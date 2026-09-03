@@ -1,0 +1,13 @@
+[package]
+name = "modbit-sandbox-gateway"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "modbit-sandbox-gateway"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints]
+workspace = true

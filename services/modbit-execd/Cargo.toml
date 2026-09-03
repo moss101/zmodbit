@@ -1,0 +1,13 @@
+[package]
+name = "modbit-execd"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "modbit-execd"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints]
+workspace = true

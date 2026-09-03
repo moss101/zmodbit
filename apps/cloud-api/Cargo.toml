@@ -1,0 +1,13 @@
+[package]
+name = "modbit-cloud-api"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "modbit-cloud-api"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints]
+workspace = true

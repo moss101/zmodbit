@@ -786,8 +786,24 @@
    "milestone": "M0",
    "order": 0,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-03T19:28:06Z",
+     "from": "NOT_STARTED",
+     "to": "AUDITING",
+     "note": "Existing-code audit: repository contains only dossier/graph/tools; product workspace NOT_FOUND. Proceeding to implement M0.1 per docs/12 layout."
+    },
+    {
+     "at": "2026-09-03T19:32:51Z",
+     "from": "AUDITING",
+     "to": "REAL_TESTING",
+     "note": "Implemented per docs/12: 26 lib crates + 5 bin members, pnpm workspace (desktop/ui/surface-protocol/design-tokens), tools/architecture-lint (cargo-metadata rule engine + --self-test), GitHub Actions matrix CI. Local: cargo fmt/clippy/build/test clean; pnpm typecheck clean; lint OK 31 members; injected real forbidden edge (workspace->browser) detected exit 1, reverted. Awaiting 3-OS CI for E2E proof."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-03T19:32:51Z"
   },
   {
    "id": "M0.2",
@@ -23640,5 +23656,6 @@
    "to": "eval-bench",
    "type": "constrains"
   }
- ]
+ ],
+ "updated_on": "2026-09-03T19:32:51Z"
 }

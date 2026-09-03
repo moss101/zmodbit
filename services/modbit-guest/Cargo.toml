@@ -1,0 +1,13 @@
+[package]
+name = "modbit-guest"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "modbit-guest"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints]
+workspace = true

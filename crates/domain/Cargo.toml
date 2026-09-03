@@ -1,0 +1,9 @@
+[package]
+name = "modbit-domain"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

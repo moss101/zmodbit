@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/*",
+    "services/*",
+    "apps/cloud-api",
+    "apps/cloud-worker",
+    "apps/sandbox-gateway",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

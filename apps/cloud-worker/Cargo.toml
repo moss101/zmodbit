@@ -1,0 +1,13 @@
+[package]
+name = "modbit-cloud-worker"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "modbit-cloud-worker"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints]
+workspace = true
