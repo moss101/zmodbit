@@ -8447,18 +8447,27 @@
    "milestone": "M0",
    "qual": "QUAL-EV-0208",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33818669947",
+    "commit:b5dd256"
+   ],
    "notes": [
     {
      "at": "2026-09-03T23:41:17Z",
      "from": "NOT_STARTED",
      "to": "REAL_TESTING",
      "note": "Audit: no memory system existed (NOT_FOUND). Implemented architecture dependency test per QUAL-EV-0208: name 'memory' reserved to modbit-memory (single owner), memory severed from event-store/checkpoint/compaction both directions (MOD-STATE-001). Self-test 6/6 injections; real-workspace injection of modbit-agent-memory crate caught exit 1, reverted."
+    },
+    {
+     "at": "2026-09-03T23:43:07Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "QUAL-EV-0208 satisfied: architecture dependency test enforces single Engineering Memory owner + memory/recovery severance; CI green incl. lint self-test (6/6 injections)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-03T23:41:17Z"
+   "status_changed_on": "2026-09-03T23:43:07Z"
   },
   {
    "id": "IMP-EV-0209",
@@ -8835,18 +8844,27 @@
    "milestone": "M0",
    "qual": "QUAL-EV-0242",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33818669947",
+    "commit:b5dd256"
+   ],
    "notes": [
     {
      "at": "2026-09-03T23:41:17Z",
      "from": "NOT_STARTED",
      "to": "REAL_TESTING",
      "note": "Audit: no hooks layer existed (NOT_FOUND). Implemented M0-scope architectural enforcement per REQ-EV-0242: hook-layer members severed from durable stores (event-store/protocol-state/checkpoint/memory) in BOTH directions — structurally a hook reset cannot lose durable truth. Self-test injections (hook->store, store->hook) caught; rule is prospective (hook bus arrives M9), runtime re-verification rides M4 kill-point suite."
+    },
+    {
+     "at": "2026-09-03T23:43:07Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "M0-scope architectural enforcement of REQ-EV-0242: hook/durable-store edges severed both directions in CI lint (structural guarantee a hook reset holds no durable truth); rule prospective until M9 hook bus; runtime re-verification rides M4 kill-point suite."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-03T23:41:17Z"
+   "status_changed_on": "2026-09-03T23:43:07Z"
   },
   {
    "id": "IMP-EV-0244",
@@ -23711,5 +23729,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-03T23:41:17Z"
+ "updated_on": "2026-09-03T23:43:07Z"
 }
