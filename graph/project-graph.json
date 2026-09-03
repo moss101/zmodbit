@@ -8447,8 +8447,18 @@
    "milestone": "M0",
    "qual": "QUAL-EV-0208",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-03T23:41:17Z",
+     "from": "NOT_STARTED",
+     "to": "REAL_TESTING",
+     "note": "Audit: no memory system existed (NOT_FOUND). Implemented architecture dependency test per QUAL-EV-0208: name 'memory' reserved to modbit-memory (single owner), memory severed from event-store/checkpoint/compaction both directions (MOD-STATE-001). Self-test 6/6 injections; real-workspace injection of modbit-agent-memory crate caught exit 1, reverted."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-03T23:41:17Z"
   },
   {
    "id": "IMP-EV-0209",
@@ -8825,8 +8835,18 @@
    "milestone": "M0",
    "qual": "QUAL-EV-0242",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-03T23:41:17Z",
+     "from": "NOT_STARTED",
+     "to": "REAL_TESTING",
+     "note": "Audit: no hooks layer existed (NOT_FOUND). Implemented M0-scope architectural enforcement per REQ-EV-0242: hook-layer members severed from durable stores (event-store/protocol-state/checkpoint/memory) in BOTH directions — structurally a hook reset cannot lose durable truth. Self-test injections (hook->store, store->hook) caught; rule is prospective (hook bus arrives M9), runtime re-verification rides M4 kill-point suite."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-03T23:41:17Z"
   },
   {
    "id": "IMP-EV-0244",
@@ -23691,5 +23711,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-03T23:36:59Z"
+ "updated_on": "2026-09-03T23:41:17Z"
 }

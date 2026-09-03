@@ -15,6 +15,11 @@ direction") and AGENTS.md ("Architecture ownership"):
       browser    -> core-runtime        (same)
       modbit-guest -> cloud-api / cloud-worker ("guest -> cloud-api business logic")
       retrieval  -> any app/UI member   ("retrieval -> desktop", "policy -> electron")
+  - IMP-EV-0208 (REQ/QUAL-EV-0208): one Engineering Memory interface — the name
+    "memory" is reserved to modbit-memory, and memory is severed from the
+    durability spine (event-store/checkpoint/compaction) in both directions.
+  - IMP-EV-0242 (REQ/QUAL-EV-0242): durable state remains in stores; hook-layer
+    members are ephemeral control — severed from durable stores both ways.
 
 `--self-test` proves the checker catches violations: it runs the same rule
 engine over a synthetic graph containing a forbidden edge (must FAIL) and a
@@ -38,6 +43,35 @@ FORBIDDEN_EDGES = [
     ("modbit-browser", "modbit-core-runtime"),
     ("modbit-guest", "modbit-cloud-api"),
     ("modbit-guest", "modbit-cloud-worker"),
+    # IMP-EV-0208 / REQ-EV-0208 (MOD-STATE-001): Engineering Memory is separate
+    # from the durability spine — no edge in either direction, so the memory
+    # system cannot become a recovery mechanism and recovery cannot require it.
+    ("modbit-memory", "modbit-event-store"),
+    ("modbit-event-store", "modbit-memory"),
+    ("modbit-memory", "modbit-checkpoint"),
+    ("modbit-checkpoint", "modbit-memory"),
+    ("modbit-memory", "modbit-compaction"),
+    ("modbit-compaction", "modbit-memory"),
+]
+
+# IMP-EV-0242 / REQ-EV-0242: durable state remains in stores; live hooks are
+# ephemeral control. Hook-layer members (name contains "hook") may hold no
+# durable truth: no edge in either direction between hook members and the
+# durable stores, so a hook process reset cannot lose durable state.
+HOOK_PATTERN = "hook"
+DURABLE_STORES = [
+    "modbit-event-store",
+    "modbit-protocol-state",
+    "modbit-checkpoint",
+    "modbit-memory",
+]
+
+# IMP-EV-0208: name-reserved single ownership. Any member whose name contains
+# a reserved pattern must BE the canonical owner, and at most one member may
+# match — structurally one Engineering Memory interface, one hook bus.
+RESERVED_NAME_PATTERNS = [
+    ("memory", "modbit-memory"),  # (pattern, canonical owner; None = M9 future owner)
+    ("hook", None),
 ]
 
 # `from` may not depend on any member whose name is in the list.
@@ -105,6 +139,34 @@ def check(graph):
                 "foundation member depends on infrastructure: %s -> %s (docs/12: domain depends "
                 "on no infrastructure crate)" % (src, dst)
             )
+
+    # IMP-EV-0242: hook members (ephemeral control) hold no durable truth —
+    # severed from durable stores in both directions.
+    for src, deps in sorted(graph.items()):
+        for dst in sorted(deps):
+            src_hook = HOOK_PATTERN in src
+            dst_hook = HOOK_PATTERN in dst
+            dst_durable = dst in DURABLE_STORES
+            src_durable = src in DURABLE_STORES
+            if (src_hook and dst_durable) or (src_durable and dst_hook):
+                violations.append(
+                    "durable/live separation violated: %s -> %s (REQ-EV-0242: durable state "
+                    "remains in stores; live hooks are ephemeral control)" % (src, dst)
+                )
+
+    # IMP-EV-0208: reserved name patterns — single canonical owner each.
+    for pattern, owner in RESERVED_NAME_PATTERNS:
+        matches = [m for m in graph if pattern in m]
+        for m in matches:
+            if owner is not None and m != owner:
+                violations.append(
+                    "second %s system: %s (reserved owner: %s; REQ-EV-0208/QUAL-EV-0208)"
+                    % (pattern, m, owner)
+                )
+        if len(matches) > 1:
+            violations.append(
+                "multiple %r-layer members: %s (at most one allowed)" % (pattern, sorted(matches))
+            )
     return violations
 
 
@@ -136,7 +198,40 @@ def self_test():
         print("SELF-TEST FAIL: foundation dependency rule not enforced: %r" % found2)
         return False
 
-    print("SELF-TEST OK: forbidden-edge detection works (2/2 injections caught, clean graph passes)")
+    # IMP-EV-0208: second Engineering Memory owner must be rejected.
+    two_mem = dict(clean)
+    two_mem["modbit-agent-memory"] = set()
+    f3 = check(two_mem)
+    if not any("modbit-agent-memory" in v for v in f3):
+        print("SELF-TEST FAIL: second memory owner not detected: %r" % f3)
+        return False
+
+    # IMP-EV-0208: memory entangled with the recovery spine must be rejected.
+    mem_recovery = dict(clean)
+    mem_recovery["modbit-memory"] = {"modbit-event-store"}
+    f4 = check(mem_recovery)
+    if not any("modbit-memory -> modbit-event-store" in v for v in f4):
+        print("SELF-TEST FAIL: memory/recovery entanglement not detected: %r" % f4)
+        return False
+
+    # IMP-EV-0242: hooks holding durable truth must be rejected, both directions.
+    hooks_out = dict(clean)
+    hooks_out["modbit-hooks"] = {"modbit-event-store"}
+    f5 = check(hooks_out)
+    if not any("modbit-hooks -> modbit-event-store" in v for v in f5):
+        print("SELF-TEST FAIL: hook->durable-store edge not detected: %r" % f5)
+        return False
+    hooks_in = dict(clean)
+    hooks_in["modbit-event-store"] = {"modbit-domain", "modbit-hooks"}
+    f6 = check(hooks_in)
+    if not any("modbit-event-store -> modbit-hooks" in v for v in f6):
+        print("SELF-TEST FAIL: durable-store->hook edge not detected: %r" % f6)
+        return False
+
+    print(
+        "SELF-TEST OK: forbidden-edge detection works "
+        "(6/6 injections caught, clean graph passes)"
+    )
     return True
 
 

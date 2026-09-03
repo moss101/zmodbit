@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 574580,
-      "sha256": "daa58e583b6a8f9e9faeeb3871245513119427d0eb3a77a4e5de06d003e09882"
+      "bytes": 575785,
+      "sha256": "49ac3c1d08a2db6f7caac278e80b26843b026c9bd3f60285f5dcdf161585480f"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -831,8 +831,8 @@
     },
     {
       "path": "tools/architecture-lint/lint.py",
-      "bytes": 6480,
-      "sha256": "b3f06b593de4cf8982310fd66ab444d5063bdd560e61a1f1e8990b8314d95c1c"
+      "bytes": 10866,
+      "sha256": "59dc7f68e5725574d5dcc82ca5b618de8d6d0ace244d3b627b221222e2a1d481"
     }
   ],
   "renames_v3_to_v3_1": {
