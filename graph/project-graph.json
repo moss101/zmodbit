@@ -822,8 +822,11 @@
    "milestone": "M0",
    "order": 1,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33818148993",
+    "commit:bb4c846"
+   ],
    "notes": [
     {
      "at": "2026-09-03T23:24:53Z",
@@ -836,10 +839,16 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Implemented: docs/decisions/{README ledger,TEMPLATE,ADR-0001 ACCEPTED}; docs/02 change-control pointer (locked change covered by ADR-0001 in same changeset); tools/decision-guard.py (locked-file guard + ADR validation, 5-scenario self-test + real injections caught: no-ADR and PROPOSED-ADR both exit 1); CI architecture job wired with fetch-depth 0 + GITHUB_BASE_REF diff; build_manifest extended to 30 root/tooling files incl. decisions; build_graph rebuild preserved live statuses; check_dossier green. Awaiting CI."
+    },
+    {
+     "at": "2026-09-03T23:36:59Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "CI green incl. architecture job running decision-guard self-test + real check on 3-OS matrix."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-03T23:33:52Z"
+   "status_changed_on": "2026-09-03T23:36:59Z"
   },
   {
    "id": "M0.3",
@@ -23682,5 +23691,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-03T23:33:52Z"
+ "updated_on": "2026-09-03T23:36:59Z"
 }
