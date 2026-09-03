@@ -858,8 +858,24 @@
    "milestone": "M0",
    "order": 2,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-03T23:44:05Z",
+     "from": "NOT_STARTED",
+     "to": "AUDITING",
+     "note": "Audit: no proto/ schemas, no codegen, no generated Rust/TS types. NOT_FOUND. Proceeding per docs/30."
+    },
+    {
+     "at": "2026-09-03T23:55:42Z",
+     "from": "AUDITING",
+     "to": "REAL_TESTING",
+     "note": "Implemented: proto/modbit/protocol/v1/{common,domain,commands,events}.proto (CommandEnvelope/EventEnvelope per docs/30); prost codegen via crates/protocol/build.rs; ts-proto bindings in packages/surface-protocol/src/generated (committed); golden fixtures proto/fixtures/*.bin written by Rust encoder; Rust tests 5/5 (determinism, round-trips, fixture match); TS wire-compat 6/6 (decode Rust bytes, byte-identical re-encode both messages, TS-built messages match fixture); CI regenerates bindings and asserts zero drift (docs/70). Awaiting 3-OS CI."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-03T23:55:42Z"
   },
   {
    "id": "M1.1",
@@ -23729,5 +23745,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-03T23:43:07Z"
+ "updated_on": "2026-09-03T23:55:42Z"
 }

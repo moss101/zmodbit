@@ -105,17 +105,17 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 576628 | `12b853ae0d50252563dd7ab47c4d8b9b3bed21309c4560a23b209a823a57394b` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22234 | `eed6892b4045e9e2ef6345b970bdc9f84108b8ae126a661c5945f5cfa5ab91b9` |
+| `graph/project-graph.json` | project driver graph with live status | 577601 | `72a73d871fa6ab07adc6a41be88c86f2f2b07e667febf634af185c4e0f28f195` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22235 | `4076e8fa0e8707fbe5fb3e91447128e52ee3fd60c58e0c036c6bdf6d74d6d073` |
 | `tools/build_manifest.py` | regenerates this manifest | 14622 | `376613450c7c262f03095491743125ee2628ec89831fb518ac3b5ffcf676c6c9` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
 | `tools/check_dossier.py` | integrity gate | 8995 | `0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46` |
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
-| `.github/workflows/ci.yml` |  | 1855 | `74475a69dbed86c39cb70d664881bebe48cee51c5ebd76e0a3b16e78200f1c62` |
+| `.github/workflows/ci.yml` |  | 2612 | `683f9526407de9f0c2d55dcfbb064d0bd4697707dbe1e5712e50ea8a8a21ce62` |
 | `Cargo.toml` |  | 269 | `69f3ea22e4cc38f041293b66375f2672afc8c4177168a6e11909ba9b0ef15d7d` |
-| `pnpm-workspace.yaml` |  | 46 | `13010bdbd7a0c948a379d91c29c493485aff31cf3060f366853b5615ff941471` |
-| `package.json` |  | 227 | `44b49795fbc933ffcc83dadeb3e32b133ca44523cacc03b3636b69e4acae53a3` |
+| `pnpm-workspace.yaml` |  | 133 | `167d6a7b8186b83859ca92ad13fbd7ad4db7583f64319f79d17a4aabce7f4299` |
+| `package.json` |  | 278 | `36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c` |
 | `apps/desktop/package.json` |  | 228 | `428baa8402848a224dc8c6f383f35487a474fe8726b7e9ee9e0c80146dde74e7` |
 | `apps/desktop/src/main.ts` |  | 188 | `e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42` |
 | `apps/desktop/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
@@ -125,8 +125,14 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/design-tokens/package.json` |  | 234 | `20d0f683df2fdb5748ef6582f73d8a643158b2403bc9f1472be1baf0ccb9847a` |
 | `packages/design-tokens/src/index.ts` |  | 204 | `f2d07647db91487425dbc9e901b36f5f78b22a83719c3cb65cbaf3d8abe78d55` |
 | `packages/design-tokens/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
-| `packages/surface-protocol/package.json` |  | 237 | `aa52730f944a4635183d0bce256d44f30745806a53961549c4cf5b4b5f6ecb59` |
-| `packages/surface-protocol/src/index.ts` |  | 249 | `68f366d2981b3db465ee24b2d92d2184f79534e551cc1c082f8446723f09e7a2` |
+| `packages/surface-protocol/package.json` |  | 420 | `bbb218f7a79544c401d7df1f6d606a9fb69a4ee6ab6e208b2189bbf37130dda8` |
+| `packages/surface-protocol/src/generated/google/protobuf/timestamp.ts` |  | 7979 | `e4b93d44fe68fb24d0e84ce41f9e6e92122b299669ccd0b42fd049031bff7a55` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts` |  | 16892 | `f93d4b43859507ef815b3771d6046c08f7b16ed5a9a61aff061eb5ef51ef64a1` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3646 | `fe695aed6ebdfdbddbfdbfc95ce07af67f02a3a1ae72e1b0863a6d343f056889` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2582 | `4219589efee4fe40bff3590598a446a8f6b23503179bbc2c7187ac1b63377a3d` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23229 | `172d126c7504591426b41b9d224f26331fa228664699159ce9c16fcdb256ac04` |
+| `packages/surface-protocol/src/index.ts` |  | 729 | `11be0e5c80215d6c2e4d98b96cddfd9c09496a4c8aae680fe0c96f629c672e10` |
+| `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |
 | `packages/surface-protocol/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
 | `packages/ui/package.json` |  | 223 | `0690dc195afbe986050db57fe4dbc696df44362c4264502aa4768ed43d6d6bfd` |
 | `packages/ui/src/index.ts` |  | 194 | `a526d54c14940b3a22dbaae3cf68391b692ee26b4b3f0a67a5a612d91db21b66` |

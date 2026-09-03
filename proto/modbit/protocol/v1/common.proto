@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package modbit.protocol.v1;
+
+// Canonical schema version carried by every envelope (docs/30 § Version
+// compatibility). Major mismatch blocks task mutation; minor is additive.
+message SchemaVersion {
+  uint32 major = 1;
+  uint32 minor = 2;
+}

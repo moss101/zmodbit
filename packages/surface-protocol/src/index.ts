@@ -1,5 +1,22 @@
 /**
  * TypeScript protocol/API types shared with the Modbit Core SurfaceProtocol.
- * Scaffold only at M0.1; generated types arrive with M0.3 protobuf generation (docs/30).
+ * Generated from the canonical protobuf schemas (proto/, docs/30) via
+ * `pnpm --filter @modbit/surface-protocol generate`; CI asserts the committed
+ * bindings match the schema source (docs/70).
  */
-export const SURFACE_PROTOCOL_PACKAGE_NAME = "@modbit/surface-protocol";
+export type { SchemaVersion } from "./generated/modbit/protocol/v1/common";
+export { TaskStatus } from "./generated/modbit/protocol/v1/domain";
+export type {
+  CommandEnvelope,
+  CreateSessionCommand,
+  CreateTaskCommand,
+  CancelTaskCommand,
+} from "./generated/modbit/protocol/v1/commands";
+export type {
+  EventEnvelope,
+  TaskEvent,
+  TaskCreated,
+  TaskStarted,
+  TaskCompleted,
+  TaskFailed,
+} from "./generated/modbit/protocol/v1/events";

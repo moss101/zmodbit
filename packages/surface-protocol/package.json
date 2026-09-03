@@ -5,9 +5,15 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate": "node scripts/generate.mjs",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "5.9.2"
+    "ts-proto": "2.7.7",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4",
+    "@bufbuild/protobuf": "2.5.0",
+    "@types/node": "24.3.1"
   }
 }

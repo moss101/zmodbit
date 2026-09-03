@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package modbit.protocol.v1;
+
+import "google/protobuf/timestamp.proto";
+import "modbit/protocol/v1/common.proto";
+import "modbit/protocol/v1/domain.proto";
+
+// Canonical event envelope (docs/30 § Canonical event types). Events are the
+// only durable truth; they append to the event store with aggregate generation
+// fencing (MOD-STATE-001/002/003).
+message EventEnvelope {
+  string event_id = 1;
+  string tenant_id = 2;
+  string aggregate_id = 3;
+  uint64 generation = 4;
+  string event_type = 5;
+  SchemaVersion schema_version = 6;
+  bytes payload = 7;
+  google.protobuf.Timestamp occurred_at = 8;
+}
+
+// Session/task event family slice (docs/30 § Session/task). Discrete task
+// events ride a typed payload; the full event set accretes with milestones.
+message TaskEvent {
+  string task_id = 1;
+  uint64 generation = 2;
+  oneof payload {
+    TaskCreated task_created = 10;
+    TaskStarted task_started = 11;
+    TaskCompleted task_completed = 12;
+    TaskFailed task_failed = 13;
+  }
+}
+
+message TaskCreated {
+  string session_id = 1;
+  string title = 2;
+  string prompt = 3;
+  TaskStatus initial_status = 4;
+}
+
+message TaskStarted {
+  google.protobuf.Timestamp started_at = 1;
+}
+
+message TaskCompleted {
+  string summary = 1;
+}
+
+message TaskFailed {
+  string error_kind = 1;
+  string message = 2;
+}

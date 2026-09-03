@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package modbit.protocol.v1;
+
+// Task lifecycle status (docs/30 § Session/task events; docs/93 vocabulary).
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_QUEUED = 1;
+  TASK_STATUS_STARTED = 2;
+  TASK_STATUS_WAITING = 3;
+  TASK_STATUS_NEEDS_ATTENTION = 4;
+  TASK_STATUS_READY_FOR_REVIEW = 5;
+  TASK_STATUS_COMPLETED = 6;
+  TASK_STATUS_FAILED = 7;
+  TASK_STATUS_CANCELLED = 8;
+}

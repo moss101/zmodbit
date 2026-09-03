@@ -26,6 +26,19 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Install protoc
+        shell: bash
+        run: |
+          if command -v protoc >/dev/null 2>&1; then
+            protoc --version
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y protobuf-compiler
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install protobuf
+          else
+            choco install protoc -y --no-progress
+          fi
+
       - name: Rust formatting
         run: cargo fmt --all -- --check
 
@@ -35,14 +48,22 @@ jobs:
       - name: Rust build
         run: cargo build --workspace --all-targets
 
-      - name: Rust tests
+      - name: Rust tests (includes protobuf round-trip + golden fixtures)
         run: cargo test --workspace
 
       - name: TypeScript install
         run: pnpm install --frozen-lockfile
 
+      - name: Regenerate TS bindings and require zero drift (docs/70)
+        run: |
+          pnpm -r generate
+          git diff --exit-code -- packages/surface-protocol/src/generated
+
       - name: TypeScript build/typecheck
         run: pnpm -r typecheck
+
+      - name: TypeScript tests (Rust↔TS wire compatibility)
+        run: pnpm -r test
 
   architecture:
     runs-on: ubuntu-latest
