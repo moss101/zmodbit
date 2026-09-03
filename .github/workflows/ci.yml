@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Rust lint (warnings policy, docs/70 PR pipeline step 1-2)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Rust build
+        run: cargo build --workspace --all-targets
+
+      - name: Rust tests
+        run: cargo test --workspace
+
+      - name: TypeScript install
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript build/typecheck
+        run: pnpm -r typecheck
+
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Forbidden dependency self-test (must prove detection works)
+        run: python3 tools/architecture-lint/lint.py --self-test
+
+      - name: Architecture dependency lint (docs/12, PR pipeline step 4)
+        run: python3 tools/architecture-lint/lint.py
+
+      - name: Dossier integrity gate
+        run: python3 tools/check_dossier.py
