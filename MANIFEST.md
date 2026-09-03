@@ -1,7 +1,7 @@
 # Modbit Dossier Manifest — V3.1
 
 > **Authority date:** 2026-09-03  
-> **Generated:** 2026-09-03 by `tools/build_manifest.py`  
+> **Generated:** 2026-09-04 by `tools/build_manifest.py`  
 > **Scope:** every specification file in `docs/` plus the root governing files and tooling. The previous `99_MANIFEST.md` covered only 39 Part 2 files; this manifest covers all 70 docs.
 > **Machine-readable twin:** `manifest.json` (same content, same hashes).
 
@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 572868 | `d50155766363ef024968e0dbe8451ff81f06224b7171668e0ee68d3a3cbc816e` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22241 | `5c8693c1630212ff4399a9a46aa1452244756630a0c05a9f48d4929924fbb764` |
+| `graph/project-graph.json` | project driver graph with live status | 573292 | `b390bf31ddd3d50ba077015b901736f3938390d5f7bc99f5254d380836d39b0e` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22237 | `23b62f99053668654f8ac7e2a1204c35823b7d62a4d8b7ee28ffecfc6f497ef5` |
 | `tools/build_manifest.py` | regenerates this manifest | 13610 | `7c6bb05684c309f2595b5fa214b1f3f06bcfd4fabbedb15506307c64cf58ff81` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |

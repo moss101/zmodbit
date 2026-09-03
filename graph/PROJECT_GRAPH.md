@@ -42,7 +42,7 @@ One JSON file that answers *what exists, what depends on what, what proves what,
 
 ```mermaid
 flowchart LR
-  M0["M0<br/>Repository and authority<br/>0/6 done"]
+  M0["M0<br/>Repository and authority<br/>1/6 done"]
   M1["M1<br/>Durable local shell and Core<br/>0/31 done"]
   M2["M2<br/>Real local engineering loop<br/>0/72 done"]
   M3["M3<br/>Context intelligence<br/>0/54 done"]
@@ -90,7 +90,7 @@ Critical path (reliability spine): **M0 → M1 → M2 → M4**. Do not start bro
 
 | Milestone | State | Unblocked | Milestone tasks | IMP-EV tasks | Complete | Blocked | Depends on | Proof |
 |---|---|---|---:|---:|---:|---:|---|---|
-| M0 Repository and authority | IN_PROGRESS | yes | 4 | 2 | 0 | 0 | — | clean clone build + architecture lint |
+| M0 Repository and authority | IN_PROGRESS | yes | 4 | 2 | 1 | 0 | — | clean clone build + architecture lint |
 | M1 Durable local shell and Core | NOT_STARTED | no | 5 | 26 | 0 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
 | M2 Real local engineering loop | NOT_STARTED | no | 10 | 62 | 0 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
 | M3 Context intelligence | NOT_STARTED | no | 9 | 45 | 0 | 0 | M2 | profile A/B/C benchmark plus retrieval-before-edit visible in task evidence. |
@@ -202,7 +202,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M0.1` | REAL_TESTING | Create monorepo, Rust workspace, pnpm workspace, CI, architecture-lint | fresh clone builds on macOS/Linux/Windows CI; forbidden dependency test works. |
+| `M0.1` | COMPLETE | Create monorepo, Rust workspace, pnpm workspace, CI, architecture-lint | fresh clone builds on macOS/Linux/Windows CI; forbidden dependency test works. |
 | `M0.2` | NOT_STARTED | Add authoritative ADRs and status ledger | CI rejects changed locked architecture file without linked ADR metadata. |
 | `M0.3` | NOT_STARTED | Protobuf domain/protocol generation Rust↔TS | round-trip compatibility tests. |
 | `M0.4` | NOT_STARTED | Requirement-coverage CI and REQ→IMP→QUAL traceability parser | CI fails on ADOPT/ADAPT row without owner/IMP-EV/QUAL-EV, COMPLETE task without evidence, or duplicate active owner |
