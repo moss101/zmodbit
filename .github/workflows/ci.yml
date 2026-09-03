@@ -48,6 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -56,6 +58,14 @@ jobs:
 
       - name: Architecture dependency lint (docs/12, PR pipeline step 4)
         run: python3 tools/architecture-lint/lint.py
+
+      - name: Decision guard self-test (must prove locked-file detection works)
+        run: python3 tools/decision-guard.py --self-test
+
+      - name: Decision guard — locked files need linked ADRs (docs/02 change control)
+        run: python3 tools/decision-guard.py
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
 
       - name: Dossier integrity gate
         run: python3 tools/check_dossier.py

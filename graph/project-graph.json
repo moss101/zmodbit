@@ -3,7 +3,7 @@
  "product": "Modbit",
  "edition": "V3.1",
  "authority_date": "2026-09-03",
- "generated_on": "2026-09-03",
+ "generated_on": "2026-09-04",
  "generator": "tools/build_graph.py",
  "status_vocabulary": [
   "NOT_STARTED",
@@ -822,8 +822,24 @@
    "milestone": "M0",
    "order": 1,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-03T23:24:53Z",
+     "from": "NOT_STARTED",
+     "to": "AUDITING",
+     "note": "Existing-code audit: docs/decisions/ does not exist; no ADR mechanism, no locked-file CI check. NOT_FOUND. Proceeding per docs/02 + docs/46."
+    },
+    {
+     "at": "2026-09-03T23:33:52Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Implemented: docs/decisions/{README ledger,TEMPLATE,ADR-0001 ACCEPTED}; docs/02 change-control pointer (locked change covered by ADR-0001 in same changeset); tools/decision-guard.py (locked-file guard + ADR validation, 5-scenario self-test + real injections caught: no-ADR and PROPOSED-ADR both exit 1); CI architecture job wired with fetch-depth 0 + GITHUB_BASE_REF diff; build_manifest extended to 30 root/tooling files incl. decisions; build_graph rebuild preserved live statuses; check_dossier green. Awaiting CI."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-03T23:33:52Z"
   },
   {
    "id": "M0.3",
@@ -23666,5 +23682,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-03T23:10:37Z"
+ "updated_on": "2026-09-03T23:33:52Z"
 }

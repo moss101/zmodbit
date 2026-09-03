@@ -6,8 +6,8 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 9,
-    "docs_bytes": 507710
+    "root_and_tooling": 30,
+    "docs_bytes": 507950
   },
   "sections": [
     {
@@ -76,8 +76,8 @@
       "section": "authority",
       "section_title": "Authority and orientation",
       "title": "Authority, Decision Register, and Conflict Resolution",
-      "bytes": 8418,
-      "sha256": "1fde529ae990233238311f85ef11a0046d6ae88896aa46cd9d4e7fc8d907706f"
+      "bytes": 8658,
+      "sha256": "62e0ecd4fb2141ae49f4165a9216a622ea7f2f16c12f22912a467adc24957756"
     },
     {
       "path": "docs/03_ARCHITECTURAL_CONFLICTS_AND_SUPERSESSIONS.md",
@@ -701,18 +701,18 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 573292,
-      "sha256": "b390bf31ddd3d50ba077015b901736f3938390d5f7bc99f5254d380836d39b0e"
+      "bytes": 574279,
+      "sha256": "187a4cf1d6f685953b89e5a12b74fab9bd23fd00d9358357d3302267cb292f98"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22237,
-      "sha256": "23b62f99053668654f8ac7e2a1204c35823b7d62a4d8b7ee28ffecfc6f497ef5"
+      "bytes": 22238,
+      "sha256": "a04f67e5e9c173d9a89491dd7176ad7cacc94dc91ca0321105a2bfe8512e0b5d"
     },
     {
       "path": "tools/build_manifest.py",
-      "bytes": 13610,
-      "sha256": "7c6bb05684c309f2595b5fa214b1f3f06bcfd4fabbedb15506307c64cf58ff81"
+      "bytes": 14622,
+      "sha256": "376613450c7c262f03095491743125ee2628ec89831fb518ac3b5ffcf676c6c9"
     },
     {
       "path": "tools/build_graph.py",
@@ -728,6 +728,111 @@
       "path": "tools/check_dossier.py",
       "bytes": 8995,
       "sha256": "0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46"
+    },
+    {
+      "path": "tools/decision-guard.py",
+      "bytes": 7908,
+      "sha256": "cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 1855,
+      "sha256": "74475a69dbed86c39cb70d664881bebe48cee51c5ebd76e0a3b16e78200f1c62"
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 269,
+      "sha256": "69f3ea22e4cc38f041293b66375f2672afc8c4177168a6e11909ba9b0ef15d7d"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 46,
+      "sha256": "13010bdbd7a0c948a379d91c29c493485aff31cf3060f366853b5615ff941471"
+    },
+    {
+      "path": "package.json",
+      "bytes": 227,
+      "sha256": "44b49795fbc933ffcc83dadeb3e32b133ca44523cacc03b3636b69e4acae53a3"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "bytes": 228,
+      "sha256": "428baa8402848a224dc8c6f383f35487a474fe8726b7e9ee9e0c80146dde74e7"
+    },
+    {
+      "path": "apps/desktop/src/main.ts",
+      "bytes": 188,
+      "sha256": "e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42"
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "bytes": 323,
+      "sha256": "8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110"
+    },
+    {
+      "path": "docs/decisions/ADR-0001-baseline-decision-register.md",
+      "bytes": 2328,
+      "sha256": "2fcf3eafcce3ccff939244c77c9faa0ebf7106edf2ba7f1cbc9d300524100379"
+    },
+    {
+      "path": "docs/decisions/README.md",
+      "bytes": 1657,
+      "sha256": "59264591f661d13c95c0e384f27a04852164fbaa878c5ec172ac219b2e748847"
+    },
+    {
+      "path": "docs/decisions/TEMPLATE.md",
+      "bytes": 1195,
+      "sha256": "666bfdf99aa951eec878352547e20d9a4ea69e8ac18cb2e935b407d71bc2fca3"
+    },
+    {
+      "path": "packages/design-tokens/package.json",
+      "bytes": 234,
+      "sha256": "20d0f683df2fdb5748ef6582f73d8a643158b2403bc9f1472be1baf0ccb9847a"
+    },
+    {
+      "path": "packages/design-tokens/src/index.ts",
+      "bytes": 204,
+      "sha256": "f2d07647db91487425dbc9e901b36f5f78b22a83719c3cb65cbaf3d8abe78d55"
+    },
+    {
+      "path": "packages/design-tokens/tsconfig.json",
+      "bytes": 323,
+      "sha256": "8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110"
+    },
+    {
+      "path": "packages/surface-protocol/package.json",
+      "bytes": 237,
+      "sha256": "aa52730f944a4635183d0bce256d44f30745806a53961549c4cf5b4b5f6ecb59"
+    },
+    {
+      "path": "packages/surface-protocol/src/index.ts",
+      "bytes": 249,
+      "sha256": "68f366d2981b3db465ee24b2d92d2184f79534e551cc1c082f8446723f09e7a2"
+    },
+    {
+      "path": "packages/surface-protocol/tsconfig.json",
+      "bytes": 323,
+      "sha256": "8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110"
+    },
+    {
+      "path": "packages/ui/package.json",
+      "bytes": 223,
+      "sha256": "0690dc195afbe986050db57fe4dbc696df44362c4264502aa4768ed43d6d6bfd"
+    },
+    {
+      "path": "packages/ui/src/index.ts",
+      "bytes": 194,
+      "sha256": "a526d54c14940b3a22dbaae3cf68391b692ee26b4b3f0a67a5a612d91db21b66"
+    },
+    {
+      "path": "packages/ui/tsconfig.json",
+      "bytes": 323,
+      "sha256": "8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110"
+    },
+    {
+      "path": "tools/architecture-lint/lint.py",
+      "bytes": 6480,
+      "sha256": "b3f06b593de4cf8982310fd66ab444d5063bdd560e61a1f1e8990b8314d95c1c"
     }
   ],
   "renames_v3_to_v3_1": {

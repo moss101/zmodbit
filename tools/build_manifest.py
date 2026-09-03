@@ -105,7 +105,27 @@ RENAMES = {
 }
 
 ROOT_FILES = ["README.md", "AGENTS.md", "SKILLS.md", "graph/project-graph.json", "graph/PROJECT_GRAPH.md",
-              "tools/build_manifest.py", "tools/build_graph.py", "tools/graph.py", "tools/check_dossier.py"]
+              "tools/build_manifest.py", "tools/build_graph.py", "tools/graph.py", "tools/check_dossier.py",
+              "tools/decision-guard.py", ".github/workflows/ci.yml", "Cargo.toml", "pnpm-workspace.yaml",
+              "package.json"]
+
+
+def extra_tooling_files():
+    """Every remaining product file the integrity claim covers: all tools/**,
+    TS workspace packages and the decision records (docs/decisions/**)."""
+    found = []
+    for base in ("tools", "docs/decisions", "packages", "apps/desktop"):
+        full = os.path.join(ROOT, base)
+        if not os.path.isdir(full):
+            continue
+        for dirpath, dirnames, filenames in os.walk(full):
+            dirnames[:] = [d for d in dirnames if d not in ("node_modules", "target", "__pycache__")]
+            for fn in filenames:
+                if fn.endswith((".ts", ".py", ".md", ".json", ".yaml", ".toml")):
+                    rel = os.path.relpath(os.path.join(dirpath, fn), ROOT)
+                    if rel not in ROOT_FILES:
+                        found.append(rel.replace(os.sep, "/"))
+    return sorted(found)
 
 
 def sha256(path):
@@ -151,7 +171,7 @@ def main():
             "sha256": sha256(p),
         })
     root_entries = []
-    for rel in ROOT_FILES:
+    for rel in ROOT_FILES + extra_tooling_files():
         p = os.path.join(ROOT, rel)
         if not os.path.exists(p):
             continue

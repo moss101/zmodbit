@@ -1,7 +1,7 @@
 # Modbit Project Graph
 
 > Generated from `graph/project-graph.json` by `tools/graph.py render --write`. Do not edit by hand; edit the graph through `tools/graph.py set` or regenerate structure with `tools/build_graph.py`.  
-> Graph generated on 2026-09-03; view rendered on 2026-09-03.
+> Graph generated on 2026-09-04; view rendered on 2026-09-03.
 
 ## What the graph is
 
@@ -203,7 +203,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
 | `M0.1` | COMPLETE | Create monorepo, Rust workspace, pnpm workspace, CI, architecture-lint | fresh clone builds on macOS/Linux/Windows CI; forbidden dependency test works. |
-| `M0.2` | NOT_STARTED | Add authoritative ADRs and status ledger | CI rejects changed locked architecture file without linked ADR metadata. |
+| `M0.2` | REAL_TESTING | Add authoritative ADRs and status ledger | CI rejects changed locked architecture file without linked ADR metadata. |
 | `M0.3` | NOT_STARTED | Protobuf domain/protocol generation Rust↔TS | round-trip compatibility tests. |
 | `M0.4` | NOT_STARTED | Requirement-coverage CI and REQ→IMP→QUAL traceability parser | CI fails on ADOPT/ADAPT row without owner/IMP-EV/QUAL-EV, COMPLETE task without evidence, or duplicate active owner |
 

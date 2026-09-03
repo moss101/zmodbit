@@ -13,7 +13,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 
 | Section | Range | Files | Bytes |
 |---|---|---:|---:|
-| Authority and orientation | 00–09 | 5 | 26438 |
+| Authority and orientation | 00–09 | 5 | 26678 |
 | Architecture and subsystems | 10–29 | 17 | 76622 |
 | Implementation specifications | 30–39 | 8 | 29941 |
 | Requirements, tasks and traceability | 40–49 | 9 | 292645 |
@@ -21,7 +21,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
 | Live state | 98–99 | 1 | 2097 |
-| **Total docs** | | **70** | **507710** |
+| **Total docs** | | **70** | **507950** |
 
 ## Specification files (`docs/`)
 
@@ -29,7 +29,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 |---:|---|---|---|---:|---|
 | 00 | `docs/00_MASTER_INDEX.md` | Modbit — AI-Agent Build Dossier V3.1 | authority | 10612 | `4739b765f5781a297a231a5a1f4b29e618d2f4924e7b5ab81099b011c74a3ccb` |
 | 01 | `docs/01_START_HERE_FOR_BUILD_AGENTS.md` | Start Here for Build Agents | authority | 2109 | `6ad6ee428f676259a10a5e27e57f1e89216304f4d527c1f2afe4c085f9809e5a` |
-| 02 | `docs/02_AUTHORITY_AND_DECISIONS.md` | Authority, Decision Register, and Conflict Resolution | authority | 8418 | `1fde529ae990233238311f85ef11a0046d6ae88896aa46cd9d4e7fc8d907706f` |
+| 02 | `docs/02_AUTHORITY_AND_DECISIONS.md` | Authority, Decision Register, and Conflict Resolution | authority | 8658 | `62e0ecd4fb2141ae49f4165a9216a622ea7f2f16c12f22912a467adc24957756` |
 | 03 | `docs/03_ARCHITECTURAL_CONFLICTS_AND_SUPERSESSIONS.md` | Architectural Conflicts and Supersessions | authority | 4047 | `e5fcb6e088ee2fa07777cb45d93f3179df08fa78b722cb820d37a6e891e81d87` |
 | 04 | `docs/04_REQUIREMENT_BASIS_AND_LIMITS.md` | Requirement Basis and Limits | authority | 1252 | `942aec1f5b14f71d9bc5f398ecb8dc4c4f5636c0d23db4d0ef83b7bf2ef5cb5d` |
 | 10 | `docs/10_PRODUCT_PRD_AND_UX.md` | Product Requirements and UX Specification | architecture | 6497 | `fa91e06198c0527e5a0bed57ecd1ff33066f7bd8036dbc08d573d1e5cac16252` |
@@ -105,12 +105,33 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 573292 | `b390bf31ddd3d50ba077015b901736f3938390d5f7bc99f5254d380836d39b0e` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22237 | `23b62f99053668654f8ac7e2a1204c35823b7d62a4d8b7ee28ffecfc6f497ef5` |
-| `tools/build_manifest.py` | regenerates this manifest | 13610 | `7c6bb05684c309f2595b5fa214b1f3f06bcfd4fabbedb15506307c64cf58ff81` |
+| `graph/project-graph.json` | project driver graph with live status | 574279 | `187a4cf1d6f685953b89e5a12b74fab9bd23fd00d9358357d3302267cb292f98` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22238 | `a04f67e5e9c173d9a89491dd7176ad7cacc94dc91ca0321105a2bfe8512e0b5d` |
+| `tools/build_manifest.py` | regenerates this manifest | 14622 | `376613450c7c262f03095491743125ee2628ec89831fb518ac3b5ffcf676c6c9` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
 | `tools/check_dossier.py` | integrity gate | 8995 | `0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46` |
+| `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
+| `.github/workflows/ci.yml` |  | 1855 | `74475a69dbed86c39cb70d664881bebe48cee51c5ebd76e0a3b16e78200f1c62` |
+| `Cargo.toml` |  | 269 | `69f3ea22e4cc38f041293b66375f2672afc8c4177168a6e11909ba9b0ef15d7d` |
+| `pnpm-workspace.yaml` |  | 46 | `13010bdbd7a0c948a379d91c29c493485aff31cf3060f366853b5615ff941471` |
+| `package.json` |  | 227 | `44b49795fbc933ffcc83dadeb3e32b133ca44523cacc03b3636b69e4acae53a3` |
+| `apps/desktop/package.json` |  | 228 | `428baa8402848a224dc8c6f383f35487a474fe8726b7e9ee9e0c80146dde74e7` |
+| `apps/desktop/src/main.ts` |  | 188 | `e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42` |
+| `apps/desktop/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
+| `docs/decisions/ADR-0001-baseline-decision-register.md` |  | 2328 | `2fcf3eafcce3ccff939244c77c9faa0ebf7106edf2ba7f1cbc9d300524100379` |
+| `docs/decisions/README.md` |  | 1657 | `59264591f661d13c95c0e384f27a04852164fbaa878c5ec172ac219b2e748847` |
+| `docs/decisions/TEMPLATE.md` |  | 1195 | `666bfdf99aa951eec878352547e20d9a4ea69e8ac18cb2e935b407d71bc2fca3` |
+| `packages/design-tokens/package.json` |  | 234 | `20d0f683df2fdb5748ef6582f73d8a643158b2403bc9f1472be1baf0ccb9847a` |
+| `packages/design-tokens/src/index.ts` |  | 204 | `f2d07647db91487425dbc9e901b36f5f78b22a83719c3cb65cbaf3d8abe78d55` |
+| `packages/design-tokens/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
+| `packages/surface-protocol/package.json` |  | 237 | `aa52730f944a4635183d0bce256d44f30745806a53961549c4cf5b4b5f6ecb59` |
+| `packages/surface-protocol/src/index.ts` |  | 249 | `68f366d2981b3db465ee24b2d92d2184f79534e551cc1c082f8446723f09e7a2` |
+| `packages/surface-protocol/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
+| `packages/ui/package.json` |  | 223 | `0690dc195afbe986050db57fe4dbc696df44362c4264502aa4768ed43d6d6bfd` |
+| `packages/ui/src/index.ts` |  | 194 | `a526d54c14940b3a22dbaae3cf68391b692ee26b4b3f0a67a5a612d91db21b66` |
+| `packages/ui/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
+| `tools/architecture-lint/lint.py` |  | 6480 | `b3f06b593de4cf8982310fd66ab444d5063bdd560e61a1f1e8990b8314d95c1c` |
 
 ## Rename map (V3 flat numbering → V3.1 `docs/`)
 

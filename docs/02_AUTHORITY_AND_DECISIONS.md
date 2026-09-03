@@ -62,6 +62,8 @@ External reference behavior is used as evidence for mechanisms only. No propriet
 
 Any future change to a **LOCKED** item requires a Decision Record containing: trigger/evidence, current behavior, proposed replacement, migration, compatibility, security impact, test impact, rollback and explicit user approval. A PR that silently changes a locked invariant fails architecture CI.
 
+Decision Records live in `docs/decisions/` (template, ledger and the locked-file list); architecture CI enforces them via `tools/decision-guard.py` — baseline adoption recorded in `docs/decisions/ADR-0001-baseline-decision-register.md`.
+
 
 ## V2 decisions added after source reconciliation
 
