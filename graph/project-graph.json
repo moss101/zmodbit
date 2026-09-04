@@ -930,8 +930,11 @@
    "milestone": "M1",
    "order": 1,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33824010091",
+    "commit:efcbe33"
+   ],
    "notes": [
     {
      "at": "2026-09-04T00:50:09Z",
@@ -944,10 +947,16 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Implemented: v2 migration with docs/31 Core-table projections (sessions/tasks/runs/turns/run_steps); transactional projection updates inside every append + command transaction (docs/13 invariant); rebuild-from-events reproducing identical rows; v1->v2 migration-safety test preserving events (fixture DB). Idempotency/migrations halves shipped with M1.1. 12 store tests + full workspace 60 green; clippy clean. Awaiting 3-OS CI."
+    },
+    {
+     "at": "2026-09-04T01:03:42Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Projections transactional with appends (sessions/tasks/runs/turns/run_steps per docs/31); rebuild reproduces identical rows; v1->v2 migration preserves events; command idempotency shipped with M1.1. CI green on 3 OSes."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T00:59:45Z"
+   "status_changed_on": "2026-09-04T01:03:42Z"
   },
   {
    "id": "M1.3",
@@ -23808,5 +23817,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T00:59:45Z"
+ "updated_on": "2026-09-04T01:03:42Z"
 }
