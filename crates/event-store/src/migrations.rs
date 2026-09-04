@@ -47,6 +47,7 @@ pub const MIGRATIONS: &[Migration] = &[
         crate::leases::SQL_V3_LEASES,
     ),
     (4, SQL_V4_TASK_INPUTS),
+    (5, SQL_V5_FORK_LINEAGE),
 ];
 
 /// Projection tables (docs/31 § Core tables): derived read models, always
@@ -129,6 +130,13 @@ pub const SQL_V4_TASK_INPUTS: &str = "
     CREATE INDEX idx_task_inputs_task ON task_inputs(task_id, sequence);
 ";
 
+/// Fork lineage (REQ-EV-0077): forked branches record their source session
+/// and fork point so revision lineage is explicit and auditable.
+pub const SQL_V5_FORK_LINEAGE: &str = "
+    ALTER TABLE sessions ADD COLUMN parent_session_id TEXT;
+    ALTER TABLE sessions ADD COLUMN forked_at_sequence INTEGER;
+";
+
 pub fn migrate(conn: &Connection) -> Result<(), rusqlite::Error> {
     let current: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
     for (version, sql) in MIGRATIONS {
@@ -152,6 +160,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 4);
+        assert_eq!(v, 5);
     }
 }

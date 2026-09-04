@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 55,
+    "root_and_tooling": 57,
     "docs_bytes": 508040
   },
   "sections": [
@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 592247,
-      "sha256": "05eef76c8aa82b3fe9d5871386133581d86f76362a155e46849996bbced259d1"
+      "bytes": 592551,
+      "sha256": "25bf2564eda4a5cfb9698e8177c2f7bb3f81cdccb1969512d1ab5410974fcb76"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -770,9 +770,14 @@
       "sha256": "2aa9b4e72d4b523c2dabe64bb20fc853c3a29b9e2c4d1e61b9d5ed87930afdfd"
     },
     {
+      "path": "apps/desktop/electron/bridge-schema.cjs",
+      "bytes": 3926,
+      "sha256": "8d5387b36b7cb374e98ba73f4f9e11ee9956442a8c68481ac987a3459bc860fe"
+    },
+    {
       "path": "apps/desktop/electron/main.cjs",
-      "bytes": 3749,
-      "sha256": "e46925411277c8e18515ca9e5eb69b8bd262343be799dcdc462a7c30824e231e"
+      "bytes": 4497,
+      "sha256": "7b0171810334b3bb97f0403677a9c042fecee66b2f2afef912f0a4cf7542673f"
     },
     {
       "path": "apps/desktop/electron/preload.cjs",
@@ -828,6 +833,11 @@
       "path": "apps/desktop/src/styles.css",
       "bytes": 785,
       "sha256": "80b36bcf1afafab6a373c59063fa8358e50fd36cad614dd69ccd13631e7b7862"
+    },
+    {
+      "path": "apps/desktop/test/bridge.test.ts",
+      "bytes": 2632,
+      "sha256": "64ee3d705a2f2b483ac6b9334159181f517bcfa5d2b423de9f646bddece98efe"
     },
     {
       "path": "apps/desktop/test/surface.e2e.test.ts",

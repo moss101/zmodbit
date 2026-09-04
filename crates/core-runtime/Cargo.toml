@@ -7,6 +7,7 @@ edition.workspace = true
 modbit-domain = { path = "../domain" }
 modbit-event-store = { path = "../event-store" }
 modbit-protocol = { path = "../protocol" }
+serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 prost = "0.13"

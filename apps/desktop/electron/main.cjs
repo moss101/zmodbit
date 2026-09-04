@@ -13,6 +13,7 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
 const { connectSurface } = require("./surface-client.cjs");
+const { validateIpcMessage, Rejected } = require("./bridge-schema.cjs");
 
 let coreProcess = null;
 let surface = null;
@@ -77,10 +78,31 @@ async function createSession({ displayName }) {
   return withRetry((s) => s.request({ createSession: displayName }));
 }
 
+// REQ-EV-0103: every renderer message is schema-validated before the
+// privileged host acts on it. Malicious/malformed messages are rejected.
+function guarded(channel, action) {
+  ipcMain.handle(channel, (_event, payload) => {
+    let request;
+    try {
+      request = validateIpcMessage(channel, payload);
+    } catch (e) {
+      if (e instanceof Rejected) return { ok: false, error: e.message };
+      throw e;
+    }
+    return action(request);
+  });
+}
+
 function registerIpc() {
-  ipcMain.handle("fleet:snapshot", () => getFleet());
-  ipcMain.handle("task:create", (_event, { title, prompt }) => createTask({ title, prompt }));
-  ipcMain.handle("session:create", (_event, { displayName }) => createSession({ displayName }));
+  guarded("fleet:snapshot", () => getFleet());
+  guarded("task:create", (request) => {
+    if (request.kind !== "createTask") return { ok: false, error: "wrong request kind" };
+    return createTask({ title: request.title, prompt: request.prompt });
+  });
+  guarded("session:create", (request) => {
+    if (request.kind !== "createSession") return { ok: false, error: "wrong request kind" };
+    return createSession({ displayName: request.displayName });
+  });
 }
 
 function createWindow() {

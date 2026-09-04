@@ -105,7 +105,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 592247 | `05eef76c8aa82b3fe9d5871386133581d86f76362a155e46849996bbced259d1` |
+| `graph/project-graph.json` | project driver graph with live status | 592551 | `25bf2564eda4a5cfb9698e8177c2f7bb3f81cdccb1969512d1ab5410974fcb76` |
 | `graph/PROJECT_GRAPH.md` | human view of the graph | 22213 | `f374fa89fc8dbb6af241f31ee4632e8d3488d09d434e748e77825fae37296437` |
 | `tools/build_manifest.py` | regenerates this manifest | 14670 | `3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
@@ -119,7 +119,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/dist/assets/index-BJMD7rLe.js` |  | 145498 | `cc69f16b9b0fab97b91535afbd7404cc3fe13aa230afadcd79df547498ee9fcf` |
 | `apps/desktop/dist/assets/index-DrM0Ho-V.css` |  | 664 | `e0f5b17ca79348d107ea783cbc7cf8118ecae0a838287dbc82973ee6e5bfffc4` |
 | `apps/desktop/dist/index.html` |  | 448 | `2aa9b4e72d4b523c2dabe64bb20fc853c3a29b9e2c4d1e61b9d5ed87930afdfd` |
-| `apps/desktop/electron/main.cjs` |  | 3749 | `e46925411277c8e18515ca9e5eb69b8bd262343be799dcdc462a7c30824e231e` |
+| `apps/desktop/electron/bridge-schema.cjs` |  | 3926 | `8d5387b36b7cb374e98ba73f4f9e11ee9956442a8c68481ac987a3459bc860fe` |
+| `apps/desktop/electron/main.cjs` |  | 4497 | `7b0171810334b3bb97f0403677a9c042fecee66b2f2afef912f0a4cf7542673f` |
 | `apps/desktop/electron/preload.cjs` |  | 554 | `1463ea7284acf481f5a112524fbb13aad50d386a915af1f14f8759836f3b5ef0` |
 | `apps/desktop/electron/surface-client.cjs` |  | 10525 | `8205a7250a43acfc48fc4b63009a5edbafe394c7e719a939c39c95306c2bb773` |
 | `apps/desktop/index.html` |  | 348 | `fe3a3fc8fb9f256a4f651b6252eede9328674eaef7d67dc9ebba05e3366b0f5d` |
@@ -131,6 +132,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/src/main.ts` |  | 188 | `e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42` |
 | `apps/desktop/src/main.tsx` |  | 232 | `ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140` |
 | `apps/desktop/src/styles.css` |  | 785 | `80b36bcf1afafab6a373c59063fa8358e50fd36cad614dd69ccd13631e7b7862` |
+| `apps/desktop/test/bridge.test.ts` |  | 2632 | `64ee3d705a2f2b483ac6b9334159181f517bcfa5d2b423de9f646bddece98efe` |
 | `apps/desktop/test/surface.e2e.test.ts` |  | 4444 | `caed16f7a4ba2cf16e0fb35285d065f3f5454f7be9a22681b7810247be0fa4eb` |
 | `apps/desktop/tsconfig.json` |  | 384 | `04d41467686090e811fa48d26f64694df7722dfffa12891b0559143d781b62ff` |
 | `apps/desktop/vite.config.ts` |  | 150 | `ce36fc4ce9db762ab99a5056aabd3c722f73f37010e639c1f1a2c992c63e5f4d` |
