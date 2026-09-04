@@ -94,7 +94,7 @@ jobs:
       - name: Dossier integrity gate
         run: python3 tools/check_dossier.py
 
-      - name: Examples runner (REQ-EV-0212: no fake test examples)
+      - name: "Examples runner (REQ-EV-0212, no fake test examples)"
         run: |
           python3 tools/examples_runner.py --self-test
           python3 tools/examples_runner.py
