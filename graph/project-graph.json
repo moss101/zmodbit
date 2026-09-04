@@ -1383,9 +1383,12 @@
    "milestone": "M3",
    "order": 1,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "M3.3",
@@ -1395,8 +1398,20 @@
    "milestone": "M3",
    "order": 2,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-04T21:59:39Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks: see context_graph/bm25/diagnostics/pull/planner/rerank/pack_compiler/provenance/bench_harness modules — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-04T21:59:39Z"
   },
   {
    "id": "M3.4",
@@ -1406,8 +1421,20 @@
    "milestone": "M3",
    "order": 3,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-04T21:59:39Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks: see context_graph/bm25/diagnostics/pull/planner/rerank/pack_compiler/provenance/bench_harness modules — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-04T21:59:39Z"
   },
   {
    "id": "M3.5",
@@ -1417,8 +1444,20 @@
    "milestone": "M3",
    "order": 4,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-04T21:59:39Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks: see context_graph/bm25/diagnostics/pull/planner/rerank/pack_compiler/provenance/bench_harness modules — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-04T21:59:39Z"
   },
   {
    "id": "M3.6",
@@ -1428,8 +1467,20 @@
    "milestone": "M3",
    "order": 5,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-04T21:59:39Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks: see context_graph/bm25/diagnostics/pull/planner/rerank/pack_compiler/provenance/bench_harness modules — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-04T21:59:39Z"
   },
   {
    "id": "M3.7",
@@ -1439,8 +1490,20 @@
    "milestone": "M3",
    "order": 6,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-04T21:59:39Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks: see context_graph/bm25/diagnostics/pull/planner/rerank/pack_compiler/provenance/bench_harness modules — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-04T21:59:39Z"
   },
   {
    "id": "M3.8",
@@ -1450,8 +1513,20 @@
    "milestone": "M3",
    "order": 7,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-04T21:59:39Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks: see context_graph/bm25/diagnostics/pull/planner/rerank/pack_compiler/provenance/bench_harness modules — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-04T21:59:39Z"
   },
   {
    "id": "M3.9",
@@ -1461,8 +1536,20 @@
    "milestone": "M3",
    "order": 8,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-04T21:59:39Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks: see context_graph/bm25/diagnostics/pull/planner/rerank/pack_compiler/provenance/bench_harness modules — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-04T21:59:39Z"
   },
   {
    "id": "M4.1",
@@ -10103,9 +10190,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0249",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:16Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0250",
@@ -10118,9 +10208,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0250",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0251",
@@ -10133,9 +10226,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0251",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0252",
@@ -10148,9 +10244,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0252",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0253",
@@ -10163,9 +10262,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0253",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0254",
@@ -10178,9 +10280,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0254",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0255",
@@ -10305,9 +10410,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0268",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0269",
@@ -10417,9 +10525,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0274",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0275",
@@ -10558,9 +10669,12 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0284",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T21:53:17Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
+    "commit:a596a94"
+   ],
+   "status_changed_on": "2026-09-04T21:58:31Z"
   },
   {
    "id": "IMP-EV-0285",
@@ -24935,5 +25049,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T21:53:17Z"
+ "updated_on": "2026-09-04T21:59:39Z"
 }
