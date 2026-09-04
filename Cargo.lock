@@ -364,6 +364,10 @@ version = "0.1.0"
 [[package]]
 name = "modbit-compaction"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2",
+]
 
 [[package]]
 name = "modbit-context"
