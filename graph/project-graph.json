@@ -1038,8 +1038,24 @@
    "milestone": "M1",
    "order": 4,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T02:36:51Z",
+   "notes": [
+    {
+     "at": "2026-09-04T02:24:47Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Audit: no crash/restart proof existed (NOT_FOUND). M1 milestone proof = 'user creates durable task, kills/restarts app+Core, same task recovers with no fake state' (docs/43). Implement: spawn real modbit-core, create durable tasks, SIGKILL the process, respawn on the same DB, verify fleet identical + integrity verified. The durable/live separation (IMP-EV-0242 rule) and transactional projections (M1.2) are what make this pass."
+    },
+    {
+     "at": "2026-09-04T02:36:51Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Implemented: crash/restart durability proof over the real binary — create durable tasks through the authenticated surface (incl. one full lifecycle to Completed), SIGKILL the Core process, restart on the same db+socket (stale UDS file reclaimed at bind), verify fleet recovers EXACTLY (ids/titles/states) across TWO further restarts. Found+fixed: stale socket file after SIGKILL blocked re-bind (unlink at bind for fs endpoints). Awaiting 3-OS CI."
+    }
+   ]
   },
   {
    "id": "M2.1",
@@ -23867,5 +23883,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T02:23:53Z"
+ "updated_on": "2026-09-04T02:36:51Z"
 }

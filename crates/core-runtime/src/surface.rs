@@ -10,7 +10,7 @@ use prost::Message;
 use rusqlite::OptionalExtension;
 
 use modbit_domain::commands::CommandPayload;
-use modbit_domain::{Actor, ActorType, Command, SessionId};
+use modbit_domain::{Actor, ActorType, Command, SessionId, TaskId};
 use modbit_event_store::{CommandProcessor, EventStore};
 use modbit_protocol::modbit::protocol::v1 as pb;
 
@@ -68,6 +68,32 @@ impl CoreServices {
                     ..Default::default()
                 },
             },
+            Some(pb::surface_request::Request::QueueTask(queue)) => self.lifecycle_response(
+                &queue.task_id,
+                CommandPayload::QueueTask {
+                    task_id: parse_task_id(&queue.task_id),
+                },
+            ),
+            Some(pb::surface_request::Request::StartTask(start)) => self.lifecycle_response(
+                &start.task_id,
+                CommandPayload::StartTask {
+                    task_id: parse_task_id(&start.task_id),
+                },
+            ),
+            Some(pb::surface_request::Request::TaskReadyForReview(review)) => self
+                .lifecycle_response(
+                    &review.task_id,
+                    CommandPayload::TaskReadyForReview {
+                        task_id: parse_task_id(&review.task_id),
+                    },
+                ),
+            Some(pb::surface_request::Request::CompleteTask(complete)) => self.lifecycle_response(
+                &complete.task_id,
+                CommandPayload::CompleteTask {
+                    task_id: parse_task_id(&complete.task_id),
+                    summary: complete.summary,
+                },
+            ),
             Some(pb::surface_request::Request::CreateSession(create)) => {
                 let outcome = self.execute(Command {
                     command_id: new_command_id(),
@@ -155,6 +181,28 @@ impl CoreServices {
             None => pb::SurfaceResponse {
                 ok: false,
                 error: "empty SurfaceRequest".into(),
+                ..Default::default()
+            },
+        }
+    }
+
+    fn lifecycle_response(&self, task_id: &str, payload: CommandPayload) -> pb::SurfaceResponse {
+        match self.execute(Command {
+            command_id: new_command_id(),
+            actor: actor(),
+            payload,
+        }) {
+            Ok(_) => {
+                let task = self.task_view(task_id);
+                pb::SurfaceResponse {
+                    ok: true,
+                    task,
+                    ..Default::default()
+                }
+            }
+            Err(e) => pb::SurfaceResponse {
+                ok: false,
+                error: e,
                 ..Default::default()
             },
         }
@@ -337,4 +385,8 @@ fn map_state(state: &str) -> i32 {
 
 fn new_command_id() -> String {
     uuid::Uuid::now_v7().to_string()
+}
+
+fn parse_task_id(task_id: &str) -> TaskId {
+    TaskId::parse(task_id).unwrap_or_else(|_| TaskId::generate())
 }

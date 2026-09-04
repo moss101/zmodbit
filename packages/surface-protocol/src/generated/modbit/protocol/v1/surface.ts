@@ -20,9 +20,30 @@ export interface SurfaceRequest {
   createSession?: CreateSessionCommand | undefined;
   createTask?: CreateTaskCommand | undefined;
   getFleet?: GetFleetRequest | undefined;
+  queueTask?: QueueTaskCommand | undefined;
+  startTask?: StartTaskCommand | undefined;
+  taskReadyForReview?: TaskReadyForReviewCommand | undefined;
+  completeTask?: CompleteTaskCommand | undefined;
 }
 
 export interface GetFleetRequest {
+}
+
+export interface QueueTaskCommand {
+  taskId: string;
+}
+
+export interface StartTaskCommand {
+  taskId: string;
+}
+
+export interface TaskReadyForReviewCommand {
+  taskId: string;
+}
+
+export interface CompleteTaskCommand {
+  taskId: string;
+  summary: string;
 }
 
 /** One task card in the Fleet views (docs/32 § Renderer modules: fleet/). */
@@ -53,7 +74,15 @@ export interface SurfaceResponse {
 }
 
 function createBaseSurfaceRequest(): SurfaceRequest {
-  return { createSession: undefined, createTask: undefined, getFleet: undefined };
+  return {
+    createSession: undefined,
+    createTask: undefined,
+    getFleet: undefined,
+    queueTask: undefined,
+    startTask: undefined,
+    taskReadyForReview: undefined,
+    completeTask: undefined,
+  };
 }
 
 export const SurfaceRequest: MessageFns<SurfaceRequest> = {
@@ -66,6 +95,18 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getFleet !== undefined) {
       GetFleetRequest.encode(message.getFleet, writer.uint32(26).fork()).join();
+    }
+    if (message.queueTask !== undefined) {
+      QueueTaskCommand.encode(message.queueTask, writer.uint32(34).fork()).join();
+    }
+    if (message.startTask !== undefined) {
+      StartTaskCommand.encode(message.startTask, writer.uint32(42).fork()).join();
+    }
+    if (message.taskReadyForReview !== undefined) {
+      TaskReadyForReviewCommand.encode(message.taskReadyForReview, writer.uint32(50).fork()).join();
+    }
+    if (message.completeTask !== undefined) {
+      CompleteTaskCommand.encode(message.completeTask, writer.uint32(58).fork()).join();
     }
     return writer;
   },
@@ -101,6 +142,38 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.getFleet = GetFleetRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.queueTask = QueueTaskCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.startTask = StartTaskCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.taskReadyForReview = TaskReadyForReviewCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.completeTask = CompleteTaskCommand.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -115,6 +188,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       createSession: isSet(object.createSession) ? CreateSessionCommand.fromJSON(object.createSession) : undefined,
       createTask: isSet(object.createTask) ? CreateTaskCommand.fromJSON(object.createTask) : undefined,
       getFleet: isSet(object.getFleet) ? GetFleetRequest.fromJSON(object.getFleet) : undefined,
+      queueTask: isSet(object.queueTask) ? QueueTaskCommand.fromJSON(object.queueTask) : undefined,
+      startTask: isSet(object.startTask) ? StartTaskCommand.fromJSON(object.startTask) : undefined,
+      taskReadyForReview: isSet(object.taskReadyForReview)
+        ? TaskReadyForReviewCommand.fromJSON(object.taskReadyForReview)
+        : undefined,
+      completeTask: isSet(object.completeTask) ? CompleteTaskCommand.fromJSON(object.completeTask) : undefined,
     };
   },
 
@@ -128,6 +207,18 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getFleet !== undefined) {
       obj.getFleet = GetFleetRequest.toJSON(message.getFleet);
+    }
+    if (message.queueTask !== undefined) {
+      obj.queueTask = QueueTaskCommand.toJSON(message.queueTask);
+    }
+    if (message.startTask !== undefined) {
+      obj.startTask = StartTaskCommand.toJSON(message.startTask);
+    }
+    if (message.taskReadyForReview !== undefined) {
+      obj.taskReadyForReview = TaskReadyForReviewCommand.toJSON(message.taskReadyForReview);
+    }
+    if (message.completeTask !== undefined) {
+      obj.completeTask = CompleteTaskCommand.toJSON(message.completeTask);
     }
     return obj;
   },
@@ -145,6 +236,18 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.getFleet = (object.getFleet !== undefined && object.getFleet !== null)
       ? GetFleetRequest.fromPartial(object.getFleet)
+      : undefined;
+    message.queueTask = (object.queueTask !== undefined && object.queueTask !== null)
+      ? QueueTaskCommand.fromPartial(object.queueTask)
+      : undefined;
+    message.startTask = (object.startTask !== undefined && object.startTask !== null)
+      ? StartTaskCommand.fromPartial(object.startTask)
+      : undefined;
+    message.taskReadyForReview = (object.taskReadyForReview !== undefined && object.taskReadyForReview !== null)
+      ? TaskReadyForReviewCommand.fromPartial(object.taskReadyForReview)
+      : undefined;
+    message.completeTask = (object.completeTask !== undefined && object.completeTask !== null)
+      ? CompleteTaskCommand.fromPartial(object.completeTask)
       : undefined;
     return message;
   },
@@ -189,6 +292,256 @@ export const GetFleetRequest: MessageFns<GetFleetRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<GetFleetRequest>, I>>(_: I): GetFleetRequest {
     const message = createBaseGetFleetRequest();
+    return message;
+  },
+};
+
+function createBaseQueueTaskCommand(): QueueTaskCommand {
+  return { taskId: "" };
+}
+
+export const QueueTaskCommand: MessageFns<QueueTaskCommand> = {
+  encode(message: QueueTaskCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueueTaskCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueueTaskCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueueTaskCommand {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: QueueTaskCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueueTaskCommand>, I>>(base?: I): QueueTaskCommand {
+    return QueueTaskCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueueTaskCommand>, I>>(object: I): QueueTaskCommand {
+    const message = createBaseQueueTaskCommand();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseStartTaskCommand(): StartTaskCommand {
+  return { taskId: "" };
+}
+
+export const StartTaskCommand: MessageFns<StartTaskCommand> = {
+  encode(message: StartTaskCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StartTaskCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStartTaskCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StartTaskCommand {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: StartTaskCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StartTaskCommand>, I>>(base?: I): StartTaskCommand {
+    return StartTaskCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StartTaskCommand>, I>>(object: I): StartTaskCommand {
+    const message = createBaseStartTaskCommand();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseTaskReadyForReviewCommand(): TaskReadyForReviewCommand {
+  return { taskId: "" };
+}
+
+export const TaskReadyForReviewCommand: MessageFns<TaskReadyForReviewCommand> = {
+  encode(message: TaskReadyForReviewCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TaskReadyForReviewCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTaskReadyForReviewCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TaskReadyForReviewCommand {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: TaskReadyForReviewCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TaskReadyForReviewCommand>, I>>(base?: I): TaskReadyForReviewCommand {
+    return TaskReadyForReviewCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TaskReadyForReviewCommand>, I>>(object: I): TaskReadyForReviewCommand {
+    const message = createBaseTaskReadyForReviewCommand();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseCompleteTaskCommand(): CompleteTaskCommand {
+  return { taskId: "", summary: "" };
+}
+
+export const CompleteTaskCommand: MessageFns<CompleteTaskCommand> = {
+  encode(message: CompleteTaskCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.summary !== "") {
+      writer.uint32(18).string(message.summary);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CompleteTaskCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCompleteTaskCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.summary = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CompleteTaskCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      summary: isSet(object.summary) ? globalThis.String(object.summary) : "",
+    };
+  },
+
+  toJSON(message: CompleteTaskCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.summary !== "") {
+      obj.summary = message.summary;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CompleteTaskCommand>, I>>(base?: I): CompleteTaskCommand {
+    return CompleteTaskCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CompleteTaskCommand>, I>>(object: I): CompleteTaskCommand {
+    const message = createBaseCompleteTaskCommand();
+    message.taskId = object.taskId ?? "";
+    message.summary = object.summary ?? "";
     return message;
   },
 };

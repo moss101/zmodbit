@@ -13,10 +13,28 @@ message SurfaceRequest {
     CreateSessionCommand create_session = 1;
     CreateTaskCommand create_task = 2;
     GetFleetRequest get_fleet = 3;
+    QueueTaskCommand queue_task = 4;
+    StartTaskCommand start_task = 5;
+    TaskReadyForReviewCommand task_ready_for_review = 6;
+    CompleteTaskCommand complete_task = 7;
   }
 }
 
 message GetFleetRequest {}
+
+message QueueTaskCommand {
+  string task_id = 1;
+}
+message StartTaskCommand {
+  string task_id = 1;
+}
+message TaskReadyForReviewCommand {
+  string task_id = 1;
+}
+message CompleteTaskCommand {
+  string task_id = 1;
+  string summary = 2;
+}
 
 // One task card in the Fleet views (docs/32 § Renderer modules: fleet/).
 message TaskView {

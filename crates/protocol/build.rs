@@ -7,6 +7,7 @@ use std::path::PathBuf;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")?).join("../..");
     let proto_root = root.join("proto");
+    println!("cargo:rerun-if-changed={}", proto_root.display());
     let files = [
         "modbit/protocol/v1/common.proto",
         "modbit/protocol/v1/domain.proto",

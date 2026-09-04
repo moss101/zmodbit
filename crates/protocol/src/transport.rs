@@ -133,6 +133,9 @@ impl From<std::io::Error> for TransportError {
 pub struct EndpointName {
     inner: interprocess::local_socket::Name<'static>,
     raw: String,
+    /// True when `raw` is a filesystem path (unix UDS). A hard crash leaves
+    /// the socket file behind, so bind() must unlink it first.
+    is_fs: bool,
 }
 
 impl EndpointName {
@@ -143,6 +146,7 @@ impl EndpointName {
         Ok(Self {
             inner: path.to_fs_name::<GenericFilePath>().map_err(io_other)?,
             raw,
+            is_fs: true,
         })
     }
 
@@ -153,6 +157,7 @@ impl EndpointName {
         Ok(Self {
             inner: path.to_fs_name::<GenericFilePath>().map_err(io_other)?,
             raw,
+            is_fs: true,
         })
     }
 
@@ -166,7 +171,21 @@ impl EndpointName {
         Ok(Self {
             inner: leaked.to_ns_name::<GenericNamespaced>().map_err(io_other)?,
             raw: leaked.to_string(),
+            is_fs: false,
         })
+    }
+
+    /// Builds the endpoint from a boot-channel socket name: a filesystem
+    /// path on unix, a namespace name on windows.
+    pub fn from_boot_name(socket_name: String) -> Result<Self, TransportError> {
+        #[cfg(windows)]
+        {
+            Self::namespace(&socket_name)
+        }
+        #[cfg(not(windows))]
+        {
+            Self::fs_path(PathBuf::from(socket_name))
+        }
     }
 
     /// Stable human-readable form for logs and the boot channel json.
@@ -205,8 +224,18 @@ fn io_other(e: impl ToString) -> TransportError {
 
 /// Binds the Core-side listener (Unix socket / named pipe).
 pub fn bind(name: &EndpointName) -> Result<interprocess::local_socket::Listener, TransportError> {
+    #[cfg(unix)]
+    if name.is_fs {
+        // A SIGKILLed predecessor leaves the socket file; unlink so the
+        // restarted Core can re-bind the same endpoint (M1.5 kill/restart).
+        let _ = std::fs::remove_file(&name.raw);
+    }
     ListenerOptions::new()
         .name(name.interprocess_name().to_owned())
+        // After a hard crash the stale socket file remains; reclaiming the
+        // name lets the restarted Core re-bind the same endpoint (docs/43 M1
+        // kill/restart proof).
+        .reclaim_name(true)
         .create_sync()
         .map_err(io_other)
 }
