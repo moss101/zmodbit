@@ -6337,16 +6337,24 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33866288627",
-    "commit:4557599"
+    "commit:4557599",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
+    "commit:710aff4"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T11:09:41Z",
+   "status_changed_on": "2026-09-04T11:54:36Z",
    "notes": [
     {
      "at": "2026-09-04T11:05:21Z",
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Diagnostics comparison module in verification crate; regression-only attribution with preexisting/resolved tracking. 3 tests green."
+    },
+    {
+     "at": "2026-09-04T11:54:36Z",
+     "from": "COMPLETE",
+     "to": "COMPLETE",
+     "note": "Diagnostics comparison: preexisting errors not blamed on change; new regressions attributed; resolved tracked."
     }
    ]
   },
@@ -7063,10 +7071,21 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0062",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
+    "commit:710aff4"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T11:38:58Z"
+   "status_changed_on": "2026-09-04T11:54:36Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:54:36Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "EnvironmentSnapshot pins toolchain/PATH/env/workspace roots to revision identity; env_matches detects drift; tested."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0063",
@@ -7079,10 +7098,21 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0063",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
+    "commit:710aff4"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T11:38:58Z"
+   "status_changed_on": "2026-09-04T11:54:36Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:54:36Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "EnvironmentHandoffBundle validates no secrets embedded; handoff preserves task/plan/context/evidence."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0064",
@@ -7095,10 +7125,21 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0064",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
+    "commit:710aff4"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T11:38:58Z"
+   "status_changed_on": "2026-09-04T11:54:36Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:54:36Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "Typed UndoPlan with per-file inverse actions built from prior content; preserves unrelated user changes."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0065",
@@ -24503,5 +24544,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T11:38:58Z"
+ "updated_on": "2026-09-04T11:54:36Z"
 }
