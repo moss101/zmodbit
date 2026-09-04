@@ -11,6 +11,7 @@
 pub mod handoff;
 pub mod merge_transaction;
 pub mod review;
+pub mod session_lineage;
 pub use review::{apply_review as review_apply, ReviewedHunk};
 use std::collections::BTreeMap;
 use std::fmt;

@@ -318,3 +318,113 @@ mod tests {
         );
     }
 }
+
+/// A deferred tool: NOT in the model's always-on surface. Its metadata is
+/// searchable; the full schema is revealed only on activation, and
+/// activation still goes through policy (REQ-EV-0134).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeferredToolEntry {
+    pub name: String,
+    /// One-line summary indexed for search.
+    pub summary: String,
+    pub tags: Vec<String>,
+    pub effect_class: modbit_policy::EffectClass,
+}
+
+/// The searchable catalog of deferred tool metadata.
+#[derive(Clone, Debug, Default)]
+pub struct DeferredCatalog {
+    pub entries: Vec<DeferredToolEntry>,
+}
+
+/// A search hit: the deferred tool plus its (still unauthorized) activation
+/// descriptor.
+#[derive(Clone, Debug)]
+pub struct SearchHit {
+    pub entry: DeferredToolEntry,
+    /// The schema text the model receives AFTER activation — discovery
+    /// returns only name + summary, never the parameter contract.
+    pub schema_revealed_on_activation: bool,
+}
+
+impl DeferredCatalog {
+    pub fn new(entries: Vec<DeferredToolEntry>) -> Self {
+        Self { entries }
+    }
+
+    /// Searches the catalog by substring across name, summary, and tags.
+    /// Search is DISCOVERY ONLY: it grants nothing.
+    pub fn search(&self, query: &str) -> Vec<SearchHit> {
+        let q = query.to_lowercase();
+        self.entries
+            .iter()
+            .filter(|e| {
+                e.name.to_lowercase().contains(&q)
+                    || e.summary.to_lowercase().contains(&q)
+                    || e.tags.iter().any(|t| t.to_lowercase().contains(&q))
+            })
+            .map(|e| SearchHit {
+                entry: e.clone(),
+                schema_revealed_on_activation: true,
+            })
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod deferred_tests {
+    use super::*;
+    use crate::ToolRegistry;
+    use modbit_policy::{EffectClass, PolicyDecision};
+    use std::sync::Arc;
+
+    fn catalog() -> DeferredCatalog {
+        DeferredCatalog::new(vec![
+            DeferredToolEntry {
+                name: "db.query".into(),
+                summary: "run SQL against the analytics warehouse".into(),
+                tags: vec!["database".into(), "sql".into()],
+                effect_class: EffectClass::ReadOnly,
+            },
+            DeferredToolEntry {
+                name: "image.render".into(),
+                summary: "render a PNG from a chart spec".into(),
+                tags: vec!["graphics".into()],
+                effect_class: EffectClass::Write,
+            },
+        ])
+    }
+
+    /// QUAL-EV-0134: search finds the tool, activation still requires
+    /// permission — discovery does not authorize.
+    #[test]
+    fn search_finds_tool_but_activation_still_enforces_policy() {
+        let hits = catalog().search("sql");
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].entry.name, "db.query");
+        assert!(hits[0].schema_revealed_on_activation);
+
+        // Activation path: the registry executes ONLY on a policy Allow.
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "db.query",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(|_args| Ok(serde_json::json!({"rows": []}))),
+            )
+            .unwrap();
+
+        // The kernel's DENY decision (discovery did NOT authorize).
+        let deny = PolicyDecision::Deny {
+            reason: "tool not granted for this session".into(),
+        };
+        let err = registry
+            .execute("db.query", &serde_json::json!({"sql": "SELECT 1"}), &deny)
+            .unwrap_err();
+        assert!(
+            matches!(err, crate::ToolError::PolicyDenied { .. }),
+            "found-by-search tool must still be denied without a grant"
+        );
+    }
+}

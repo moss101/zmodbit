@@ -48,6 +48,9 @@ pub struct EnterprisePolicy {
     pub blocked_models: Vec<String>,
     pub blocked_providers: Vec<String>,
     pub required_model: Option<String>,
+    /// Service-tier ceiling (None/empty = no restriction) — REQ-EV-0112.
+    #[serde(default)]
+    pub allowed_service_tiers: Option<Vec<crate::envelope::ServiceTier>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]

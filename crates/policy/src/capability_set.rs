@@ -78,6 +78,10 @@ pub struct AdvertisedCapability {
     pub authorized: bool,
     pub transport_supported: bool,
     pub consumer_exists: bool,
+    /// The consumer adapter this capability requires (e.g. "ui.browser").
+    /// Empty for headless capabilities. REQ-EV-0133.
+    #[serde(default)]
+    pub consumer_adapter: String,
 }
 
 /// Checks the end-to-end invariant: all four layers must be present.
@@ -95,6 +99,32 @@ pub fn check_e2e_capability(cap: &AdvertisedCapability) -> Result<(), String> {
         return Err(format!("{}: no consumer to render it", cap.name));
     }
     Ok(())
+}
+
+/// A host-side consumer adapter that can be enabled or disabled (e.g. a
+/// desktop build ships "ui.browser"; a headless agent does not).
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct ConsumerAdapter {
+    pub name: String,
+    pub enabled: bool,
+}
+
+/// The tool schemas visible to the model: a tool appears ONLY when its
+/// end-to-end invariant holds AND its required consumer adapter is enabled.
+/// Disabling an adapter makes dependent schemas disappear BEFORE dispatch —
+/// the model can never select a tool the host cannot render/execute
+/// (REQ-EV-0133: no dead tools).
+pub fn visible_tools(caps: &[AdvertisedCapability], adapters: &[ConsumerAdapter]) -> Vec<String> {
+    caps.iter()
+        .filter(|cap| {
+            let adapter_ok = cap.consumer_adapter.is_empty()
+                || adapters
+                    .iter()
+                    .any(|a| a.name == cap.consumer_adapter && a.enabled);
+            adapter_ok && check_e2e_capability(cap).is_ok()
+        })
+        .map(|cap| cap.name.clone())
+        .collect()
 }
 
 #[cfg(test)]
@@ -153,5 +183,58 @@ mod tests {
             })();
             assert_eq!(result.is_ok(), expect_ok);
         }
+    }
+}
+
+#[cfg(test)]
+mod adapter_tests {
+    use super::*;
+
+    fn tool(name: &str, adapter: &str) -> AdvertisedCapability {
+        AdvertisedCapability {
+            name: name.to_string(),
+            producer_exists: true,
+            authorized: true,
+            transport_supported: true,
+            consumer_exists: true,
+            consumer_adapter: adapter.to_string(),
+        }
+    }
+
+    /// QUAL-EV-0133: disabling the consumer adapter makes the dependent
+    /// tool schema DISAPPEAR from the visible surface.
+    #[test]
+    fn disabling_adapter_removes_dependent_schemas() {
+        let caps = vec![tool("browser.open", "ui.browser"), tool("fs.read", "")];
+        let adapters = vec![ConsumerAdapter {
+            name: "ui.browser".into(),
+            enabled: true,
+        }];
+        let visible = visible_tools(&caps, &adapters);
+        assert_eq!(
+            visible,
+            vec!["browser.open".to_string(), "fs.read".to_string()]
+        );
+
+        // Disable the adapter: the browser schema disappears, the headless
+        // tool remains.
+        let adapters_disabled = vec![ConsumerAdapter {
+            name: "ui.browser".into(),
+            enabled: false,
+        }];
+        let visible = visible_tools(&caps, &adapters_disabled);
+        assert_eq!(visible, vec!["fs.read".to_string()]);
+    }
+
+    /// The invariant still filters independently of adapters: a capability
+    /// missing any layer never surfaces even with every adapter enabled.
+    #[test]
+    fn dead_tools_never_surface() {
+        let mut broken = tool("shell.run", "");
+        broken.authorized = false;
+        let caps = vec![broken, tool("fs.read", "")];
+        let adapters: Vec<ConsumerAdapter> = vec![];
+        let visible = visible_tools(&caps, &adapters);
+        assert_eq!(visible, vec!["fs.read".to_string()]);
     }
 }

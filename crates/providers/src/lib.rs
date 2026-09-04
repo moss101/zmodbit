@@ -1,6 +1,7 @@
 //! modbit-providers — normalized model/embedding adapters
 //!
 //! Canonical owner subsystem: model-gateway (docs/81). Layout: docs/12_REPOSITORY_AND_MODULE_LAYOUT.md.
+pub mod envelope;
 pub mod gateway;
 pub mod routing;
 pub use gateway::{

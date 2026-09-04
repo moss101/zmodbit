@@ -180,9 +180,18 @@ pub fn open_and_merge(
     target_branch: &str,
 ) -> Result<(MergeTransaction, MergeOutcome), MergeTransactionError> {
     if let Some(existing) = load(repo)? {
-        return Err(MergeTransactionError::AlreadyOpen {
-            transaction_id: existing.transaction_id,
-        });
+        match existing.phase {
+            MergePhase::Committed | MergePhase::RolledBack => {
+                // Terminal transaction: archive the record and allow a new
+                // transaction to start.
+                let _ = std::fs::remove_file(transaction_path(repo));
+            }
+            MergePhase::Open | MergePhase::Conflicted | MergePhase::Validating => {
+                return Err(MergeTransactionError::AlreadyOpen {
+                    transaction_id: existing.transaction_id,
+                });
+            }
+        }
     }
     let mut tx = MergeTransaction::new(transaction_id, source_branch, target_branch);
     tx.base_commit = merge_base(repo, source_branch, target_branch)?;

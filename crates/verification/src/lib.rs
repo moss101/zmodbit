@@ -5,6 +5,7 @@
 //! completion requires real-system evidence, never a model claim.
 
 pub mod diagnostics;
+pub mod evidence_index;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
