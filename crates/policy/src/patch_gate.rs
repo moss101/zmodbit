@@ -67,7 +67,7 @@ mod tests {
             old_content: "old".into(),
             new_content: "new".into(),
         };
-        let verdict = check_patch(&req, &["/protected"], 1.0);
+        let verdict = check_patch(&req, &["/protected".to_string()], 1.0);
         assert_eq!(verdict, PatchVerdict::Allow);
     }
 
@@ -78,7 +78,7 @@ mod tests {
             old_content: "old".into(),
             new_content: "new".into(),
         };
-        let verdict = check_patch(&req, &["/protected"], 1.0);
+        let verdict = check_patch(&req, &["/protected".to_string()], 1.0);
         assert!(matches!(verdict, PatchVerdict::Deny { .. }));
     }
 }
