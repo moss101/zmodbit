@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+modbit-domain = { path = "../domain" }
+rusqlite = { workspace = true }
+sha2 = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
 
 [lints]
 workspace = true

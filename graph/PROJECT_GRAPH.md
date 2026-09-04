@@ -72,7 +72,7 @@ flowchart LR
   M8 --> M10
   M9 --> M10
   style M0 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M1 fill:#f3f4f6,stroke:#9ca3af,color:#111827
+  style M1 fill:#fef3c7,stroke:#d97706,color:#111827
   style M2 fill:#f3f4f6,stroke:#9ca3af,color:#111827
   style M3 fill:#f3f4f6,stroke:#9ca3af,color:#111827
   style M4 fill:#f3f4f6,stroke:#9ca3af,color:#111827
@@ -91,7 +91,7 @@ Critical path (reliability spine): **M0 → M1 → M2 → M4**. Do not start bro
 | Milestone | State | Unblocked | Milestone tasks | IMP-EV tasks | Complete | Blocked | Depends on | Proof |
 |---|---|---|---:|---:|---:|---:|---|---|
 | M0 Repository and authority | COMPLETE | yes | 4 | 2 | 6 | 0 | — | clean clone build + architecture lint |
-| M1 Durable local shell and Core | NOT_STARTED | yes | 5 | 26 | 0 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
+| M1 Durable local shell and Core | IN_PROGRESS | yes | 5 | 26 | 0 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
 | M2 Real local engineering loop | NOT_STARTED | no | 10 | 62 | 0 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
 | M3 Context intelligence | NOT_STARTED | no | 9 | 45 | 0 | 0 | M2 | profile A/B/C benchmark plus retrieval-before-edit visible in task evidence. |
 | M4 Durable recovery spine | NOT_STARTED | no | 6 | 5 | 0 | 0 | M2 | E2E-004/005/006/007/008. |
@@ -211,7 +211,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M1.1` | NOT_STARTED | Implement Session/Task/Run/Turn/RunStep domain and event store |  |
+| `M1.1` | REAL_TESTING | Implement Session/Task/Run/Turn/RunStep domain and event store |  |
 | `M1.2` | NOT_STARTED | Implement SQLite migrations, projections, command idempotency |  |
 | `M1.3` | NOT_STARTED | Implement local authenticated SurfaceProtocol |  |
 | `M1.4` | NOT_STARTED | Electron shell + real Fleet/New Task UI against Core |  |

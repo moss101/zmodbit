@@ -105,15 +105,15 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 578945 | `cb23b783d572611ebc1871d306a6026aa4e54fc1a0646c97ff7ee06de2a0c015` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22226 | `2e4a7e72a188893c768a498ca67cffab6dd92235b12e435544355730c602bd98` |
+| `graph/project-graph.json` | project driver graph with live status | 580116 | `73eb46cef8a189fe148cb5833fb764f1ce6d3f9c4e55fce8494d09b4cb75d4b3` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22227 | `89c587d5609edc92a487941311880b1959724c9e0d27ef41bd71c3ff7e37b314` |
 | `tools/build_manifest.py` | regenerates this manifest | 14622 | `376613450c7c262f03095491743125ee2628ec89831fb518ac3b5ffcf676c6c9` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
 | `tools/check_dossier.py` | integrity gate | 8995 | `0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46` |
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
 | `.github/workflows/ci.yml` |  | 2872 | `eeaa05aa3a5fb724185e18e0888d0aa830eac2bc415b441420fb3ed8717be956` |
-| `Cargo.toml` |  | 269 | `69f3ea22e4cc38f041293b66375f2672afc8c4177168a6e11909ba9b0ef15d7d` |
+| `Cargo.toml` |  | 484 | `0e74629caa64c7d248556e7c48acb53e70da550c36c99c20948504b8fd6995a7` |
 | `pnpm-workspace.yaml` |  | 76 | `da253f18976a532f3df4f73eea28b37d4ba4dc0a00baef4468f4306dba651b75` |
 | `package.json` |  | 278 | `36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c` |
 | `apps/desktop/package.json` |  | 228 | `428baa8402848a224dc8c6f383f35487a474fe8726b7e9ee9e0c80146dde74e7` |

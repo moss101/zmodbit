@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 578945,
-      "sha256": "cb23b783d572611ebc1871d306a6026aa4e54fc1a0646c97ff7ee06de2a0c015"
+      "bytes": 580116,
+      "sha256": "73eb46cef8a189fe148cb5833fb764f1ce6d3f9c4e55fce8494d09b4cb75d4b3"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22226,
-      "sha256": "2e4a7e72a188893c768a498ca67cffab6dd92235b12e435544355730c602bd98"
+      "bytes": 22227,
+      "sha256": "89c587d5609edc92a487941311880b1959724c9e0d27ef41bd71c3ff7e37b314"
     },
     {
       "path": "tools/build_manifest.py",
@@ -741,8 +741,8 @@
     },
     {
       "path": "Cargo.toml",
-      "bytes": 269,
-      "sha256": "69f3ea22e4cc38f041293b66375f2672afc8c4177168a6e11909ba9b0ef15d7d"
+      "bytes": 484,
+      "sha256": "0e74629caa64c7d248556e7c48acb53e70da550c36c99c20948504b8fd6995a7"
     },
     {
       "path": "pnpm-workspace.yaml",

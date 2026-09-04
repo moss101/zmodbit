@@ -1,4 +1,16 @@
-//! modbit-event-store — append-only event store + projections
+//! modbit-event-store — append-only event store + projections.
 //!
-//! Canonical owner subsystem: domain-events (docs/81). Layout: docs/12_REPOSITORY_AND_MODULE_LAYOUT.md.
-//! Intentionally empty at M0; behavior lands with its scheduled milestone.
+//! Implements the authoritative persistence of docs/13/docs/31: the
+//! append-only `events` table with per-aggregate sequence ordering and
+//! integrity hashing, explicit versioned migrations over SQLite (WAL,
+//! foreign_keys, synchronous=FULL), and the idempotent command processor
+//! (docs/30 § Commands, docs/33 § Idempotency).
+//!
+//! Canonical owner subsystem: domain-events (docs/81). Layout: docs/12.
+
+pub mod commands;
+pub mod migrations;
+pub mod store;
+
+pub use commands::{CommandProcessor, Outcome};
+pub use store::{envelope_for, EventStore, StoreError};
