@@ -16,6 +16,9 @@ use std::sync::Arc;
 /// deny-only).
 pub type Hook = Arc<dyn Fn(&Value, &mut HookContext) -> Result<(), String> + Send + Sync>;
 
+/// The typed executor of a pipelined tool.
+pub type Executor = Arc<dyn Fn(&Value) -> Result<Value, String> + Send + Sync>;
+
 /// Mutable hook context: hooks may annotate evidence.
 #[derive(Default, Serialize, Clone, Debug, PartialEq)]
 pub struct HookContext {
@@ -47,7 +50,7 @@ pub struct PipelinedTool {
     pub name: String,
     pub schema: ToolSchema,
     pub effect_class: modbit_policy::EffectClass,
-    pub execute: Arc<dyn Fn(&Value) -> Result<Value, String> + Send + Sync>,
+    pub execute: Executor,
     pub pre_hooks: Vec<Hook>,
     pub post_hooks: Vec<Hook>,
 }
