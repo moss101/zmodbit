@@ -55,12 +55,29 @@ pub enum CommandPayload {
         task_id: TaskId,
         steer_note: String,
     },
+    /// Fork from a source session at a sequence point, carrying the selected
+    /// decisions/evidence capsule (never pending approvals — REQ-EV-0122).
+    ForkSession {
+        source_session: SessionId,
+        at_sequence: u64,
+        carried_decisions: Vec<String>,
+        carried_evidence_refs: Vec<String>,
+    },
+    /// Rewind a session to `to_sequence`. `expected_last_hash` is the
+    /// integrity hash the caller believes the stream currently ends with —
+    /// an optimistic concurrency check (REQ-EV-0123).
+    RewindSession {
+        session_id: SessionId,
+        to_sequence: u64,
+        expected_last_hash: String,
+    },
 }
 
 impl CommandPayload {
     /// The aggregate type this command targets; `None` for creation commands
     /// that mint a new aggregate id.
-    pub fn target(&self) -> Option<TaskId> {
+    /// The aggregate this command targets, when it targets an existing one.
+    pub fn target_aggregate(&self) -> Option<String> {
         match self {
             CommandPayload::QueueTask { task_id }
             | CommandPayload::StartTask { task_id }
@@ -69,13 +86,17 @@ impl CommandPayload {
             | CommandPayload::CompleteTask { task_id, .. }
             | CommandPayload::FailTask { task_id, .. }
             | CommandPayload::CancelTask { task_id, .. }
-            | CommandPayload::SteerTask { task_id, .. } => Some(*task_id),
+            | CommandPayload::SteerTask { task_id, .. } => Some(task_id.to_string()),
+            CommandPayload::ForkSession { source_session, .. } => Some(source_session.to_string()),
+            CommandPayload::RewindSession { session_id, .. } => Some(session_id.to_string()),
             CommandPayload::CreateSession { .. } | CommandPayload::CreateTask { .. } => None,
         }
     }
 
     pub fn kind(&self) -> &'static str {
         match self {
+            CommandPayload::ForkSession { .. } => "fork_session",
+            CommandPayload::RewindSession { .. } => "rewind_session",
             CommandPayload::CreateSession { .. } => "create_session",
             CommandPayload::CreateTask { .. } => "create_task",
             CommandPayload::QueueTask { .. } => "queue_task",
@@ -101,13 +122,13 @@ mod tests {
             task_id,
             reason: "x".into(),
         };
-        assert_eq!(cmd.target(), Some(task_id));
+        assert_eq!(cmd.target_aggregate(), Some(task_id.to_string()));
         assert_eq!(cmd.kind(), "cancel_task");
         assert_eq!(
             CommandPayload::CreateSession {
                 display_name: "s".into()
             }
-            .target(),
+            .target_aggregate(),
             None
         );
     }

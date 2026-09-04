@@ -232,3 +232,100 @@ mod tests {
         assert_eq!(fold_task(&events), Some(Ok(TaskState::Running)));
     }
 }
+
+#[cfg(test)]
+mod state_independence_tests {
+    //! QUAL-EV-0102: state-transition tests reject impossible conflation —
+    //! e.g. a command failure is not a thread/task failure, and turn/step
+    //! events never move the task machine.
+
+    use super::*;
+    use crate::events::{DomainEvent, StepType};
+
+    #[test]
+    fn step_and_turn_events_never_move_the_task_machine() {
+        let mut events = vec![
+            DomainEvent::TaskCreated {
+                session_id: crate::ids::SessionId::generate(),
+                title: "t".into(),
+                prompt: "p".into(),
+            },
+            DomainEvent::TaskQueued,
+        ];
+        events.push(DomainEvent::TaskStarted);
+        let state = fold_task(&events).unwrap().unwrap();
+
+        for alien in [
+            DomainEvent::RunStepFailed {
+                failure_code: "x".into(),
+            },
+            DomainEvent::TurnFailed {
+                failure_code: "x".into(),
+            },
+            DomainEvent::RunFailed {
+                failure_code: "x".into(),
+            },
+            DomainEvent::SessionRewound {
+                to_sequence: 1,
+                reverted_event_count: 1,
+                previous_last_hash: "h".into(),
+            },
+        ] {
+            // Non-task events are simply not task-machine inputs: applying
+            // them to the task state must be rejected, never silently change
+            // the state.
+            let before = state;
+            assert!(apply_task_event(before, &alien).is_err(), "{alien:?}");
+            assert_eq!(state, before, "task state must not move on {alien:?}");
+        }
+    }
+
+    #[test]
+    fn command_failure_is_not_task_failure() {
+        // A failed COMMAND only produces an error outcome; the task machine
+        // only moves on TaskFailed — modeled by the requirement that a task
+        // in Waiting stays Waiting across unrelated failures.
+        let mut events = vec![
+            DomainEvent::TaskCreated {
+                session_id: crate::ids::SessionId::generate(),
+                title: "t".into(),
+                prompt: "p".into(),
+            },
+            DomainEvent::TaskQueued,
+            DomainEvent::TaskStarted,
+            DomainEvent::TaskWaiting {
+                reason: crate::WaitingReason::UserInput,
+            },
+        ];
+        let state = fold_task(&events).unwrap().unwrap();
+        assert!(matches!(state, TaskState::Waiting(_)));
+        // Mixing another aggregate's event into a task stream is an error —
+        // the conflation guard itself (QUAL-EV-0102): a run-step failure can
+        // never masquerade as a task transition.
+        events.push(DomainEvent::RunStepFailed {
+            failure_code: "proc-1".into(),
+        });
+        assert!(
+            matches!(fold_task(&events), Some(Err(_))),
+            "mixed aggregate stream rejected"
+        );
+    }
+
+    #[test]
+    fn step_types_cover_the_canonical_set() {
+        // docs/13 § RunStep: the nine canonical step types exist.
+        for step in [
+            StepType::ContextCompile,
+            StepType::ModelInvoke,
+            StepType::ToolCall,
+            StepType::ProcedureRun,
+            StepType::ApprovalWait,
+            StepType::Verification,
+            StepType::Checkpoint,
+            StepType::Handoff,
+            StepType::UserQuestion,
+        ] {
+            assert!(!step.as_str().is_empty());
+        }
+    }
+}

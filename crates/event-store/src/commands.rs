@@ -148,8 +148,81 @@ impl CommandProcessor {
                 e.seal();
                 events.push(e);
             }
+            CommandPayload::ForkSession {
+                source_session,
+                at_sequence,
+                carried_decisions,
+                carried_evidence_refs,
+            } => {
+                // REQ-EV-0122: the new branch carries the selected
+                // decisions/evidence capsule and NEVER pending approvals —
+                // the capsule type has no approval field, by construction.
+                let source_len = source_stream_len(tx, &source_session.to_string())?;
+                if *at_sequence == 0 || *at_sequence > source_len as u64 {
+                    return Err(format!(
+                        "cannot fork {source_session} at sequence {at_sequence} (stream has {source_len} events)"
+                    ));
+                }
+                let fork_id = modbit_domain::SessionId::generate();
+                let mut e = envelope_for(
+                    modbit_domain::AggregateType::Session,
+                    fork_id.to_string(),
+                    fork_id,
+                    DomainEvent::SessionForked {
+                        source_session: *source_session,
+                        at_sequence: *at_sequence,
+                        carried_decisions: carried_decisions.clone(),
+                        carried_evidence_refs: carried_evidence_refs.clone(),
+                    },
+                );
+                e.sequence = 1;
+                e.seal();
+                events.push(e);
+            }
+            CommandPayload::RewindSession {
+                session_id,
+                to_sequence,
+                expected_last_hash,
+            } => {
+                // REQ-EV-0123: revert honors optimistic hash checks — the
+                // caller states the hash the stream must currently end with.
+                let stream = load_session_envelopes(tx, &session_id.to_string())?;
+                let last = stream
+                    .last()
+                    .ok_or_else(|| format!("session {session_id} has no events"))?;
+                if last.integrity_hash != *expected_last_hash {
+                    return Err(format!(
+                        "rewind rejected: stream ends with hash {}, caller expected {expected_last_hash}",
+                        last.integrity_hash
+                    ));
+                }
+                if *to_sequence == 0 || *to_sequence >= last.sequence {
+                    return Err(format!(
+                        "cannot rewind session {session_id} to sequence {to_sequence} (stream ends at {})",
+                        last.sequence
+                    ));
+                }
+                let reverted = last.sequence - to_sequence;
+                let mut e = envelope_for(
+                    modbit_domain::AggregateType::Session,
+                    session_id.to_string(),
+                    *session_id,
+                    DomainEvent::SessionRewound {
+                        to_sequence: *to_sequence,
+                        reverted_event_count: reverted,
+                        previous_last_hash: last.integrity_hash.clone(),
+                    },
+                );
+                e.sequence = last.sequence + 1;
+                e.seal();
+                events.push(e);
+            }
             payload => {
-                let task_id = payload.target().expect("lifecycle commands target a task");
+                let task_id = match payload.target_aggregate() {
+                    Some(aggregate) => modbit_domain::TaskId::parse(&aggregate)
+                        .map_err(|e| format!("bad task id: {e}"))?,
+                    None => return Err("lifecycle commands target a task".into()),
+                };
                 let history = Self::load_task_events(tx, &task_id)?;
                 let current = fold_task(&history)
                     .ok_or_else(|| format!("task {task_id} does not exist"))?
@@ -158,10 +231,11 @@ impl CommandProcessor {
                 let next = apply_task_event(current, &domain_event)
                     .map_err(|e: TransitionError| e.to_string())?;
                 let _ = next; // state is derived by folding; the event is authoritative
+                let session_id = task_session(tx, &task_id)?;
                 let mut e = envelope_for(
                     modbit_domain::AggregateType::Task,
                     task_id.to_string(),
-                    task_session(tx, &task_id)?,
+                    session_id,
                     domain_event,
                 );
                 e.task_id = Some(task_id);
@@ -243,6 +317,35 @@ impl CommandProcessor {
         }
         Ok(out)
     }
+}
+
+fn source_stream_len(tx: &rusqlite::Transaction<'_>, session_id: &str) -> Result<i64, String> {
+    tx.query_row(
+        "SELECT COUNT(*) FROM events WHERE aggregate_type = 'session' AND aggregate_id = ?1",
+        [session_id],
+        |r| r.get(0),
+    )
+    .map_err(|e| e.to_string())
+}
+
+fn load_session_envelopes(
+    tx: &rusqlite::Transaction<'_>,
+    session_id: &str,
+) -> Result<Vec<modbit_domain::EventEnvelope>, String> {
+    let mut stmt = tx
+        .prepare("SELECT payload_inline FROM events WHERE aggregate_id = ?1 ORDER BY sequence")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([session_id], |r| r.get::<_, String>(0))
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for row in rows {
+        let payload: String = row.map_err(|e| e.to_string())?;
+        let envelope: modbit_domain::EventEnvelope =
+            serde_json::from_str(&payload).map_err(|e| e.to_string())?;
+        out.push(envelope);
+    }
+    Ok(out)
 }
 
 fn lifecycle_event(payload: &CommandPayload) -> DomainEvent {

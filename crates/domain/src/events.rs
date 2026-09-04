@@ -130,6 +130,21 @@ pub enum DomainEvent {
     RunStepFailed {
         failure_code: String,
     },
+    /// Session fork (REQ-EV-0122): a new branch carries the selected
+    /// decisions/evidence capsule and NEVER pending approvals.
+    SessionForked {
+        source_session: SessionId,
+        at_sequence: u64,
+        carried_decisions: Vec<String>,
+        carried_evidence_refs: Vec<String>,
+    },
+    /// Session rewind (REQ-EV-0123): events after `to_sequence` are
+    /// superseded (append-only tombstone; the store never truncates).
+    SessionRewound {
+        to_sequence: u64,
+        reverted_event_count: u64,
+        previous_last_hash: String,
+    },
 }
 
 /// Why a running task is waiting (docs/13 Task state machine `Waiting` kinds).
@@ -228,6 +243,8 @@ impl EventEnvelope {
             DomainEvent::RunStepPrepared { .. } => "run_step_prepared",
             DomainEvent::RunStepCompleted => "run_step_completed",
             DomainEvent::RunStepFailed { .. } => "run_step_failed",
+            DomainEvent::SessionForked { .. } => "session_forked",
+            DomainEvent::SessionRewound { .. } => "session_rewound",
         }
     }
 

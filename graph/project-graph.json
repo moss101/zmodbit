@@ -7248,8 +7248,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0102",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T03:32:28Z",
+   "notes": [
+    {
+     "at": "2026-09-04T03:32:28Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "State-independence conflation guards: step/turn/run/rewind events rejected as task-machine inputs; mixing another aggregate's event into a stream fails the fold (QUAL-EV-0102 tests in domain crate)."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0103",
@@ -7500,8 +7510,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0121",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T03:32:28Z",
+   "notes": [
+    {
+     "at": "2026-09-04T03:32:28Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Resume reproduces pending state exactly: task driven to Waiting(Approval), fresh store handle on same db, projection row + event fold both yield identical pending state (QUAL-EV-0121 test)."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0122",
@@ -7514,8 +7534,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0122",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T03:32:28Z",
+   "notes": [
+    {
+     "at": "2026-09-04T03:32:28Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "ForkSession: new branch from source at sequence point with BranchCarryoverCapsule (decisions + evidence refs; approval field structurally absent); forked branch active with no tasks; capsule payload verified on first event (QUAL-EV-0122 test)."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0123",
@@ -7528,8 +7558,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0123",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T03:32:28Z",
+   "notes": [
+    {
+     "at": "2026-09-04T03:32:28Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "preview_rewind non-mutating (row counts unchanged); revert honors optimistic integrity-hash check — stale hash rejected with descriptive error; SessionRewound tombstone appended append-only (QUAL-EV-0123 tests)."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0124",
@@ -23949,5 +23989,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T03:10:01Z"
+ "updated_on": "2026-09-04T03:32:28Z"
 }

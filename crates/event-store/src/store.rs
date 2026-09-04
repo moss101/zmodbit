@@ -283,6 +283,37 @@ impl EventStore {
         Ok((out, last_offset))
     }
 
+    /// Non-mutating rewind preview (REQ-EV-0123): lists the event ids that
+    /// a rewind to `to_sequence` would supersede. Writes nothing.
+    pub fn preview_rewind(
+        &self,
+        session_id: &str,
+        to_sequence: u64,
+    ) -> Result<Vec<String>, StoreError> {
+        let conn = self.conn.lock().expect("event store mutex poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT event_id, sequence FROM events
+             WHERE aggregate_id = ?1 AND sequence > ?2 ORDER BY sequence",
+        )?;
+        let rows = stmt
+            .query_map(params![session_id, to_sequence as i64], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+            })?
+            .collect::<Result<Vec<_>, rusqlite::Error>>()?;
+        let mut out = Vec::new();
+        for (event_id, sequence) in rows {
+            if sequence <= to_sequence as i64 {
+                return Err(StoreError::SequenceConflict {
+                    aggregate_id: session_id.to_string(),
+                    expected: to_sequence,
+                    actual: sequence as u64,
+                });
+            }
+            out.push(event_id);
+        }
+        Ok(out)
+    }
+
     /// Lease-fenced append (REQ-EV-0054/0273): the events are appended only
     /// if `lease_id` is still the session's current mutation owner. Stale
     /// writers lose with `StaleLease`; nothing partial is committed.
