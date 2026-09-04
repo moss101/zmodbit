@@ -14,6 +14,9 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
+pub mod approvals;
+pub use approvals::{intent_hash, Approval, ApprovalError, ApprovalState, ApprovalStore};
+
 /// Effect class of a tool (docs/16 § Tool capability).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

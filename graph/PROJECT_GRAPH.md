@@ -225,7 +225,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M2.2` | COMPLETE | Git branch/worktree/diff operations |  |
 | `M2.3` | COMPLETE | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
 | `M2.4` | COMPLETE | Tool Registry + direct `fs/git/shell/test` tools |  |
-| `M2.5` | NOT_STARTED | Capability Kernel + basic approval flow |  |
+| `M2.5` | REAL_TESTING | Capability Kernel + basic approval flow |  |
 | `M2.6` | NOT_STARTED | Provider Gateway OpenAI + Anthropic streaming |  |
 | `M2.7` | NOT_STARTED | Basic Prompt Compiler and one-agent runtime |  |
 | `M2.8` | NOT_STARTED | Verification engine build/test checks |  |

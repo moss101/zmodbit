@@ -1194,8 +1194,18 @@
    "milestone": "M2",
    "order": 4,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T07:45:20Z",
+   "notes": [
+    {
+     "at": "2026-09-04T07:45:20Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Approval flow per docs/23 § Approval policy + docs/13 approval state machine: ApprovalStore with intent-hash binding (parameter changes invalidate), expiry transitions on sight, Superseded from Approved, resolve with provenance. 9 policy tests green incl. hash determinism/order-insensitivity, denied/expired/superseded rejection. Awaiting 3-OS CI."
+    }
+   ]
   },
   {
    "id": "M2.6",
@@ -24240,5 +24250,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T07:33:45Z"
+ "updated_on": "2026-09-04T07:45:20Z"
 }
