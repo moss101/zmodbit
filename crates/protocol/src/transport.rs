@@ -149,8 +149,10 @@ impl EndpointName {
     #[cfg(windows)]
     pub fn fs_path(path: PathBuf) -> Result<Self, TransportError> {
         use interprocess::local_socket::{GenericFilePath, ToFsName};
+        let raw = path.display().to_string();
         Ok(Self {
             inner: path.to_fs_name::<GenericFilePath>().map_err(io_other)?,
+            raw,
         })
     }
 
