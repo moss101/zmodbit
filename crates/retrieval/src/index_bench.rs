@@ -42,7 +42,7 @@ pub fn cold_vs_incremental(files: usize, dirs: usize) -> IndexBenchmark {
 
     // COLD: full rebuild over the changed tree.
     let mut changed_tree = base.clone();
-    let target = format!("mod0/file_0.rs");
+    let target = "mod0/file_0.rs".to_string();
     let new_body = b"// edited\npub fn sym_0() -> u32 { 999 }\n".to_vec();
     changed_tree.insert(target.clone(), new_body.clone());
 
