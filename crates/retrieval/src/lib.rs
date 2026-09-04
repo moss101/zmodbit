@@ -12,7 +12,9 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fmt;
 
+pub mod context_graph;
 pub mod hydration;
+pub mod knowledge;
 pub mod merkle;
 
 pub fn sha256_hex(bytes: &[u8]) -> String {
