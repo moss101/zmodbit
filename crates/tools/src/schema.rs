@@ -566,3 +566,15 @@ mod lazy_tests {
             .all(|(name, _)| catalog.iter().any(|(n, _, _)| n == name)));
     }
 }
+
+/// Convenience used by the turn-surface compiler: schema text under a
+/// possibly different display name.
+pub trait ToolSchemaExt {
+    fn schema_text_of(&self, name: &str) -> String;
+}
+
+impl ToolSchemaExt for ToolSchema {
+    fn schema_text_of(&self, name: &str) -> String {
+        ToolSchema::schema_text(name, self)
+    }
+}

@@ -158,6 +158,7 @@ pub mod output_pagination;
 pub mod pipeline;
 pub mod schema;
 pub mod tool_families;
+pub mod turn_surface;
 
 pub mod direct {
     use super::*;
