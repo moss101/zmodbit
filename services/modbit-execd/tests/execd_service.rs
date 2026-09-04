@@ -9,6 +9,9 @@ use base64::Engine as _;
 
 struct Execd {
     child: Child,
+    // The stdout reader must stay alive: dropping it closes the pipe and the
+    // broker panics (and dies) on its next stdout write.
+    _stdout: BufReader<std::process::ChildStdout>,
     addr: String,
 }
 
@@ -38,8 +41,11 @@ fn spawn_execd(tag: &str) -> Execd {
     reader.read_line(&mut boot_line).expect("read boot line");
     let boot: serde_json::Value = serde_json::from_str(boot_line.trim()).expect("boot json");
     let addr = boot["addr"].as_str().expect("addr").to_string();
-    drop(reader);
-    Execd { child, addr }
+    Execd {
+        child,
+        _stdout: reader,
+        addr,
+    }
 }
 
 fn rpc(stream: &mut TcpStream, request: serde_json::Value) -> serde_json::Value {
