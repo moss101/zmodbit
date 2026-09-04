@@ -1245,8 +1245,24 @@
    "milestone": "M2",
    "order": 6,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T09:22:05Z",
+     "from": "NOT_STARTED",
+     "to": "IMPLEMENTING",
+     "note": "M2.7 split: prompt compiler (model-free, this batch) + one-agent runtime (needs M2.6 live qualification with user-supplied credentials). Compiler per docs/15 § Prompt cache economics: stable ordered segments with cache keys."
+    },
+    {
+     "at": "2026-09-04T09:25:03Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Prompt compiler half COMPLETE per docs/15 § Prompt cache economics: 5 canonical ordered segments, deterministic compile (byte-identical for identical inputs), per-segment sha256 hashes, cache key binding model/provider/compiler-version/segment chain — any segment or model change invalidates. 5 compiler tests green. One-agent runtime half PENDING M2.6 live qualification (user credentials)."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T09:25:03Z"
   },
   {
    "id": "M2.8",
@@ -24305,5 +24321,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T09:09:56Z"
+ "updated_on": "2026-09-04T09:25:03Z"
 }
