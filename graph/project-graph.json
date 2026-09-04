@@ -1038,10 +1038,13 @@
    "milestone": "M1",
    "order": 4,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33830421841",
+    "commit:9530bb3"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T02:36:51Z",
+   "status_changed_on": "2026-09-04T02:46:20Z",
    "notes": [
     {
      "at": "2026-09-04T02:24:47Z",
@@ -1054,6 +1057,12 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Implemented: crash/restart durability proof over the real binary — create durable tasks through the authenticated surface (incl. one full lifecycle to Completed), SIGKILL the Core process, restart on the same db+socket (stale UDS file reclaimed at bind), verify fleet recovers EXACTLY (ids/titles/states) across TWO further restarts. Found+fixed: stale socket file after SIGKILL blocked re-bind (unlink at bind for fs endpoints). Awaiting 3-OS CI."
+    },
+    {
+     "at": "2026-09-04T02:46:20Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Crash/restart proof over the real binary: durable tasks created through the authenticated surface, Core SIGKILLed, restart on same db+socket (stale UDS reclaimed), fleet recovers exactly across two further boots. Windows platform fix for is_fs read."
     }
    ]
   },
@@ -23883,5 +23892,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T02:36:51Z"
+ "updated_on": "2026-09-04T02:46:20Z"
 }
