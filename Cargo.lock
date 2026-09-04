@@ -481,6 +481,9 @@ dependencies = [
 [[package]]
 name = "modbit-procedural-runtime"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "modbit-prompt-compiler"
@@ -548,6 +551,12 @@ version = "0.1.0"
 [[package]]
 name = "modbit-skills"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-terminal"
