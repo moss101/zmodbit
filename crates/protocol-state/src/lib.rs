@@ -92,10 +92,21 @@ impl ProtocolStateStore {
         let mut records = Vec::new();
         if path.exists() {
             let text = std::fs::read_to_string(path).map_err(ProtocolStateError::Io)?;
-            for line in text.lines().filter(|l| !l.is_empty()) {
-                let record: ProtocolRecord =
-                    serde_json::from_str(line).map_err(ProtocolStateError::Serialization)?;
-                records.push(record);
+            let lines: Vec<&str> = text.lines().filter(|l| !l.is_empty()).collect();
+            let last = lines.len().saturating_sub(1);
+            for (index, line) in lines.iter().enumerate() {
+                match serde_json::from_str::<ProtocolRecord>(line) {
+                    Ok(record) => records.push(record),
+                    Err(e) => {
+                        // A torn FINAL line is a crash mid-append: the
+                        // journal is prefix-consistent, so skip the tail.
+                        // Corruption mid-journal is a real error.
+                        if index == last {
+                            break;
+                        }
+                        return Err(ProtocolStateError::Serialization(e));
+                    }
+                }
             }
         }
         Ok(Self {

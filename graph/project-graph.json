@@ -1559,8 +1559,9 @@
    "milestone": "M4",
    "order": 0,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-04T22:21:48Z"
   },
   {
    "id": "M4.2",
@@ -1570,8 +1571,9 @@
    "milestone": "M4",
    "order": 1,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-04T22:21:48Z"
   },
   {
    "id": "M4.3",
@@ -1581,8 +1583,9 @@
    "milestone": "M4",
    "order": 2,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-04T22:21:48Z"
   },
   {
    "id": "M4.4",
@@ -1592,8 +1595,9 @@
    "milestone": "M4",
    "order": 3,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-04T22:21:48Z"
   },
   {
    "id": "M4.5",
@@ -1603,8 +1607,9 @@
    "milestone": "M4",
    "order": 4,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-04T22:21:48Z"
   },
   {
    "id": "M4.6",
@@ -1614,8 +1619,9 @@
    "milestone": "M4",
    "order": 5,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-04T22:21:48Z"
   },
   {
    "id": "M5.1",
@@ -25069,5 +25075,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T22:15:51Z"
+ "updated_on": "2026-09-04T22:21:48Z"
 }

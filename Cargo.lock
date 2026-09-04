@@ -508,6 +508,7 @@ dependencies = [
 name = "modbit-protocol-state"
 version = "0.1.0"
 dependencies = [
+ "modbit-checkpoint",
  "serde",
  "serde_json",
  "uuid",
