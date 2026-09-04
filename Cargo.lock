@@ -503,6 +503,11 @@ dependencies = [
 [[package]]
 name = "modbit-retrieval"
 version = "0.1.0"
+dependencies = [
+ "regex",
+ "serde",
+ "sha2",
+]
 
 [[package]]
 name = "modbit-sandbox"
