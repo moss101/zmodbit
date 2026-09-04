@@ -9496,9 +9496,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0217",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T16:55:13Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
+    "commit:09fc533"
+   ],
+   "status_changed_on": "2026-09-04T16:58:47Z"
   },
   {
    "id": "IMP-EV-0218",
@@ -9580,9 +9583,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0222",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T16:55:13Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
+    "commit:09fc533"
+   ],
+   "status_changed_on": "2026-09-04T16:58:47Z"
   },
   {
    "id": "IMP-EV-0223",
@@ -9637,9 +9643,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0229",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T16:55:13Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
+    "commit:09fc533"
+   ],
+   "status_changed_on": "2026-09-04T16:58:47Z"
   },
   {
    "id": "IMP-EV-0230",
@@ -9736,9 +9745,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0239",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T16:55:13Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
+    "commit:09fc533"
+   ],
+   "status_changed_on": "2026-09-04T16:58:47Z"
   },
   {
    "id": "IMP-EV-0240",
@@ -10088,9 +10100,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0269",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-04T16:55:13Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
+    "commit:09fc533"
+   ],
+   "status_changed_on": "2026-09-04T16:58:47Z"
   },
   {
    "id": "IMP-EV-0270",
@@ -24694,5 +24709,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T16:55:13Z"
+ "updated_on": "2026-09-04T16:58:47Z"
 }
