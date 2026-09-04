@@ -352,6 +352,11 @@ version = "0.1.0"
 [[package]]
 name = "modbit-checkpoint"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-cloud-api"
@@ -502,6 +507,11 @@ dependencies = [
 [[package]]
 name = "modbit-protocol-state"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-providers"
