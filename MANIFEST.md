@@ -20,8 +20,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
-| Live state | 98–99 | 1 | 2187 |
-| **Total docs** | | **70** | **508040** |
+| Live state | 98–99 | 1 | 2283 |
+| **Total docs** | | **70** | **508136** |
 
 ## Specification files (`docs/`)
 
@@ -96,7 +96,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 91 | `docs/91_FEATURE_COMPLETION_AUDIT.md` | Feature Completion Audit | governance | 1074 | `810c4488a24258cff4ed87cd0ba6cea6b21cda5834b44bc02bf4c9e0a4eda3f5` |
 | 92 | `docs/92_BUILD_EVIDENCE_AND_DEPENDENCY_MANIFEST.md` | Build Evidence and Dependency Manifest | governance | 829 | `6cbd341583a935351b02637e0d295802a56073070054b5736f58fc9d5790ff86` |
 | 93 | `docs/93_STATUS_VOCABULARY_AND_LIFECYCLE.md` | Status Vocabulary and Lifecycle Reconciliation | governance | 3926 | `7693851eabf968fb946a5a84eb70b2af058d2cb5c0846767f51c07307aa70a29` |
-| 98 | `docs/98_BUILD_MANIFEST.md` | Build Manifest | live-state | 2187 | `7ef3df02debcdcec77c9430f330200f1ced3185547ba7ab0fc3eebfbd0a881c2` |
+| 98 | `docs/98_BUILD_MANIFEST.md` | Build Manifest | live-state | 2283 | `b4b61d304e597eefabcd84e054aba0d6dd8439401b9412870a184efb3424c7ca` |
 
 ## Root governing files and tooling
 
@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 598040 | `2159504a9bf07895d31c1086e8671e3db82aaee95dd5c18cccc5d2d8ccf33527` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22211 | `7b4fa6c28795f8606ff718552a7de6c00c0fcc500858d4dbab1fd06f5ab051c1` |
+| `graph/project-graph.json` | project driver graph with live status | 598914 | `35277c59aaeeca74b33df4dc3f88997788774ab2408b250b99ff87a6a1758bfe` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22212 | `474679f82f5e66f6675f4b5797f8f15f687bab378ce7b9cbd1620cc89730dc1b` |
 | `tools/build_manifest.py` | regenerates this manifest | 14670 | `3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
