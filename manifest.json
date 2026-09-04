@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 38,
+    "root_and_tooling": 55,
     "docs_bytes": 508040
   },
   "sections": [
@@ -701,18 +701,18 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 583670,
-      "sha256": "01931c4d50293d31718c14e1c1e43c4d586b829af4e30c4fc641744f2bcef225"
+      "bytes": 585018,
+      "sha256": "2e3eda93a0ebef1990aeb74bb60fc1bc6025bbc172ff7e556301a9d57c0b6c5f"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22217,
-      "sha256": "91eaf25e6839ed7dfbe8ee2ff24f630956f20d36d381ab845daf2ed69479e241"
+      "bytes": 22218,
+      "sha256": "46fe6b1c3dd27734443787b13e932f85fcfb396cc877835d7a25f3349b84aa9b"
     },
     {
       "path": "tools/build_manifest.py",
-      "bytes": 14622,
-      "sha256": "376613450c7c262f03095491743125ee2628ec89831fb518ac3b5ffcf676c6c9"
+      "bytes": 14670,
+      "sha256": "3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a"
     },
     {
       "path": "tools/build_graph.py",
@@ -746,8 +746,8 @@
     },
     {
       "path": "pnpm-workspace.yaml",
-      "bytes": 76,
-      "sha256": "da253f18976a532f3df4f73eea28b37d4ba4dc0a00baef4468f4306dba651b75"
+      "bytes": 93,
+      "sha256": "4f1844ac535cd5c2607091352d8e97cd8b04a48acaf48fb69674de6597a1c1aa"
     },
     {
       "path": "package.json",
@@ -755,9 +755,64 @@
       "sha256": "36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c"
     },
     {
+      "path": "apps/desktop/dist/assets/index-BJMD7rLe.js",
+      "bytes": 145498,
+      "sha256": "cc69f16b9b0fab97b91535afbd7404cc3fe13aa230afadcd79df547498ee9fcf"
+    },
+    {
+      "path": "apps/desktop/dist/assets/index-DrM0Ho-V.css",
+      "bytes": 664,
+      "sha256": "e0f5b17ca79348d107ea783cbc7cf8118ecae0a838287dbc82973ee6e5bfffc4"
+    },
+    {
+      "path": "apps/desktop/dist/index.html",
+      "bytes": 448,
+      "sha256": "2aa9b4e72d4b523c2dabe64bb20fc853c3a29b9e2c4d1e61b9d5ed87930afdfd"
+    },
+    {
+      "path": "apps/desktop/electron/main.cjs",
+      "bytes": 3749,
+      "sha256": "e46925411277c8e18515ca9e5eb69b8bd262343be799dcdc462a7c30824e231e"
+    },
+    {
+      "path": "apps/desktop/electron/preload.cjs",
+      "bytes": 554,
+      "sha256": "1463ea7284acf481f5a112524fbb13aad50d386a915af1f14f8759836f3b5ef0"
+    },
+    {
+      "path": "apps/desktop/electron/surface-client.cjs",
+      "bytes": 10259,
+      "sha256": "d3f449be4ee002b494e0eefb7949596a10af5538788efa980572de09bb6affdf"
+    },
+    {
+      "path": "apps/desktop/index.html",
+      "bytes": 348,
+      "sha256": "fe3a3fc8fb9f256a4f651b6252eede9328674eaef7d67dc9ebba05e3366b0f5d"
+    },
+    {
       "path": "apps/desktop/package.json",
-      "bytes": 228,
-      "sha256": "428baa8402848a224dc8c6f383f35487a474fe8726b7e9ee9e0c80146dde74e7"
+      "bytes": 485,
+      "sha256": "e29470ae01c6516082c8a466b4b361a55c9a76b4605afa9a4b2198f965fafce8"
+    },
+    {
+      "path": "apps/desktop/src/App.tsx",
+      "bytes": 2869,
+      "sha256": "8a145353852d4ee9c07992e13159d842340be509aa6b5a90a874403256c80bae"
+    },
+    {
+      "path": "apps/desktop/src/fleet/grouping.test.ts",
+      "bytes": 1567,
+      "sha256": "c42b72324ab747e334366296b626c18f5922c7e5ac182c675e5996822c3f7004"
+    },
+    {
+      "path": "apps/desktop/src/fleet/grouping.ts",
+      "bytes": 2067,
+      "sha256": "289eced8443546348bb7f941b247405307ba92df798dfd1c98546785bfe5c55e"
+    },
+    {
+      "path": "apps/desktop/src/global.d.ts",
+      "bytes": 654,
+      "sha256": "1c577b7c9682d24ee958c8969c3069174126ad402a4c7b6db85bfe6ab58dd15f"
     },
     {
       "path": "apps/desktop/src/main.ts",
@@ -765,9 +820,29 @@
       "sha256": "e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42"
     },
     {
+      "path": "apps/desktop/src/main.tsx",
+      "bytes": 232,
+      "sha256": "ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140"
+    },
+    {
+      "path": "apps/desktop/src/styles.css",
+      "bytes": 785,
+      "sha256": "80b36bcf1afafab6a373c59063fa8358e50fd36cad614dd69ccd13631e7b7862"
+    },
+    {
+      "path": "apps/desktop/test/surface.e2e.test.ts",
+      "bytes": 4444,
+      "sha256": "caed16f7a4ba2cf16e0fb35285d065f3f5454f7be9a22681b7810247be0fa4eb"
+    },
+    {
       "path": "apps/desktop/tsconfig.json",
-      "bytes": 323,
-      "sha256": "8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110"
+      "bytes": 384,
+      "sha256": "04d41467686090e811fa48d26f64694df7722dfffa12891b0559143d781b62ff"
+    },
+    {
+      "path": "apps/desktop/vite.config.ts",
+      "bytes": 150,
+      "sha256": "ce36fc4ce9db762ab99a5056aabd3c722f73f37010e639c1f1a2c992c63e5f4d"
     },
     {
       "path": "docs/decisions/ADR-0001-baseline-decision-register.md",
@@ -805,6 +880,11 @@
       "sha256": "bbb218f7a79544c401d7df1f6d606a9fb69a4ee6ab6e208b2189bbf37130dda8"
     },
     {
+      "path": "packages/surface-protocol/scripts/generate.mjs",
+      "bytes": 2626,
+      "sha256": "c36bf3f4982af8158048f0d8cde5ff230d10d02ecb605776d89770f0cabdabb8"
+    },
+    {
       "path": "packages/surface-protocol/src/generated/google/protobuf/timestamp.ts",
       "bytes": 7992,
       "sha256": "41bead303f2e6d23d691fb4f0b00760fe41ac02fe984fcf657274029cdaa1db2"
@@ -821,13 +901,18 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts",
-      "bytes": 2595,
-      "sha256": "4fe9e276a759cd1cce6a3ee0d826306eaa709bcd0e79df6ff9906671d97b407d"
+      "bytes": 2886,
+      "sha256": "eab432c06eb3fc6480a201930f869418ed42236bf040e85dace4e00c50e59f8b"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts",
       "bytes": 23242,
       "sha256": "f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a"
+    },
+    {
+      "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
+      "bytes": 17147,
+      "sha256": "7d79d22a2a8bb997db86b36bb1ae15943cb08a398735ebfe9f15bc3c76c1080d"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",

@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package modbit.protocol.v1;
+
+import "modbit/protocol/v1/commands.proto";
+import "modbit/protocol/v1/domain.proto";
+
+// Local SurfaceProtocol request/response slice (docs/30 § Local SurfaceProtocol,
+// docs/32 § startup + task composer). Commands ride the canonical envelopes;
+// the desktop uses this typed surface for the M1 Fleet/New-Task vertical.
+message SurfaceRequest {
+  oneof request {
+    CreateSessionCommand create_session = 1;
+    CreateTaskCommand create_task = 2;
+    GetFleetRequest get_fleet = 3;
+  }
+}
+
+message GetFleetRequest {}
+
+// One task card in the Fleet views (docs/32 § Renderer modules: fleet/).
+message TaskView {
+  string task_id = 1;
+  string session_id = 2;
+  string title = 3;
+  TaskStatus state = 4;
+  string created_at = 5;
+  uint64 generation = 6;
+}
+
+message Fleet {
+  repeated TaskView tasks = 1;
+  // Sessions are created on demand; the desktop composer submits new tasks
+  // against this session.
+  string default_session_id = 2;
+}
+
+message SurfaceResponse {
+  bool ok = 1;
+  string error = 2;
+  Fleet fleet = 3;
+  TaskView task = 4;
+  string session_id = 5;
+}

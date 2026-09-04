@@ -366,6 +366,15 @@ version = "0.1.0"
 [[package]]
 name = "modbit-core-runtime"
 version = "0.1.0"
+dependencies = [
+ "modbit-domain",
+ "modbit-event-store",
+ "modbit-protocol",
+ "prost",
+ "rusqlite",
+ "serde_json",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-diagnostics"

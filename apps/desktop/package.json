@@ -2,12 +2,21 @@
   "name": "@modbit/desktop",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
-    "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "5.9.2"
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "electron": "33.4.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "5.9.2",
+    "vite": "6.0.7",
+    "vitest": "3.2.4"
   }
 }

@@ -1002,8 +1002,24 @@
    "milestone": "M1",
    "order": 3,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T01:33:49Z",
+     "from": "NOT_STARTED",
+     "to": "AUDITING",
+     "note": "Audit: apps/desktop is a bare typecheck-only package; no Electron main/preload, no React renderer, no Core daemon. NOT_FOUND. Per docs/32 (Electron main is sole SurfaceProtocol peer, sandboxed renderer, preload-only bridge; MOD-UX-001 six fleet views). IMPLEMENTING."
+    },
+    {
+     "at": "2026-09-04T02:09:14Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Implemented: modbit-core daemon (core-runtime bin: store+boot secret+endpoint+serve, boot-channel json on stdout); surface.proto SurfaceRequest/Response + Fleet/TaskView; CoreServices dispatch (get_fleet/create_task/create_session; composer rule: empty session -> CreateSession if needed per docs/32; fleet from docs/31 projections); Electron main (spawns core, reads boot channel, JS surface client: framing+HMAC+minimal wire codec), sandboxed preload bridge (contextBridge only), React Fleet views (MOD-UX-001 six views) + New Task composer. Tests: Rust e2e spawns real binary (fleet+create, auth rejection, server survival) 2/2; desktop vitest 5/5 incl. real JS-client-vs-core e2e + wrong-secret rejection; renderer build via vite. Awaiting 3-OS CI."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T02:09:14Z"
   },
   {
    "id": "M1.5",
@@ -23842,5 +23858,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T01:30:28Z"
+ "updated_on": "2026-09-04T02:09:14Z"
 }

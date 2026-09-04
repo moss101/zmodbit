@@ -54,6 +54,22 @@ impl BootSecret {
         Self(bytes)
     }
 
+    pub fn from_hex(s: &str) -> Option<Self> {
+        if s.len() != 64 {
+            return None;
+        }
+        let mut bytes = [0u8; 32];
+        for (i, byte) in bytes.iter_mut().enumerate() {
+            *byte = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).ok()?;
+        }
+        Some(Self(bytes))
+    }
+
+    /// Lowercase hex for the boot channel json line.
+    pub fn hex(&self) -> String {
+        self.0.iter().map(|b| format!("{b:02x}")).collect()
+    }
+
     fn hmac_proof(
         &self,
         server_nonce: &[u8],
@@ -116,14 +132,17 @@ impl From<std::io::Error> for TransportError {
 #[derive(Clone, Debug)]
 pub struct EndpointName {
     inner: interprocess::local_socket::Name<'static>,
+    raw: String,
 }
 
 impl EndpointName {
     #[cfg(unix)]
     pub fn fs_path(path: PathBuf) -> Result<Self, TransportError> {
         use interprocess::local_socket::{GenericFilePath, ToFsName};
+        let raw = path.display().to_string();
         Ok(Self {
             inner: path.to_fs_name::<GenericFilePath>().map_err(io_other)?,
+            raw,
         })
     }
 
@@ -144,7 +163,13 @@ impl EndpointName {
         let leaked: &'static str = Box::leak(name.to_string().into_boxed_str());
         Ok(Self {
             inner: leaked.to_ns_name::<GenericNamespaced>().map_err(io_other)?,
+            raw: leaked.to_string(),
         })
+    }
+
+    /// Stable human-readable form for logs and the boot channel json.
+    pub fn display_name(&self) -> String {
+        self.raw.clone()
     }
 
     /// A unique endpoint under the platform's temp area — for tests and for
@@ -392,24 +417,25 @@ pub fn serve(
         std::thread::spawn(move || {
             // A rejected or misbehaving peer must not take the server down:
             // the connection is closed and the accept loop continues.
-            let Ok((accepted, _read_only, _version)) = server_handshake(&mut stream, &secret)
-            else {
-                return;
-            };
-            if !accepted {
+            if let Err(e) = server_handshake(&mut stream, &secret) {
+                eprintln!("modbit transport: handshake failed: {e}");
                 return;
             }
             loop {
                 match read_frame(&mut stream) {
                     Ok(request) => {
                         let response = handler(&request);
-                        if write_frame(&mut stream, &response).is_err() {
+                        if let Err(e) = write_frame(&mut stream, &response) {
+                            eprintln!("modbit transport: response write failed: {e}");
                             return;
                         }
                     }
                     // Clean EOF from the client ends the connection.
                     Err(TransportError::Protocol { .. }) | Err(TransportError::Io(_)) => return,
-                    Err(_) => return,
+                    Err(e) => {
+                        eprintln!("modbit transport: frame read failed: {e}");
+                        return;
+                    }
                 }
             }
         });

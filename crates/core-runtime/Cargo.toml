@@ -4,6 +4,20 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+modbit-domain = { path = "../domain" }
+modbit-event-store = { path = "../event-store" }
+modbit-protocol = { path = "../protocol" }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+prost = "0.13"
+rusqlite = { workspace = true }
+
+[[bin]]
+name = "modbit-core"
+path = "src/bin/modbit-core.rs"
+
+[dev-dependencies]
+uuid = { workspace = true }
 
 [lints]
 workspace = true

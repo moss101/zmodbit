@@ -18,6 +18,7 @@ const protos = [
   "modbit/protocol/v1/commands.proto",
   "modbit/protocol/v1/events.proto",
   "modbit/protocol/v1/transport.proto",
+  "modbit/protocol/v1/surface.proto",
 ].map((f) => join(protoRoot, f));
 
 const pluginBase = join(pkgRoot, "node_modules", ".bin", "protoc-gen-ts_proto");

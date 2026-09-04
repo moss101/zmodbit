@@ -19,6 +19,8 @@ export enum TaskStatus {
   TASK_STATUS_COMPLETED = 6,
   TASK_STATUS_FAILED = 7,
   TASK_STATUS_CANCELLED = 8,
+  /** TASK_STATUS_CREATED - Created tasks exist before queueing (docs/13: Created → Queued). */
+  TASK_STATUS_CREATED = 9,
   UNRECOGNIZED = -1,
 }
 
@@ -51,6 +53,9 @@ export function taskStatusFromJSON(object: any): TaskStatus {
     case 8:
     case "TASK_STATUS_CANCELLED":
       return TaskStatus.TASK_STATUS_CANCELLED;
+    case 9:
+    case "TASK_STATUS_CREATED":
+      return TaskStatus.TASK_STATUS_CREATED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -78,6 +83,8 @@ export function taskStatusToJSON(object: TaskStatus): string {
       return "TASK_STATUS_FAILED";
     case TaskStatus.TASK_STATUS_CANCELLED:
       return "TASK_STATUS_CANCELLED";
+    case TaskStatus.TASK_STATUS_CREATED:
+      return "TASK_STATUS_CREATED";
     case TaskStatus.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

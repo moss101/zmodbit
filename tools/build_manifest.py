@@ -121,7 +121,7 @@ def extra_tooling_files():
         for dirpath, dirnames, filenames in os.walk(full):
             dirnames[:] = [d for d in dirnames if d not in ("node_modules", "target", "__pycache__")]
             for fn in filenames:
-                if fn.endswith((".ts", ".py", ".md", ".json", ".yaml", ".toml")):
+                if fn.endswith((".ts", ".tsx", ".js", ".cjs", ".mjs", ".html", ".css", ".py", ".md", ".json", ".yaml", ".toml")):
                     rel = os.path.relpath(os.path.join(dirpath, fn), ROOT)
                     if rel not in ROOT_FILES:
                         found.append(rel.replace(os.sep, "/"))

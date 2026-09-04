@@ -13,4 +13,6 @@ enum TaskStatus {
   TASK_STATUS_COMPLETED = 6;
   TASK_STATUS_FAILED = 7;
   TASK_STATUS_CANCELLED = 8;
+  // Created tasks exist before queueing (docs/13: Created → Queued).
+  TASK_STATUS_CREATED = 9;
 }
