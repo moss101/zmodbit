@@ -315,3 +315,105 @@ mod tests {
         assert_eq!(test_recall, 1.0);
     }
 }
+
+/// A bounded expansion from a symbol to its connected engineering
+/// context (REQ-EV-0164): callers, tests, config, evidence — but NEVER
+/// more than `budget` nodes.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Expansion {
+    pub root_symbol: String,
+    pub nodes: Vec<String>,
+    pub truncated: bool,
+}
+
+impl ContextGraph {
+    /// Expands from a symbol through its file's dependency neighborhood,
+    /// stopping at the budget. The cap is hard: runaway expansion is
+    /// impossible by construction.
+    pub fn expand_from_symbol(&self, symbol_id: &str, budget: usize) -> Result<Expansion, String> {
+        let symbol = self
+            .symbols
+            .get(symbol_id)
+            .ok_or_else(|| format!("unknown symbol {symbol_id:?}"))?;
+        if budget == 0 {
+            return Ok(Expansion {
+                root_symbol: symbol_id.to_string(),
+                nodes: Vec::new(),
+                truncated: true,
+            });
+        }
+        let root_file = &symbol.path;
+        let mut nodes = vec![root_file.clone()];
+        // Direct dependents (callers) and dependencies, breadth-first.
+        let mut queue: std::collections::VecDeque<String> = std::collections::VecDeque::new();
+        for edge in &self.deps {
+            if edge.to == *root_file {
+                queue.push_back(edge.from.clone());
+            } else if edge.from == *root_file {
+                queue.push_back(edge.to.clone());
+            }
+        }
+        let mut visited: BTreeSet<String> = [root_file.clone()].into_iter().collect();
+        while let Some(next) = queue.pop_front() {
+            if nodes.len() >= budget {
+                return Ok(Expansion {
+                    root_symbol: symbol_id.to_string(),
+                    nodes,
+                    truncated: true,
+                });
+            }
+            if visited.insert(next.clone()) {
+                nodes.push(next.clone());
+            }
+        }
+        let truncated = nodes.len() >= budget;
+        Ok(Expansion {
+            root_symbol: symbol_id.to_string(),
+            nodes,
+            truncated,
+        })
+    }
+}
+
+#[cfg(test)]
+mod expansion_tests {
+    use super::*;
+
+    /// QUAL-EV-0164: the budget cap prevents runaway expansion.
+    #[test]
+    fn expansion_budget_cap_prevents_runaway() {
+        let mut g = ContextGraph::new();
+        g.index_file(Language::Rust, "src/core.rs", b"pub fn core() {}\n");
+        g.index_file(Language::Rust, "src/mid.rs", b"pub fn mid() {}\n");
+        g.index_file(Language::Rust, "src/edge.rs", b"pub fn edge() {}\n");
+        g.index_file(
+            Language::Rust,
+            "tests/core_test.rs",
+            b"#[test]\nfn core_ok() {}\n",
+        );
+        for (from, to) in [
+            ("src/mid.rs", "src/core.rs"),
+            ("src/edge.rs", "src/mid.rs"),
+            ("tests/core_test.rs", "src/core.rs"),
+        ] {
+            g.add_dependency(from, to, "call");
+        }
+
+        // Budget 2: root + one neighbor, truncated.
+        let id = "rust:src/core.rs:core";
+        let expansion = g.expand_from_symbol(id, 2).unwrap();
+        assert_eq!(expansion.nodes.len(), 2);
+        assert!(expansion.truncated);
+
+        // Budget 10: everything reachable, not truncated.
+        let expansion = g.expand_from_symbol(id, 10).unwrap();
+        assert!(expansion.nodes.len() >= 3);
+        assert!(!expansion.truncated);
+        assert!(expansion.nodes.contains(&"tests/core_test.rs".to_string()));
+
+        // Zero budget: nothing expanded.
+        assert!(g.expand_from_symbol(id, 0).unwrap().nodes.is_empty());
+        // Unknown symbol: typed error.
+        assert!(g.expand_from_symbol("rust:x:y", 5).is_err());
+    }
+}

@@ -18,6 +18,7 @@ pub mod history_context;
 pub mod hydration;
 pub mod knowledge;
 pub mod merkle;
+pub mod rerank;
 
 pub fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();

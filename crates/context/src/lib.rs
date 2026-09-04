@@ -5,5 +5,6 @@
 
 pub mod cache_economy;
 pub mod inspector;
+pub mod pack_compiler;
 pub mod planner;
 pub mod recoverability;
