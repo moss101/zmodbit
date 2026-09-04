@@ -10,6 +10,7 @@
 
 pub mod bridge;
 pub mod capsule;
+pub mod edit_gate;
 pub mod handoff;
 pub mod merge_transaction;
 pub mod review;

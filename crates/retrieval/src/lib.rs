@@ -16,6 +16,7 @@ pub mod context_graph;
 pub mod engineering_context;
 pub mod history_context;
 pub mod hydration;
+pub mod index_bench;
 pub mod knowledge;
 pub mod merkle;
 pub mod rerank;
