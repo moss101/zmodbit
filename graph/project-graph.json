@@ -1110,8 +1110,18 @@
    "milestone": "M2",
    "order": 1,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T06:31:02Z",
+   "notes": [
+    {
+     "at": "2026-09-04T06:31:02Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "modbit-git: typed git CLI wrapper — init (main + local identity), commit_all with HEAD hash, branch/checkout, linked worktrees for concurrent builders, numstat diff, typed merge (Merged | Conflict{conflicted_files} evidence with clean abort). 4 real-git integration tests incl. conflict evidence + worktree isolation. Awaiting 3-OS CI."
+    }
+   ]
   },
   {
    "id": "M2.3",
@@ -24189,5 +24199,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T06:19:21Z"
+ "updated_on": "2026-09-04T06:31:02Z"
 }

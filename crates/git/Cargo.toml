@@ -5,5 +5,8 @@ edition.workspace = true
 
 [dependencies]
 
+[dev-dependencies]
+uuid = { workspace = true }
+
 [lints]
 workspace = true

@@ -222,7 +222,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
 | `M2.1` | COMPLETE | Workspace File Service with safe paths/revisions |  |
-| `M2.2` | NOT_STARTED | Git branch/worktree/diff operations |  |
+| `M2.2` | REAL_TESTING | Git branch/worktree/diff operations |  |
 | `M2.3` | NOT_STARTED | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
 | `M2.4` | NOT_STARTED | Tool Registry + direct `fs/git/shell/test` tools |  |
 | `M2.5` | NOT_STARTED | Capability Kernel + basic approval flow |  |
