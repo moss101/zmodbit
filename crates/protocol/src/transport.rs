@@ -137,9 +137,9 @@ impl EndpointName {
 
     #[cfg(windows)]
     pub fn namespace(name: &str) -> Result<Self, TransportError> {
-        use interprocess::local_socket::{GenericNamespace, ToNsName};
+        use interprocess::local_socket::{GenericNamespaced, ToNsName};
         Ok(Self {
-            inner: name.to_ns_name::<GenericNamespace>().map_err(io_other)?,
+            inner: name.to_ns_name::<GenericNamespaced>().map_err(io_other)?,
         })
     }
 
