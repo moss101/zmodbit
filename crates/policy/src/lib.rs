@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 pub mod admin_precedence;
 pub mod approvals;
 pub mod capability_set;
+pub mod ceremony;
 pub mod device_policy;
 pub mod mediation;
 pub mod patch_gate;

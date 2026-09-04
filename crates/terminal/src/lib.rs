@@ -17,6 +17,7 @@ use std::sync::Mutex;
 
 pub mod broker_ext;
 pub mod command_contract;
+pub mod replay;
 
 use serde::{Deserialize, Serialize};
 
