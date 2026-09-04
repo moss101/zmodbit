@@ -154,7 +154,10 @@ impl ToolRegistry {
 
 /// Direct fs/shell tools (docs/17 § Direct tools: fs/git/shell/test).
 pub mod media;
+pub mod output_pagination;
+pub mod pipeline;
 pub mod schema;
+pub mod tool_families;
 
 pub mod direct {
     use super::*;
