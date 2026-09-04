@@ -1265,6 +1265,12 @@
      "from": "REAL_TESTING",
      "to": "IMPLEMENTING",
      "note": "One-agent runtime half IMPLEMENTED per docs/14 main loop: OneAgentRuntime with injected ModelTransport (stub-tested: completion path, tool request under policy + feedback repair turn, invalid payload rejected before side effects, policy denial refusal, max-turns bound); StreamEvent::ToolRequest + OpenAI tool_calls / Anthropic tool_use parser support. CI run 33900798541 commit 1d78ede green on 3 OSes. Remaining for COMPLETE: M2.6 live qualification (user credentials) then live-e2e of this runtime."
+    },
+    {
+     "at": "2026-09-04T18:05:00Z",
+     "from": "IMPLEMENTING",
+     "to": "IMPLEMENTING",
+     "note": "Live e2e harness added: crates/core-runtime/tests/live_one_agent.rs drives the REAL OneAgentRuntime loop (compile → stream → typed events → verify → Completed) against the production endpoint via the same curl+SSE transport as the M2.6 qualification. Env-gated (MODBIT_LIVE_OPENAI/ANTHROPIC + key), skips clean in CI (run 33901601499, commit ad1afc1). M2.6 + M2.7 now close with ONE credentialed run each the moment the user supplies keys."
     }
    ],
    "owner_agent": "zcode",
