@@ -70,18 +70,20 @@ pub struct EffectRecord {
     pub evidence_note: String,
 }
 
+/// The policy verdict function: argv -> allowed? (the capability
+/// kernel's decision, fail-closed).
+pub type PolicyFn = Box<dyn Fn(&[String]) -> bool + Send + Sync>;
+
 /// The procedural-mode runtime over a command executor.
 pub struct ProceduralRuntime {
-    /// Policy decision function: argv -> allowed? (the capability kernel's
-    /// verdict, fail-closed).
-    policy: Box<dyn Fn(&[String]) -> bool + Send + Sync>,
+    policy: PolicyFn,
     evidence: BTreeMap<String, EffectRecord>,
     exec_ids: BTreeMap<String, i64>,
     counter: u64,
 }
 
 impl ProceduralRuntime {
-    pub fn new(policy: Box<dyn Fn(&[String]) -> bool + Send + Sync>) -> Self {
+    pub fn new(policy: PolicyFn) -> Self {
         Self {
             policy,
             evidence: BTreeMap::new(),
