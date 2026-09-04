@@ -79,7 +79,6 @@ impl ModelTransport for LiveTransport {
         let stdout = stdout.take().expect("stdout");
         let reader = BufReader::new(stdout);
         let mut events = Vec::new();
-        let mut line = String::new();
         for line in reader.lines() {
             let line = line.map_err(|e| e.to_string())?;
             if let Some(payload) = modbit_providers::gateway::sse_data_line(&line) {
