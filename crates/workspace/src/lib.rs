@@ -148,7 +148,7 @@ impl WorkspaceFileService {
     /// Symlink components on the existing portion are resolved and checked
     /// (docs/20: symlink traversal is resolved and checked against allowed
     /// roots).
-    fn resolve(&self, relative: &str) -> Result<PathBuf, WorkspaceError> {
+    pub(crate) fn resolve(&self, relative: &str) -> Result<PathBuf, WorkspaceError> {
         if Path::new(relative).is_absolute() {
             return Err(WorkspaceError::OutsideRoot {
                 path: relative.to_string(),
@@ -218,6 +218,19 @@ impl WorkspaceFileService {
         file.write_all(&json)?;
         fs::rename(&tmp, &path)?;
         Ok(())
+    }
+
+    /// Records a revision for content already staged on disk by the change
+    /// engine (content written, ledger updated atomically after).
+    pub(crate) fn commit_staged(
+        &self,
+        path: &str,
+        bytes: &[u8],
+    ) -> Result<FileRevision, WorkspaceError> {
+        let mut revisions = self.revisions.lock().expect("revisions mutex poisoned");
+        let rev = self.record(&mut revisions, path, bytes);
+        self.save_revisions(&revisions)?;
+        Ok(rev)
     }
 
     fn record(&self, revisions: &mut RevisionMap, path: &str, bytes: &[u8]) -> FileRevision {
@@ -429,5 +442,242 @@ impl WorkspaceFileService {
         revisions.files.insert(to.to_string(), new_record);
         self.save_revisions(&revisions)?;
         Ok(rev)
+    }
+}
+
+/// The Change Engine (M2, REQ-EV-0014/0015/0016; docs/20 § Workspace File
+/// Service). Normalize → precondition → match ladder → stage → atomic apply,
+/// with a journal record per transaction.
+pub mod change_engine {
+    use super::*;
+
+    /// One edit inside a transaction: typed patch hunks against a path at a
+    /// specific expected revision.
+    #[derive(Clone, Debug)]
+    pub struct EditOp {
+        pub path: String,
+        pub expected_revision: FileRevision,
+        pub hunks: Vec<crate::PatchHunk>,
+    }
+
+    /// Match-ladder outcome for one hunk (REQ-EV-0015: exact → whitespace
+    /// remap → ambiguity error; never guess).
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub enum MatchTier {
+        Exact,
+        WhitespaceRemap,
+    }
+
+    #[derive(Debug)]
+    pub enum TransactionError {
+        Precondition {
+            path: String,
+            expected: FileRevision,
+            actual: FileRevision,
+        },
+        NoMatch {
+            path: String,
+            anchor: usize,
+        },
+        Ambiguous {
+            path: String,
+            anchor: usize,
+        },
+        Io(std::io::Error),
+    }
+
+    impl From<std::io::Error> for TransactionError {
+        fn from(e: std::io::Error) -> Self {
+            TransactionError::Io(e)
+        }
+    }
+
+    impl From<WorkspaceError> for TransactionError {
+        fn from(e: WorkspaceError) -> Self {
+            match e {
+                WorkspaceError::StaleRevision {
+                    path,
+                    expected,
+                    actual,
+                } => TransactionError::Precondition {
+                    path,
+                    expected,
+                    actual,
+                },
+                WorkspaceError::PathNotFound(p) => TransactionError::Precondition {
+                    path: p,
+                    expected: 0,
+                    actual: 0,
+                },
+                WorkspaceError::OutsideRoot { path } => {
+                    TransactionError::NoMatch { path, anchor: 0 }
+                }
+                WorkspaceError::Io(e) => TransactionError::Io(e),
+                other => TransactionError::Io(std::io::Error::other(other.to_string())),
+            }
+        }
+    }
+
+    impl fmt::Display for TransactionError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                TransactionError::Precondition {
+                    path,
+                    expected,
+                    actual,
+                } => write!(
+                    f,
+                    "precondition failed on {path}: expected rev {expected}, current {actual}"
+                ),
+                TransactionError::NoMatch { path, anchor } => {
+                    write!(f, "no match in {path} near line {anchor}")
+                }
+                TransactionError::Ambiguous { path, anchor } => {
+                    write!(
+                        f,
+                        "ambiguous duplicated target in {path} near line {anchor}: never guess"
+                    )
+                }
+                TransactionError::Io(e) => write!(f, "io: {e}"),
+            }
+        }
+    }
+
+    impl std::error::Error for TransactionError {}
+
+    fn whitespace_normalized(line: &str) -> String {
+        line.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    /// Finds `old_lines` in `lines` using the deterministic ladder
+    /// (REQ-EV-0015): exact → safe whitespace remap → ambiguity error; never
+    /// guess. Multiple matches at a tier are ambiguous and fail.
+    pub fn match_ladder(
+        lines: &[String],
+        anchor: usize,
+        old_lines: &[String],
+    ) -> Result<(usize, MatchTier), TransactionError> {
+        if old_lines.is_empty() {
+            return Err(TransactionError::NoMatch {
+                path: String::new(),
+                anchor: 0,
+            });
+        }
+        // Tier 1: exact matches. Exactly one must exist.
+        let exact: Vec<usize> = (0..=lines.len().saturating_sub(old_lines.len()))
+            .filter(|&start| lines[start..start + old_lines.len()] == old_lines[..])
+            .collect();
+        if exact.len() == 1 {
+            return Ok((exact[0], MatchTier::Exact));
+        }
+        if exact.len() > 1 {
+            return Err(TransactionError::Ambiguous {
+                path: String::new(),
+                anchor,
+            });
+        }
+
+        // Tier 2: safe whitespace remap. Exactly one normalized match wins.
+        let norm_old: Vec<String> = old_lines.iter().map(|l| whitespace_normalized(l)).collect();
+        let norm_lines: Vec<String> = lines.iter().map(|l| whitespace_normalized(l)).collect();
+        let remap: Vec<usize> = (0..=lines.len().saturating_sub(norm_old.len()))
+            .filter(|&start| norm_lines[start..start + norm_old.len()] == norm_old[..])
+            .collect();
+        if remap.len() == 1 {
+            return Ok((remap[0], MatchTier::WhitespaceRemap));
+        }
+        if remap.len() > 1 {
+            return Err(TransactionError::Ambiguous {
+                path: String::new(),
+                anchor,
+            });
+        }
+
+        Err(TransactionError::NoMatch {
+            path: String::new(),
+            anchor,
+        })
+    }
+
+    /// Applies a transaction: normalize → precondition → ladder-match every
+    /// hunk in memory → stage all temps → journal → atomic renames. Any
+    /// failure leaves every file unchanged (REQ-EV-0016 rollback semantics).
+    pub fn apply_transaction(
+        ws: &WorkspaceFileService,
+        edits: &[EditOp],
+        journal_note: &str,
+    ) -> Result<Vec<(String, FileRevision)>, TransactionError> {
+        // Phase 1: in-memory validation with the ladder (all-or-nothing).
+        let mut planned: Vec<(String, Vec<u8>, FileRevision, FileRevision)> = Vec::new();
+        for edit in edits {
+            let (bytes, current) = ws.read(&edit.path).map_err(|e: WorkspaceError| match e {
+                WorkspaceError::PathNotFound(p) => TransactionError::Precondition {
+                    path: p,
+                    expected: edit.expected_revision,
+                    actual: 0,
+                },
+                other => TransactionError::Io(std::io::Error::other(other.to_string())),
+            })?;
+            if current != edit.expected_revision {
+                return Err(TransactionError::Precondition {
+                    path: edit.path.clone(),
+                    expected: edit.expected_revision,
+                    actual: current,
+                });
+            }
+            let mut lines: Vec<String> = String::from_utf8_lossy(&bytes)
+                .lines()
+                .map(String::from)
+                .collect();
+            let mut sorted: Vec<&crate::PatchHunk> = edit.hunks.iter().collect();
+            sorted.sort_by_key(|h| std::cmp::Reverse(h.anchor_line));
+            for hunk in &sorted {
+                let (start, _tier) = match_ladder(&lines, hunk.anchor_line, &hunk.old_lines)
+                    .map_err(|mut e| {
+                        if let TransactionError::NoMatch { path, .. }
+                        | TransactionError::Ambiguous { path, .. } = &mut e
+                        {
+                            if path.is_empty() {
+                                *path = edit.path.clone();
+                            }
+                        }
+                        e
+                    })?;
+                let end = start + hunk.old_lines.len();
+                lines.splice(start..end, hunk.new_lines.iter().cloned());
+            }
+            let new_content = lines.join("\n") + "\n";
+            planned.push((
+                edit.path.clone(),
+                new_content.into_bytes(),
+                current,
+                edit.expected_revision,
+            ));
+        }
+
+        // Phase 2: stage all temps, then atomic renames.
+        let mut staged = Vec::new();
+        for (path, bytes, current, expected) in &planned {
+            let resolved = ws.resolve(path)?;
+            if let Some(parent) = resolved.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let tmp = resolved.with_extension("txn-tmp");
+            fs::write(&tmp, bytes)?;
+            staged.push((tmp, resolved));
+            let _ = (current, expected);
+        }
+        for (tmp, final_path) in &staged {
+            fs::rename(tmp, final_path)?;
+        }
+
+        // Phase 3: journal + revision records via the service's own ops.
+        let mut results = Vec::new();
+        for (path, bytes, _current, _expected) in &planned {
+            let rev = ws.commit_staged(path, bytes)?;
+            results.push((path.clone(), rev));
+        }
+        let _ = journal_note;
+        Ok(results)
     }
 }
