@@ -368,6 +368,9 @@ version = "0.1.0"
 [[package]]
 name = "modbit-context"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "modbit-core-runtime"
@@ -394,6 +397,9 @@ dependencies = [
 [[package]]
 name = "modbit-diagnostics"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "modbit-domain"
