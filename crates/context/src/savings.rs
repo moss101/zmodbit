@@ -1,10 +1,7 @@
 //! Prompt-cache-aware compaction (M3, REQ-EV-0268), measured savings
 //! (REQ-EV-0274), and web prompt-injection isolation (REQ-EV-0284).
 
-use crate::cache_economy::CacheLedger;
 use crate::metrics::{EfficiencyDashboard, EfficiencyRecord};
-use modbit_compaction::EpochRegistry;
-use modbit_prompt_compiler::CompilerInputs;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -20,8 +17,10 @@ pub fn savings_report(
 ) -> EfficiencyDashboard {
     // Publish the TREATMENT economics; savings are the paired deltas
     // visible against the baseline totals.
-    let mut dashboard = EfficiencyDashboard::default();
-    dashboard.records = treatment.to_vec();
+    let dashboard = EfficiencyDashboard {
+        records: treatment.to_vec(),
+        ..Default::default()
+    };
     let _ = baseline;
     dashboard.report()
 }
@@ -73,6 +72,9 @@ impl ToolAuthority {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cache_economy::CacheLedger;
+    use modbit_compaction::EpochRegistry;
+    use modbit_prompt_compiler::CompilerInputs;
 
     /// QUAL-EV-0268: cache hits/misses around a fork/revert and no stale
     /// context applied afterwards.

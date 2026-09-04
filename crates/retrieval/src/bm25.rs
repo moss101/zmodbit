@@ -5,7 +5,6 @@
 //! scoring contract (segment per file, idf-weighted term matching) is
 //! what M3.2 requires.
 
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// BM25 parameters.
