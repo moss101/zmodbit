@@ -7,7 +7,10 @@ edition.workspace = true
 modbit-domain = { path = "../domain" }
 modbit-event-store = { path = "../event-store" }
 modbit-protocol = { path = "../protocol" }
+modbit-terminal = { path = "../terminal" }
+modbit-workspace = { path = "../workspace" }
 serde = { workspace = true }
+sha2 = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 prost = "0.13"
@@ -20,6 +23,7 @@ path = "src/bin/modbit-core.rs"
 
 [dev-dependencies]
 uuid = { workspace = true }
+modbit-workspace = { path = "../workspace" }
 
 [lints]
 workspace = true

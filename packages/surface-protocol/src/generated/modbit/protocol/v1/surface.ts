@@ -26,6 +26,7 @@ export interface SurfaceRequest {
   taskReadyForReview?: TaskReadyForReviewCommand | undefined;
   completeTask?: CompleteTaskCommand | undefined;
   getTaskEvents?: GetTaskEventsRequest | undefined;
+  getCodeView?: GetCodeViewRequest | undefined;
 }
 
 export interface GetFleetRequest {
@@ -33,6 +34,23 @@ export interface GetFleetRequest {
 
 export interface GetTaskEventsRequest {
   taskId: string;
+}
+
+/**
+ * Trusted Code Surface (docs/20 § Trusted Code Surface): immutable file
+ * payload bound to workspace + file revisions. The renderer never owns
+ * buffers; staleness is detected by revision comparison.
+ */
+export interface CodeViewModel {
+  workspaceRevision: string;
+  fileRevision: string;
+  path: string;
+  contentSha256: string;
+  contentText: string;
+}
+
+export interface GetCodeViewRequest {
+  path: string;
 }
 
 /**
@@ -87,6 +105,7 @@ export interface SurfaceResponse {
   task: TaskView | undefined;
   sessionId: string;
   taskEvents: TaskEvents | undefined;
+  codeView: CodeViewModel | undefined;
 }
 
 function createBaseSurfaceRequest(): SurfaceRequest {
@@ -99,6 +118,7 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     taskReadyForReview: undefined,
     completeTask: undefined,
     getTaskEvents: undefined,
+    getCodeView: undefined,
   };
 }
 
@@ -127,6 +147,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getTaskEvents !== undefined) {
       GetTaskEventsRequest.encode(message.getTaskEvents, writer.uint32(66).fork()).join();
+    }
+    if (message.getCodeView !== undefined) {
+      GetCodeViewRequest.encode(message.getCodeView, writer.uint32(74).fork()).join();
     }
     return writer;
   },
@@ -202,6 +225,14 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.getTaskEvents = GetTaskEventsRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.getCodeView = GetCodeViewRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -223,6 +254,7 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
         : undefined,
       completeTask: isSet(object.completeTask) ? CompleteTaskCommand.fromJSON(object.completeTask) : undefined,
       getTaskEvents: isSet(object.getTaskEvents) ? GetTaskEventsRequest.fromJSON(object.getTaskEvents) : undefined,
+      getCodeView: isSet(object.getCodeView) ? GetCodeViewRequest.fromJSON(object.getCodeView) : undefined,
     };
   },
 
@@ -251,6 +283,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getTaskEvents !== undefined) {
       obj.getTaskEvents = GetTaskEventsRequest.toJSON(message.getTaskEvents);
+    }
+    if (message.getCodeView !== undefined) {
+      obj.getCodeView = GetCodeViewRequest.toJSON(message.getCodeView);
     }
     return obj;
   },
@@ -283,6 +318,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.getTaskEvents = (object.getTaskEvents !== undefined && object.getTaskEvents !== null)
       ? GetTaskEventsRequest.fromPartial(object.getTaskEvents)
+      : undefined;
+    message.getCodeView = (object.getCodeView !== undefined && object.getCodeView !== null)
+      ? GetCodeViewRequest.fromPartial(object.getCodeView)
       : undefined;
     return message;
   },
@@ -385,6 +423,188 @@ export const GetTaskEventsRequest: MessageFns<GetTaskEventsRequest> = {
   fromPartial<I extends Exact<DeepPartial<GetTaskEventsRequest>, I>>(object: I): GetTaskEventsRequest {
     const message = createBaseGetTaskEventsRequest();
     message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseCodeViewModel(): CodeViewModel {
+  return { workspaceRevision: "0", fileRevision: "0", path: "", contentSha256: "", contentText: "" };
+}
+
+export const CodeViewModel: MessageFns<CodeViewModel> = {
+  encode(message: CodeViewModel, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.workspaceRevision !== "0") {
+      writer.uint32(8).uint64(message.workspaceRevision);
+    }
+    if (message.fileRevision !== "0") {
+      writer.uint32(16).uint64(message.fileRevision);
+    }
+    if (message.path !== "") {
+      writer.uint32(26).string(message.path);
+    }
+    if (message.contentSha256 !== "") {
+      writer.uint32(34).string(message.contentSha256);
+    }
+    if (message.contentText !== "") {
+      writer.uint32(42).string(message.contentText);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CodeViewModel {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCodeViewModel();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.workspaceRevision = reader.uint64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.fileRevision = reader.uint64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.contentSha256 = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.contentText = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CodeViewModel {
+    return {
+      workspaceRevision: isSet(object.workspaceRevision) ? globalThis.String(object.workspaceRevision) : "0",
+      fileRevision: isSet(object.fileRevision) ? globalThis.String(object.fileRevision) : "0",
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      contentSha256: isSet(object.contentSha256) ? globalThis.String(object.contentSha256) : "",
+      contentText: isSet(object.contentText) ? globalThis.String(object.contentText) : "",
+    };
+  },
+
+  toJSON(message: CodeViewModel): unknown {
+    const obj: any = {};
+    if (message.workspaceRevision !== "0") {
+      obj.workspaceRevision = message.workspaceRevision;
+    }
+    if (message.fileRevision !== "0") {
+      obj.fileRevision = message.fileRevision;
+    }
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.contentSha256 !== "") {
+      obj.contentSha256 = message.contentSha256;
+    }
+    if (message.contentText !== "") {
+      obj.contentText = message.contentText;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CodeViewModel>, I>>(base?: I): CodeViewModel {
+    return CodeViewModel.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CodeViewModel>, I>>(object: I): CodeViewModel {
+    const message = createBaseCodeViewModel();
+    message.workspaceRevision = object.workspaceRevision ?? "0";
+    message.fileRevision = object.fileRevision ?? "0";
+    message.path = object.path ?? "";
+    message.contentSha256 = object.contentSha256 ?? "";
+    message.contentText = object.contentText ?? "";
+    return message;
+  },
+};
+
+function createBaseGetCodeViewRequest(): GetCodeViewRequest {
+  return { path: "" };
+}
+
+export const GetCodeViewRequest: MessageFns<GetCodeViewRequest> = {
+  encode(message: GetCodeViewRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.path !== "") {
+      writer.uint32(10).string(message.path);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetCodeViewRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetCodeViewRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetCodeViewRequest {
+    return { path: isSet(object.path) ? globalThis.String(object.path) : "" };
+  },
+
+  toJSON(message: GetCodeViewRequest): unknown {
+    const obj: any = {};
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetCodeViewRequest>, I>>(base?: I): GetCodeViewRequest {
+    return GetCodeViewRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetCodeViewRequest>, I>>(object: I): GetCodeViewRequest {
+    const message = createBaseGetCodeViewRequest();
+    message.path = object.path ?? "";
     return message;
   },
 };
@@ -932,7 +1152,15 @@ export const Fleet: MessageFns<Fleet> = {
 };
 
 function createBaseSurfaceResponse(): SurfaceResponse {
-  return { ok: false, error: "", fleet: undefined, task: undefined, sessionId: "", taskEvents: undefined };
+  return {
+    ok: false,
+    error: "",
+    fleet: undefined,
+    task: undefined,
+    sessionId: "",
+    taskEvents: undefined,
+    codeView: undefined,
+  };
 }
 
 export const SurfaceResponse: MessageFns<SurfaceResponse> = {
@@ -954,6 +1182,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.taskEvents !== undefined) {
       TaskEvents.encode(message.taskEvents, writer.uint32(50).fork()).join();
+    }
+    if (message.codeView !== undefined) {
+      CodeViewModel.encode(message.codeView, writer.uint32(58).fork()).join();
     }
     return writer;
   },
@@ -1013,6 +1244,14 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.taskEvents = TaskEvents.decode(reader, reader.uint32());
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.codeView = CodeViewModel.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1030,6 +1269,7 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       task: isSet(object.task) ? TaskView.fromJSON(object.task) : undefined,
       sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
       taskEvents: isSet(object.taskEvents) ? TaskEvents.fromJSON(object.taskEvents) : undefined,
+      codeView: isSet(object.codeView) ? CodeViewModel.fromJSON(object.codeView) : undefined,
     };
   },
 
@@ -1053,6 +1293,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.taskEvents !== undefined) {
       obj.taskEvents = TaskEvents.toJSON(message.taskEvents);
     }
+    if (message.codeView !== undefined) {
+      obj.codeView = CodeViewModel.toJSON(message.codeView);
+    }
     return obj;
   },
 
@@ -1068,6 +1311,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     message.sessionId = object.sessionId ?? "";
     message.taskEvents = (object.taskEvents !== undefined && object.taskEvents !== null)
       ? TaskEvents.fromPartial(object.taskEvents)
+      : undefined;
+    message.codeView = (object.codeView !== undefined && object.codeView !== null)
+      ? CodeViewModel.fromPartial(object.codeView)
       : undefined;
     return message;
   },

@@ -1267,8 +1267,24 @@
    "milestone": "M2",
    "order": 8,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T08:48:14Z",
+     "from": "NOT_STARTED",
+     "to": "IMPLEMENTING",
+     "note": "Audit: no trusted code review surface (NOT_FOUND). Implementing per docs/20 § Trusted Code Surface + docs/32: CodeViewModel via surface request reading through WorkspaceFileService (immutable payloads, revision binding, staleness); no editor buffers."
+    },
+    {
+     "at": "2026-09-04T09:01:10Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Trusted Code Review Surface per docs/20 § Trusted Code Surface + docs/32: get_code_view surface request reads through the canonical WorkspaceFileService (immutable payload bound to workspace+file revisions, sha256 fingerprint); traversal refused; staleness via revision comparison (TS tests); renderer never owns buffers. Awaiting 3-OS CI."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T09:01:10Z"
   },
   {
    "id": "M3.1",
@@ -24279,5 +24295,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T08:18:16Z"
+ "updated_on": "2026-09-04T09:01:10Z"
 }

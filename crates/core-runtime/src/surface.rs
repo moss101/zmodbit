@@ -19,6 +19,7 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 pub struct CoreServices {
     store: Arc<EventStore>,
     processor: CommandProcessor,
+    workspace: Option<std::sync::Arc<modbit_workspace::WorkspaceFileService>>,
 }
 
 fn actor() -> Actor {
@@ -33,7 +34,17 @@ impl CoreServices {
         Self {
             processor: CommandProcessor::new(store.clone()),
             store,
+            workspace: None,
         }
+    }
+
+    /// Attaches the canonical workspace for the Trusted Code Surface.
+    pub fn with_workspace(
+        mut self,
+        workspace: std::sync::Arc<modbit_workspace::WorkspaceFileService>,
+    ) -> Self {
+        self.workspace = Some(workspace);
+        self
     }
 
     pub fn store(&self) -> &EventStore {
@@ -69,6 +80,25 @@ impl CoreServices {
                             task_id: get.task_id,
                             events,
                         }),
+                        code_view: Default::default(),
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::GetCodeView(get)) => {
+                match self.code_view(&get.path) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        error: String::new(),
+                        fleet: Default::default(),
+                        task: Default::default(),
+                        session_id: String::new(),
+                        task_events: Default::default(),
+                        code_view: Some(view),
                     },
                     Err(e) => pb::SurfaceResponse {
                         ok: false,
@@ -337,6 +367,30 @@ impl CoreServices {
                     .unwrap_or_default(),
             })
             .collect())
+    }
+
+    /// Trusted Code Surface payload (docs/20): immutable file content bound
+    /// to workspace + file revisions, read through the canonical
+    /// WorkspaceFileService — the renderer never owns buffers.
+    fn code_view(&self, path: &str) -> Result<pb::CodeViewModel, String> {
+        let ws = self
+            .workspace
+            .as_ref()
+            .ok_or_else(|| "no workspace open".to_string())?;
+        let (bytes, file_revision) = ws.read(path).map_err(|e| e.to_string())?;
+        let sha256 = ws
+            .stat(path)
+            .map_err(|e| e.to_string())?
+            .map(|(_, sha, _)| sha)
+            .unwrap_or_default();
+        Ok(pb::CodeViewModel {
+            workspace_revision: ws.workspace_revision(),
+            file_revision,
+            path: path.to_string(),
+            content_sha256: sha256,
+            content_text: String::from_utf8(bytes)
+                .map_err(|_| "file is not valid UTF-8".to_string())?,
+        })
     }
 
     /// Fleet snapshot from the tasks projection (docs/31 § `tasks`).

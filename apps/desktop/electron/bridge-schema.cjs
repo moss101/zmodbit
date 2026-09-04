@@ -87,6 +87,15 @@ const CHANNELS = {
             return { kind: "taskEvents", taskId };
         },
     },
+    "code:view": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["path"]);
+            const path = requireString(payload, "path", 512);
+            if (path.includes("..")) throw new Rejected("path traversal rejected");
+            return { kind: "codeView", path };
+        },
+    },
     "session:create": {
         validate(payload) {
             if (!isPlainObject(payload)) throw new Rejected("payload must be an object");

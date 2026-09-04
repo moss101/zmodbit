@@ -229,7 +229,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M2.6` | NOT_STARTED | Provider Gateway OpenAI + Anthropic streaming |  |
 | `M2.7` | NOT_STARTED | Basic Prompt Compiler and one-agent runtime |  |
 | `M2.8` | REAL_TESTING | Verification engine build/test checks |  |
-| `M2.9` | NOT_STARTED | Trusted Code Review Surface |  |
+| `M2.9` | REAL_TESTING | Trusted Code Review Surface |  |
 | `M2.10` | REAL_TESTING | MediaEnvelope + Media Pipeline (before any multimodal provider/tool feature) | real PNG/JPEG/text-PDF read through fs.read with provenance, budgets and artifact digests |
 
 ### M3 — Context intelligence

@@ -19,6 +19,7 @@ message SurfaceRequest {
     TaskReadyForReviewCommand task_ready_for_review = 6;
     CompleteTaskCommand complete_task = 7;
     GetTaskEventsRequest get_task_events = 8;
+    GetCodeViewRequest get_code_view = 9;
   }
 }
 
@@ -26,6 +27,21 @@ message GetFleetRequest {}
 
 message GetTaskEventsRequest {
   string task_id = 1;
+}
+
+// Trusted Code Surface (docs/20 § Trusted Code Surface): immutable file
+// payload bound to workspace + file revisions. The renderer never owns
+// buffers; staleness is detected by revision comparison.
+message CodeViewModel {
+  uint64 workspace_revision = 1;
+  uint64 file_revision = 2;
+  string path = 3;
+  string content_sha256 = 4;
+  string content_text = 5;
+}
+
+message GetCodeViewRequest {
+  string path = 1;
 }
 
 // Context Inspector payload: the task's durable event stream (docs/32
@@ -73,4 +89,5 @@ message SurfaceResponse {
   TaskView task = 4;
   string session_id = 5;
   TaskEvents task_events = 6;
+  CodeViewModel code_view = 7;
 }

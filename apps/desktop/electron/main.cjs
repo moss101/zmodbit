@@ -74,6 +74,10 @@ async function getTaskEvents(taskId) {
   return withRetry((s) => s.request({ taskEvents: taskId }));
 }
 
+async function getCodeView(path) {
+  return withRetry((s) => s.request({ codeView: path }));
+}
+
 async function createTask({ title, prompt }) {
   return withRetry((s) => s.request({ createTask: { sessionId: "", title, prompt } }));
 }
@@ -110,6 +114,10 @@ function registerIpc() {
   guarded("task:events", (request) => {
     if (request.kind !== "taskEvents") return { ok: false, error: "wrong request kind" };
     return getTaskEvents(request.taskId);
+  });
+  guarded("code:view", (request) => {
+    if (request.kind !== "codeView") return { ok: false, error: "wrong request kind" };
+    return getCodeView(request.path);
   });
 }
 

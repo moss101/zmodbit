@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld("modbit", {
   createTask: (title, prompt) => ipcRenderer.invoke("task:create", { title, prompt }),
   createSession: (displayName) => ipcRenderer.invoke("session:create", { displayName }),
   taskEvents: (taskId) => ipcRenderer.invoke("task:events", { taskId }),
+  codeView: (path) => ipcRenderer.invoke("code:view", { path }),
 });
