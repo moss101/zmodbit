@@ -519,11 +519,16 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "uuid",
 ]
 
 [[package]]
 name = "modbit-verification"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-workspace"

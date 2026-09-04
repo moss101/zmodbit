@@ -1246,8 +1246,18 @@
    "milestone": "M2",
    "order": 7,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T08:18:16Z",
+   "notes": [
+    {
+     "at": "2026-09-04T08:03:36Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Audit: no verification engine (NOT_FOUND). Implementing deterministic gates per docs/50: typed Gate plans run as real processes with timeouts, bounded output tails, all-must-pass verdicts; real cargo build/test fixture gate."
+    }
+   ]
   },
   {
    "id": "M2.9",
@@ -1910,8 +1920,18 @@
    "order": 9,
    "source": "docs/25_MULTIMODAL_MEDIA_AND_NOTEBOOK_RUNTIME.md; docs/43 V2 sequencing delta",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T08:18:16Z",
+   "notes": [
+    {
+     "at": "2026-09-04T08:03:36Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Audit: no media pipeline (NOT_FOUND). Implementing per docs/25: magic-byte type detection (PNG/JPEG/PDF/text), size budgets, content-addressed artifact store, MediaEnvelope with provenance + digests; bounded typed fs.read results."
+    }
+   ]
   },
   {
    "id": "M5.7",
@@ -24259,5 +24279,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T07:58:15Z"
+ "updated_on": "2026-09-04T08:18:16Z"
 }

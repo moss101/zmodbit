@@ -153,6 +153,8 @@ impl ToolRegistry {
 }
 
 /// Direct fs/shell tools (docs/17 § Direct tools: fs/git/shell/test).
+pub mod media;
+
 pub mod direct {
     use super::*;
 

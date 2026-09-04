@@ -9,5 +9,8 @@ serde_json = { workspace = true }
 sha2 = { workspace = true }
 modbit-policy = { path = "../policy" }
 
+[dev-dependencies]
+uuid = { workspace = true }
+
 [lints]
 workspace = true
