@@ -9,9 +9,11 @@
 //! Canonical owner subsystem: domain-events (docs/81). Layout: docs/12.
 
 pub mod commands;
+pub mod index_store;
 pub mod leases;
 pub mod migrations;
 pub mod projections;
+pub mod runtime;
 pub mod store;
 
 pub use commands::{CommandProcessor, Outcome};

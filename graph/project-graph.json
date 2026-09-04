@@ -7202,8 +7202,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0098",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T04:37:42Z",
+   "notes": [
+    {
+     "at": "2026-09-04T04:37:42Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "tool_calls table + record call/result APIs; pairing preserved across restart (QUAL-EV-0098 test: call-1 result intact, call-2 pending visible)."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0099",
@@ -7365,8 +7375,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0108",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T04:37:42Z",
+   "notes": [
+    {
+     "at": "2026-09-04T04:37:42Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "OutputRef spill: 12MB result stored content-addressed with bounded 256-byte preview instead of a giant IPC body; transport frame ceiling (8MiB) already enforced both directions. QUAL-EV-0108 test asserts spill + exact reassembly + separate index.db."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0109",
@@ -8912,8 +8932,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0221",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T04:37:42Z",
+   "notes": [
+    {
+     "at": "2026-09-04T04:37:42Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "RuntimeStore: durable background handles (register/list/stop) with status surviving restart, bounded preview + full OutputRef output (content-addressed, exact reassembly). QUAL-EV-0221 test covers run/list/status/read/stop across restart."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0222",
@@ -24036,5 +24066,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T04:25:34Z"
+ "updated_on": "2026-09-04T04:37:42Z"
 }

@@ -54,7 +54,9 @@ impl IndexStore {
         for (_, sql) in INDEX_MIGRATIONS {
             conn.execute_batch(sql).map_err(IndexError::Sqlite)?;
         }
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     /// Records an index generation (content-addressed external index files
@@ -79,11 +81,9 @@ impl IndexStore {
     pub fn latest_generation(&self) -> Result<Option<u64>, IndexError> {
         let conn = self.conn.lock().expect("index store mutex poisoned");
         let row: Option<i64> = conn
-            .query_row(
-                "SELECT MAX(generation) FROM index_generations",
-                [],
-                |r| r.get(0),
-            )
+            .query_row("SELECT MAX(generation) FROM index_generations", [], |r| {
+                r.get(0)
+            })
             .map_err(IndexError::Sqlite)?;
         Ok(row.map(|v| v as u64))
     }
