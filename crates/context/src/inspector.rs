@@ -33,20 +33,14 @@ impl WindowSlice {
 }
 
 /// The full breakdown of one provider request envelope.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct WindowBreakdown {
     pub slices: Vec<WindowSlice>,
 }
 
-impl Default for WindowBreakdown {
-    fn default() -> Self {
-        Self { slices: Vec::new() }
-    }
-}
-
 impl WindowBreakdown {
     pub fn new() -> Self {
-        Self::default()
+        Self { slices: Vec::new() }
     }
 
     pub fn push(&mut self, slice: WindowSlice) {
