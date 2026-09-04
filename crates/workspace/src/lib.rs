@@ -684,3 +684,21 @@ pub mod change_engine {
         Ok(results)
     }
 }
+
+/// Typed file-change event emitted on every workspace mutation (REQ-EV-0106).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileChangeEvent {
+    pub path: String,
+    pub change_kind: FileChangeKind,
+    pub file_revision: FileRevision,
+    pub workspace_revision: WorkspaceRevision,
+    pub sha256: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FileChangeKind {
+    Created,
+    Modified,
+    Deleted,
+}

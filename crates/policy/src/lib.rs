@@ -313,3 +313,104 @@ pub mod autonomous {
         }
     }
 }
+
+/// Workspace trust is DISTINCT from sandbox grants (REQ-EV-0093). A trusted
+/// repo still cannot use denied network/secret capabilities.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceTrust {
+    pub workspace_root: String,
+    pub trusted: bool,
+}
+
+/// Sandbox grants: fs/network/secret/tool scopes.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct SandboxGrants {
+    pub fs: bool,
+    pub network: bool,
+    pub secrets: bool,
+    pub tools: bool,
+}
+
+/// Checks that workspace trust does NOT grant sandbox capabilities.
+/// Returns Err if the caller assumed trust implies sandbox.
+pub fn check_trust_sandbox_separation(
+    trusted: bool,
+    grants: &SandboxGrants,
+    requested: &str,
+) -> Result<(), String> {
+    let _ = trusted;
+    match requested {
+        "network" => {
+            if !grants.network {
+                return Err("trusted workspace does not grant network access".into());
+            }
+        }
+        "secrets" => {
+            if !grants.secrets {
+                return Err("trusted workspace does not grant secret access".into());
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Permission modes (REQ-EV-0136): friendly modes compile to monotonic
+/// policy. Mode switch requiring user action cannot be triggered by model.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PermissionMode {
+    ReadOnly,
+    Standard,
+    Autonomous,
+}
+
+/// A permission mode change request.
+#[derive(Clone, Debug)]
+pub struct ModeChangeRequest {
+    pub from: PermissionMode,
+    pub to: PermissionMode,
+    pub by_model: bool,
+}
+
+/// Mode changes are monotonic downward (tightening) without user action.
+/// A model cannot increase permissions.
+pub fn validate_mode_change(request: &ModeChangeRequest) -> Result<(), String> {
+    if request.by_model && request.to > request.from {
+        return Err(format!(
+            "model cannot escalate permissions from {:?} to {:?}",
+            request.from, request.to
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod trust_tests {
+    use super::*;
+
+    /// QUAL-EV-0093: trusted repo still cannot use denied network capability.
+    #[test]
+    fn trusted_workspace_cannot_use_denied_network() {
+        let grants = SandboxGrants {
+            fs: true,
+            network: false,
+            secrets: false,
+            tools: true,
+        };
+        let result = check_trust_sandbox_separation(true, &grants, "network");
+        assert!(result.is_err(), "trusted workspace must not grant network");
+    }
+
+    #[test]
+    fn sandbox_grants_are_independent_of_trust() {
+        let grants = SandboxGrants {
+            fs: true,
+            network: true,
+            secrets: false,
+            tools: true,
+        };
+        let result = check_trust_sandbox_separation(true, &grants, "network");
+        assert!(result.is_ok(), "network granted explicitly");
+    }
+}

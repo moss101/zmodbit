@@ -7575,8 +7575,10 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0093",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T12:18:40Z"
   },
   {
    "id": "IMP-EV-0096",
@@ -7589,8 +7591,10 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0096",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T12:18:40Z"
   },
   {
    "id": "IMP-EV-0097",
@@ -7658,8 +7662,10 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0100",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T12:18:40Z"
   },
   {
    "id": "IMP-EV-0101",
@@ -7765,8 +7771,10 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0106",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T12:18:40Z"
   },
   {
    "id": "IMP-EV-0107",
@@ -8236,8 +8244,10 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0136",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T12:18:40Z"
   },
   {
    "id": "IMP-EV-0137",
@@ -24569,5 +24579,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T12:13:46Z"
+ "updated_on": "2026-09-04T12:18:40Z"
 }

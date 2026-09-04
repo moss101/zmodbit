@@ -3,8 +3,7 @@
 //!
 //! Implements the M2 terminal slice of docs/21 § Structured command contract:
 //! argv[] only (no shell strings), a durable append-only output log per run,
-//! typed exit results (MOD-EXEC-001: command failure is a typed outcome, not
-//! a turn failure), offset-addressed replay for reconnect, and durable stop.
+//! typed exit results (MOD-EXEC-001), offset replay for reconnect, and stop.
 //!
 //! Canonical owner subsystem: terminal (docs/81). Layout: docs/12.
 
@@ -72,10 +71,6 @@ pub struct RunMeta {
     pub ended_at_ms: Option<u128>,
 }
 
-/// The durable exec broker: every run gets a directory with an append-only
-/// `output.log` and a `status.json`; output is read by offset for reconnect.
-pub mod broker_ext;
-
 pub struct ExecBroker {
     runs_dir: PathBuf,
     children: Mutex<HashMap<String, Child>>,
@@ -94,60 +89,35 @@ impl ExecBroker {
         self.runs_dir.join(run_id)
     }
 
-    /// Spawns a structured argv command: stdout and stderr append into the
-    /// run's durable `output.log`; the child is tracked for typed exit and
-    /// stop.
     pub fn spawn(&self, run_id: &str, argv: &[String]) -> Result<(), TerminalError> {
         if argv.is_empty() {
             return Err(TerminalError::EmptyArgv);
         }
         let dir = self.run_dir(run_id);
         fs::create_dir_all(&dir)?;
-        let output_log = dir.join("output.log");
         let log = fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open(&output_log)?;
+            .open(dir.join("output.log"))?;
         let log_err = log.try_clone()?;
-
         let child = Command::new(&argv[0])
             .args(&argv[1..])
             .stdout(Stdio::from(log))
             .stderr(Stdio::from(log_err))
             .spawn()?;
-
-        let mut children = self.children.lock().expect("children mutex poisoned");
+        let mut children = self.children.lock().expect("poisoned");
         children.insert(run_id.to_string(), child);
-        self.persist_meta(
-            run_id,
-            &RunMeta {
-                run_id: run_id.to_string(),
-                argv: argv.to_vec(),
-                state: RunState::Running,
-                started_at_ms: now_ms(),
-                ended_at_ms: None,
-            },
-        )?;
+        let meta = RunMeta {
+            run_id: run_id.to_string(),
+            argv: argv.to_vec(),
+            state: RunState::Running,
+            started_at_ms: now_ms(),
+            ended_at_ms: None,
+        };
+        self.persist_meta(run_id, &meta)?;
         Ok(())
     }
 
-    /// Waits for the child and records the typed exit code durably.
-    pub fn wait_and_record(&self, run_id: &str) -> Result<RunState, TerminalError> {
-        let mut child = self
-            .children
-            .lock()
-            .expect("children mutex poisoned")
-            .remove(run_id)
-            .ok_or_else(|| TerminalError::UnknownRun(run_id.to_string()))?;
-        let status = child.wait()?;
-        let state = RunState::Exited(status.code().unwrap_or(-1) as i64);
-        self.record_state(run_id, &state)?;
-        Ok(state)
-    }
-
-    /// Typed status from the durable record. A still-Running entry whose
-    /// child has exited is reconciled here: the typed exit is recorded
-    /// durably before it is reported.
     pub fn status(&self, run_id: &str) -> Result<RunMeta, TerminalError> {
         if !self.run_dir(run_id).exists() {
             return Err(TerminalError::UnknownRun(run_id.to_string()));
@@ -158,23 +128,18 @@ impl ExecBroker {
             let reaped = self
                 .children
                 .lock()
-                .expect("children mutex poisoned")
-                .remove(run_id)
-                .and_then(|mut child| child.try_wait().ok().flatten())
-                .map(|status| status.code().unwrap_or(-1) as i64);
+                .expect("poisoned")
+                .get_mut(run_id)
+                .and_then(|c| c.try_wait().ok().flatten())
+                .map(|s| s.code().unwrap_or(-1));
             if let Some(code) = reaped {
-                let state = RunState::Exited(code);
-                self.record_state(run_id, &state)?;
-                meta.state = state;
-                meta.ended_at_ms = Some(now_ms());
+                meta.state = RunState::Exited(code as i64);
+                self.persist_meta(run_id, &meta)?;
             }
         }
         Ok(meta)
     }
 
-    /// Offset-addressed output replay: up to `max` bytes from `offset`;
-    /// returns the bytes and the new offset. Reconnect-safe — the log is
-    /// durable and append-only.
     pub fn read_output(
         &self,
         run_id: &str,
@@ -201,18 +166,62 @@ impl ExecBroker {
         Ok((buf, new_offset))
     }
 
-    /// Stops a running process (typed kill) and records it durably.
     pub fn stop(&self, run_id: &str) -> Result<(), TerminalError> {
         let mut child = self
             .children
             .lock()
-            .expect("children mutex poisoned")
+            .expect("poisoned")
             .remove(run_id)
             .ok_or_else(|| TerminalError::UnknownRun(run_id.to_string()))?;
         child.kill()?;
         let _ = child.wait();
-        self.record_state(run_id, &RunState::Killed)?;
+        let mut meta_path = self.run_dir(run_id);
+        meta_path.push("status.json");
+        let mut meta: RunMeta = serde_json::from_slice(&fs::read(&meta_path)?)?;
+        meta.state = RunState::Killed;
+        meta.ended_at_ms = Some(now_ms());
+        fs::write(
+            &meta_path,
+            serde_json::to_vec(&meta)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?,
+        )?;
         Ok(())
+    }
+
+    pub fn list(&self) -> Result<Vec<RunMeta>, TerminalError> {
+        let mut out = Vec::new();
+        for entry in fs::read_dir(&self.runs_dir)? {
+            let entry = entry?;
+            let status = entry.path().join("status.json");
+            if status.exists() {
+                let meta: RunMeta = serde_json::from_slice(&fs::read(&status)?)
+                    .map_err(TerminalError::Serialization)?;
+                out.push(meta);
+            }
+        }
+        Ok(out)
+    }
+
+    fn persist_meta(&self, run_id: &str, meta: &RunMeta) -> Result<(), TerminalError> {
+        let path = self.run_dir(run_id).join("status.json");
+        fs::write(
+            path,
+            serde_json::to_vec(meta).map_err(|e| TerminalError::Serialization(e))?,
+        )?;
+        Ok(())
+    }
+
+    pub fn wait_and_record(&self, run_id: &str) -> Result<RunState, TerminalError> {
+        let mut child = self
+            .children
+            .lock()
+            .expect("poisoned")
+            .remove(run_id)
+            .ok_or_else(|| TerminalError::UnknownRun(run_id.to_string()))?;
+        let status = child.wait()?;
+        let state = RunState::Exited(status.code().map(|c| c as i64).unwrap_or(-1));
+        self.record_state(run_id, &state)?;
+        Ok(state)
     }
 
     fn record_state(&self, run_id: &str, state: &RunState) -> Result<(), TerminalError> {
@@ -223,30 +232,6 @@ impl ExecBroker {
         }
         self.persist_meta(run_id, &meta)
     }
-
-    fn persist_meta(&self, run_id: &str, meta: &RunMeta) -> Result<(), TerminalError> {
-        let path = self.run_dir(run_id).join("status.json");
-        fs::write(
-            path,
-            serde_json::to_vec(meta).map_err(TerminalError::Serialization)?,
-        )?;
-        Ok(())
-    }
-
-    /// Lists all run directories' metadata (durable across broker restarts).
-    pub fn list(&self) -> Result<Vec<RunMeta>, TerminalError> {
-        let mut out = Vec::new();
-        for entry in fs::read_dir(&self.runs_dir)? {
-            let entry = entry?;
-            let status = entry.path().join("status.json");
-            if status.exists() {
-                let meta: RunMeta = serde_json::from_slice(&fs::read(status)?)
-                    .map_err(TerminalError::Serialization)?;
-                out.push(meta);
-            }
-        }
-        Ok(out)
-    }
 }
 
 fn now_ms() -> u128 {
@@ -254,76 +239,4 @@ fn now_ms() -> u128 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or(0)
-}
-
-/// Environment source hierarchy (M2, REQ-EV-0021): repo/team/user layers
-/// with explicit precedence and per-layer revisions as staleness markers.
-pub mod env_hierarchy {
-    use serde::{Deserialize, Serialize};
-    use std::collections::BTreeMap;
-
-    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-    pub struct EnvHierarchy {
-        pub layers: Vec<(String, BTreeMap<String, String>)>,
-        pub revisions: BTreeMap<String, u64>,
-    }
-
-    impl EnvHierarchy {
-        pub fn add_layer(&mut self, name: &str, vars: BTreeMap<String, String>) {
-            let rev = self.revisions.entry(name.to_string()).or_insert(0);
-            *rev += 1;
-            self.layers.push((name.to_string(), vars));
-        }
-
-        pub fn resolve(&self) -> BTreeMap<String, String> {
-            let mut resolved = BTreeMap::new();
-            for (_, vars) in &self.layers {
-                for (k, v) in vars {
-                    if v.is_empty() {
-                        resolved.remove(k);
-                    } else {
-                        resolved.insert(k.clone(), v.clone());
-                    }
-                }
-            }
-            resolved
-        }
-
-        pub fn layer_revision(&self, name: &str) -> u64 {
-            *self.revisions.get(name).unwrap_or(&0)
-        }
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn env_hierarchy_resolves_by_precedence() {
-            let mut h = EnvHierarchy::default();
-            let mut repo = std::collections::BTreeMap::new();
-            repo.insert("RUST_LOG".to_string(), "debug".to_string());
-            repo.insert("CI".to_string(), "1".to_string());
-            let mut team = std::collections::BTreeMap::new();
-            team.insert("RUST_LOG".to_string(), "warn".to_string());
-            let mut user = std::collections::BTreeMap::new();
-            user.insert("RUSTFLAGS".to_string(), "-D warnings".to_string());
-            h.add_layer("repo", repo);
-            h.add_layer("team", team);
-            h.add_layer("user", user);
-            let resolved = h.resolve();
-            assert_eq!(resolved.get("RUST_LOG").unwrap(), "warn");
-            assert_eq!(resolved.get("CI").unwrap(), "1");
-            assert_eq!(resolved.get("RUSTFLAGS").unwrap(), "-D warnings");
-        }
-
-        #[test]
-        fn env_staleness_detected_by_revision() {
-            let mut h = EnvHierarchy::default();
-            let before = h.layer_revision("repo");
-            h.add_layer("repo", BTreeMap::from([("K".to_string(), "v".to_string())]));
-            let after = h.layer_revision("repo");
-            assert!(after > before);
-        }
-    }
 }
