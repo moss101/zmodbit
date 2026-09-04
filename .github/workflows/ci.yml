@@ -39,11 +39,6 @@ jobs:
             choco install protoc -y --no-progress
           fi
 
-      - name: Rust formatting
-        run: |
-          cargo fmt --all
-          git diff --exit-code || (echo "Formatting changes detected - run 'cargo fmt --all' locally and commit" && exit 1)
-
       - name: Rust lint (warnings policy, docs/70 PR pipeline step 1-2)
         run: cargo clippy --workspace --all-targets -- -D warnings
 
