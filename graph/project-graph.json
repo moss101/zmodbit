@@ -6256,19 +6256,25 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0015",
    "source": "docs/41",
-   "status": "COMPLETE",
+   "status": "REAL_TESTING",
    "evidence": [
     "run:pending-local",
     "run:PENDING-CI"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T09:51:52Z",
+   "status_changed_on": "2026-09-04T09:52:46Z",
    "notes": [
     {
      "at": "2026-09-04T09:51:21Z",
      "from": "COMPLETE",
      "to": "REAL_TESTING",
      "note": "Evidence placeholder was premature — reverting to REAL_TESTING until the 3-OS CI run for the change-engine batch completes (Actions minutes exhausted; batch queued for CI)."
+    },
+    {
+     "at": "2026-09-04T09:52:46Z",
+     "from": "COMPLETE",
+     "to": "REAL_TESTING",
+     "note": "Evidence correction: previous COMPLETE mark used placeholder evidence 'run:PENDING-CI' — invalid per docs/82. Implementation + tests done and CI-green locally, but the 3-OS CI run for this batch is blocked by Actions minutes exhaustion (private repo). Stays REAL_TESTING until a real CI run validates."
     }
    ]
   },
@@ -24340,5 +24346,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T09:51:52Z"
+ "updated_on": "2026-09-04T09:52:46Z"
 }
