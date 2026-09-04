@@ -226,7 +226,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M2.3` | COMPLETE | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
 | `M2.4` | COMPLETE | Tool Registry + direct `fs/git/shell/test` tools |  |
 | `M2.5` | COMPLETE | Capability Kernel + basic approval flow |  |
-| `M2.6` | NOT_STARTED | Provider Gateway OpenAI + Anthropic streaming |  |
+| `M2.6` | IMPLEMENTING | Provider Gateway OpenAI + Anthropic streaming |  |
 | `M2.7` | NOT_STARTED | Basic Prompt Compiler and one-agent runtime |  |
 | `M2.8` | REAL_TESTING | Verification engine build/test checks |  |
 | `M2.9` | REAL_TESTING | Trusted Code Review Surface |  |
