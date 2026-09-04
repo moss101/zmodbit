@@ -8,6 +8,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]
+modbit-git = { path = "../git" }
 uuid = { workspace = true }
 
 [lints]

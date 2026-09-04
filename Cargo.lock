@@ -505,6 +505,7 @@ version = "0.1.0"
 name = "modbit-terminal"
 version = "0.1.0"
 dependencies = [
+ "modbit-git",
  "serde",
  "serde_json",
  "uuid",
