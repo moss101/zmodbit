@@ -3,11 +3,18 @@ name = "modbit-execd"
 version.workspace = true
 edition.workspace = true
 
+[dependencies]
+modbit-terminal = { path = "../../crates/terminal" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+base64 = "0.22"
+
+[dev-dependencies]
+uuid = { workspace = true }
+
 [[bin]]
 name = "modbit-execd"
 path = "src/main.rs"
-
-[dependencies]
 
 [lints]
 workspace = true

@@ -1140,8 +1140,24 @@
    "milestone": "M2",
    "order": 2,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T06:40:22Z",
+     "from": "NOT_STARTED",
+     "to": "AUDITING",
+     "note": "Audit: crates/terminal empty, services/modbit-execd empty (NOT_FOUND). Reading docs/21 § terminal execution + docs/16 § tool capability."
+    },
+    {
+     "at": "2026-09-04T07:22:11Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "ExecBroker in crates/terminal: durable run dirs (output.log + status.json), structured argv spawn, offset-addressed output replay, typed exit results (Exited/Killed), stop. modbit-execd TCP JSON-line service (spawn/status/read/stop/list) with real broker process. Tests: 7 terminal (typed exit 0/non-zero, offset replay + rehydrate, stop durability, unknown run, list) + 2 execd service over real TCP. Status reconciliation fixed: exited children record typed exits on status."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T07:22:11Z"
   },
   {
    "id": "M2.4",
@@ -1151,8 +1167,18 @@
    "milestone": "M2",
    "order": 3,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T07:22:11Z",
+   "notes": [
+    {
+     "at": "2026-09-04T07:22:11Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "ToolRegistry (fail-closed policy decision required for execution; duplicate rejection; args hash evidence) + direct fs.list/shell.run tools with real fs/process effects; PolicyKernel fail-closed capability kernel (missing grant denies, effect-class mismatch denies, protected paths deny writes even with grant, revoke works). 5 policy + 5 tools tests. Awaiting 3-OS CI."
+    }
+   ]
   },
   {
    "id": "M2.5",
@@ -24208,5 +24234,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T06:35:35Z"
+ "updated_on": "2026-09-04T07:22:11Z"
 }

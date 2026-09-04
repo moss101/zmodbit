@@ -223,8 +223,8 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 |---|---|---|---|
 | `M2.1` | COMPLETE | Workspace File Service with safe paths/revisions |  |
 | `M2.2` | COMPLETE | Git branch/worktree/diff operations |  |
-| `M2.3` | NOT_STARTED | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
-| `M2.4` | NOT_STARTED | Tool Registry + direct `fs/git/shell/test` tools |  |
+| `M2.3` | REAL_TESTING | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
+| `M2.4` | REAL_TESTING | Tool Registry + direct `fs/git/shell/test` tools |  |
 | `M2.5` | NOT_STARTED | Capability Kernel + basic approval flow |  |
 | `M2.6` | NOT_STARTED | Provider Gateway OpenAI + Anthropic streaming |  |
 | `M2.7` | NOT_STARTED | Basic Prompt Compiler and one-agent runtime |  |
