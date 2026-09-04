@@ -74,6 +74,8 @@ pub struct RunMeta {
 
 /// The durable exec broker: every run gets a directory with an append-only
 /// `output.log` and a `status.json`; output is read by offset for reconnect.
+pub mod broker_ext;
+
 pub struct ExecBroker {
     runs_dir: PathBuf,
     children: Mutex<HashMap<String, Child>>,
