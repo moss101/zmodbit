@@ -6006,8 +6006,24 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0010",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T02:50:34Z",
+     "from": "NOT_STARTED",
+     "to": "IMPLEMENTING",
+     "note": "Audit: no offset-keyed resume API (NOT_FOUND). Implementing session-stream resume by monotonic rowid offset + full-rehydrate fallback (projections::rebuild) per REQ-EV-0010."
+    },
+    {
+     "at": "2026-09-04T03:06:00Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Offset-keyed resume: session_events_since(offset, limit) with monotonic rowid offsets; reconnect returns exactly the events produced while away; offset-0 = full-rehydrate fallback (projections::rebuild). QUAL-EV-0010 test: exact stream comparison + fallback."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T03:06:00Z"
   },
   {
    "id": "IMP-EV-0011",
@@ -6580,8 +6596,24 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0054",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T02:50:34Z",
+     "from": "NOT_STARTED",
+     "to": "IMPLEMENTING",
+     "note": "Audit: no lease mechanism (NOT_FOUND). Implementing session_leases table (v3 migration) + acquire/renew with monotonic generation + append_with_lease fencing per REQ-EV-0054."
+    },
+    {
+     "at": "2026-09-04T03:06:00Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "SessionLease + fencing: session_leases table (v3 migration), acquire/renew with monotonic generation, append_with_lease rejects stale writers with StaleLease. QUAL-EV-0054 test: dual resume, only current lease appends."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T03:06:00Z"
   },
   {
    "id": "IMP-EV-0055",
@@ -9362,8 +9394,24 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0273",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T02:50:34Z",
+     "from": "NOT_STARTED",
+     "to": "IMPLEMENTING",
+     "note": "Audit: same gap as 0054. Lease fencing rejects stale-writer appends; dual-mutation-owner test per REQ-EV-0273."
+    },
+    {
+     "at": "2026-09-04T03:06:00Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Lease fencing prevents dual active mutation owners: same fencing test proves the second (stale) client's mutation is rejected. Found+fixed real bug: next_sequence returned 0 for fresh aggregates (MAX NULL handling), breaking lease-fenced appends."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T03:06:00Z"
   },
   {
    "id": "IMP-EV-0274",
@@ -23892,5 +23940,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T02:46:20Z"
+ "updated_on": "2026-09-04T03:06:00Z"
 }

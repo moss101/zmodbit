@@ -42,6 +42,10 @@ pub const MIGRATIONS: &[Migration] = &[
     ",
     ),
     (2, SQL_V2_PROJECTIONS),
+    (
+        crate::leases::MIGRATION_V3_LEASES,
+        crate::leases::SQL_V3_LEASES,
+    ),
 ];
 
 /// Projection tables (docs/31 § Core tables): derived read models, always
@@ -132,6 +136,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 2);
+        assert_eq!(v, 3);
     }
 }

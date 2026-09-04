@@ -227,13 +227,14 @@ fn v1_database_migrates_to_v2_preserving_events() {
         .unwrap();
     }
 
-    // Reopening migrates v1 → v2, preserves events, and rebuilds projections.
+    // Reopening migrates v1 → current, preserves events, and rebuilds
+    // projections.
     let store = EventStore::open(&path).unwrap();
     store.with_conn(|conn| {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 2, "migration applied");
+        assert_eq!(v, 3, "migration applied through the lease tables");
     });
     let sessions = all_session_aggregates(&store);
     assert_eq!(sessions.len(), 1);
