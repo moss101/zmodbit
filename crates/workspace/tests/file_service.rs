@@ -70,6 +70,7 @@ fn symlink_escape_is_rejected() {
     std::fs::remove_dir_all(outside).ok();
 }
 
+#[cfg(unix)]
 fn tempfile_dir(tag: &str) -> PathBuf {
     let unique = uuid::Uuid::now_v7().simple().to_string()[..8].to_string();
     let mut path = std::env::temp_dir();
