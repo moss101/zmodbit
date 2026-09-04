@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 65,
+    "root_and_tooling": 66,
     "docs_bytes": 508136
   },
   "sections": [
@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 618431,
-      "sha256": "665a1c5130b9373d9f9577de2a7457eafac6d894bc1413626fe1995aea97cce0"
+      "bytes": 619136,
+      "sha256": "24103d0b0058b21f7847fc09a4b6717f08d2f36c3f8b39fbfc1bff34016e77a0"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -736,8 +736,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 2801,
-      "sha256": "70fb6e05f25e930055eca4710a9c36e28b9a3be73ee37072804865e4302fa412"
+      "bytes": 2984,
+      "sha256": "21a25c6b6729e5457261ee403ba7251045c3111b90fce01ec385b33d6bca0f3e"
     },
     {
       "path": "Cargo.toml",
@@ -1008,6 +1008,11 @@
       "path": "tools/coverage-guard.py",
       "bytes": 11760,
       "sha256": "72cd433655fd4afa141d6c663216838a1c6dbf45f004c42129230afbb2f85247"
+    },
+    {
+      "path": "tools/examples_runner.py",
+      "bytes": 3505,
+      "sha256": "3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4"
     }
   ],
   "renames_v3_to_v3_1": {

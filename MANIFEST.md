@@ -105,14 +105,14 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 618431 | `665a1c5130b9373d9f9577de2a7457eafac6d894bc1413626fe1995aea97cce0` |
+| `graph/project-graph.json` | project driver graph with live status | 619136 | `24103d0b0058b21f7847fc09a4b6717f08d2f36c3f8b39fbfc1bff34016e77a0` |
 | `graph/PROJECT_GRAPH.md` | human view of the graph | 22203 | `e209c5d501db73b4a00a9902a414ac944b6303a927cab1321ade27ce2a09f41b` |
 | `tools/build_manifest.py` | regenerates this manifest | 14670 | `3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
 | `tools/check_dossier.py` | integrity gate | 8995 | `0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46` |
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
-| `.github/workflows/ci.yml` |  | 2801 | `70fb6e05f25e930055eca4710a9c36e28b9a3be73ee37072804865e4302fa412` |
+| `.github/workflows/ci.yml` |  | 2984 | `21a25c6b6729e5457261ee403ba7251045c3111b90fce01ec385b33d6bca0f3e` |
 | `Cargo.toml` |  | 484 | `0e74629caa64c7d248556e7c48acb53e70da550c36c99c20948504b8fd6995a7` |
 | `pnpm-workspace.yaml` |  | 93 | `4f1844ac535cd5c2607091352d8e97cd8b04a48acaf48fb69674de6597a1c1aa` |
 | `package.json` |  | 278 | `36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c` |
@@ -167,6 +167,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/ui/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
 | `tools/architecture-lint/lint.py` |  | 10866 | `59dc7f68e5725574d5dcc82ca5b618de8d6d0ace244d3b627b221222e2a1d481` |
 | `tools/coverage-guard.py` |  | 11760 | `72cd433655fd4afa141d6c663216838a1c6dbf45f004c42129230afbb2f85247` |
+| `tools/examples_runner.py` |  | 3505 | `3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4` |
 
 ## Rename map (V3 flat numbering → V3.1 `docs/`)
 
