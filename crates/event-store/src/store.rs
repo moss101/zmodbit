@@ -314,6 +314,39 @@ impl EventStore {
         Ok(out)
     }
 
+    /// Global-offset event resume (REQ-EV-0010 generalized): events across
+    /// ALL aggregates committed after `after_offset`, ordered by the same
+    /// monotonic offset. Powers the SSE daemon's multi-client replay.
+    pub fn events_since_global(
+        &self,
+        after_offset: u64,
+        limit: usize,
+    ) -> Result<(Vec<EventEnvelope>, u64), StoreError> {
+        let conn = self.conn.lock().expect("event store mutex poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT rowid, event_id, session_id, aggregate_type, aggregate_id, sequence,
+                    event_type, schema_version, occurred_at, actor_type, actor_id,
+                    causation_id, correlation_id, payload_inline, payload_object_hash,
+                    integrity_hash
+             FROM events WHERE rowid > ?1 ORDER BY rowid LIMIT ?2",
+        )?;
+        let rows = stmt
+            .query_map(
+                params![after_offset as i64, limit as i64],
+                crate::store::map_event_row_with_offset,
+            )?
+            .collect::<Result<Vec<(i64, EventRow)>, rusqlite::Error>>()?;
+
+        let mut out = Vec::new();
+        let mut last_offset = after_offset;
+        for (offset, row) in rows {
+            let envelope = reconstruct_envelope(row)?;
+            last_offset = offset as u64;
+            out.push(envelope);
+        }
+        Ok((out, last_offset))
+    }
+
     /// Lease-fenced append (REQ-EV-0054/0273): the events are appended only
     /// if `lease_id` is still the session's current mutation owner. Stale
     /// writers lose with `StaleLease`; nothing partial is committed.
@@ -390,6 +423,31 @@ pub(crate) struct EventRow(
     pub Option<String>,
     pub String,
 );
+
+pub(crate) fn map_event_row_with_offset(
+    r: &rusqlite::Row<'_>,
+) -> rusqlite::Result<(i64, EventRow)> {
+    Ok((
+        r.get(0)?,
+        EventRow(
+            r.get(1)?,
+            r.get(2)?,
+            r.get(3)?,
+            r.get(4)?,
+            r.get(5)?,
+            r.get(6)?,
+            r.get(7)?,
+            r.get(8)?,
+            r.get(9)?,
+            r.get(10)?,
+            r.get(11)?,
+            r.get(12)?,
+            r.get(13)?,
+            r.get(14)?,
+            r.get(15)?,
+        ),
+    ))
+}
 
 pub(crate) fn map_event_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<EventRow> {
     Ok(EventRow(

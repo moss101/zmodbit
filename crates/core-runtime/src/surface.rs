@@ -15,6 +15,7 @@ use modbit_event_store::{CommandProcessor, EventStore};
 use modbit_protocol::modbit::protocol::v1 as pb;
 
 /// Core services shared by the SurfaceProtocol dispatch loop.
+#[derive(Clone)]
 pub struct CoreServices {
     store: Arc<EventStore>,
     processor: CommandProcessor,

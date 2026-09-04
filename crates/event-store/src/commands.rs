@@ -25,6 +25,7 @@ pub enum Outcome {
     Rejected { reason: String },
 }
 
+#[derive(Clone)]
 pub struct CommandProcessor {
     store: Arc<EventStore>,
 }

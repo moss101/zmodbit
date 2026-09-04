@@ -8605,8 +8605,24 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0192",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T05:28:34Z",
+     "from": "NOT_STARTED",
+     "to": "IMPLEMENTING",
+     "note": "Audit: no daemon/HTTP+SSE (NOT_FOUND). Implementing multi-client event daemon over std TCP per docs/30 SubscribeEvents + docs/33 backpressure: per-client bounded queues, offset replay, never blocking Core."
+    },
+    {
+     "at": "2026-09-04T05:48:21Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Daemon HTTP+SSE: GET /events?since=offset as bounded-batch SSE stream with slow-client replay, GET /fleet JSON snapshot, POST /commands through the idempotent processor (413 on >8MiB bodies). Multi-client test: two concurrent SSE clients both receive the durable event; commands endpoint applies and fleet reflects."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T05:48:21Z"
   },
   {
    "id": "IMP-EV-0193",
@@ -24139,5 +24155,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T05:27:17Z"
+ "updated_on": "2026-09-04T05:48:21Z"
 }
