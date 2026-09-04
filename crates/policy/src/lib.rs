@@ -14,9 +14,12 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
+pub mod admin_precedence;
 pub mod approvals;
 pub mod capability_set;
 pub mod device_policy;
+pub mod patch_gate;
+pub mod policy_before_exec;
 pub use approvals::{intent_hash, Approval, ApprovalError, ApprovalState, ApprovalStore};
 pub use capability_set::{check_e2e_capability, AdvertisedCapability, ProtocolCapabilitySet};
 pub use device_policy::{
