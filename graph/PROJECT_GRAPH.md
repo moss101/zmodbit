@@ -43,7 +43,7 @@ One JSON file that answers *what exists, what depends on what, what proves what,
 ```mermaid
 flowchart LR
   M0["M0<br/>Repository and authority<br/>6/6 done"]
-  M1["M1<br/>Durable local shell and Core<br/>5/31 done"]
+  M1["M1<br/>Durable local shell and Core<br/>8/31 done"]
   M2["M2<br/>Real local engineering loop<br/>0/72 done"]
   M3["M3<br/>Context intelligence<br/>0/54 done"]
   M4["M4<br/>Durable recovery spine<br/>0/11 done"]
@@ -91,7 +91,7 @@ Critical path (reliability spine): **M0 → M1 → M2 → M4**. Do not start bro
 | Milestone | State | Unblocked | Milestone tasks | IMP-EV tasks | Complete | Blocked | Depends on | Proof |
 |---|---|---|---:|---:|---:|---:|---|---|
 | M0 Repository and authority | COMPLETE | yes | 4 | 2 | 6 | 0 | — | clean clone build + architecture lint |
-| M1 Durable local shell and Core | IN_PROGRESS | yes | 5 | 26 | 5 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
+| M1 Durable local shell and Core | IN_PROGRESS | yes | 5 | 26 | 8 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
 | M2 Real local engineering loop | NOT_STARTED | no | 10 | 62 | 0 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
 | M3 Context intelligence | NOT_STARTED | no | 9 | 45 | 0 | 0 | M2 | profile A/B/C benchmark plus retrieval-before-edit visible in task evidence. |
 | M4 Durable recovery spine | NOT_STARTED | no | 6 | 5 | 0 | 0 | M2 | E2E-004/005/006/007/008. |
