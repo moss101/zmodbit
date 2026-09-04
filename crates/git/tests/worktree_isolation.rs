@@ -49,6 +49,9 @@ fn git(root: &Path, args: &[&str]) -> String {
 fn parallel_worktrees_never_cross_write() {
     let main_root = repo_root("main");
     let repo = GitRepo::init(&main_root).unwrap();
+    // Byte-exact isolation assertions: no line-ending translation (linked
+    // worktrees share the repo config).
+    repo.set_config("core.autocrlf", "false").unwrap();
     write(&main_root, "shared.txt", "base\n");
     write(&main_root, "README.md", "docs\n");
     repo.commit_all("base").unwrap();
