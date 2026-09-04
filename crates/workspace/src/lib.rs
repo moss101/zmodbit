@@ -8,6 +8,7 @@
 //!
 //! Canonical owner subsystem: workspace-git (docs/81). Layout: docs/12.
 
+pub mod handoff;
 pub mod review;
 pub use review::{apply_review as review_apply, ReviewedHunk};
 use std::collections::BTreeMap;

@@ -233,3 +233,80 @@ mod tests {
         assert!(!k.check(&request, &[]).is_allow(), "revoked grants deny");
     }
 }
+
+/// Capability-oriented autonomous mode (M2, REQ-EV-0045): unattended
+/// execution uses an explicit bounded capability profile — never bypass/yolo.
+pub mod autonomous {
+    use serde::{Deserialize, Serialize};
+
+    /// Maximum effect class an autonomous run can use.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum MaxEffect {
+        ReadOnly,
+        Write,
+        External,
+    }
+
+    /// Explicit bounded capability profile for unattended runs.
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct AutonomousProfile {
+        pub profile_id: String,
+        pub max_effect: MaxEffect,
+        pub allowed_tool_prefixes: Vec<String>,
+        pub protected_path_prefixes: Vec<String>,
+        pub max_concurrent: u32,
+    }
+
+    /// Checks whether a tool invocation is within the profile ceiling.
+    pub fn check_autonomous(
+        profile: &AutonomousProfile,
+        tool: &str,
+        is_write: bool,
+    ) -> Result<(), String> {
+        let write_allowed = profile.max_effect >= MaxEffect::Write;
+        if is_write && !write_allowed {
+            return Err(format!(
+                "profile {} does not allow write operations",
+                profile.profile_id
+            ));
+        }
+        let allowed = profile
+            .allowed_tool_prefixes
+            .iter()
+            .any(|prefix| tool.starts_with(prefix.as_str()));
+        if !allowed {
+            return Err(format!("tool {tool:?} not in profile allowlist"));
+        }
+        Ok(())
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn profile() -> AutonomousProfile {
+            AutonomousProfile {
+                profile_id: "safe-run".into(),
+                max_effect: MaxEffect::Write,
+                allowed_tool_prefixes: vec!["fs.".into(), "git.".into()],
+                protected_path_prefixes: vec!["/protected".into()],
+                max_concurrent: 2,
+            }
+        }
+
+        #[test]
+        fn autonomous_mode_rejects_unlisted_tools() {
+            let p = profile();
+            assert!(check_autonomous(&p, "fs.read", false).is_ok());
+            assert!(check_autonomous(&p, "git.commit", true).is_ok());
+            assert!(check_autonomous(&p, "shell.run", true).is_err());
+        }
+
+        #[test]
+        fn autonomous_mode_rejects_protected_paths() {
+            let p = profile();
+            assert!(check_autonomous(&p, "/protected/secret", true).is_err());
+        }
+    }
+}
