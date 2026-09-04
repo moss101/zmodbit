@@ -188,8 +188,24 @@ mod conformance {
             .unwrap();
         broker.wait_and_record("run-cwd").unwrap();
         let (bytes, _) = broker.read_output("run-cwd", 0, usize::MAX).unwrap();
-        let reported = std::path::PathBuf::from(String::from_utf8_lossy(&bytes).trim());
-        assert_eq!(reported, workdir, "child must observe the contract cwd");
+        let reported = String::from_utf8_lossy(&bytes).trim().to_string();
+        // Windows: canonicalize() yields \\?\C:\... but `cd` reports the
+        // plain form; compare case-insensitively without the prefix.
+        #[cfg(windows)]
+        let expected = workdir
+            .to_string_lossy()
+            .trim_start_matches(r"\\?\")
+            .to_lowercase();
+        #[cfg(not(windows))]
+        let expected = workdir.to_string_lossy().to_string();
+        #[cfg(windows)]
+        let reported_cmp = reported.to_lowercase();
+        #[cfg(not(windows))]
+        let reported_cmp = reported.clone();
+        assert_eq!(
+            reported_cmp, expected,
+            "child must observe the contract cwd"
+        );
     }
 
     /// env: the child observes the explicit environment additions.
