@@ -858,8 +858,11 @@
    "milestone": "M0",
    "order": 2,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33820576307",
+    "commit:7a9b188"
+   ],
    "notes": [
     {
      "at": "2026-09-03T23:44:05Z",
@@ -872,10 +875,16 @@
      "from": "AUDITING",
      "to": "REAL_TESTING",
      "note": "Implemented: proto/modbit/protocol/v1/{common,domain,commands,events}.proto (CommandEnvelope/EventEnvelope per docs/30); prost codegen via crates/protocol/build.rs; ts-proto bindings in packages/surface-protocol/src/generated (committed); golden fixtures proto/fixtures/*.bin written by Rust encoder; Rust tests 5/5 (determinism, round-trips, fixture match); TS wire-compat 6/6 (decode Rust bytes, byte-identical re-encode both messages, TS-built messages match fixture); CI regenerates bindings and asserts zero drift (docs/70). Awaiting 3-OS CI."
+    },
+    {
+     "at": "2026-09-04T00:11:38Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Round-trip compatibility proven: Rust golden fixtures decoded+re-encoded byte-identically by TS (6 tests), TS-built messages byte-match Rust, Rust round-trips 5/5; CI regenerates bindings on 3 OSes and asserts zero drift vs committed; vendored timestamp.proto pins WKT across protoc distributions."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-03T23:55:42Z"
+   "status_changed_on": "2026-09-04T00:11:38Z"
   },
   {
    "id": "M1.1",
@@ -23745,5 +23754,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-03T23:55:42Z"
+ "updated_on": "2026-09-04T00:11:38Z"
 }
