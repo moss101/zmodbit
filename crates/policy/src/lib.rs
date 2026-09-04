@@ -26,8 +26,9 @@ pub use device_policy::{
     merge_device_policy, revalidate, DevicePolicy, PolicySnapshot, ProjectConfig,
 };
 
-/// Effect class of a tool (docs/16 § Tool capability).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// Effect class of a tool (docs/16 § Tool capability). Ordered from least
+/// to most privileged so profiles can express a ceiling.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EffectClass {
     ReadOnly,
@@ -239,77 +240,181 @@ mod tests {
 
 /// Capability-oriented autonomous mode (M2, REQ-EV-0045): unattended
 /// execution uses an explicit bounded capability profile — never bypass/yolo.
+/// The profile is a hard ceiling: a run cannot request, borrow, or escalate
+/// to any privilege above it; the only way to change the ceiling is an
+/// operator installing a different explicit profile before the run.
 pub mod autonomous {
+    use crate::EffectClass;
     use serde::{Deserialize, Serialize};
 
-    /// Maximum effect class an autonomous run can use.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-    #[serde(rename_all = "snake_case")]
-    pub enum MaxEffect {
-        ReadOnly,
-        Write,
-        External,
-    }
-
-    /// Explicit bounded capability profile for unattended runs.
+    /// Explicit bounded capability profile for unattended runs. Constructed
+    /// only by the operator (no runtime constructor raises any field).
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct AutonomousProfile {
         pub profile_id: String,
-        pub max_effect: MaxEffect,
+        /// Hard ceiling: every invocation must satisfy
+        /// `effect <= max_effect`.
+        pub max_effect: EffectClass,
+        /// Tools the run may call (prefix match, e.g. "fs.", "git.").
         pub allowed_tool_prefixes: Vec<String>,
+        /// Paths writes/external effects may never touch, even below the
+        /// ceiling.
         pub protected_path_prefixes: Vec<String>,
         pub max_concurrent: u32,
+        /// Hard resource/budget bound for the run.
+        pub max_total_output_bytes: u64,
     }
 
-    /// Checks whether a tool invocation is within the profile ceiling.
-    pub fn check_autonomous(
+    /// One invocable unit inside an autonomous run.
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct Invocation<'a> {
+        pub tool: &'a str,
+        pub effect: EffectClass,
+        /// Paths the invocation touches (empty for pure read/compute tools).
+        pub paths: &'a [&'a str],
+    }
+
+    /// Checks one invocation against the profile ceiling. Denial reasons are
+    /// explicit; there is no "force" or "override" parameter.
+    pub fn authorize(
         profile: &AutonomousProfile,
-        tool: &str,
-        is_write: bool,
+        invocation: &Invocation<'_>,
     ) -> Result<(), String> {
-        let write_allowed = profile.max_effect >= MaxEffect::Write;
-        if is_write && !write_allowed {
+        if invocation.effect > profile.max_effect {
             return Err(format!(
-                "profile {} does not allow write operations",
-                profile.profile_id
+                "profile {} ceilings at {:?}; invocation of {:?} needs {:?} — escalation is not available to autonomous runs",
+                profile.profile_id, profile.max_effect, invocation.tool, invocation.effect
             ));
         }
         let allowed = profile
             .allowed_tool_prefixes
             .iter()
-            .any(|prefix| tool.starts_with(prefix.as_str()));
+            .any(|prefix| invocation.tool.starts_with(prefix.as_str()));
         if !allowed {
-            return Err(format!("tool {tool:?} not in profile allowlist"));
+            return Err(format!(
+                "tool {:?} not in profile {} allowlist",
+                invocation.tool, profile.profile_id
+            ));
+        }
+        if invocation.effect >= EffectClass::Write {
+            for path in invocation.paths {
+                for prefix in &profile.protected_path_prefixes {
+                    if path.starts_with(prefix.as_str()) {
+                        return Err(format!(
+                            "profile {} protects {prefix:?}; refusing {effect:?} on {path:?}",
+                            profile.profile_id,
+                            effect = invocation.effect
+                        ));
+                    }
+                }
+            }
         }
         Ok(())
+    }
+
+    /// A request to raise the ceiling mid-run. The type exists so the
+    /// refusal is part of the API surface: autonomous runs have NO path to
+    /// higher privilege — this always denies (docs/16: no bypass/yolo).
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct EscalationRequest<'a> {
+        pub run_id: &'a str,
+        pub requested: EffectClass,
+        pub justification: &'a str,
+    }
+
+    pub fn evaluate_escalation(_request: &EscalationRequest<'_>) -> Result<(), String> {
+        Err(
+            "autonomous runs cannot escalate: install an explicit operator-authored \
+             profile before the run instead"
+                .to_string(),
+        )
     }
 
     #[cfg(test)]
     mod tests {
         use super::*;
 
-        fn profile() -> AutonomousProfile {
+        fn profile(max_effect: EffectClass) -> AutonomousProfile {
             AutonomousProfile {
                 profile_id: "safe-run".into(),
-                max_effect: MaxEffect::Write,
+                max_effect,
                 allowed_tool_prefixes: vec!["fs.".into(), "git.".into()],
                 protected_path_prefixes: vec!["/protected".into()],
                 max_concurrent: 2,
+                max_total_output_bytes: 10 * 1024 * 1024,
             }
+        }
+
+        fn invocation<'a>(
+            tool: &'a str,
+            effect: EffectClass,
+            paths: &'a [&'a str],
+        ) -> Invocation<'a> {
+            Invocation {
+                tool,
+                effect,
+                paths,
+            }
+        }
+
+        /// The ceiling is a strict order: read < write < external.
+        #[test]
+        fn autonomous_run_cannot_exceed_profile_ceiling() {
+            let p = profile(EffectClass::Write);
+            assert!(authorize(&p, &invocation("fs.read", EffectClass::ReadOnly, &[])).is_ok());
+            assert!(authorize(
+                &p,
+                &invocation("fs.write", EffectClass::Write, &["src/lib.rs"])
+            )
+            .is_ok());
+            // External exceeds a Write ceiling: denied, always.
+            let external = invocation("git.push", EffectClass::External, &[]);
+            assert!(authorize(&p, &external).is_err());
+
+            let ro = profile(EffectClass::ReadOnly);
+            assert!(authorize(&ro, &invocation("fs.write", EffectClass::Write, &["x"])).is_err());
         }
 
         #[test]
         fn autonomous_mode_rejects_unlisted_tools() {
-            let p = profile();
-            assert!(check_autonomous(&p, "fs.read", false).is_ok());
-            assert!(check_autonomous(&p, "git.commit", true).is_ok());
-            assert!(check_autonomous(&p, "shell.run", true).is_err());
+            let p = profile(EffectClass::External);
+            assert!(authorize(&p, &invocation("shell.run", EffectClass::External, &[])).is_err());
+            assert!(authorize(&p, &invocation("git.commit", EffectClass::Write, &[])).is_ok());
         }
 
+        /// Protected paths are enforced even when the effect is below the
+        /// ceiling — the allowlist does not override protection.
         #[test]
         fn autonomous_mode_rejects_protected_paths() {
-            let p = profile();
-            assert!(check_autonomous(&p, "/protected/secret", true).is_err());
+            let p = profile(EffectClass::External);
+            assert!(authorize(
+                &p,
+                &invocation("fs.write", EffectClass::Write, &["/protected/secret"])
+            )
+            .is_err());
+            assert!(authorize(
+                &p,
+                &invocation("fs.write", EffectClass::Write, &["src/main.rs"])
+            )
+            .is_ok());
+            // Reads may inspect protected paths (they leak nothing).
+            assert!(authorize(
+                &p,
+                &invocation("fs.read", EffectClass::ReadOnly, &["/protected/secret"])
+            )
+            .is_ok());
+        }
+
+        /// There is no bypass: escalation requests are denied unconditionally,
+        /// regardless of justification.
+        #[test]
+        fn escalation_is_refused_without_exception() {
+            let req = EscalationRequest {
+                run_id: "run-1",
+                requested: EffectClass::External,
+                justification: "the model says it needs network access urgently",
+            };
+            assert!(evaluate_escalation(&req).is_err());
         }
     }
 }

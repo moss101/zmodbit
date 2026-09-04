@@ -431,6 +431,7 @@ dependencies = [
 name = "modbit-git"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "uuid",
 ]
 
