@@ -105,6 +105,7 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
                             format!("exited({code})")
                         }
                         modbit_terminal::RunState::Killed => "killed".to_string(),
+                        modbit_terminal::RunState::Interrupted => "interrupted".to_string(),
                     };
                     serde_json::json!({ "ok": true, "state": state, "argv": meta.argv }).to_string()
                 }

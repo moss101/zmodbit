@@ -63,6 +63,10 @@ pub enum RunState {
     Running,
     Exited(i64),
     Killed,
+    /// The run ENDED while detached from this broker (e.g. after a UI
+    /// restart): we know it is gone, but the exit code is unobservable.
+    /// Docs/21: surface the unobservable case explicitly — never guess.
+    Interrupted,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -72,6 +76,10 @@ pub struct RunMeta {
     pub state: RunState,
     pub started_at_ms: u128,
     pub ended_at_ms: Option<u128>,
+    /// OS process id, recorded so a RESTARTED UI can reattach to and
+    /// cancel a detached run (REQ-EV-0027/0135). Absent in legacy files.
+    #[serde(default)]
+    pub pid: Option<u32>,
 }
 
 pub struct ExecBroker {
@@ -128,6 +136,7 @@ impl ExecBroker {
             .stderr(Stdio::from(log_err))
             .spawn()?;
         let mut children = self.children.lock().expect("poisoned");
+        let pid = child.id();
         children.insert(run_id.to_string(), child);
         let meta = RunMeta {
             run_id: run_id.to_string(),
@@ -135,6 +144,7 @@ impl ExecBroker {
             state: RunState::Running,
             started_at_ms: now_ms(),
             ended_at_ms: None,
+            pid: Some(pid),
         };
         self.persist_meta(run_id, &meta)?;
         Ok(())
@@ -157,6 +167,15 @@ impl ExecBroker {
             if let Some(code) = reaped {
                 meta.state = RunState::Exited(code as i64);
                 self.persist_meta(run_id, &meta)?;
+            } else if let Some(pid) = meta.pid {
+                // Detached run: this broker owns no child handle. Probe
+                // liveness by pid; if the process is gone, the run ended
+                // while detached — typed Interrupted, not a stuck Running.
+                if !pid_alive(pid) {
+                    meta.state = RunState::Interrupted;
+                    meta.ended_at_ms = Some(now_ms());
+                    self.persist_meta(run_id, &meta)?;
+                }
             }
         }
         Ok(meta)
@@ -188,15 +207,27 @@ impl ExecBroker {
         Ok((buf, new_offset))
     }
 
+    /// Stops a run: through the in-memory child handle when this broker
+    /// owns it, or by the recorded OS pid when the run was spawned by a
+    /// previous (restarted) UI — detach/reattach never orphans a process
+    /// (REQ-EV-0027/0135).
     pub fn stop(&self, run_id: &str) -> Result<(), TerminalError> {
-        let mut child = self
-            .children
-            .lock()
-            .expect("poisoned")
-            .remove(run_id)
-            .ok_or_else(|| TerminalError::UnknownRun(run_id.to_string()))?;
-        child.kill()?;
-        let _ = child.wait();
+        let in_memory = self.children.lock().expect("poisoned").remove(run_id);
+        if let Some(mut child) = in_memory {
+            child.kill()?;
+            let _ = child.wait();
+        } else {
+            let meta_path = self.run_dir(run_id).join("status.json");
+            let meta: RunMeta = serde_json::from_slice(&fs::read(&meta_path)?)?;
+            let pid = meta
+                .pid
+                .ok_or_else(|| TerminalError::UnknownRun(run_id.to_string()))?;
+            if !kill_pid(pid) {
+                return Err(TerminalError::Io(std::io::Error::other(format!(
+                    "failed to kill detached run {run_id} (pid {pid})"
+                ))));
+            }
+        }
         let mut meta_path = self.run_dir(run_id);
         meta_path.push("status.json");
         let mut meta: RunMeta = serde_json::from_slice(&fs::read(&meta_path)?)?;
@@ -260,4 +291,49 @@ fn now_ms() -> u128 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or(0)
+}
+
+/// Terminates an OS process by pid — the detach/reattach cancel path for
+/// runs this broker process does not own.
+fn kill_pid(pid: u32) -> bool {
+    #[cfg(windows)]
+    {
+        Command::new("taskkill")
+            .args(["/F", "/PID", &pid.to_string()])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+    #[cfg(not(windows))]
+    {
+        Command::new("kill")
+            .arg(pid.to_string())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+}
+
+/// Reports whether an OS pid is ALIVE RUNNING — a zombie counts as dead:
+/// it no longer executes, it is merely an unreaped pid entry.
+pub fn pid_alive(pid: u32) -> bool {
+    #[cfg(windows)]
+    {
+        Command::new("tasklist")
+            .args(["/FI", &format!("PID eq {pid}")])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).contains(&pid.to_string()))
+            .unwrap_or(false)
+    }
+    #[cfg(not(windows))]
+    {
+        Command::new("ps")
+            .args(["-o", "stat=", "-p", &pid.to_string()])
+            .output()
+            .map(|o| {
+                let stat = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                !stat.is_empty() && !stat.starts_with('Z')
+            })
+            .unwrap_or(false)
+    }
 }
