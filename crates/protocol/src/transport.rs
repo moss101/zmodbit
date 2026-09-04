@@ -138,8 +138,12 @@ impl EndpointName {
     #[cfg(windows)]
     pub fn namespace(name: &str) -> Result<Self, TransportError> {
         use interprocess::local_socket::{GenericNamespaced, ToNsName};
+        // Namespace names must be 'static for interprocess (they are stored
+        // without allocation); callers create at most a handful per process,
+        // so leaking the small string is intentional and bounded.
+        let leaked: &'static str = Box::leak(name.to_string().into_boxed_str());
         Ok(Self {
-            inner: name.to_ns_name::<GenericNamespaced>().map_err(io_other)?,
+            inner: leaked.to_ns_name::<GenericNamespaced>().map_err(io_other)?,
         })
     }
 
