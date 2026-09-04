@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 585018,
-      "sha256": "2e3eda93a0ebef1990aeb74bb60fc1bc6025bbc172ff7e556301a9d57c0b6c5f"
+      "bytes": 585548,
+      "sha256": "b174fe5af7375ebdc67e0254664a10d4916568c19752d450effa0cc31f69698f"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22218,
-      "sha256": "46fe6b1c3dd27734443787b13e932f85fcfb396cc877835d7a25f3349b84aa9b"
+      "bytes": 22214,
+      "sha256": "55709279cf93bf5d4cf434ae70299106c34154f1ef5a2ee7b8ec9ba8bba9840c"
     },
     {
       "path": "tools/build_manifest.py",
@@ -781,8 +781,8 @@
     },
     {
       "path": "apps/desktop/electron/surface-client.cjs",
-      "bytes": 10259,
-      "sha256": "d3f449be4ee002b494e0eefb7949596a10af5538788efa980572de09bb6affdf"
+      "bytes": 10525,
+      "sha256": "8205a7250a43acfc48fc4b63009a5edbafe394c7e719a939c39c95306c2bb773"
     },
     {
       "path": "apps/desktop/index.html",

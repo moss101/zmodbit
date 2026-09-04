@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 585018 | `2e3eda93a0ebef1990aeb74bb60fc1bc6025bbc172ff7e556301a9d57c0b6c5f` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22218 | `46fe6b1c3dd27734443787b13e932f85fcfb396cc877835d7a25f3349b84aa9b` |
+| `graph/project-graph.json` | project driver graph with live status | 585548 | `b174fe5af7375ebdc67e0254664a10d4916568c19752d450effa0cc31f69698f` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22214 | `55709279cf93bf5d4cf434ae70299106c34154f1ef5a2ee7b8ec9ba8bba9840c` |
 | `tools/build_manifest.py` | regenerates this manifest | 14670 | `3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
@@ -121,7 +121,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/dist/index.html` |  | 448 | `2aa9b4e72d4b523c2dabe64bb20fc853c3a29b9e2c4d1e61b9d5ed87930afdfd` |
 | `apps/desktop/electron/main.cjs` |  | 3749 | `e46925411277c8e18515ca9e5eb69b8bd262343be799dcdc462a7c30824e231e` |
 | `apps/desktop/electron/preload.cjs` |  | 554 | `1463ea7284acf481f5a112524fbb13aad50d386a915af1f14f8759836f3b5ef0` |
-| `apps/desktop/electron/surface-client.cjs` |  | 10259 | `d3f449be4ee002b494e0eefb7949596a10af5538788efa980572de09bb6affdf` |
+| `apps/desktop/electron/surface-client.cjs` |  | 10525 | `8205a7250a43acfc48fc4b63009a5edbafe394c7e719a939c39c95306c2bb773` |
 | `apps/desktop/index.html` |  | 348 | `fe3a3fc8fb9f256a4f651b6252eede9328674eaef7d67dc9ebba05e3366b0f5d` |
 | `apps/desktop/package.json` |  | 485 | `e29470ae01c6516082c8a466b4b361a55c9a76b4605afa9a4b2198f965fafce8` |
 | `apps/desktop/src/App.tsx` |  | 2869 | `8a145353852d4ee9c07992e13159d842340be509aa6b5a90a874403256c80bae` |
