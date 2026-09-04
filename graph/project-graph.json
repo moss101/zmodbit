@@ -966,8 +966,11 @@
    "milestone": "M1",
    "order": 2,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33825790448",
+    "commit:f522f4c"
+   ],
    "notes": [
     {
      "at": "2026-09-04T01:06:14Z",
@@ -980,10 +983,16 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Implemented authenticated framed-protobuf transport per docs/30 § Local SurfaceProtocol: UDS (unix) / named pipe (windows) via interprocess; boot-scoped BootSecret (getrandom); Challenge->Hello->AuthResult handshake with HMAC-SHA256 over both nonces + version (constant-time verify; secret never on wire); capability negotiation (major mismatch => read_only flag per docs/30 Version compatibility; minor = min). 8MiB frame bound. 3 real-socket integration tests: wrong-secret rejected + server survives, version negotiation read-only, 25-frame round-trip of canonical CommandEnvelope. Awaiting 3-OS CI."
+    },
+    {
+     "at": "2026-09-04T01:30:28Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Authenticated framed-protobuf transport live on all 3 OSes: UDS (unix) / named pipe (windows), boot-secret HMAC handshake (constant-time, secret never on wire), capability negotiation (major mismatch => read_only), 8 MiB frame bound; real-socket tests prove auth rejection without secret + server survival + 25-frame round-trip."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T01:18:39Z"
+   "status_changed_on": "2026-09-04T01:30:28Z"
   },
   {
    "id": "M1.4",
@@ -23833,5 +23842,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T01:18:39Z"
+ "updated_on": "2026-09-04T01:30:28Z"
 }
