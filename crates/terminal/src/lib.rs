@@ -183,7 +183,7 @@ impl ExecBroker {
         fs::write(
             &meta_path,
             serde_json::to_vec(&meta)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?,
+                .map_err(|e| std::io::Error::other(e))?,
         )?;
         Ok(())
     }
@@ -206,7 +206,7 @@ impl ExecBroker {
         let path = self.run_dir(run_id).join("status.json");
         fs::write(
             path,
-            serde_json::to_vec(meta).map_err(|e| TerminalError::Serialization(e))?,
+            serde_json::to_vec(meta).map_err(TerminalError::Serialization)?,
         )?;
         Ok(())
     }
