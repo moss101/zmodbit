@@ -191,3 +191,53 @@ fn revision_ledger_survives_service_restart() {
     let (bytes, _) = ws2.read("keep.txt").unwrap();
     assert_eq!(bytes, b"durable");
 }
+
+/// QUAL-EV-0106: applying a real patch produces a typed change event whose
+/// digests let UI and evidence streams derive an IDENTICAL diff.
+#[test]
+fn real_patch_emits_event_ui_and_evidence_agree_on() {
+    use modbit_workspace::FileChangeKind;
+
+    let (_root, ws) = workspace("events");
+    let original = "line one\nline two\nline three\n";
+    let rev1 = ws.create("src/lib.rs", original.as_bytes()).unwrap();
+
+    // The patch: replace line two.
+    let patch = vec![PatchHunk {
+        anchor_line: 2,
+        old_lines: vec!["line two".to_string()],
+        new_lines: vec!["line two (patched)".to_string()],
+    }];
+    let rev2 = ws.apply_patch("src/lib.rs", rev1, &patch).unwrap();
+
+    // Evidence stream: the journal has Created then Modified.
+    let events = ws.changes().unwrap();
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[0].change_kind, FileChangeKind::Created);
+    assert_eq!(events[1].change_kind, FileChangeKind::Modified);
+
+    // The Modified event is revision-bound.
+    let modified = &events[1];
+    assert_eq!(modified.file_revision, rev2);
+    assert_eq!(modified.workspace_revision, ws.workspace_revision());
+
+    // UI derivation: apply the same patch hunks to the pre-patch content.
+    let mut lines: Vec<String> = original.lines().map(String::from).collect();
+    lines.splice(1..2, patch[0].new_lines.iter().cloned());
+    let ui_derived = lines.join("\n") + "\n";
+
+    // Evidence derivation: the event digests must match BOTH sides.
+    assert_eq!(
+        modified.prev_sha256,
+        WorkspaceFileService::sha256_hex(original.as_bytes()),
+        "event prev digest matches pre-patch content"
+    );
+    assert_eq!(
+        modified.sha256,
+        WorkspaceFileService::sha256_hex(ui_derived.as_bytes()),
+        "event digest matches UI-derived patched content"
+    );
+    // And the on-disk content agrees too (single source of truth).
+    let (on_disk, _) = ws.read("src/lib.rs").unwrap();
+    assert_eq!(modified.sha256, WorkspaceFileService::sha256_hex(&on_disk));
+}

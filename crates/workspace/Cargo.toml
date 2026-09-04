@@ -7,6 +7,7 @@ edition.workspace = true
 sha2 = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+modbit-git = { path = "../git" }
 
 [dev-dependencies]
 uuid = { workspace = true }

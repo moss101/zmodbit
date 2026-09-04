@@ -15,6 +15,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
+pub mod broker_ext;
+pub mod command_contract;
+
 use serde::{Deserialize, Serialize};
 
 /// Per-read cap so clients bound their own buffers (docs/33 bounded queue).
@@ -90,6 +93,18 @@ impl ExecBroker {
     }
 
     pub fn spawn(&self, run_id: &str, argv: &[String]) -> Result<(), TerminalError> {
+        self.spawn_full(run_id, argv, None, &[])
+    }
+
+    /// Spawn with explicit cwd and env additions (REQ-EV-0100 contract:
+    /// these fields are honored exactly, never inherited by accident).
+    pub fn spawn_full(
+        &self,
+        run_id: &str,
+        argv: &[String],
+        cwd: Option<&Path>,
+        env: &[(String, String)],
+    ) -> Result<(), TerminalError> {
         if argv.is_empty() {
             return Err(TerminalError::EmptyArgv);
         }
@@ -100,8 +115,15 @@ impl ExecBroker {
             .append(true)
             .open(dir.join("output.log"))?;
         let log_err = log.try_clone()?;
-        let child = Command::new(&argv[0])
-            .args(&argv[1..])
+        let mut command = Command::new(&argv[0]);
+        command.args(&argv[1..]);
+        if let Some(dir_path) = cwd {
+            command.current_dir(dir_path);
+        }
+        for (k, v) in env {
+            command.env(k, v);
+        }
+        let child = command
             .stdout(Stdio::from(log))
             .stderr(Stdio::from(log_err))
             .spawn()?;

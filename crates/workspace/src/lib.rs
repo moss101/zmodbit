@@ -9,6 +9,7 @@
 //! Canonical owner subsystem: workspace-git (docs/81). Layout: docs/12.
 
 pub mod handoff;
+pub mod merge_transaction;
 pub mod review;
 pub use review::{apply_review as review_apply, ReviewedHunk};
 use std::collections::BTreeMap;
@@ -108,6 +109,9 @@ pub struct WorkspaceFileService {
     root: PathBuf,
     revisions: Mutex<RevisionMap>,
 }
+
+/// Persisted JSONL journal of file-change events (REQ-EV-0106).
+const CHANGES_FILE: &str = ".modbit/changes.jsonl";
 
 impl WorkspaceFileService {
     /// Opens (or initializes) the workspace rooted at `root`.
@@ -230,10 +234,67 @@ impl WorkspaceFileService {
         path: &str,
         bytes: &[u8],
     ) -> Result<FileRevision, WorkspaceError> {
-        let mut revisions = self.revisions.lock().expect("revisions mutex poisoned");
+        let mut revisions = self.revisions.lock().expect("revisions poisoned");
         let rev = self.record(&mut revisions, path, bytes);
         self.save_revisions(&revisions)?;
         Ok(rev)
+    }
+
+    /// Appends a typed file-change event to the persisted journal
+    /// (REQ-EV-0106). Takes the ALREADY-LOCKED ledger so it never re-locks
+    /// the revisions mutex (which would self-deadlock); the event always
+    /// reflects the committed revision.
+    fn emit_event(
+        &self,
+        revisions: &RevisionMap,
+        path: &str,
+        kind: FileChangeKind,
+        rev: FileRevision,
+        prev_sha256: String,
+    ) -> Result<(), WorkspaceError> {
+        let sha256 = revisions
+            .files
+            .get(path)
+            .map(|r| r.sha256.clone())
+            .unwrap_or_default();
+        let event = FileChangeEvent {
+            path: path.to_string(),
+            change_kind: kind,
+            file_revision: rev,
+            workspace_revision: revisions.workspace_revision,
+            sha256,
+            prev_sha256,
+        };
+        let path = self.root.join(CHANGES_FILE);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let mut file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)?;
+        let mut line =
+            serde_json::to_vec(&event).map_err(|e| WorkspaceError::Io(std::io::Error::other(e)))?;
+        line.push(b'\n');
+        file.write_all(&line)?;
+        Ok(())
+    }
+
+    /// The full ordered file-change journal (UI and evidence streams read
+    /// the same events).
+    pub fn changes(&self) -> Result<Vec<FileChangeEvent>, WorkspaceError> {
+        let path = self.root.join(CHANGES_FILE);
+        if !path.exists() {
+            return Ok(Vec::new());
+        }
+        let text = fs::read_to_string(&path)?;
+        let mut events = Vec::new();
+        for line in text.lines().filter(|l| !l.is_empty()) {
+            let event: FileChangeEvent = serde_json::from_str(line)
+                .map_err(|e| WorkspaceError::Io(std::io::Error::other(e)))?;
+            events.push(event);
+        }
+        Ok(events)
     }
 
     fn record(&self, revisions: &mut RevisionMap, path: &str, bytes: &[u8]) -> FileRevision {
@@ -267,6 +328,13 @@ impl WorkspaceFileService {
         let mut revisions = self.revisions.lock().expect("revisions mutex poisoned");
         let rev = self.record(&mut revisions, path, bytes);
         self.save_revisions(&revisions)?;
+        self.emit_event(
+            &revisions,
+            path,
+            FileChangeKind::Created,
+            rev,
+            String::new(),
+        )?;
         Ok(rev)
     }
 
@@ -331,6 +399,12 @@ impl WorkspaceFileService {
                 actual: current,
             });
         }
+        let prev_sha256 = revisions
+            .files
+            .get(path)
+            .filter(|r| !r.deleted)
+            .map(|r| r.sha256.clone())
+            .unwrap_or_default();
         if let Some(parent) = resolved.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -343,6 +417,7 @@ impl WorkspaceFileService {
         fs::rename(&tmp, &resolved)?;
         let rev = self.record(&mut revisions, path, bytes);
         self.save_revisions(&revisions)?;
+        self.emit_event(&revisions, path, FileChangeKind::Modified, rev, prev_sha256)?;
         Ok(rev)
     }
 
@@ -394,6 +469,11 @@ impl WorkspaceFileService {
         let resolved = self.resolve(path)?;
         fs::remove_file(resolved)?;
         let mut revisions = self.revisions.lock().expect("revisions mutex poisoned");
+        let prev_sha256 = revisions
+            .files
+            .get(path)
+            .map(|r| r.sha256.clone())
+            .unwrap_or_default();
         revisions.workspace_revision += 1;
         let record = revisions
             .files
@@ -406,8 +486,11 @@ impl WorkspaceFileService {
             });
         record.revision += 1;
         record.deleted = true;
+        record.sha256 = String::new();
+        record.byte_length = 0;
         let rev = record.revision;
         self.save_revisions(&revisions)?;
+        self.emit_event(&revisions, path, FileChangeKind::Deleted, rev, prev_sha256)?;
         Ok(rev)
     }
 
@@ -439,11 +522,14 @@ impl WorkspaceFileService {
             });
         record.revision += 1;
         record.deleted = true;
+        let prev_sha256 = record.sha256.clone();
         let rev = record.revision;
         let mut new_record = record.clone();
         new_record.deleted = false;
         revisions.files.insert(to.to_string(), new_record);
         self.save_revisions(&revisions)?;
+        self.emit_event(&revisions, from, FileChangeKind::Deleted, rev, prev_sha256)?;
+        self.emit_event(&revisions, to, FileChangeKind::Created, rev, String::new())?;
         Ok(rev)
     }
 }
@@ -686,6 +772,8 @@ pub mod change_engine {
 }
 
 /// Typed file-change event emitted on every workspace mutation (REQ-EV-0106).
+/// Revision-bound: carries the file revision, workspace revision, and both
+/// content digests so UI and evidence streams derive byte-identical diffs.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileChangeEvent {
     pub path: String,
@@ -693,6 +781,9 @@ pub struct FileChangeEvent {
     pub file_revision: FileRevision,
     pub workspace_revision: WorkspaceRevision,
     pub sha256: String,
+    /// Content digest before the change (empty for Created).
+    #[serde(default)]
+    pub prev_sha256: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

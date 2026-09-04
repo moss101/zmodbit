@@ -119,6 +119,34 @@ impl GitRepo {
         &self.root
     }
 
+    /// Merge base of two refs (empty string if none).
+    pub fn merge_base(&self, a: &str, b: &str) -> Result<String, GitError> {
+        let out = self.git("merge-base", &[a, b])?;
+        Ok(Self::stdout_text(&out))
+    }
+
+    /// Stages one path (resolution bookkeeping for merge transactions).
+    pub fn stage_path(&self, path: &str) -> Result<(), GitError> {
+        self.git("add", &["--", path]).map(|_| ())
+    }
+
+    /// Concludes an in-progress merge with a commit message (MERGE_HEAD is
+    /// consumed by the commit).
+    pub fn conclude_merge(&self, message: &str) -> Result<(), GitError> {
+        self.git("commit", &["-m", message]).map(|_| ())
+    }
+
+    /// Aborts a live merge, restoring the pre-merge worktree.
+    pub fn abort_merge_state(&self) -> Result<(), GitError> {
+        self.git("merge", &["--abort"]).map(|_| ())
+    }
+
+    /// Hard-resets the branch and worktree to a commit (transaction
+    /// rollback of a merge commit we created).
+    pub fn reset_hard(&self, target: &str) -> Result<(), GitError> {
+        self.git("reset", &["--hard", target]).map(|_| ())
+    }
+
     /// Commits all changes; returns the new HEAD hash.
     pub fn commit_all(&self, message: &str) -> Result<String, GitError> {
         self.git("add", &["-A"])?;
@@ -186,6 +214,30 @@ impl GitRepo {
     pub fn head(&self) -> Result<String, GitError> {
         let out = self.git("rev-parse", &["HEAD"])?;
         Ok(Self::stdout_text(&out))
+    }
+
+    /// Starts a merge without committing and WITHOUT aborting on conflict:
+    /// the merge state stays live so a merge transaction can resolve and
+    /// conclude (two-parent commit) later. Conflicts surface as typed
+    /// evidence; the caller owns abort vs. conclude.
+    pub fn start_merge(&self, branch: &str) -> Result<MergeOutcome, GitError> {
+        match self.git("merge", &["--no-ff", "--no-commit", branch]) {
+            Ok(_) => Ok(MergeOutcome::Merged),
+            Err(_) => {
+                let diff = self.git("diff", &["--name-only", "--diff-filter=U"]);
+                let files = match diff {
+                    Ok(out) => Self::stdout_text(&out)
+                        .lines()
+                        .filter(|l| !l.is_empty())
+                        .map(String::from)
+                        .collect(),
+                    Err(_) => Vec::new(),
+                };
+                Ok(MergeOutcome::Conflict {
+                    conflicted_files: files,
+                })
+            }
+        }
     }
 
     /// Typed merge (docs/20 § Git strategy): `Merged` on success; `Conflict`
