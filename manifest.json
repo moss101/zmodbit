@@ -746,8 +746,8 @@
     },
     {
       "path": "pnpm-workspace.yaml",
-      "bytes": 133,
-      "sha256": "167d6a7b8186b83859ca92ad13fbd7ad4db7583f64319f79d17a4aabce7f4299"
+      "bytes": 76,
+      "sha256": "da253f18976a532f3df4f73eea28b37d4ba4dc0a00baef4468f4306dba651b75"
     },
     {
       "path": "package.json",
@@ -806,28 +806,28 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/google/protobuf/timestamp.ts",
-      "bytes": 7979,
-      "sha256": "e4b93d44fe68fb24d0e84ce41f9e6e92122b299669ccd0b42fd049031bff7a55"
+      "bytes": 7992,
+      "sha256": "41bead303f2e6d23d691fb4f0b00760fe41ac02fe984fcf657274029cdaa1db2"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts",
-      "bytes": 16892,
-      "sha256": "f93d4b43859507ef815b3771d6046c08f7b16ed5a9a61aff061eb5ef51ef64a1"
+      "bytes": 16905,
+      "sha256": "65f4121c6c049dcdf27797ccaf0f08cacad2b8de49d654ee59f2bcf891bf1eb5"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts",
-      "bytes": 3646,
-      "sha256": "fe695aed6ebdfdbddbfdbfc95ce07af67f02a3a1ae72e1b0863a6d343f056889"
+      "bytes": 3659,
+      "sha256": "47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts",
-      "bytes": 2582,
-      "sha256": "4219589efee4fe40bff3590598a446a8f6b23503179bbc2c7187ac1b63377a3d"
+      "bytes": 2595,
+      "sha256": "4fe9e276a759cd1cce6a3ee0d826306eaa709bcd0e79df6ff9906671d97b407d"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts",
-      "bytes": 23229,
-      "sha256": "172d126c7504591426b41b9d224f26331fa228664699159ce9c16fcdb256ac04"
+      "bytes": 23242,
+      "sha256": "f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a"
     },
     {
       "path": "packages/surface-protocol/src/index.ts",

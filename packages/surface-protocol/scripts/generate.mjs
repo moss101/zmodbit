@@ -44,4 +44,24 @@ if (result.error || result.status !== 0) {
   console.error("protoc generation failed", result.error ?? `exit ${result.status}`);
   process.exit(1);
 }
+
+// Normalize the protoc version comment: it varies between environments
+// (brew/apt/choco release trains) and is not meaningful drift. Without this,
+// the CI generated-matches-schema gate fails on runner toolchain updates.
+const { readdirSync, readFileSync, writeFileSync } = await import("node:fs");
+const normalize = (dir) => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) normalize(p);
+    else if (entry.name.endsWith(".ts")) {
+      const stable = readFileSync(p, "utf8").replace(
+        /^\/\/   protoc\s+v.*$/m,
+        "//   protoc               <version-normalized>",
+      );
+      writeFileSync(p, stable);
+    }
+  }
+};
+normalize(outDir);
+
 console.log(`generated TypeScript bindings into ${outDir}`);

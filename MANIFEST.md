@@ -114,7 +114,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
 | `.github/workflows/ci.yml` |  | 2612 | `683f9526407de9f0c2d55dcfbb064d0bd4697707dbe1e5712e50ea8a8a21ce62` |
 | `Cargo.toml` |  | 269 | `69f3ea22e4cc38f041293b66375f2672afc8c4177168a6e11909ba9b0ef15d7d` |
-| `pnpm-workspace.yaml` |  | 133 | `167d6a7b8186b83859ca92ad13fbd7ad4db7583f64319f79d17a4aabce7f4299` |
+| `pnpm-workspace.yaml` |  | 76 | `da253f18976a532f3df4f73eea28b37d4ba4dc0a00baef4468f4306dba651b75` |
 | `package.json` |  | 278 | `36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c` |
 | `apps/desktop/package.json` |  | 228 | `428baa8402848a224dc8c6f383f35487a474fe8726b7e9ee9e0c80146dde74e7` |
 | `apps/desktop/src/main.ts` |  | 188 | `e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42` |
@@ -126,11 +126,11 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/design-tokens/src/index.ts` |  | 204 | `f2d07647db91487425dbc9e901b36f5f78b22a83719c3cb65cbaf3d8abe78d55` |
 | `packages/design-tokens/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
 | `packages/surface-protocol/package.json` |  | 420 | `bbb218f7a79544c401d7df1f6d606a9fb69a4ee6ab6e208b2189bbf37130dda8` |
-| `packages/surface-protocol/src/generated/google/protobuf/timestamp.ts` |  | 7979 | `e4b93d44fe68fb24d0e84ce41f9e6e92122b299669ccd0b42fd049031bff7a55` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts` |  | 16892 | `f93d4b43859507ef815b3771d6046c08f7b16ed5a9a61aff061eb5ef51ef64a1` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3646 | `fe695aed6ebdfdbddbfdbfc95ce07af67f02a3a1ae72e1b0863a6d343f056889` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2582 | `4219589efee4fe40bff3590598a446a8f6b23503179bbc2c7187ac1b63377a3d` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23229 | `172d126c7504591426b41b9d224f26331fa228664699159ce9c16fcdb256ac04` |
+| `packages/surface-protocol/src/generated/google/protobuf/timestamp.ts` |  | 7992 | `41bead303f2e6d23d691fb4f0b00760fe41ac02fe984fcf657274029cdaa1db2` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts` |  | 16905 | `65f4121c6c049dcdf27797ccaf0f08cacad2b8de49d654ee59f2bcf891bf1eb5` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3659 | `47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2595 | `4fe9e276a759cd1cce6a3ee0d826306eaa709bcd0e79df6ff9906671d97b407d` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23242 | `f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a` |
 | `packages/surface-protocol/src/index.ts` |  | 729 | `11be0e5c80215d6c2e4d98b96cddfd9c09496a4c8aae680fe0c96f629c672e10` |
 | `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |
 | `packages/surface-protocol/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
