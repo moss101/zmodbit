@@ -7212,10 +7212,12 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33871402984",
-    "commit:2ad3efc"
+    "commit:2ad3efc",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
+    "commit:6973749"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T12:13:46Z"
+   "status_changed_on": "2026-09-04T13:47:54Z"
   },
   {
    "id": "IMP-EV-0069",
@@ -7245,10 +7247,12 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33871402984",
-    "commit:2ad3efc"
+    "commit:2ad3efc",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
+    "commit:6973749"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T12:13:46Z"
+   "status_changed_on": "2026-09-04T13:47:54Z"
   },
   {
    "id": "IMP-EV-0071",
@@ -7264,10 +7268,12 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33871402984",
-    "commit:2ad3efc"
+    "commit:2ad3efc",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
+    "commit:6973749"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T12:13:46Z"
+   "status_changed_on": "2026-09-04T13:47:54Z"
   },
   {
    "id": "IMP-EV-0072",
@@ -7386,10 +7392,12 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33871402984",
-    "commit:2ad3efc"
+    "commit:2ad3efc",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
+    "commit:6973749"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T12:13:46Z"
+   "status_changed_on": "2026-09-04T13:47:54Z"
   },
   {
    "id": "IMP-EV-0081",
@@ -7545,10 +7553,12 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33871402984",
-    "commit:2ad3efc"
+    "commit:2ad3efc",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
+    "commit:6973749"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T12:13:46Z"
+   "status_changed_on": "2026-09-04T13:47:54Z"
   },
   {
    "id": "IMP-EV-0092",
@@ -24579,5 +24589,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T12:18:40Z"
+ "updated_on": "2026-09-04T13:47:54Z"
 }

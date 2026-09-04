@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 615256,
-      "sha256": "0fafc5d34e5f44827cedaaadbcf4ab77f4ed7e5874f90594c0cfecfee97c4886"
+      "bytes": 615721,
+      "sha256": "c790f2e638e072de839d0fbcfd95b531fd1e145c7e8a25e8fcc1df710bd4318c"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -736,8 +736,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 2872,
-      "sha256": "eeaa05aa3a5fb724185e18e0888d0aa830eac2bc415b441420fb3ed8717be956"
+      "bytes": 2801,
+      "sha256": "70fb6e05f25e930055eca4710a9c36e28b9a3be73ee37072804865e4302fa412"
     },
     {
       "path": "Cargo.toml",

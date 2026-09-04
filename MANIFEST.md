@@ -105,14 +105,14 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 615256 | `0fafc5d34e5f44827cedaaadbcf4ab77f4ed7e5874f90594c0cfecfee97c4886` |
+| `graph/project-graph.json` | project driver graph with live status | 615721 | `c790f2e638e072de839d0fbcfd95b531fd1e145c7e8a25e8fcc1df710bd4318c` |
 | `graph/PROJECT_GRAPH.md` | human view of the graph | 22203 | `e209c5d501db73b4a00a9902a414ac944b6303a927cab1321ade27ce2a09f41b` |
 | `tools/build_manifest.py` | regenerates this manifest | 14670 | `3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
 | `tools/check_dossier.py` | integrity gate | 8995 | `0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46` |
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
-| `.github/workflows/ci.yml` |  | 2872 | `eeaa05aa3a5fb724185e18e0888d0aa830eac2bc415b441420fb3ed8717be956` |
+| `.github/workflows/ci.yml` |  | 2801 | `70fb6e05f25e930055eca4710a9c36e28b9a3be73ee37072804865e4302fa412` |
 | `Cargo.toml` |  | 484 | `0e74629caa64c7d248556e7c48acb53e70da550c36c99c20948504b8fd6995a7` |
 | `pnpm-workspace.yaml` |  | 93 | `4f1844ac535cd5c2607091352d8e97cd8b04a48acaf48fb69674de6597a1c1aa` |
 | `package.json` |  | 278 | `36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c` |
