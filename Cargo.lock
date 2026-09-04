@@ -490,6 +490,7 @@ version = "0.1.0"
 name = "modbit-providers"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "serde",
  "serde_json",
  "sha2",
@@ -542,6 +543,7 @@ name = "modbit-verification"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "sha2",
  "uuid",
 ]
 

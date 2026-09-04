@@ -21,6 +21,14 @@ pub struct ModelCapability {
     pub supports_vision: bool,
     pub supports_reasoning: bool,
     pub supports_structured_output: bool,
+    /// Media modalities the model accepts (e.g. ["image", "pdf"]).
+    /// REQ-EV-0189.
+    #[serde(default)]
+    pub media_modalities: Vec<String>,
+    /// Whether the model formats tool RESULTS acceptably (structured
+    /// tool-result rendering support). REQ-EV-0189.
+    #[serde(default)]
+    pub supports_tool_result_formatting: bool,
     pub cost_per_1k_input: f64,
     pub cost_per_1k_output: f64,
     pub success_rate: f64,
@@ -28,12 +36,20 @@ pub struct ModelCapability {
 }
 
 /// Hard requirements a task fingerprint places on the model.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct TaskFingerprint {
     pub requires_tools: bool,
     pub requires_vision: bool,
     pub requires_reasoning: bool,
     pub requires_structured_output: bool,
+    /// Media modalities the task consumes (e.g. "image", "audio").
+    /// Empty = text-only. REQ-EV-0189.
+    #[serde(default)]
+    pub requires_media_modalities: Vec<String>,
+    /// The task feeds tool output back to the model and needs correct
+    /// tool-result rendering. REQ-EV-0189.
+    #[serde(default)]
+    pub requires_tool_result_formatting: bool,
     pub min_context_tokens: u64,
     pub min_output_tokens: u64,
     pub blocked_models: Vec<String>,
@@ -152,6 +168,33 @@ pub fn route(
         });
     }
 
+    // Media modalities: a task consuming a modality the model refuses is
+    // excluded BEFORE dispatch (REQ-EV-0189 QUAL).
+    for modality in &fingerprint.requires_media_modalities {
+        candidates.retain(|c| {
+            let ok = c.media_modalities.iter().any(|m| m == modality);
+            if !ok {
+                exclusions.push(format!(
+                    "{}: media modality {modality:?} unsupported",
+                    c.model
+                ));
+            }
+            ok
+        });
+    }
+
+    // Tool-result formatting: tasks that feed tool output back need a
+    // model that renders it correctly (opt-in requirement).
+    if fingerprint.requires_tool_result_formatting {
+        candidates.retain(|c| {
+            let ok = c.supports_tool_result_formatting;
+            if !ok {
+                exclusions.push(format!("{}: no tool-result formatting support", c.model));
+            }
+            ok
+        });
+    }
+
     // Enterprise: required model — only that model survives.
     if let Some(required) = &policy.required_model {
         candidates.retain(|c| {
@@ -239,6 +282,8 @@ mod tests {
             supports_vision: false,
             supports_reasoning: false,
             supports_structured_output: false,
+            media_modalities: Vec::new(),
+            supports_tool_result_formatting: false,
             cost_per_1k_input: cost,
             cost_per_1k_output: cost,
             success_rate: 1.0,
@@ -356,5 +401,64 @@ mod tests {
         let errors = result.unwrap_err();
         assert!(errors.iter().any(|e| e.contains("ghost-1")));
         assert!(errors.iter().any(|e| e.contains("ghost-2")));
+    }
+}
+
+#[cfg(test)]
+mod media_modality_tests {
+    use super::*;
+
+    fn cap(model: &str, provider: &str, media: &[&str], formats_results: bool) -> ModelCapability {
+        ModelCapability {
+            model: model.into(),
+            provider: provider.into(),
+            context_window: 128_000,
+            max_output_tokens: 4_096,
+            supports_tools: true,
+            supports_parallel_tools: false,
+            supports_vision: !media.is_empty(),
+            supports_reasoning: false,
+            supports_structured_output: false,
+            media_modalities: media.iter().map(|s| s.to_string()).collect(),
+            supports_tool_result_formatting: formats_results,
+            cost_per_1k_input: 1.0,
+            cost_per_1k_output: 2.0,
+            success_rate: 1.0,
+            latency_class: "fast".into(),
+        }
+    }
+
+    /// QUAL-EV-0189: routing refuses a media-unsupported model and selects
+    /// the eligible endpoint, with the refusal recorded as evidence.
+    #[test]
+    fn routing_refuses_unsupported_media_and_selects_eligible() {
+        let catalog = vec![
+            cap("text-only-pro", "prov-a", &[], false),
+            cap("vision-pro", "prov-b", &["image"], true),
+        ];
+        let fp = TaskFingerprint {
+            requires_media_modalities: vec!["image".into()],
+            requires_tool_result_formatting: true,
+            ..Default::default()
+        };
+        let policy = EnterprisePolicy::default();
+        let decision = route(&fp, &policy, &catalog).unwrap();
+        assert_eq!(decision.model, "vision-pro");
+        assert!(
+            decision
+                .exclusion_reasons
+                .iter()
+                .any(|r| r.contains("text-only-pro") && r.contains("image")),
+            "the refusal of the unsupported model is recorded: {:?}",
+            decision.exclusion_reasons
+        );
+
+        // No model supports the modality: routing fails with evidence.
+        let audio_only = TaskFingerprint {
+            requires_media_modalities: vec!["audio".into()],
+            ..Default::default()
+        };
+        let err = route(&audio_only, &policy, &catalog).unwrap_err();
+        assert!(err.iter().any(|r| r.contains("audio")));
     }
 }

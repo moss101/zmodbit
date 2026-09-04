@@ -1,0 +1,23 @@
+{
+  "description": "Executable doc examples (REQ-EV-0212): every example used for evaluation is executed by tools/examples_runner.py. Illustrative placeholders are not allowed; release fails on drift (wrong exit code or missing expected output).",
+  "examples": [
+    {
+      "name": "graph-status-overview",
+      "cmd": "python3 tools/graph.py stats",
+      "expect_exit": 0,
+      "expect_stdout_contains": ["work items by status:", "COMPLETE"]
+    },
+    {
+      "name": "architecture-lint-clean",
+      "cmd": "python3 tools/architecture-lint/lint.py",
+      "expect_exit": 0,
+      "expect_stdout_contains": ["architecture-lint: OK"]
+    },
+    {
+      "name": "coverage-guard-traceability",
+      "cmd": "python3 tools/coverage-guard.py",
+      "expect_exit": 0,
+      "expect_stdout_contains": ["coverage-guard: OK"]
+    }
+  ]
+}

@@ -189,6 +189,8 @@ mod tests {
             supports_vision: true,
             supports_reasoning: true,
             supports_structured_output: true,
+            media_modalities: vec!["image".to_string()],
+            supports_tool_result_formatting: true,
             cost_per_1k_input: 1.0,
             cost_per_1k_output: 2.0,
             latency_class: "fast".to_string(),

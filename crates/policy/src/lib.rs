@@ -18,6 +18,7 @@ pub mod admin_precedence;
 pub mod approvals;
 pub mod capability_set;
 pub mod device_policy;
+pub mod mediation;
 pub mod patch_gate;
 pub mod policy_before_exec;
 pub mod ui_risk;

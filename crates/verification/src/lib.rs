@@ -5,6 +5,7 @@
 //! completion requires real-system evidence, never a model claim.
 
 pub mod adaptive;
+pub mod browser_evidence;
 pub mod diagnostics;
 pub mod evidence_index;
 

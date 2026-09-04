@@ -3,6 +3,7 @@
 //! Canonical owner subsystem: model-gateway (docs/81). Layout: docs/12_REPOSITORY_AND_MODULE_LAYOUT.md.
 pub mod envelope;
 pub mod gateway;
+pub mod media_split;
 pub mod routing;
 pub use gateway::{
     anthropic_request_body, openai_request_body, parse_anthropic_sse_payload,
