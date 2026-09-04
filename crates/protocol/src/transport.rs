@@ -188,6 +188,10 @@ impl EndpointName {
         }
     }
 
+    pub fn is_fs_path(&self) -> bool {
+        self.is_fs
+    }
+
     /// Stable human-readable form for logs and the boot channel json.
     pub fn display_name(&self) -> String {
         self.raw.clone()
@@ -224,10 +228,11 @@ fn io_other(e: impl ToString) -> TransportError {
 
 /// Binds the Core-side listener (Unix socket / named pipe).
 pub fn bind(name: &EndpointName) -> Result<interprocess::local_socket::Listener, TransportError> {
-    #[cfg(unix)]
-    if name.is_fs {
-        // A SIGKILLed predecessor leaves the socket file; unlink so the
-        // restarted Core can re-bind the same endpoint (M1.5 kill/restart).
+    if name.is_fs_path() {
+        // A SIGKILLed predecessor leaves the socket file behind on unix;
+        // unlink so the restarted Core can re-bind the same endpoint (M1.5
+        // kill/restart proof). Windows pipes are reclaimed by the kernel.
+        #[cfg(unix)]
         let _ = std::fs::remove_file(&name.raw);
     }
     ListenerOptions::new()
