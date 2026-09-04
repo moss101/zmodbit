@@ -894,8 +894,11 @@
    "milestone": "M1",
    "order": 0,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33823102873",
+    "commit:b17391c"
+   ],
    "notes": [
     {
      "at": "2026-09-04T00:24:46Z",
@@ -908,10 +911,16 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Implemented per docs/13+31+30: domain crate (opaque UUIDv7 identity types, Session/Task/Run/Turn/RunStep aggregates, locked Task+Turn state machines with fold, EventEnvelope with SHA-256 integrity hash), event-store crate (SQLite WAL+foreign_keys+synchronous=FULL, versioned migrations, append-only events table with per-aggregate gapless sequence enforcement -> SequenceConflict, integrity verification incl. tamper detection, idempotent command processor: command_id recorded atomically with events, retries replay outcome, rejections deterministic). Tests: 12 domain + 9 store + full workspace 59 green; clippy -D warnings clean. Awaiting 3-OS CI."
+    },
+    {
+     "at": "2026-09-04T00:49:29Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Domain (ids/aggregates/state machines/envelope integrity) + event store (SQLite WAL/FK/FULL, versioned migrations, gapless per-aggregate sequences, tamper detection, idempotent commands) proven by 21 tests green on 3-OS CI."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T00:45:48Z"
+   "status_changed_on": "2026-09-04T00:49:29Z"
   },
   {
    "id": "M1.2",
@@ -23783,5 +23792,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T00:45:48Z"
+ "updated_on": "2026-09-04T00:49:29Z"
 }
