@@ -248,7 +248,13 @@ function writeFrame(socket, payload) {
 
 async function connectSurface({ socketPath, secretHex }) {
   const secret = Buffer.from(secretHex, "hex");
-  const socket = net.createConnection(socketPath);
+  // Core reports namespace-style names on Windows ("modbit-core-<id>"); node
+  // requires the full local pipe path.
+  const address =
+    process.platform === "win32" && !socketPath.startsWith("\\\\.\\pipe\\")
+      ? `\\\\.\\pipe\\${socketPath}`
+      : socketPath;
+  const socket = net.createConnection(address);
   await new Promise((resolve, reject) => {
     socket.once("connect", resolve);
     socket.once("error", reject);
