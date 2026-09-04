@@ -1074,8 +1074,11 @@
    "milestone": "M2",
    "order": 0,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33843562145",
+    "commit:5a7abda"
+   ],
    "notes": [
     {
      "at": "2026-09-04T05:56:23Z",
@@ -1088,10 +1091,16 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "WorkspaceFileService per docs/20 § Workspace File Service: typed ops (read/stat/list/apply_patch/atomic replace/create/delete/mkdir/move); path normalization before policy with traversal + symlink containment rejection; optimistic revision preconditions (StaleRevision on blind overwrite); per-file revisions + monotonic workspace revision + content fingerprint ledger persisted atomically; 9 real-fs tests incl. patch context matching. Awaiting 3-OS CI."
+    },
+    {
+     "at": "2026-09-04T06:19:21Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "WorkspaceFileService proven on 3-OS CI: traversal + symlink containment rejected, optimistic revision preconditions block blind overwrite, typed patch hunks with context matching, atomic revision ledger, move/delete/mkdir, monotonic workspace revision, ledger survives restart."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T06:09:42Z"
+   "status_changed_on": "2026-09-04T06:19:21Z"
   },
   {
    "id": "M2.2",
@@ -24180,5 +24189,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T06:09:42Z"
+ "updated_on": "2026-09-04T06:19:21Z"
 }
