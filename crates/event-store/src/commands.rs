@@ -87,7 +87,13 @@ impl CommandProcessor {
         tx.commit()?;
         match result {
             Ok(event_ids) => Ok(Outcome::Applied { event_ids }),
-            Err(reason) => Ok(Outcome::Rejected { reason }),
+            Err(reason) => {
+                eprintln!(
+                    "modbit event store: command {} rejected: {reason}",
+                    command.payload.kind()
+                );
+                Ok(Outcome::Rejected { reason })
+            }
         }
     }
 
@@ -145,6 +151,76 @@ impl CommandProcessor {
                 );
                 e.task_id = Some(task_id);
                 e.sequence = 1;
+                e.seal();
+                events.push(e);
+            }
+            CommandPayload::QueueTaskInput {
+                task_id,
+                input_id,
+                mode,
+                text,
+            } => {
+                // REQ-EV-0191/0262: validate the dispatch mode against the
+                // task's current state, then append the durable input event.
+                // Steering additionally emits TaskSteered (interrupt-and-
+                // replace semantics live in Core, not clients — MOD-INPUT-001).
+                let history = Self::load_task_events(tx, task_id)?;
+                let current = fold_task(&history)
+                    .ok_or_else(|| format!("task {task_id} does not exist"))?
+                    .map_err(|e: TransitionError| e.to_string())?;
+                let effect = modbit_domain::input_queue::input_effect(current, *mode)?;
+                let session_id = task_session(tx, task_id)?;
+                let mut e = envelope_for(
+                    modbit_domain::AggregateType::Task,
+                    task_id.to_string(),
+                    session_id,
+                    DomainEvent::TaskInputQueued {
+                        input_id: input_id.clone(),
+                        mode: *mode,
+                        text: text.clone(),
+                    },
+                );
+                e.task_id = Some(*task_id);
+                e.sequence = history.len() as u64 + 1;
+                e.seal();
+                events.push(e);
+                if effect == modbit_domain::InputEffect::RedirectsTask {
+                    let mut steered = envelope_for(
+                        modbit_domain::AggregateType::Task,
+                        task_id.to_string(),
+                        session_id,
+                        DomainEvent::TaskSteered {
+                            steer_note: text.clone(),
+                        },
+                    );
+                    steered.task_id = Some(*task_id);
+                    steered.sequence = history.len() as u64 + 2;
+                    steered.seal();
+                    events.push(steered);
+                }
+            }
+            CommandPayload::AskSideQuestion {
+                session_id,
+                question_id,
+                question,
+                context_event_count,
+            } => {
+                // REQ-EV-0261: session-level event; the main task's state and
+                // event cursor remain untouched.
+                if !session_exists(session_id)? {
+                    return Err(format!("session {session_id} does not exist"));
+                }
+                let mut e = envelope_for(
+                    modbit_domain::AggregateType::Session,
+                    session_id.to_string(),
+                    *session_id,
+                    DomainEvent::SideQuestionAsked {
+                        question_id: question_id.clone(),
+                        question: question.clone(),
+                        context_event_count: *context_event_count,
+                    },
+                );
+                e.sequence = session_sequence(tx, &session_id.to_string())? + 1;
                 e.seal();
                 events.push(e);
             }
@@ -246,21 +322,30 @@ impl CommandProcessor {
         }
 
         // Continuity check inside the transaction (optimistic concurrency).
+        // Progression tracks events already staged in this same batch.
+        let mut next_expected: std::collections::HashMap<String, u64> =
+            std::collections::HashMap::new();
         for e in &events {
-            let max: Option<i64> = tx
-                .query_row(
-                    "SELECT MAX(sequence) FROM events WHERE aggregate_id = ?1",
-                    [&e.aggregate_id],
-                    |r| r.get::<_, Option<i64>>(0),
-                )
-                .map_err(|e| e.to_string())?;
-            let expected = max.map_or(1, |v| v as u64 + 1);
+            let expected = *next_expected
+                .entry(e.aggregate_id.clone())
+                .or_insert_with(|| {
+                    let max: Option<i64> = tx
+                        .query_row(
+                            "SELECT MAX(sequence) FROM events WHERE aggregate_id = ?1",
+                            [&e.aggregate_id],
+                            |r| r.get::<_, Option<i64>>(0),
+                        )
+                        .map_err(|err| err.to_string())
+                        .unwrap_or(None);
+                    max.map_or(1, |v| v as u64 + 1)
+                });
             if e.sequence != expected {
                 return Err(format!(
                     "sequence conflict on {}: expected {expected}, got {}",
                     e.aggregate_id, e.sequence
                 ));
             }
+            next_expected.insert(e.aggregate_id.clone(), e.sequence + 1);
         }
 
         let mut event_ids = Vec::new();
@@ -317,6 +402,17 @@ impl CommandProcessor {
         }
         Ok(out)
     }
+}
+
+fn session_sequence(tx: &rusqlite::Transaction<'_>, session_id: &str) -> Result<u64, String> {
+    let max: Option<i64> = tx
+        .query_row(
+            "SELECT MAX(sequence) FROM events WHERE aggregate_type = 'session' AND aggregate_id = ?1",
+            [session_id],
+            |r| r.get::<_, Option<i64>>(0),
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(max.map_or(0, |v| v as u64))
 }
 
 fn source_stream_len(tx: &rusqlite::Transaction<'_>, session_id: &str) -> Result<i64, String> {

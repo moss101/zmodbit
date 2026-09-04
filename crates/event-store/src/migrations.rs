@@ -46,6 +46,7 @@ pub const MIGRATIONS: &[Migration] = &[
         crate::leases::MIGRATION_V3_LEASES,
         crate::leases::SQL_V3_LEASES,
     ),
+    (4, SQL_V4_TASK_INPUTS),
 ];
 
 /// Projection tables (docs/31 § Core tables): derived read models, always
@@ -113,6 +114,21 @@ pub const SQL_V2_PROJECTIONS: &str = "
     );
 ";
 
+/// Durable input queue (docs/30 § Commands; REQ-EV-0191/0262): ordering is
+/// the per-task event sequence, preserved across reconnects.
+pub const SQL_V4_TASK_INPUTS: &str = "
+    CREATE TABLE task_inputs (
+        input_id  TEXT PRIMARY KEY,
+        task_id   TEXT NOT NULL REFERENCES tasks(task_id),
+        mode      TEXT NOT NULL,
+        text      TEXT NOT NULL,
+        sequence  INTEGER NOT NULL,
+        state     TEXT NOT NULL DEFAULT 'pending',
+        UNIQUE(task_id, sequence)
+    );
+    CREATE INDEX idx_task_inputs_task ON task_inputs(task_id, sequence);
+";
+
 pub fn migrate(conn: &Connection) -> Result<(), rusqlite::Error> {
     let current: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
     for (version, sql) in MIGRATIONS {
@@ -136,6 +152,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 3);
+        assert_eq!(v, 4);
     }
 }

@@ -145,6 +145,21 @@ pub enum DomainEvent {
         reverted_event_count: u64,
         previous_last_hash: String,
     },
+    /// Durable queued input (REQ-EV-0191/0262): every user input is an event,
+    /// ordered per task aggregate across reconnects.
+    TaskInputQueued {
+        input_id: String,
+        mode: crate::input_queue::InputMode,
+        text: String,
+    },
+    /// Non-disruptive side question (REQ-EV-0261): session-level event; the
+    /// question is answered against a bounded recent context snapshot and
+    /// never mutates main task state.
+    SideQuestionAsked {
+        question_id: String,
+        question: String,
+        context_event_count: u64,
+    },
 }
 
 /// Why a running task is waiting (docs/13 Task state machine `Waiting` kinds).
@@ -245,6 +260,8 @@ impl EventEnvelope {
             DomainEvent::RunStepFailed { .. } => "run_step_failed",
             DomainEvent::SessionForked { .. } => "session_forked",
             DomainEvent::SessionRewound { .. } => "session_rewound",
+            DomainEvent::TaskInputQueued { .. } => "task_input_queued",
+            DomainEvent::SideQuestionAsked { .. } => "side_question_asked",
         }
     }
 

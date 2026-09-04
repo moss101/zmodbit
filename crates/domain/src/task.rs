@@ -98,6 +98,17 @@ pub fn apply_task_event(
             TaskState::Running | TaskState::Waiting(_) => Ok(state),
             _ => Err(reject("task_steered")),
         },
+        // Durable queued input (REQ-EV-0191/0262): recorded on the task
+        // aggregate but state-neutral — its dispatch effect is decided by
+        // the InputMode policy, not the lifecycle machine.
+        DomainEvent::TaskInputQueued { .. } => match state {
+            TaskState::Created
+            | TaskState::Queued
+            | TaskState::Running
+            | TaskState::Waiting(_)
+            | TaskState::ReadyForReview => Ok(state),
+            _ => Err(reject("task_input_queued")),
+        },
         // Creation events do not transition an existing aggregate.
         DomainEvent::TaskCreated { .. } => match state {
             TaskState::Created => Ok(TaskState::Created),

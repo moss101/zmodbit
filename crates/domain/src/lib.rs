@@ -10,6 +10,7 @@
 pub mod commands;
 pub mod events;
 pub mod ids;
+pub mod input_queue;
 pub mod run;
 pub mod run_step;
 pub mod session;
@@ -21,6 +22,7 @@ pub use events::{
     Actor, ActorType, AggregateType, DomainEvent, EventEnvelope, StepType, WaitingReason,
 };
 pub use ids::{RunId, RunStepId, SessionId, TaskId, TenantId, TurnId, UserId};
+pub use input_queue::{InputEffect, InputMode, SteeringPolicy};
 pub use run::RunState;
 pub use run_step::{RunStep, RunStepState};
 pub use session::SessionState;

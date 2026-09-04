@@ -234,7 +234,7 @@ fn v1_database_migrates_to_v2_preserving_events() {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 3, "migration applied through the lease tables");
+        assert_eq!(v, 4, "migration applied through the input queue tables");
     });
     let sessions = all_session_aggregates(&store);
     assert_eq!(sessions.len(), 1);

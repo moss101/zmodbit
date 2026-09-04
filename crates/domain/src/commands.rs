@@ -71,6 +71,20 @@ pub enum CommandPayload {
         to_sequence: u64,
         expected_last_hash: String,
     },
+    /// Durable queued input with a typed dispatch mode (REQ-EV-0191/0262).
+    QueueTaskInput {
+        task_id: TaskId,
+        input_id: String,
+        mode: crate::input_queue::InputMode,
+        text: String,
+    },
+    /// Non-disruptive side question (REQ-EV-0261): session-level event only.
+    AskSideQuestion {
+        session_id: SessionId,
+        question_id: String,
+        question: String,
+        context_event_count: u64,
+    },
 }
 
 impl CommandPayload {
@@ -89,12 +103,16 @@ impl CommandPayload {
             | CommandPayload::SteerTask { task_id, .. } => Some(task_id.to_string()),
             CommandPayload::ForkSession { source_session, .. } => Some(source_session.to_string()),
             CommandPayload::RewindSession { session_id, .. } => Some(session_id.to_string()),
+            CommandPayload::QueueTaskInput { task_id, .. } => Some(task_id.to_string()),
+            CommandPayload::AskSideQuestion { session_id, .. } => Some(session_id.to_string()),
             CommandPayload::CreateSession { .. } | CommandPayload::CreateTask { .. } => None,
         }
     }
 
     pub fn kind(&self) -> &'static str {
         match self {
+            CommandPayload::QueueTaskInput { .. } => "queue_task_input",
+            CommandPayload::AskSideQuestion { .. } => "ask_side_question",
             CommandPayload::ForkSession { .. } => "fork_session",
             CommandPayload::RewindSession { .. } => "rewind_session",
             CommandPayload::CreateSession { .. } => "create_session",

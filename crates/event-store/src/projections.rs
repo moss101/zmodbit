@@ -86,6 +86,17 @@ fn project_task(
                 params![e.aggregate_id, e.sequence],
             )?;
         }
+        DomainEvent::TaskInputQueued {
+            input_id,
+            mode,
+            text,
+        } => {
+            conn.execute(
+                "INSERT INTO task_inputs (input_id, task_id, mode, text, sequence, state)
+                 VALUES (?1, ?2, ?3, ?4, ?5, 'pending')",
+                params![input_id, e.aggregate_id, mode.as_str(), text, e.sequence,],
+            )?;
+        }
         _ => {}
     }
     Ok(())
