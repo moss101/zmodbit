@@ -152,10 +152,11 @@ mod conformance {
     }
 
     /// argv: the request is validated and the program runs with its args.
+    /// `git` is the portable real process on every CI platform.
     #[test]
     fn contract_field_argv_runs_real_process() {
         let req = ExecRequest {
-            argv: vec!["echo".into(), "contract-argv".into()],
+            argv: vec!["git".into(), "--version".into()],
             ..Default::default()
         };
         req.validate().unwrap();
@@ -165,7 +166,7 @@ mod conformance {
         let state = broker.wait_and_record("run-argv").unwrap();
         assert!(matches!(state, crate::RunState::Exited(0)));
         let (bytes, _) = broker.read_output("run-argv", 0, usize::MAX).unwrap();
-        assert!(String::from_utf8_lossy(&bytes).contains("contract-argv"));
+        assert!(String::from_utf8_lossy(&bytes).contains("git version"));
         let _ = dir;
     }
 
@@ -177,15 +178,13 @@ mod conformance {
         let broker = ExecBroker::open(&dir).unwrap();
         // Canonicalize: temp dirs may sit under a symlink (/var -> /private/var).
         let workdir = workdir.canonicalize().unwrap();
-        // Real process reports its own cwd back to us (sh is on PATH on all
-        // CI platforms via Git for Windows).
+        // The child reports its own cwd with a shell builtin.
+        #[cfg(windows)]
+        let argv: Vec<String> = vec!["cmd.exe".into(), "/C".into(), "cd".into()];
+        #[cfg(not(windows))]
+        let argv: Vec<String> = vec!["pwd".into()];
         broker
-            .spawn_full(
-                "run-cwd",
-                &["sh".to_string(), "-c".to_string(), "pwd".to_string()],
-                Some(workdir.as_path()),
-                &[],
-            )
+            .spawn_full("run-cwd", &argv, Some(workdir.as_path()), &[])
             .unwrap();
         broker.wait_and_record("run-cwd").unwrap();
         let (bytes, _) = broker.read_output("run-cwd", 0, usize::MAX).unwrap();
@@ -198,10 +197,18 @@ mod conformance {
     fn contract_field_env_is_honored() {
         let dir = temp_runs("env");
         let broker = ExecBroker::open(&dir).unwrap();
+        #[cfg(windows)]
+        let argv: Vec<String> = vec![
+            "cmd.exe".into(),
+            "/C".into(),
+            "echo %CONTRACT_MARKER%".into(),
+        ];
+        #[cfg(not(windows))]
+        let argv: Vec<String> = vec!["sh".into(), "-c".into(), "echo $CONTRACT_MARKER".into()];
         broker
             .spawn_full(
                 "run-env",
-                &["sh".into(), "-c".into(), "echo $CONTRACT_MARKER".into()],
+                &argv,
                 None,
                 &[("CONTRACT_MARKER".to_string(), "present".to_string())],
             )
