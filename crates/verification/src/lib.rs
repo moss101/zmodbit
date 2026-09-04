@@ -4,6 +4,8 @@
 //! result. A verification plan passes only when EVERY gate passes —
 //! completion requires real-system evidence, never a model claim.
 
+pub mod diagnostics;
+
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -47,6 +49,7 @@ pub struct GateResult {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+
 pub struct VerificationReport {
     pub passed: bool,
     pub gates: Vec<GateResult>,

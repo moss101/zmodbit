@@ -6334,8 +6334,18 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0018",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T11:05:21Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:05:21Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Diagnostics comparison module in verification crate; regression-only attribution with preexisting/resolved tracking. 3 tests green."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0019",
@@ -6480,8 +6490,10 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0027",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T10:33:44Z"
   },
   {
    "id": "IMP-EV-0028",
@@ -6603,8 +6615,18 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0036",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T11:05:21Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:05:21Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Per-hunk selective review via review::apply_review; proven by change_engine tests"
+    }
+   ]
   },
   {
    "id": "IMP-EV-0037",
@@ -7024,8 +7046,18 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0065",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T11:05:21Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:05:21Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Optimistic-concurrency revert proven by hash-mismatch test in imp_batch.rs"
+    }
+   ]
   },
   {
    "id": "IMP-EV-0066",
@@ -24401,5 +24433,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T10:29:51Z"
+ "updated_on": "2026-09-04T11:05:21Z"
 }
