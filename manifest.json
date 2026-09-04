@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 57,
+    "root_and_tooling": 64,
     "docs_bytes": 508040
   },
   "sections": [
@@ -755,9 +755,9 @@
       "sha256": "36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c"
     },
     {
-      "path": "apps/desktop/dist/assets/index-BJMD7rLe.js",
-      "bytes": 145498,
-      "sha256": "cc69f16b9b0fab97b91535afbd7404cc3fe13aa230afadcd79df547498ee9fcf"
+      "path": "apps/desktop/dist/assets/index-BngEqeZV.js",
+      "bytes": 146638,
+      "sha256": "e2e0c547a033d2e8e1cbef8e576bbf394c5f488745d80c2bf376906fce067f61"
     },
     {
       "path": "apps/desktop/dist/assets/index-DrM0Ho-V.css",
@@ -767,27 +767,27 @@
     {
       "path": "apps/desktop/dist/index.html",
       "bytes": 448,
-      "sha256": "2aa9b4e72d4b523c2dabe64bb20fc853c3a29b9e2c4d1e61b9d5ed87930afdfd"
+      "sha256": "5a322bc5abed3f7d0a907a96f4a5015bfe135d17db2d4d3eaebe8bfbdc2e02e1"
     },
     {
       "path": "apps/desktop/electron/bridge-schema.cjs",
-      "bytes": 3926,
-      "sha256": "8d5387b36b7cb374e98ba73f4f9e11ee9956442a8c68481ac987a3459bc860fe"
+      "bytes": 4252,
+      "sha256": "e6d84ebab5adb95741978bef6feeeebef685d5f213bed5a1b498ee81575ce522"
     },
     {
       "path": "apps/desktop/electron/main.cjs",
-      "bytes": 4497,
-      "sha256": "7b0171810334b3bb97f0403677a9c042fecee66b2f2afef912f0a4cf7542673f"
+      "bytes": 4779,
+      "sha256": "28b584323005444e26cea0fac8498ee787f9633d3e2435a0237bdfe4975c9ddb"
     },
     {
       "path": "apps/desktop/electron/preload.cjs",
-      "bytes": 554,
-      "sha256": "1463ea7284acf481f5a112524fbb13aad50d386a915af1f14f8759836f3b5ef0"
+      "bytes": 627,
+      "sha256": "1bf3c29e1fb1eadedf61736d40836843e3dea7ad04c40ded10b36bfcad7d95eb"
     },
     {
       "path": "apps/desktop/electron/surface-client.cjs",
-      "bytes": 10525,
-      "sha256": "8205a7250a43acfc48fc4b63009a5edbafe394c7e719a939c39c95306c2bb773"
+      "bytes": 11768,
+      "sha256": "92020c6ecc6838bb4e7eced9e05263bc75d5c5b3e6795f650b91327bff192b75"
     },
     {
       "path": "apps/desktop/index.html",
@@ -801,8 +801,23 @@
     },
     {
       "path": "apps/desktop/src/App.tsx",
-      "bytes": 2869,
-      "sha256": "8a145353852d4ee9c07992e13159d842340be509aa6b5a90a874403256c80bae"
+      "bytes": 3764,
+      "sha256": "8ccd9ef39784bdcde1777e3276977c988ed9f71af87dd89ba6430bf2a3c59990"
+    },
+    {
+      "path": "apps/desktop/src/command-center/commands.ts",
+      "bytes": 2241,
+      "sha256": "789f1cecc06fd978e60eb5304fcdc04995bceeb489d404de82008dafeee33f24"
+    },
+    {
+      "path": "apps/desktop/src/context-inspector/inspector.test.ts",
+      "bytes": 1213,
+      "sha256": "3d2009a9090dd04b6793af794c894cd64c3df8ad2cb0d821fa8bd48c55ca65b2"
+    },
+    {
+      "path": "apps/desktop/src/context-inspector/inspector.ts",
+      "bytes": 1518,
+      "sha256": "f38ab87c66e744fa8c0a1b6b5433c445655b5bddcacbf72dea4b41b608503d8b"
     },
     {
       "path": "apps/desktop/src/fleet/grouping.test.ts",
@@ -813,6 +828,16 @@
       "path": "apps/desktop/src/fleet/grouping.ts",
       "bytes": 2067,
       "sha256": "289eced8443546348bb7f941b247405307ba92df798dfd1c98546785bfe5c55e"
+    },
+    {
+      "path": "apps/desktop/src/fleet/supervision.test.ts",
+      "bytes": 1085,
+      "sha256": "b5bcfae4e3b7c1e7e3d2cdf336765e4c2d5cc6382f7d4ae15bde0c6313993283"
+    },
+    {
+      "path": "apps/desktop/src/fleet/supervision.ts",
+      "bytes": 918,
+      "sha256": "7676a5b0d2bd6909b23c281d741d623743fcaa627048efb55f885f096c15aee4"
     },
     {
       "path": "apps/desktop/src/global.d.ts",
@@ -828,6 +853,16 @@
       "path": "apps/desktop/src/main.tsx",
       "bytes": 232,
       "sha256": "ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140"
+    },
+    {
+      "path": "apps/desktop/src/status-center/status.test.ts",
+      "bytes": 1210,
+      "sha256": "21829549ac56b4673383e5f91af4f9fd61bf875816d55eb877813f3d7b7d1005"
+    },
+    {
+      "path": "apps/desktop/src/status-center/status.ts",
+      "bytes": 1251,
+      "sha256": "b5bac21314e4e4a7d79ad2d05626714e24057e35eb6591ff29ec744ab2e37b3d"
     },
     {
       "path": "apps/desktop/src/styles.css",
@@ -921,8 +956,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 28191,
-      "sha256": "f01e5cb14e8bc5b5ae73afce3424cf7842ad8353a61299863a7ab510d02eff73"
+      "bytes": 34113,
+      "sha256": "3d75544f58dd6bdf51d9aa2e4f7fc5b1d8d9532c44297a8dabdfb627eee5ab10"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",

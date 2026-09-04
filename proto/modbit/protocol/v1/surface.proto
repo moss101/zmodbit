@@ -3,6 +3,7 @@ syntax = "proto3";
 package modbit.protocol.v1;
 
 import "modbit/protocol/v1/commands.proto";
+import "modbit/protocol/v1/events.proto";
 import "modbit/protocol/v1/domain.proto";
 
 // Local SurfaceProtocol request/response slice (docs/30 § Local SurfaceProtocol,
@@ -17,10 +18,22 @@ message SurfaceRequest {
     StartTaskCommand start_task = 5;
     TaskReadyForReviewCommand task_ready_for_review = 6;
     CompleteTaskCommand complete_task = 7;
+    GetTaskEventsRequest get_task_events = 8;
   }
 }
 
 message GetFleetRequest {}
+
+message GetTaskEventsRequest {
+  string task_id = 1;
+}
+
+// Context Inspector payload: the task's durable event stream (docs/32
+// task/timeline modules). Events are committed facts, never fabricated.
+message TaskEvents {
+  string task_id = 1;
+  repeated EventEnvelope events = 2;
+}
 
 message QueueTaskCommand {
   string task_id = 1;
@@ -59,4 +72,5 @@ message SurfaceResponse {
   Fleet fleet = 3;
   TaskView task = 4;
   string session_id = 5;
+  TaskEvents task_events = 6;
 }

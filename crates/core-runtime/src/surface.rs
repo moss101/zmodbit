@@ -56,6 +56,26 @@ impl CoreServices {
 
     fn dispatch(&self, request: pb::SurfaceRequest) -> pb::SurfaceResponse {
         match request.request {
+            Some(pb::surface_request::Request::GetTaskEvents(get)) => {
+                match self.task_events(&get.task_id) {
+                    Ok(events) => pb::SurfaceResponse {
+                        ok: true,
+                        error: String::new(),
+                        fleet: Default::default(),
+                        task: Default::default(),
+                        session_id: String::new(),
+                        task_events: Some(pb::TaskEvents {
+                            task_id: get.task_id,
+                            events,
+                        }),
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             Some(pb::surface_request::Request::GetFleet(_)) => match self.fleet() {
                 Ok(fleet) => pb::SurfaceResponse {
                     ok: true,
@@ -280,6 +300,44 @@ impl CoreServices {
         }
     }
 
+    /// Context Inspector data: the task's durable event stream (docs/32
+    /// timeline; events are committed facts, never fabricated).
+    fn task_events(&self, task_id: &str) -> Result<Vec<pb::EventEnvelope>, String> {
+        let exists: bool = self
+            .store
+            .with_conn(|conn| {
+                conn.query_row(
+                    "SELECT COUNT(*) FROM events WHERE aggregate_id = ?1",
+                    [task_id],
+                    |r| r.get::<_, i64>(0),
+                )
+                .map(|n| n > 0)
+            })
+            .map_err(|e| e.to_string())?;
+        if !exists {
+            return Err(format!("task {task_id} does not exist"));
+        }
+        let envelopes = self.store.load(task_id).map_err(|e| e.to_string())?;
+        Ok(envelopes
+            .iter()
+            .map(|e| pb::EventEnvelope {
+                event_id: e.event_id.clone(),
+                tenant_id: String::new(),
+                aggregate_id: e.aggregate_id.clone(),
+                generation: e.sequence,
+                event_type: e.event_type.clone(),
+                schema_version: Some(pb::SchemaVersion {
+                    major: e.schema_version.0,
+                    minor: e.schema_version.1,
+                }),
+                occurred_at: Some(rfc3339_to_timestamp(&e.occurred_at)),
+                payload: serde_json::to_vec(&e.payload)
+                    .map_err(|e| e.to_string())
+                    .unwrap_or_default(),
+            })
+            .collect())
+    }
+
     /// Fleet snapshot from the tasks projection (docs/31 § `tasks`).
     fn fleet(&self) -> Result<pb::Fleet, String> {
         let default_session = self.first_session()?.unwrap_or_default();
@@ -388,6 +446,42 @@ fn map_state(state: &str) -> i32 {
 
 fn new_command_id() -> String {
     uuid::Uuid::now_v7().to_string()
+}
+
+/// Converts the RFC3339 timestamps emitted by the store into protobuf
+/// Timestamps. Inverse of the event store's own formatting.
+fn rfc3339_to_timestamp(s: &str) -> prost_types::Timestamp {
+    // Format: YYYY-MM-DDTHH:MM:SS.mmmZ (produced by the event store).
+    let parse_err = || prost_types::Timestamp {
+        seconds: 0,
+        nanos: 0,
+    };
+    let bytes = s.as_bytes();
+    if bytes.len() != 24 || !s.ends_with('Z') {
+        return parse_err();
+    }
+    let num = |a: usize, b: usize| -> Option<i64> { s.get(a..b)?.parse().ok() };
+    let (year, month, day) = match (num(0, 4), num(5, 7), num(8, 10)) {
+        (Some(y), Some(m), Some(d)) => (y, m, d),
+        _ => return parse_err(),
+    };
+    let (hh, mm, ss, ms) = match (num(11, 13), num(14, 16), num(17, 19), num(20, 23)) {
+        (Some(a), Some(b), Some(c), Some(d)) => (a, b, c, d),
+        _ => return parse_err(),
+    };
+    // Days from civil (Howard Hinnant), inverse of the store's formatter.
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = if month > 2 { month - 3 } else { month + 9 };
+    let doy = (153 * mp + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    let secs = days * 86_400 + hh * 3_600 + mm * 60 + ss;
+    prost_types::Timestamp {
+        seconds: secs,
+        nanos: (ms * 1_000_000) as i32,
+    }
 }
 
 fn parse_task_id(task_id: &str) -> TaskId {

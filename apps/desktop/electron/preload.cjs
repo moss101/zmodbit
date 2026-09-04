@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld("modbit", {
   fleetSnapshot: () => ipcRenderer.invoke("fleet:snapshot"),
   createTask: (title, prompt) => ipcRenderer.invoke("task:create", { title, prompt }),
   createSession: (displayName) => ipcRenderer.invoke("session:create", { displayName }),
+  taskEvents: (taskId) => ipcRenderer.invoke("task:events", { taskId }),
 });

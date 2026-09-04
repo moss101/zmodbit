@@ -8,6 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { CreateSessionCommand, CreateTaskCommand } from "./commands";
 import { TaskStatus, taskStatusFromJSON, taskStatusToJSON } from "./domain";
+import { EventEnvelope } from "./events";
 
 export const protobufPackage = "modbit.protocol.v1";
 
@@ -24,9 +25,23 @@ export interface SurfaceRequest {
   startTask?: StartTaskCommand | undefined;
   taskReadyForReview?: TaskReadyForReviewCommand | undefined;
   completeTask?: CompleteTaskCommand | undefined;
+  getTaskEvents?: GetTaskEventsRequest | undefined;
 }
 
 export interface GetFleetRequest {
+}
+
+export interface GetTaskEventsRequest {
+  taskId: string;
+}
+
+/**
+ * Context Inspector payload: the task's durable event stream (docs/32
+ * task/timeline modules). Events are committed facts, never fabricated.
+ */
+export interface TaskEvents {
+  taskId: string;
+  events: EventEnvelope[];
 }
 
 export interface QueueTaskCommand {
@@ -71,6 +86,7 @@ export interface SurfaceResponse {
   fleet: Fleet | undefined;
   task: TaskView | undefined;
   sessionId: string;
+  taskEvents: TaskEvents | undefined;
 }
 
 function createBaseSurfaceRequest(): SurfaceRequest {
@@ -82,6 +98,7 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     startTask: undefined,
     taskReadyForReview: undefined,
     completeTask: undefined,
+    getTaskEvents: undefined,
   };
 }
 
@@ -107,6 +124,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.completeTask !== undefined) {
       CompleteTaskCommand.encode(message.completeTask, writer.uint32(58).fork()).join();
+    }
+    if (message.getTaskEvents !== undefined) {
+      GetTaskEventsRequest.encode(message.getTaskEvents, writer.uint32(66).fork()).join();
     }
     return writer;
   },
@@ -174,6 +194,14 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.completeTask = CompleteTaskCommand.decode(reader, reader.uint32());
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.getTaskEvents = GetTaskEventsRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -194,6 +222,7 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
         ? TaskReadyForReviewCommand.fromJSON(object.taskReadyForReview)
         : undefined,
       completeTask: isSet(object.completeTask) ? CompleteTaskCommand.fromJSON(object.completeTask) : undefined,
+      getTaskEvents: isSet(object.getTaskEvents) ? GetTaskEventsRequest.fromJSON(object.getTaskEvents) : undefined,
     };
   },
 
@@ -219,6 +248,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.completeTask !== undefined) {
       obj.completeTask = CompleteTaskCommand.toJSON(message.completeTask);
+    }
+    if (message.getTaskEvents !== undefined) {
+      obj.getTaskEvents = GetTaskEventsRequest.toJSON(message.getTaskEvents);
     }
     return obj;
   },
@@ -248,6 +280,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.completeTask = (object.completeTask !== undefined && object.completeTask !== null)
       ? CompleteTaskCommand.fromPartial(object.completeTask)
+      : undefined;
+    message.getTaskEvents = (object.getTaskEvents !== undefined && object.getTaskEvents !== null)
+      ? GetTaskEventsRequest.fromPartial(object.getTaskEvents)
       : undefined;
     return message;
   },
@@ -292,6 +327,140 @@ export const GetFleetRequest: MessageFns<GetFleetRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<GetFleetRequest>, I>>(_: I): GetFleetRequest {
     const message = createBaseGetFleetRequest();
+    return message;
+  },
+};
+
+function createBaseGetTaskEventsRequest(): GetTaskEventsRequest {
+  return { taskId: "" };
+}
+
+export const GetTaskEventsRequest: MessageFns<GetTaskEventsRequest> = {
+  encode(message: GetTaskEventsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetTaskEventsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTaskEventsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTaskEventsRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: GetTaskEventsRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTaskEventsRequest>, I>>(base?: I): GetTaskEventsRequest {
+    return GetTaskEventsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTaskEventsRequest>, I>>(object: I): GetTaskEventsRequest {
+    const message = createBaseGetTaskEventsRequest();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseTaskEvents(): TaskEvents {
+  return { taskId: "", events: [] };
+}
+
+export const TaskEvents: MessageFns<TaskEvents> = {
+  encode(message: TaskEvents, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    for (const v of message.events) {
+      EventEnvelope.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TaskEvents {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTaskEvents();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.events.push(EventEnvelope.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TaskEvents {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      events: globalThis.Array.isArray(object?.events) ? object.events.map((e: any) => EventEnvelope.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: TaskEvents): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.events?.length) {
+      obj.events = message.events.map((e) => EventEnvelope.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TaskEvents>, I>>(base?: I): TaskEvents {
+    return TaskEvents.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TaskEvents>, I>>(object: I): TaskEvents {
+    const message = createBaseTaskEvents();
+    message.taskId = object.taskId ?? "";
+    message.events = object.events?.map((e) => EventEnvelope.fromPartial(e)) || [];
     return message;
   },
 };
@@ -763,7 +932,7 @@ export const Fleet: MessageFns<Fleet> = {
 };
 
 function createBaseSurfaceResponse(): SurfaceResponse {
-  return { ok: false, error: "", fleet: undefined, task: undefined, sessionId: "" };
+  return { ok: false, error: "", fleet: undefined, task: undefined, sessionId: "", taskEvents: undefined };
 }
 
 export const SurfaceResponse: MessageFns<SurfaceResponse> = {
@@ -782,6 +951,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.sessionId !== "") {
       writer.uint32(42).string(message.sessionId);
+    }
+    if (message.taskEvents !== undefined) {
+      TaskEvents.encode(message.taskEvents, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -833,6 +1005,14 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.sessionId = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.taskEvents = TaskEvents.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -849,6 +1029,7 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       fleet: isSet(object.fleet) ? Fleet.fromJSON(object.fleet) : undefined,
       task: isSet(object.task) ? TaskView.fromJSON(object.task) : undefined,
       sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
+      taskEvents: isSet(object.taskEvents) ? TaskEvents.fromJSON(object.taskEvents) : undefined,
     };
   },
 
@@ -869,6 +1050,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.sessionId !== "") {
       obj.sessionId = message.sessionId;
     }
+    if (message.taskEvents !== undefined) {
+      obj.taskEvents = TaskEvents.toJSON(message.taskEvents);
+    }
     return obj;
   },
 
@@ -882,6 +1066,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     message.fleet = (object.fleet !== undefined && object.fleet !== null) ? Fleet.fromPartial(object.fleet) : undefined;
     message.task = (object.task !== undefined && object.task !== null) ? TaskView.fromPartial(object.task) : undefined;
     message.sessionId = object.sessionId ?? "";
+    message.taskEvents = (object.taskEvents !== undefined && object.taskEvents !== null)
+      ? TaskEvents.fromPartial(object.taskEvents)
+      : undefined;
     return message;
   },
 };

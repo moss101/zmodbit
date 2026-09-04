@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { groupFleet, FLEET_VIEW_ORDER, FLEET_VIEW_LABELS, type TaskCard } from "./fleet/grouping";
+import { groupFleet, FLEET_VIEW_ORDER, FLEET_VIEW_LABELS, TASK_STATUS, type TaskCard } from "./fleet/grouping";
+import { superviseFleet } from "./fleet/supervision";
+import { statusSummary } from "./status-center/status";
 
 // docs/32: the renderer never fabricates completion — every card renders
 // from Core data (projections derived from committed events only).
@@ -48,10 +50,31 @@ export default function App() {
   }, [title, prompt, submitting, refresh]);
 
   const grouped = groupFleet(tasks);
+  const summary = statusSummary(tasks);
+  const supervised = superviseFleet(tasks);
 
   return (
     <main>
       <h1>Modbit Fleet</h1>
+      <section aria-label="Status center">
+        <h2>Status center</h2>
+        <p>
+          {summary.totalTasks} tasks · {summary.attention} need attention ·{" "}
+          {summary.bySession.length} session(s)
+        </p>
+      </section>
+      <section aria-label="Needs attention supervision">
+        <h2>Needs attention — single next action</h2>
+        {supervised.length === 0 ? (
+          <p className="empty">nothing needs attention</p>
+        ) : (
+          supervised.map(({ task, nextAction }) => (
+            <article key={task.taskId}>
+              <strong>{task.title}</strong> — {nextAction}
+            </article>
+          ))
+        )}
+      </section>
       {error ? <p role="alert">Core error: {error}</p> : null}
       <section aria-label="New task">
         <input

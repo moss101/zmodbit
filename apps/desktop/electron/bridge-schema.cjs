@@ -79,6 +79,14 @@ const CHANNELS = {
             return { kind: "createTask", title, prompt };
         },
     },
+    "task:events": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId"]);
+            const taskId = requireString(payload, "taskId", 64);
+            return { kind: "taskEvents", taskId };
+        },
+    },
     "session:create": {
         validate(payload) {
             if (!isPlainObject(payload)) throw new Rejected("payload must be an object");

@@ -70,6 +70,10 @@ async function getFleet() {
   return withRetry((s) => s.request({ getFleet: {} }));
 }
 
+async function getTaskEvents(taskId) {
+  return withRetry((s) => s.request({ taskEvents: taskId }));
+}
+
 async function createTask({ title, prompt }) {
   return withRetry((s) => s.request({ createTask: { sessionId: "", title, prompt } }));
 }
@@ -102,6 +106,10 @@ function registerIpc() {
   guarded("session:create", (request) => {
     if (request.kind !== "createSession") return { ok: false, error: "wrong request kind" };
     return createSession({ displayName: request.displayName });
+  });
+  guarded("task:events", (request) => {
+    if (request.kind !== "taskEvents") return { ok: false, error: "wrong request kind" };
+    return getTaskEvents(request.taskId);
   });
 }
 

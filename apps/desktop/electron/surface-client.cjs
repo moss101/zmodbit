@@ -77,13 +77,40 @@ function encodeGetFleet() {
   return encodeLenField(3, Buffer.alloc(0));
 }
 
+function encodeGetTaskEvents(taskId) {
+  const inner = encodeLenField(1, Buffer.from(taskId, "utf8"));
+  return encodeLenField(8, inner);
+}
+
 function encodeSurfaceRequest(request) {
   if (request.createSession !== undefined) return encodeCreateSession(request.createSession);
   if (request.createTask !== undefined) {
     const t = request.createTask;
     return encodeCreateTask(t.sessionId, t.title, t.prompt);
   }
+  if (request.taskEvents !== undefined) return encodeGetTaskEvents(request.taskEvents);
   return encodeGetFleet();
+}
+
+function decodeTaskEvents(buf) {
+  const result = { taskId: "", events: [] };
+  for (const [fieldNo, value] of decodeFields(buf)) {
+    if (fieldNo === 1) result.taskId = value.toString("utf8");
+    else if (fieldNo === 2) {
+      // EventEnvelope: event_id(1) str, aggregate_id(3) str, generation(4)
+      // varint, event_type(5) str, occurred_at(8) str, payload(7) bytes.
+      const event = { eventId: "", aggregateId: "", generation: "0", eventType: "", payload: null };
+      for (const [f, v] of decodeFields(value)) {
+        if (f === 1) event.eventId = v.toString("utf8");
+        else if (f === 3) event.aggregateId = v.toString("utf8");
+        else if (f === 4) event.generation = v.toString();
+        else if (f === 5) event.eventType = v.toString("utf8");
+        else if (f === 7) event.payload = JSON.parse(v.toString("utf8"));
+      }
+      result.events.push(event);
+    }
+  }
+  return result;
 }
 
 // ---- message decoders ------------------------------------------------------
@@ -150,6 +177,7 @@ function decodeSurfaceResponse(buf) {
     fleet: { tasks: [], defaultSessionId: "" },
     task: null,
     sessionId: "",
+    taskEvents: null,
   };
   for (const [fieldNo, value] of decodeFields(buf)) {
     if (fieldNo === 1) response.ok = value !== 0n;
@@ -157,6 +185,7 @@ function decodeSurfaceResponse(buf) {
     else if (fieldNo === 3) response.fleet = decodeFleet(value);
     else if (fieldNo === 4) response.task = decodeTaskView(value);
     else if (fieldNo === 5) response.sessionId = value.toString("utf8");
+    else if (fieldNo === 6) response.taskEvents = decodeTaskEvents(value);
   }
   return response;
 }
