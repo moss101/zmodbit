@@ -213,7 +213,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 |---|---|---|---|
 | `M1.1` | COMPLETE | Implement Session/Task/Run/Turn/RunStep domain and event store |  |
 | `M1.2` | COMPLETE | Implement SQLite migrations, projections, command idempotency |  |
-| `M1.3` | NOT_STARTED | Implement local authenticated SurfaceProtocol |  |
+| `M1.3` | REAL_TESTING | Implement local authenticated SurfaceProtocol |  |
 | `M1.4` | NOT_STARTED | Electron shell + real Fleet/New Task UI against Core |  |
 | `M1.5` | NOT_STARTED | Crash/restart snapshot + event replay |  |
 

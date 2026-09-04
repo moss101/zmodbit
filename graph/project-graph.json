@@ -966,8 +966,24 @@
    "milestone": "M1",
    "order": 2,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T01:06:14Z",
+     "from": "NOT_STARTED",
+     "to": "AUDITING",
+     "note": "Audit: crates/protocol has protobuf codegen only; no transport, no auth handshake, no negotiation. NOT_FOUND. Reading docs/30 § Local SurfaceProtocol + docs/32."
+    },
+    {
+     "at": "2026-09-04T01:18:39Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Implemented authenticated framed-protobuf transport per docs/30 § Local SurfaceProtocol: UDS (unix) / named pipe (windows) via interprocess; boot-scoped BootSecret (getrandom); Challenge->Hello->AuthResult handshake with HMAC-SHA256 over both nonces + version (constant-time verify; secret never on wire); capability negotiation (major mismatch => read_only flag per docs/30 Version compatibility; minor = min). 8MiB frame bound. 3 real-socket integration tests: wrong-secret rejected + server survives, version negotiation read-only, 25-frame round-trip of canonical CommandEnvelope. Awaiting 3-OS CI."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T01:18:39Z"
   },
   {
    "id": "M1.4",
@@ -23817,5 +23833,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T01:03:42Z"
+ "updated_on": "2026-09-04T01:18:39Z"
 }

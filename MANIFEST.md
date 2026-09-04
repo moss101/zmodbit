@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 582040 | `aa88f6ed41db5fa412c97ec0b7fe259dc0d3bba046c6753228fddb740c1d463e` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22220 | `c7976fefa23febcbc49c61556f0c6e1571431ffcbcc19bd30717bbba969508c4` |
+| `graph/project-graph.json` | project driver graph with live status | 583134 | `2d3c5b3dfa145aa36098e035601f638741dcabf25b479d8a1de12888690f840a` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22221 | `d6de4424be95befacca17a0a362c960d1bdefa857fe00a912513f5cb0700fb73` |
 | `tools/build_manifest.py` | regenerates this manifest | 14622 | `376613450c7c262f03095491743125ee2628ec89831fb518ac3b5ffcf676c6c9` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
@@ -131,6 +131,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3659 | `47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2595 | `4fe9e276a759cd1cce6a3ee0d826306eaa709bcd0e79df6ff9906671d97b407d` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23242 | `f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts` |  | 11854 | `c1eb6739e86a75a80872a57916f9526bcd90607a3096efff3067b100e18b3133` |
 | `packages/surface-protocol/src/index.ts` |  | 729 | `11be0e5c80215d6c2e4d98b96cddfd9c09496a4c8aae680fe0c96f629c672e10` |
 | `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |
 | `packages/surface-protocol/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package modbit.protocol.v1;
+
+// Boot handshake over the local SurfaceProtocol transport (docs/30 § Local
+// SurfaceProtocol). Core generates a boot-scoped random secret; the desktop
+// main process receives it through the inherited secure channel and proves
+// possession via HMAC — the secret itself never crosses the wire and is never
+// exposed to the renderer.
+message Challenge {
+  bytes server_nonce = 1;
+}
+
+message Hello {
+  // HMAC-SHA256(boot_secret, server_nonce || client_nonce || major || minor)
+  bytes proof = 1;
+  bytes client_nonce = 2;
+  uint32 major = 3;
+  uint32 minor = 4;
+}
+
+message AuthResult {
+  bool ok = 1;
+  // Major-version mismatch leaves the connection usable for read-only export
+  // while blocking task mutation (docs/30 § Version compatibility).
+  bool read_only = 2;
+  uint32 negotiated_major = 3;
+  uint32 negotiated_minor = 4;
+  string server_version = 5;
+  string error = 6;
+}

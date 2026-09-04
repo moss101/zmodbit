@@ -6,6 +6,10 @@ edition.workspace = true
 [dependencies]
 prost = "0.13"
 prost-types = "0.13"
+interprocess = "2.2"
+hmac = "0.12"
+getrandom = "0.2"
+sha2 = { workspace = true }
 
 [build-dependencies]
 prost-build = "0.13"
