@@ -255,3 +255,75 @@ fn now_ms() -> u128 {
         .map(|d| d.as_millis())
         .unwrap_or(0)
 }
+
+/// Environment source hierarchy (M2, REQ-EV-0021): repo/team/user layers
+/// with explicit precedence and per-layer revisions as staleness markers.
+pub mod env_hierarchy {
+    use serde::{Deserialize, Serialize};
+    use std::collections::BTreeMap;
+
+    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+    pub struct EnvHierarchy {
+        pub layers: Vec<(String, BTreeMap<String, String>)>,
+        pub revisions: BTreeMap<String, u64>,
+    }
+
+    impl EnvHierarchy {
+        pub fn add_layer(&mut self, name: &str, vars: BTreeMap<String, String>) {
+            let rev = self.revisions.entry(name.to_string()).or_insert(0);
+            *rev += 1;
+            self.layers.push((name.to_string(), vars));
+        }
+
+        pub fn resolve(&self) -> BTreeMap<String, String> {
+            let mut resolved = BTreeMap::new();
+            for (_, vars) in &self.layers {
+                for (k, v) in vars {
+                    if v.is_empty() {
+                        resolved.remove(k);
+                    } else {
+                        resolved.insert(k.clone(), v.clone());
+                    }
+                }
+            }
+            resolved
+        }
+
+        pub fn layer_revision(&self, name: &str) -> u64 {
+            *self.revisions.get(name).unwrap_or(&0)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn env_hierarchy_resolves_by_precedence() {
+            let mut h = EnvHierarchy::default();
+            let mut repo = std::collections::BTreeMap::new();
+            repo.insert("RUST_LOG".to_string(), "debug".to_string());
+            repo.insert("CI".to_string(), "1".to_string());
+            let mut team = std::collections::BTreeMap::new();
+            team.insert("RUST_LOG".to_string(), "warn".to_string());
+            let mut user = std::collections::BTreeMap::new();
+            user.insert("RUSTFLAGS".to_string(), "-D warnings".to_string());
+            h.add_layer("repo", repo);
+            h.add_layer("team", team);
+            h.add_layer("user", user);
+            let resolved = h.resolve();
+            assert_eq!(resolved.get("RUST_LOG").unwrap(), "warn");
+            assert_eq!(resolved.get("CI").unwrap(), "1");
+            assert_eq!(resolved.get("RUSTFLAGS").unwrap(), "-D warnings");
+        }
+
+        #[test]
+        fn env_staleness_detected_by_revision() {
+            let mut h = EnvHierarchy::default();
+            let before = h.layer_revision("repo");
+            h.add_layer("repo", BTreeMap::from([("K".to_string(), "v".to_string())]));
+            let after = h.layer_revision("repo");
+            assert!(after > before);
+        }
+    }
+}

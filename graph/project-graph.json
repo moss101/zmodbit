@@ -6364,10 +6364,19 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33862287543",
-    "commit:0035212"
+    "commit:0035212",
+    "commit:3cc4a03"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T10:18:16Z"
+   "status_changed_on": "2026-09-04T11:30:54Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:30:54Z",
+     "from": "COMPLETE",
+     "to": "COMPLETE",
+     "note": "Scrollback-as-artifact: bounded preview + content-addressed full output; >10MB output proven via bounded reads with resume."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0020",
@@ -6397,10 +6406,20 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33862287543",
-    "commit:0035212"
+    "commit:0035212",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33863214970",
+    "commit:3cc4a03"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T10:18:16Z"
+   "status_changed_on": "2026-09-04T11:30:54Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:30:54Z",
+     "from": "COMPLETE",
+     "to": "COMPLETE",
+     "note": "EnvHierarchy with repo/team/user precedence layers, per-layer revisions as staleness markers; resolution is highest-wins with explicit unset; unit tests green in CI."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0022",
@@ -6458,10 +6477,20 @@
    "status": "COMPLETE",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33862287543",
-    "commit:0035212"
+    "commit:0035212",
+    "run:https://github.com/moss101/zmodbit/actions/runs/33863214970",
+    "commit:3cc4a03"
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T10:18:16Z"
+   "status_changed_on": "2026-09-04T11:30:54Z",
+   "notes": [
+    {
+     "at": "2026-09-04T11:30:54Z",
+     "from": "COMPLETE",
+     "to": "COMPLETE",
+     "note": "ShellSession isolation: two sessions with different cwd/env cannot leak between each other; stateless one-shot and optional durable session both supported."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0026",
@@ -24462,5 +24491,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T11:21:48Z"
+ "updated_on": "2026-09-04T11:30:54Z"
 }

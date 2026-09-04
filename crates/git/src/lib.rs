@@ -180,6 +180,29 @@ impl GitRepo {
         Ok(Self::stdout_text(&out))
     }
 
+    /// Creates a temporary commit on a detached HEAD to capture dirty workspace
+    /// state for handoff (IMP-EV-0022). Returns the commit hash.
+    pub fn snapshot_dirty_state(&self, label: &str) -> Result<String, GitError> {
+        self.git("add", &["-A"])?;
+        let status = Self::stdout_text(&self.git("status", &["--porcelain"])?);
+        if status.is_empty() {
+            return Err(GitError::Git {
+                operation: "snapshot_dirty_state".into(),
+                message: "nothing to snapshot".into(),
+            });
+        }
+        self.git("commit", &["-m", &format!("dirty-state snapshot: {label}")])?;
+        let out = self.git("rev-parse", &["HEAD"])?;
+        Ok(Self::stdout_text(&out))
+    }
+
+    /// Returns to the previous branch after a snapshot has been transferred.
+    pub fn restore_branch(&self, branch: &str) -> Result<(), GitError> {
+        self.git("checkout", &[branch])?;
+        self.git("branch", &["-D", "modbit-snapshot"])?;
+        Ok(())
+    }
+
     /// Typed merge (docs/20 § Git strategy): `Merged` on success; `Conflict`
     /// with the conflicted file list as evidence on failure. The merge is
     /// aborted on conflict so the worktree stays clean — the caller decides
