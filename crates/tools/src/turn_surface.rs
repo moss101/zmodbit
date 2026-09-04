@@ -7,7 +7,6 @@
 
 use crate::schema::{ToolSchema, ToolSchemaExt};
 use modbit_policy::EffectClass;
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// One tool as the compiler sees it (full description, not the projected
