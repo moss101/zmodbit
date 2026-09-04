@@ -15,7 +15,13 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
 pub mod approvals;
+pub mod capability_set;
+pub mod device_policy;
 pub use approvals::{intent_hash, Approval, ApprovalError, ApprovalState, ApprovalStore};
+pub use capability_set::{check_e2e_capability, AdvertisedCapability, ProtocolCapabilitySet};
+pub use device_policy::{
+    merge_device_policy, revalidate, DevicePolicy, PolicySnapshot, ProjectConfig,
+};
 
 /// Effect class of a tool (docs/16 § Tool capability).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
