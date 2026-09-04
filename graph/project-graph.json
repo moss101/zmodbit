@@ -7248,10 +7248,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0102",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33833578914",
+    "commit:e557fa8"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T03:32:28Z",
+   "status_changed_on": "2026-09-04T03:36:55Z",
    "notes": [
     {
      "at": "2026-09-04T03:32:28Z",
@@ -7510,10 +7513,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0121",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33833578914",
+    "commit:e557fa8"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T03:32:28Z",
+   "status_changed_on": "2026-09-04T03:36:55Z",
    "notes": [
     {
      "at": "2026-09-04T03:32:28Z",
@@ -7534,10 +7540,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0122",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33833578914",
+    "commit:e557fa8"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T03:32:28Z",
+   "status_changed_on": "2026-09-04T03:36:55Z",
    "notes": [
     {
      "at": "2026-09-04T03:32:28Z",
@@ -7558,10 +7567,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0123",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33833578914",
+    "commit:e557fa8"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T03:32:28Z",
+   "status_changed_on": "2026-09-04T03:36:55Z",
    "notes": [
     {
      "at": "2026-09-04T03:32:28Z",
@@ -23989,5 +24001,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T03:32:28Z"
+ "updated_on": "2026-09-04T03:36:55Z"
 }
