@@ -12,6 +12,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fmt;
 
+pub mod bm25;
 pub mod context_graph;
 pub mod engineering_context;
 pub mod history_context;

@@ -18,8 +18,9 @@ pub struct EfficiencyRecord {
 
 /// The aggregated dashboard (QUAL-EV-0173): quality AND economics side by
 /// side.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct EfficiencyDashboard {
+    pub records: Vec<EfficiencyRecord>,
     pub runs: usize,
     /// Quality: share of runs with verified outcomes (bps).
     pub verified_rate_bps: u64,
@@ -35,6 +36,42 @@ pub struct EfficiencyDashboard {
 #[derive(Default)]
 pub struct Dashboard {
     records: Vec<EfficiencyRecord>,
+}
+
+impl EfficiencyDashboard {
+    /// Aggregates the carried records into the dashboard view.
+    pub fn report(&self) -> EfficiencyDashboard {
+        let records = &self.records;
+        let runs = records.len();
+        let verified = records.iter().filter(|r| r.outcome_verified).count();
+        let total_tokens: u64 = records.iter().map(|r| r.input_tokens).sum();
+        let total_latency_ms: u128 = records.iter().map(|r| r.latency_ms).sum();
+        let total_cost_units: u64 = records.iter().map(|r| r.cost_units).sum();
+        let tokens_per = if verified > 0 {
+            Some(total_tokens / verified as u64)
+        } else {
+            None
+        };
+        let cost_per = if verified > 0 {
+            Some(total_cost_units / verified as u64)
+        } else {
+            None
+        };
+        EfficiencyDashboard {
+            records: records.clone(),
+            runs,
+            verified_rate_bps: if runs == 0 {
+                0
+            } else {
+                (verified as u64 * 10_000) / runs as u64
+            },
+            total_tokens,
+            total_latency_ms,
+            total_cost_units,
+            tokens_per_verified_outcome: tokens_per,
+            cost_per_verified_outcome: cost_per,
+        }
+    }
 }
 
 impl Dashboard {
@@ -65,6 +102,7 @@ impl Dashboard {
             None
         };
         EfficiencyDashboard {
+            records: self.records.clone(),
             runs,
             verified_rate_bps: if runs == 0 {
                 0
