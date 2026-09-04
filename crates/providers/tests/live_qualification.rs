@@ -56,9 +56,11 @@ fn live_streaming_call_produces_normalized_events() {
         .args([
             "-sS",
             "-N",
+            "--max-time",
+            "90",
             "-X",
             "POST",
-            provider.endpoint(),
+            &provider.endpoint(),
             "-H",
             &format!("Authorization: Bearer {key}"),
             "-H",
@@ -70,22 +72,34 @@ fn live_streaming_call_produces_normalized_events() {
         ])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
         .spawn()
         .expect("spawn curl");
-    child
-        .stdin
-        .as_mut()
-        .expect("stdin")
-        .write_all(&body_bytes)
-        .unwrap();
-
+    // take() the stdin handle: dropping it closes the pipe. With
+    // --data-binary @- curl waits for stdin EOF before sending — leaving
+    // it open stalls the request forever.
+    std::fs::write("/tmp/live-body.json", &body_bytes).unwrap();
+    {
+        let mut stdin = child.stdin.take().expect("stdin");
+        stdin.write_all(&body_bytes).unwrap();
+    }
+    let curl_stderr_pipe = child.stderr.take().expect("stderr");
+    let curl_stderr = {
+        let mut buf = String::new();
+        use std::io::Read as _;
+        let mut reader = std::io::BufReader::new(curl_stderr_pipe);
+        let _ = reader.read_to_string(&mut buf);
+        buf
+    };
     let stdout = child.stdout.take().expect("stdout");
     let mut reader = BufReader::new(stdout);
     let mut deltas = 0usize;
     let mut completed = false;
     let mut assembled = String::new();
+    let mut raw_lines: Vec<String> = Vec::new();
     let mut line = String::new();
     while reader.read_line(&mut line).unwrap_or(0) > 0 {
+        raw_lines.push(line.trim_end().to_string());
         if let Some(payload) = modbit_providers::gateway::sse_data_line(&line) {
             let event = match provider {
                 Provider::OpenAi => parse_openai_sse_payload(&payload),
@@ -106,10 +120,38 @@ fn live_streaming_call_produces_normalized_events() {
         line.clear();
     }
     let status = child.wait().unwrap();
-    let _ = status;
+    std::fs::write(
+        "/tmp/live-debug.log",
+        format!(
+            "curl_exit={:?}\nstderr={}\nraw_lines={}\n---\n{}\n",
+            status.code(),
+            curl_stderr,
+            raw_lines.len(),
+            raw_lines.join("\n")
+        ),
+    )
+    .unwrap();
 
     let _ = &credential;
-    assert!(deltas > 0, "expected streaming deltas");
+    assert!(
+        deltas > 0,
+        "expected streaming deltas; saw {} raw lines; first 300: {:?}; last 500: {}",
+        raw_lines.len(),
+        raw_lines
+            .first()
+            .map(|l| l.chars().take(300).collect::<String>()),
+        raw_lines
+            .iter()
+            .rev()
+            .take(6)
+            .rev()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n")
+            .chars()
+            .take(500)
+            .collect::<String>()
+    );
     assert!(completed, "expected a Completed event");
     assert!(
         !assembled.trim().is_empty(),

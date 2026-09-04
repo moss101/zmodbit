@@ -56,10 +56,22 @@ pub enum Provider {
 }
 
 impl Provider {
-    pub fn endpoint(&self) -> &'static str {
+    /// Production endpoint for this adapter. The base URL is overridable
+    /// for OpenAI-compatible production gateways (e.g. OPENAI_BASE_URL=
+    /// https://openrouter.ai/api/v1) — the wire protocol is identical
+    /// chat-completions (docs/15).
+    pub fn endpoint(&self) -> String {
         match self {
-            Provider::OpenAi => "https://api.openai.com/v1/chat/completions",
-            Provider::Anthropic => "https://api.anthropic.com/v1/messages",
+            Provider::OpenAi => {
+                let base = std::env::var("OPENAI_BASE_URL")
+                    .unwrap_or_else(|_| "https://api.openai.com/v1".into());
+                format!("{base}/chat/completions")
+            }
+            Provider::Anthropic => {
+                let base = std::env::var("ANTHROPIC_BASE_URL")
+                    .unwrap_or_else(|_| "https://api.anthropic.com".into());
+                format!("{base}/v1/messages")
+            }
         }
     }
 
@@ -71,17 +83,18 @@ impl Provider {
     }
 }
 
-/// Canonical smoke-test request for live qualification.
+/// Canonical smoke-test request for live qualification. The model is
+/// overridable via MODBIT_LIVE_MODEL for gateways with different catalogs.
 pub fn test_request() -> ModelRequest {
     ModelRequest {
         request_id: "live-qualification".into(),
-        model: "gpt-4o-mini".into(),
+        model: std::env::var("MODBIT_LIVE_MODEL").unwrap_or_else(|_| "gpt-4o-mini".into()),
         system: "Reply with exactly: pong".into(),
         messages: vec![ChatMessage {
             role: Role::User,
             content: "ping".into(),
         }],
-        max_output_tokens: 16,
+        max_output_tokens: 4096,
         temperature: 0.0,
     }
 }

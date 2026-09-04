@@ -17,7 +17,7 @@ use modbit_providers::gateway::{
 };
 use modbit_tools::ToolRegistry;
 use std::io::{BufRead, BufReader, Write};
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
 
 fn live_enabled() -> Option<Provider> {
     if std::env::var("MODBIT_LIVE_OPENAI").is_ok() && std::env::var("OPENAI_API_KEY").is_ok() {
@@ -53,9 +53,11 @@ impl ModelTransport for LiveTransport {
             .args([
                 "-sS",
                 "-N",
+                "--max-time",
+                "90",
                 "-X",
                 "POST",
-                self.provider.endpoint(),
+                &self.provider.endpoint(),
                 "-H",
                 &format!("Authorization: Bearer {}", self.key),
                 "-H",
@@ -69,14 +71,16 @@ impl ModelTransport for LiveTransport {
             .stdout(Stdio::piped())
             .spawn()
             .map_err(|e| format!("spawn curl: {e}"))?;
-        let Child { stdin, stdout, .. } = &mut child;
-        stdin
-            .as_mut()
-            .expect("stdin")
-            .write_all(&body)
-            .map_err(|e| format!("write body: {e}"))?;
-
-        let stdout = stdout.take().expect("stdout");
+        // take() the stdin handle: dropping it closes the pipe. With
+        // --data-binary @- curl waits for stdin EOF before sending —
+        // leaving it open stalls the request forever.
+        {
+            let mut stdin = child.stdin.take().expect("stdin");
+            stdin
+                .write_all(&body)
+                .map_err(|e| format!("write body: {e}"))?;
+        }
+        let stdout = child.stdout.take().expect("stdout");
         let reader = BufReader::new(stdout);
         let mut events = Vec::new();
         for line in reader.lines() {
@@ -105,11 +109,13 @@ fn task() -> AgentTask {
         task_id: format!("live-{}", uuid::Uuid::now_v7().simple()),
         objective: "In one short sentence, state that the modbit one-agent runtime loop is live."
             .into(),
-        model: if live_enabled() == Some(Provider::Anthropic) {
-            "claude-3-5-haiku-20241022".into()
-        } else {
-            "gpt-4o-mini".into()
-        },
+        model: std::env::var("MODBIT_LIVE_MODEL").unwrap_or_else(|_| {
+            if live_enabled() == Some(Provider::Anthropic) {
+                "claude-3-5-haiku-20241022".into()
+            } else {
+                "gpt-4o-mini".into()
+            }
+        }),
         provider: "live".into(),
         system_policy: "Answer in at most two sentences.".into(),
         workspace_rules: String::new(),
