@@ -64,7 +64,7 @@ fn bounded_output_and_artifact_spill_after_restart() {
         let argv = vec![
             "cmd.exe".to_string(),
             "/C".to_string(),
-            "powershell -NoProfile -Command \"1..40000 | ForEach-Object { \\\"line $_ payload padding padding\\\" }\"".to_string(),
+            "for /l %i in (1,1,40000) do @echo line %i payload padding padding".to_string(),
         ];
         #[cfg(not(windows))]
         let argv = vec![
