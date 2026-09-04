@@ -353,6 +353,9 @@ mod tests {
     fn temp_repo(tag: &str) -> (TempDir, GitRepo) {
         let dir = TempDir::new(tag);
         let repo = GitRepo::init(&dir.0).unwrap();
+        // Byte-exact content assertions: no line-ending translation
+        // (Windows runners default to autocrlf=true).
+        repo.set_config("core.autocrlf", "false").unwrap();
         std::fs::write(dir.0.join("README.md"), "# temp repo\n").unwrap();
         repo.commit_all("base").unwrap();
         (dir, repo)

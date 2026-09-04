@@ -125,6 +125,12 @@ impl GitRepo {
         Ok(Self::stdout_text(&out))
     }
 
+    /// Sets a repo-local config value (e.g. core.autocrlf for byte-exact
+    /// tests or line-ending-sensitive workflows).
+    pub fn set_config(&self, key: &str, value: &str) -> Result<(), GitError> {
+        self.git("config", &[key, value]).map(|_| ())
+    }
+
     /// Stages one path (resolution bookkeeping for merge transactions).
     pub fn stage_path(&self, path: &str) -> Result<(), GitError> {
         self.git("add", &["--", path]).map(|_| ())
