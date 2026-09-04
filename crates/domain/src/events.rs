@@ -145,6 +145,12 @@ pub enum DomainEvent {
         reverted_event_count: u64,
         previous_last_hash: String,
     },
+    /// Host-owned goal configuration (REQ-EV-0119): the model can never
+    /// self-certify completion while a goal is set.
+    GoalSet {
+        objective: String,
+        acceptance_criteria: Vec<String>,
+    },
     /// Durable queued input (REQ-EV-0191/0262): every user input is an event,
     /// ordered per task aggregate across reconnects.
     TaskInputQueued {
@@ -260,6 +266,7 @@ impl EventEnvelope {
             DomainEvent::RunStepFailed { .. } => "run_step_failed",
             DomainEvent::SessionForked { .. } => "session_forked",
             DomainEvent::SessionRewound { .. } => "session_rewound",
+            DomainEvent::GoalSet { .. } => "goal_set",
             DomainEvent::TaskInputQueued { .. } => "task_input_queued",
             DomainEvent::SideQuestionAsked { .. } => "side_question_asked",
         }

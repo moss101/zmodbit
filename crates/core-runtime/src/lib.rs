@@ -8,7 +8,9 @@
 //! Canonical owner subsystem: core-runtime (docs/81). Layout: docs/12.
 
 pub mod config;
+pub mod delegation;
 pub mod surface;
 
 pub use config::{resolve, Authority, ConfigLayer, ResolvedConfig};
+pub use delegation::{decide, Delegation, DelegationDecision, DependencySignal, Reason};
 pub use surface::CoreServices;

@@ -306,6 +306,7 @@ fn steer_on_completed_task_is_rejected() {
         CommandPayload::CompleteTask {
             task_id: task,
             summary: "done".into(),
+            host_verified: false,
         },
     ] {
         assert!(proc

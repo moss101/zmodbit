@@ -7531,8 +7531,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0119",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T04:56:55Z",
+   "notes": [
+    {
+     "at": "2026-09-04T04:56:55Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Goal mode gate: SetGoal event host-owned; CompleteTask in goal mode without host_verified rejected (model cannot self-certify); host-verified completion applies after ReadyForReview. QUAL-EV-0119 e2e test."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0120",
@@ -8368,8 +8378,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0180",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T04:56:55Z",
+   "notes": [
+    {
+     "at": "2026-09-04T04:56:55Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Dependency-sensitive delegation: decide(signal) keeps blocking children Foreground, sends separable children Background; never a blind default — the dependency signal is a required input. 3 tests."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0181",
@@ -8508,8 +8528,18 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0190",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T04:56:55Z",
+   "notes": [
+    {
+     "at": "2026-09-04T04:56:55Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "MediaEnvelope normalization: same bytes via desktop/API share canonical sha256 envelope, source provenance recorded, empty/oversized/unknown-type rejected. QUAL-EV-0190 test."
+    }
+   ]
   },
   {
    "id": "IMP-EV-0191",
@@ -24075,5 +24105,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T04:42:11Z"
+ "updated_on": "2026-09-04T04:56:55Z"
 }

@@ -98,6 +98,8 @@ pub fn apply_task_event(
             TaskState::Running | TaskState::Waiting(_) => Ok(state),
             _ => Err(reject("task_steered")),
         },
+        // Goal configuration is host-owned bookkeeping: state-neutral.
+        DomainEvent::GoalSet { .. } => Ok(state),
         // Durable queued input (REQ-EV-0191/0262): recorded on the task
         // aggregate but state-neutral — its dispatch effect is decided by
         // the InputMode policy, not the lifecycle machine.

@@ -155,6 +155,7 @@ fn rejected_command_records_outcome_and_appends_nothing() {
         payload: CommandPayload::CompleteTask {
             task_id,
             summary: "skip".into(),
+            host_verified: false,
         },
     };
     match proc.execute(cmd.clone()).unwrap() {
@@ -192,6 +193,7 @@ fn full_lifecycle_folds_to_completed_and_terminal_state_rejects_more() {
         CommandPayload::CompleteTask {
             task_id,
             summary: "shipped".into(),
+            host_verified: false,
         },
     ];
     for payload in steps {

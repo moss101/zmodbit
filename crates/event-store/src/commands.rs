@@ -224,6 +224,30 @@ impl CommandProcessor {
                 e.seal();
                 events.push(e);
             }
+            CommandPayload::SetGoal {
+                task_id,
+                objective,
+                acceptance_criteria,
+            } => {
+                // REQ-EV-0119: the host owns objective/progress/termination.
+                if !task_exists(tx, task_id)? {
+                    return Err(format!("task {} does not exist", task_id));
+                }
+                let session_id = task_session(tx, task_id)?;
+                let mut e = envelope_for(
+                    modbit_domain::AggregateType::Task,
+                    task_id.to_string(),
+                    session_id,
+                    DomainEvent::GoalSet {
+                        objective: objective.clone(),
+                        acceptance_criteria: acceptance_criteria.clone(),
+                    },
+                );
+                e.task_id = Some(*task_id);
+                e.sequence = goal_stream_len(tx, task_id)? + 1;
+                e.seal();
+                events.push(e);
+            }
             CommandPayload::ForkSession {
                 source_session,
                 at_sequence,
@@ -303,6 +327,26 @@ impl CommandProcessor {
                 let current = fold_task(&history)
                     .ok_or_else(|| format!("task {task_id} does not exist"))?
                     .map_err(|e: TransitionError| e.to_string())?;
+
+                // REQ-EV-0119 (goal mode): the host owns termination. A model
+                // claim of "done" without host-verified acceptance leaves the
+                // run incomplete.
+                let goal_mode = history
+                    .iter()
+                    .any(|e| matches!(e, DomainEvent::GoalSet { .. }));
+                if let CommandPayload::CompleteTask {
+                    host_verified: false,
+                    ..
+                } = payload
+                {
+                    if goal_mode {
+                        return Err(
+                            "goal mode: completion requires host-verified acceptance criteria;                              the model cannot self-certify"
+                                .into(),
+                        );
+                    }
+                }
+
                 let domain_event = lifecycle_event(payload);
                 let next = apply_task_event(current, &domain_event)
                     .map_err(|e: TransitionError| e.to_string())?;
@@ -402,6 +446,34 @@ impl CommandProcessor {
         }
         Ok(out)
     }
+}
+
+fn goal_stream_len(
+    tx: &rusqlite::Transaction<'_>,
+    task_id: &modbit_domain::TaskId,
+) -> Result<u64, String> {
+    let n: i64 = tx
+        .query_row(
+            "SELECT COUNT(*) FROM events WHERE aggregate_id = ?1",
+            [task_id.to_string()],
+            |r| r.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(n as u64)
+}
+
+fn task_exists(
+    tx: &rusqlite::Transaction<'_>,
+    task_id: &modbit_domain::TaskId,
+) -> Result<bool, String> {
+    let n: i64 = tx
+        .query_row(
+            "SELECT COUNT(*) FROM events WHERE aggregate_id = ?1",
+            [task_id.to_string()],
+            |r| r.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(n > 0)
 }
 
 fn session_sequence(tx: &rusqlite::Transaction<'_>, session_id: &str) -> Result<u64, String> {

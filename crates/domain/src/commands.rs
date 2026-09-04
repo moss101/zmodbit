@@ -41,6 +41,9 @@ pub enum CommandPayload {
     CompleteTask {
         task_id: TaskId,
         summary: String,
+        /// True only when the HOST verified acceptance criteria. A bare model
+        /// claim can never set this (REQ-EV-0119).
+        host_verified: bool,
     },
     FailTask {
         task_id: TaskId,
@@ -70,6 +73,12 @@ pub enum CommandPayload {
         session_id: SessionId,
         to_sequence: u64,
         expected_last_hash: String,
+    },
+    /// Host sets the persistent goal (REQ-EV-0119).
+    SetGoal {
+        task_id: TaskId,
+        objective: String,
+        acceptance_criteria: Vec<String>,
     },
     /// Durable queued input with a typed dispatch mode (REQ-EV-0191/0262).
     QueueTaskInput {
@@ -103,7 +112,8 @@ impl CommandPayload {
             | CommandPayload::SteerTask { task_id, .. } => Some(task_id.to_string()),
             CommandPayload::ForkSession { source_session, .. } => Some(source_session.to_string()),
             CommandPayload::RewindSession { session_id, .. } => Some(session_id.to_string()),
-            CommandPayload::QueueTaskInput { task_id, .. } => Some(task_id.to_string()),
+            CommandPayload::QueueTaskInput { task_id, .. }
+            | CommandPayload::SetGoal { task_id, .. } => Some(task_id.to_string()),
             CommandPayload::AskSideQuestion { session_id, .. } => Some(session_id.to_string()),
             CommandPayload::CreateSession { .. } | CommandPayload::CreateTask { .. } => None,
         }
@@ -111,6 +121,7 @@ impl CommandPayload {
 
     pub fn kind(&self) -> &'static str {
         match self {
+            CommandPayload::SetGoal { .. } => "set_goal",
             CommandPayload::QueueTaskInput { .. } => "queue_task_input",
             CommandPayload::AskSideQuestion { .. } => "ask_side_question",
             CommandPayload::ForkSession { .. } => "fork_session",

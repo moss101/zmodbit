@@ -92,6 +92,9 @@ impl CoreServices {
                 CommandPayload::CompleteTask {
                     task_id: parse_task_id(&complete.task_id),
                     summary: complete.summary,
+                    // Surface completions are client claims, never
+                    // host-verified (REQ-EV-0119).
+                    host_verified: false,
                 },
             ),
             Some(pb::surface_request::Request::CreateSession(create)) => {

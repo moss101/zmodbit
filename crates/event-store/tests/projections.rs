@@ -116,6 +116,7 @@ fn run_full_lifecycle(proc: &CommandProcessor) {
         CommandPayload::CompleteTask {
             task_id,
             summary: "done".into(),
+            host_verified: false,
         },
     ] {
         proc.execute(Command {
