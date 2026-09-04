@@ -8605,8 +8605,11 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0192",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33841864831",
+    "commit:23ca677"
+   ],
    "notes": [
     {
      "at": "2026-09-04T05:28:34Z",
@@ -8619,10 +8622,16 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Daemon HTTP+SSE: GET /events?since=offset as bounded-batch SSE stream with slow-client replay, GET /fleet JSON snapshot, POST /commands through the idempotent processor (413 on >8MiB bodies). Multi-client test: two concurrent SSE clients both receive the durable event; commands endpoint applies and fleet reflects."
+    },
+    {
+     "at": "2026-09-04T05:52:29Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Multi-client HTTP+SSE daemon live: bounded-batch SSE replay from any offset, /fleet JSON, /commands through the idempotent processor, 413 bound; 3 tests green on 3-OS CI."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T05:48:21Z"
+   "status_changed_on": "2026-09-04T05:52:29Z"
   },
   {
    "id": "IMP-EV-0193",
@@ -24155,5 +24164,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T05:48:21Z"
+ "updated_on": "2026-09-04T05:52:29Z"
 }
