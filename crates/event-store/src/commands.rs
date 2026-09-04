@@ -219,6 +219,7 @@ impl CommandProcessor {
                 ],
             )
             .map_err(|err| err.to_string())?;
+            crate::projections::project(tx, e).map_err(|err| err.to_string())?;
             event_ids.push(e.event_id.clone());
         }
         Ok(event_ids)

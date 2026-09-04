@@ -66,25 +66,6 @@ impl From<std::io::Error> for StoreError {
     }
 }
 
-/// Raw row projection of the `events` table (docs/31 § `events`).
-type EventRow = (
-    String,
-    String,
-    String,
-    String,
-    i64,
-    String,
-    String,
-    String,
-    String,
-    String,
-    Option<String>,
-    Option<String>,
-    String,
-    Option<String>,
-    String,
-);
-
 pub struct EventStore {
     conn: Mutex<Connection>,
 }
@@ -184,6 +165,7 @@ impl EventStore {
                 });
             }
             EventStore::insert_event(&tx, e)?;
+            crate::projections::project(&tx, e)?;
             sequences.insert(aggregate, expected + 1);
         }
         tx.commit()?;
@@ -194,7 +176,6 @@ impl EventStore {
     /// per aggregate sequence). Envelopes are reconstructed from the row
     /// columns; `payload_inline` deserializes as the typed domain event.
     pub fn load(&self, aggregate_id: &str) -> Result<Vec<EventEnvelope>, StoreError> {
-        use modbit_domain::{Actor, ActorType, RunId, RunStepId, SessionId, TaskId, TurnId};
         let conn = self.conn.lock().expect("event store mutex poisoned");
         let mut stmt = conn.prepare(
             "SELECT event_id, session_id, aggregate_type, aggregate_id, sequence, event_type,
@@ -202,134 +183,10 @@ impl EventStore {
                     correlation_id, payload_inline, payload_object_hash, integrity_hash
              FROM events WHERE aggregate_id = ?1 ORDER BY sequence",
         )?;
-        let mut out = Vec::new();
-        let rows = stmt.query_map([aggregate_id], |r| {
-            Ok((
-                r.get::<_, String>(0)?,
-                r.get::<_, String>(1)?,
-                r.get::<_, String>(2)?,
-                r.get::<_, String>(3)?,
-                r.get::<_, i64>(4)?,
-                r.get::<_, String>(5)?,
-                r.get::<_, String>(6)?,
-                r.get::<_, String>(7)?,
-                r.get::<_, String>(8)?,
-                r.get::<_, String>(9)?,
-                r.get::<_, Option<String>>(10)?,
-                r.get::<_, Option<String>>(11)?,
-                r.get::<_, String>(12)?,
-                r.get::<_, Option<String>>(13)?,
-                r.get::<_, String>(14)?,
-            ))
-        })?;
-        for row in rows {
-            let (
-                event_id,
-                session_id,
-                aggregate_type,
-                agg_id,
-                sequence,
-                event_type,
-                schema_version,
-                occurred_at,
-                actor_type,
-                actor_id,
-                causation_id,
-                correlation_id,
-                payload_inline,
-                payload_object_hash,
-                integrity_hash,
-            ): EventRow = row?;
-            let aggregate_type = match aggregate_type.as_str() {
-                "session" => AggregateType::Session,
-                "task" => AggregateType::Task,
-                "run" => AggregateType::Run,
-                "turn" => AggregateType::Turn,
-                "run_step" => AggregateType::RunStep,
-                other => {
-                    return Err(StoreError::Io(std::io::Error::other(format!(
-                        "unknown aggregate_type {other}"
-                    ))))
-                }
-            };
-            let (task_id, run_id, turn_id, step_id) = match aggregate_type {
-                AggregateType::Task => (
-                    Some(TaskId::parse(&agg_id).map_err(StoreError::Uuid)?),
-                    None,
-                    None,
-                    None,
-                ),
-                AggregateType::Run => (
-                    None,
-                    Some(RunId::parse(&agg_id).map_err(StoreError::Uuid)?),
-                    None,
-                    None,
-                ),
-                AggregateType::Turn => (
-                    None,
-                    None,
-                    Some(TurnId::parse(&agg_id).map_err(StoreError::Uuid)?),
-                    None,
-                ),
-                AggregateType::RunStep => (
-                    None,
-                    None,
-                    None,
-                    Some(RunStepId::parse(&agg_id).map_err(StoreError::Uuid)?),
-                ),
-                AggregateType::Session => (None, None, None, None),
-            };
-            let (major, minor) = schema_version.split_once('.').ok_or_else(|| {
-                StoreError::Io(std::io::Error::other(format!(
-                    "bad schema_version {schema_version}"
-                )))
-            })?;
-            let envelope = EventEnvelope {
-                event_id: event_id.clone(),
-                session_id: SessionId::parse(&session_id).map_err(StoreError::Uuid)?,
-                task_id,
-                run_id,
-                turn_id,
-                step_id,
-                aggregate_type,
-                aggregate_id: agg_id,
-                sequence: sequence as u64,
-                event_type,
-                schema_version: (
-                    major.parse().map_err(|e: std::num::ParseIntError| {
-                        StoreError::Io(std::io::Error::other(e))
-                    })?,
-                    minor.parse().map_err(|e: std::num::ParseIntError| {
-                        StoreError::Io(std::io::Error::other(e))
-                    })?,
-                ),
-                occurred_at,
-                actor: Actor {
-                    actor_type: ActorType::parse(&actor_type).ok_or_else(|| {
-                        StoreError::Io(std::io::Error::other(format!(
-                            "bad actor_type {actor_type}"
-                        )))
-                    })?,
-                    actor_id,
-                },
-                causation_id,
-                correlation_id,
-                payload: match serde_json::from_str(&payload_inline) {
-                    Ok(payload) => payload,
-                    // A payload that no longer decodes is corrupt by
-                    // definition — surface it as an integrity failure.
-                    Err(_) => {
-                        return Err(StoreError::IntegrityMismatch {
-                            event_id: event_id.clone(),
-                        });
-                    }
-                },
-                payload_object_hash,
-                integrity_hash,
-            };
-            out.push(envelope);
-        }
-        Ok(out)
+        let rows = stmt
+            .query_map([aggregate_id], map_event_row)?
+            .collect::<Result<Vec<EventRow>, rusqlite::Error>>()?;
+        rows.into_iter().map(reconstruct_envelope).collect()
     }
 
     /// Verifies continuity and integrity of a whole aggregate stream.
@@ -352,12 +209,170 @@ impl EventStore {
         Ok(())
     }
 
+    /// Recomputes every projection row from committed events (docs/31:
+    /// projections are derived state; recovery never trusts them).
+    pub fn rebuild_projections(&self) -> Result<usize, StoreError> {
+        let conn = self.conn.lock().expect("event store mutex poisoned");
+        crate::projections::rebuild(&conn)
+    }
+
     /// Read access for integrity tooling and tests. Read-only by convention:
     /// every write path must go through `append` (docs/13 § Invariants).
     pub fn with_conn<T>(&self, f: impl FnOnce(&Connection) -> T) -> T {
         let conn = self.conn.lock().expect("event store mutex poisoned");
         f(&conn)
     }
+}
+
+/// Raw row projection of the `events` table (docs/31 § `events`).
+pub(crate) type EventRow = (
+    String,
+    String,
+    String,
+    String,
+    i64,
+    String,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    String,
+    Option<String>,
+    String,
+);
+
+pub(crate) fn map_event_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<EventRow> {
+    Ok((
+        r.get(0)?,
+        r.get(1)?,
+        r.get(2)?,
+        r.get(3)?,
+        r.get(4)?,
+        r.get(5)?,
+        r.get(6)?,
+        r.get(7)?,
+        r.get(8)?,
+        r.get(9)?,
+        r.get(10)?,
+        r.get(11)?,
+        r.get(12)?,
+        r.get(13)?,
+        r.get(14)?,
+    ))
+}
+
+/// Rebuilds an [`EventEnvelope`] from stored columns. `payload_inline`
+/// deserializes as the typed domain event; a payload that no longer decodes
+/// is corrupt by definition and surfaces as an integrity failure.
+pub(crate) fn reconstruct_envelope(row: EventRow) -> Result<EventEnvelope, StoreError> {
+    let (
+        event_id,
+        session_id,
+        aggregate_type,
+        aggregate_id,
+        sequence,
+        event_type,
+        schema_version,
+        occurred_at,
+        actor_type,
+        actor_id,
+        causation_id,
+        correlation_id,
+        payload_inline,
+        payload_object_hash,
+        integrity_hash,
+    ) = row;
+    use modbit_domain::{Actor, ActorType, RunId, RunStepId, SessionId, TaskId, TurnId};
+    let aggregate_type = match aggregate_type.as_str() {
+        "session" => AggregateType::Session,
+        "task" => AggregateType::Task,
+        "run" => AggregateType::Run,
+        "turn" => AggregateType::Turn,
+        "run_step" => AggregateType::RunStep,
+        other => {
+            return Err(StoreError::Io(std::io::Error::other(format!(
+                "unknown aggregate_type {other}"
+            ))))
+        }
+    };
+    let (task_id, run_id, turn_id, step_id) = match aggregate_type {
+        AggregateType::Task => (
+            Some(TaskId::parse(&aggregate_id).map_err(StoreError::Uuid)?),
+            None,
+            None,
+            None,
+        ),
+        AggregateType::Run => (
+            None,
+            Some(RunId::parse(&aggregate_id).map_err(StoreError::Uuid)?),
+            None,
+            None,
+        ),
+        AggregateType::Turn => (
+            None,
+            None,
+            Some(TurnId::parse(&aggregate_id).map_err(StoreError::Uuid)?),
+            None,
+        ),
+        AggregateType::RunStep => (
+            None,
+            None,
+            None,
+            Some(RunStepId::parse(&aggregate_id).map_err(StoreError::Uuid)?),
+        ),
+        AggregateType::Session => (None, None, None, None),
+    };
+    let (major, minor) = schema_version.split_once('.').ok_or_else(|| {
+        StoreError::Io(std::io::Error::other(format!(
+            "bad schema_version {schema_version}"
+        )))
+    })?;
+    let payload = match serde_json::from_str::<modbit_domain::DomainEvent>(&payload_inline) {
+        Ok(payload) => payload,
+        // A payload that no longer decodes is corrupt by definition —
+        // surface it as an integrity failure.
+        Err(_) => {
+            return Err(StoreError::IntegrityMismatch {
+                event_id: event_id.clone(),
+            });
+        }
+    };
+    Ok(EventEnvelope {
+        event_id,
+        session_id: SessionId::parse(&session_id).map_err(StoreError::Uuid)?,
+        task_id,
+        run_id,
+        turn_id,
+        step_id,
+        aggregate_type,
+        aggregate_id,
+        sequence: sequence as u64,
+        event_type,
+        schema_version: (
+            major
+                .parse()
+                .map_err(|e: std::num::ParseIntError| StoreError::Io(std::io::Error::other(e)))?,
+            minor
+                .parse()
+                .map_err(|e: std::num::ParseIntError| StoreError::Io(std::io::Error::other(e)))?,
+        ),
+        occurred_at,
+        actor: Actor {
+            actor_type: ActorType::parse(&actor_type).ok_or_else(|| {
+                StoreError::Io(std::io::Error::other(format!(
+                    "bad actor_type {actor_type}"
+                )))
+            })?,
+            actor_id,
+        },
+        causation_id,
+        correlation_id,
+        payload,
+        payload_object_hash,
+        integrity_hash,
+    })
 }
 
 /// Creates an event envelope for `aggregate` with the correct aggregate ids.

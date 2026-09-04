@@ -6,9 +6,10 @@ use rusqlite::Connection;
 
 pub type Migration = (i64, &'static str);
 
-pub const MIGRATIONS: &[Migration] = &[(
-    1,
-    "
+pub const MIGRATIONS: &[Migration] = &[
+    (
+        1,
+        "
         CREATE TABLE events (
             event_id            TEXT PRIMARY KEY,
             session_id          TEXT NOT NULL,
@@ -39,7 +40,74 @@ pub const MIGRATIONS: &[Migration] = &[(
             processed_at TEXT NOT NULL
         );
     ",
-)];
+    ),
+    (2, SQL_V2_PROJECTIONS),
+];
+
+/// Projection tables (docs/31 § Core tables): derived read models, always
+/// rebuildable from `events` via `projections::rebuild`.
+pub const SQL_V2_PROJECTIONS: &str = "
+    CREATE TABLE sessions (
+        session_id         TEXT PRIMARY KEY,
+        tenant_id          TEXT,
+        user_id            TEXT,
+        space_id           TEXT,
+        state              TEXT NOT NULL,
+        generation         INTEGER NOT NULL,
+        created_at         TEXT NOT NULL,
+        updated_at         TEXT NOT NULL,
+        current_task_id    TEXT,
+        last_event_sequence INTEGER NOT NULL
+    );
+    CREATE TABLE tasks (
+        task_id           TEXT PRIMARY KEY,
+        session_id        TEXT NOT NULL REFERENCES sessions(session_id),
+        goal_text         TEXT NOT NULL,
+        workspace_id      TEXT,
+        base_revision     TEXT,
+        execution_profile TEXT,
+        policy_profile_id TEXT,
+        state             TEXT NOT NULL,
+        generation        INTEGER NOT NULL,
+        created_at        TEXT NOT NULL,
+        started_at        TEXT,
+        completed_at      TEXT,
+        failure_code      TEXT
+    );
+    CREATE TABLE runs (
+        run_id                  TEXT PRIMARY KEY,
+        task_id                 TEXT NOT NULL REFERENCES tasks(task_id),
+        attempt                 INTEGER NOT NULL,
+        owner_location          TEXT,
+        kernel_lease_generation INTEGER,
+        state                   TEXT NOT NULL,
+        started_at              TEXT,
+        ended_at                TEXT
+    );
+    CREATE TABLE turns (
+        turn_id              TEXT PRIMARY KEY,
+        run_id               TEXT NOT NULL REFERENCES runs(run_id),
+        ordinal              INTEGER NOT NULL,
+        state                TEXT NOT NULL,
+        model_route_json     TEXT,
+        tool_projection_hash TEXT,
+        context_pack_id      TEXT,
+        started_at           TEXT,
+        ended_at             TEXT
+    );
+    CREATE TABLE run_steps (
+        step_id      TEXT PRIMARY KEY,
+        turn_id      TEXT NOT NULL REFERENCES turns(turn_id),
+        step_type    TEXT NOT NULL,
+        state        TEXT NOT NULL,
+        ordinal      INTEGER NOT NULL,
+        started_at   TEXT,
+        ended_at     TEXT,
+        input_ref    TEXT,
+        output_ref   TEXT,
+        failure_code TEXT
+    );
+";
 
 pub fn migrate(conn: &Connection) -> Result<(), rusqlite::Error> {
     let current: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
@@ -64,6 +132,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 1);
+        assert_eq!(v, 2);
     }
 }

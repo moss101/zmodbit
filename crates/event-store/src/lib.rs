@@ -10,7 +10,9 @@
 
 pub mod commands;
 pub mod migrations;
+pub mod projections;
 pub mod store;
 
 pub use commands::{CommandProcessor, Outcome};
+pub use projections::rebuild;
 pub use store::{envelope_for, EventStore, StoreError};
