@@ -6347,8 +6347,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0035",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33840233928",
+    "commit:c1370c0"
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T05:27:17Z"
   },
   {
    "id": "IMP-EV-0036",
@@ -6375,8 +6380,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0037",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33840233928",
+    "commit:c1370c0"
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T05:27:17Z"
   },
   {
    "id": "IMP-EV-0039",
@@ -7905,8 +7915,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0143",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33840233928",
+    "commit:c1370c0"
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T05:27:17Z"
   },
   {
    "id": "IMP-EV-0144",
@@ -8003,8 +8018,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0152",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33840233928",
+    "commit:c1370c0"
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T05:27:17Z"
   },
   {
    "id": "IMP-EV-0153",
@@ -8311,8 +8331,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0175",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33840233928",
+    "commit:c1370c0"
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T05:27:17Z"
   },
   {
    "id": "IMP-EV-0176",
@@ -24114,5 +24139,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T05:02:19Z"
+ "updated_on": "2026-09-04T05:27:17Z"
 }
