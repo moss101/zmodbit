@@ -373,7 +373,10 @@ dependencies = [
 name = "modbit-context"
 version = "0.1.0"
 dependencies = [
+ "modbit-compaction",
+ "modbit-prompt-compiler",
  "serde",
+ "sha2",
 ]
 
 [[package]]

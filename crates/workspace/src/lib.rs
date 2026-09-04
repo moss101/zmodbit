@@ -8,6 +8,7 @@
 //!
 //! Canonical owner subsystem: workspace-git (docs/81). Layout: docs/12.
 
+pub mod bridge;
 pub mod capsule;
 pub mod handoff;
 pub mod merge_transaction;
