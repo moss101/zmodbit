@@ -128,7 +128,17 @@ pub fn anthropic_request_body(request: &ModelRequest) -> Value {
 #[derive(Clone, Debug, PartialEq)]
 pub enum StreamEvent {
     Delta(String),
-    Completed { stop_reason: Option<String> },
+    /// A typed tool-use request from the model. The runtime MUST validate
+    /// the payload (JSON object, known tool) BEFORE any side effect
+    /// (docs/14 step 5). Arguments travel as their raw JSON text.
+    ToolRequest {
+        call_id: String,
+        name: String,
+        arguments: String,
+    },
+    Completed {
+        stop_reason: Option<String>,
+    },
 }
 
 /// Parses one OpenAI `data:` SSE payload into a normalized stream event.
@@ -149,6 +159,37 @@ pub fn parse_openai_sse_payload(payload: &str) -> Option<StreamEvent> {
         return Some(StreamEvent::Completed {
             stop_reason: Some(reason.into()),
         });
+    }
+    // Tool calls: a delta carrying a COMPLETE call (id + name + arguments)
+    // maps to one typed ToolRequest. Fragmented argument streaming is a
+    // later slice (docs/15) — fragments without identity are ignored here
+    // rather than mis-parsed.
+    if let Some(tool_calls) = choice
+        .get("delta")
+        .and_then(|d| d.get("tool_calls"))
+        .and_then(|v| v.as_array())
+    {
+        for call in tool_calls {
+            let id = call.get("id").and_then(|v| v.as_str());
+            let name = call
+                .get("function")
+                .and_then(|f| f.get("name"))
+                .and_then(|v| v.as_str());
+            let arguments = call
+                .get("function")
+                .and_then(|f| f.get("arguments"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if let (Some(id), Some(name)) = (id, name) {
+                if !arguments.is_empty() {
+                    return Some(StreamEvent::ToolRequest {
+                        call_id: id.to_string(),
+                        name: name.to_string(),
+                        arguments: arguments.to_string(),
+                    });
+                }
+            }
+        }
     }
     let text = choice.get("delta")?.get("content")?.as_str()?.to_string();
     if text.is_empty() {
@@ -171,6 +212,21 @@ pub fn parse_anthropic_sse_payload(payload: &str) -> Option<StreamEvent> {
             } else {
                 Some(StreamEvent::Delta(text))
             }
+        }
+        // Anthropic tool_use blocks arrive COMPLETE in content_block_start.
+        "content_block_start" => {
+            let block = value.get("content_block")?;
+            if block.get("type").and_then(|v| v.as_str()) != Some("tool_use") {
+                return None;
+            }
+            let id = block.get("id").and_then(|v| v.as_str())?;
+            let name = block.get("name").and_then(|v| v.as_str())?;
+            let input = block.get("input").cloned().unwrap_or(Value::Null);
+            Some(StreamEvent::ToolRequest {
+                call_id: id.to_string(),
+                name: name.to_string(),
+                arguments: input.to_string(),
+            })
         }
         "message_stop" => Some(StreamEvent::Completed {
             stop_reason: Some("end_turn".into()),

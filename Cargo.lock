@@ -375,8 +375,12 @@ version = "0.1.0"
 dependencies = [
  "modbit-domain",
  "modbit-event-store",
+ "modbit-policy",
+ "modbit-prompt-compiler",
  "modbit-protocol",
+ "modbit-providers",
  "modbit-terminal",
+ "modbit-tools",
  "modbit-workspace",
  "prost",
  "prost-types",

@@ -10,6 +10,7 @@
 pub mod config;
 pub mod daemon;
 pub mod delegation;
+pub mod one_agent;
 pub mod surface;
 
 pub use config::{resolve, Authority, ConfigLayer, ResolvedConfig};

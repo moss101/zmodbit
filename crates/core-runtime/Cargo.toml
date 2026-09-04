@@ -9,6 +9,10 @@ modbit-event-store = { path = "../event-store" }
 modbit-protocol = { path = "../protocol" }
 modbit-terminal = { path = "../terminal" }
 modbit-workspace = { path = "../workspace" }
+modbit-policy = { path = "../policy" }
+modbit-tools = { path = "../tools" }
+modbit-providers = { path = "../providers" }
+modbit-prompt-compiler = { path = "../prompt-compiler" }
 serde = { workspace = true }
 sha2 = { workspace = true }
 serde_json = { workspace = true }

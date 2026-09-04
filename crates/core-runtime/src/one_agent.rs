@@ -1,0 +1,549 @@
+//! One-agent runtime (M2.7, docs/14 § Main runtime loop — single-agent
+//! durable slice): compile the prompt, invoke the model through the
+//! NORMALIZED provider gateway, parse typed events, drive the turn state
+//! machine, and execute any tool requests under capability policy —
+//! invalid tool payloads are rejected BEFORE side effects. The model
+//! transport is an injected trait: tests run against a stub; the live
+//! qualification runs the real gateway (docs/15 live proof).
+
+use modbit_domain::turn::{can_transition, TurnState};
+use modbit_policy::{PolicyDecision, PolicyKernel, ToolCallRequest};
+use modbit_prompt_compiler::{compile, CompilerInputs};
+use modbit_providers::gateway::{ModelRequest, StreamEvent};
+use modbit_tools::ToolRegistry;
+use serde::Serialize;
+use serde_json::Value;
+
+/// How the runtime talks to a model. The production transport wraps the
+/// provider gateway over HTTPS; tests inject a stub.
+pub trait ModelTransport {
+    fn stream(&self, request: &ModelRequest) -> Result<Vec<StreamEvent>, String>;
+}
+
+/// The task the agent is asked to run.
+#[derive(Clone, Debug, Default)]
+pub struct AgentTask {
+    pub task_id: String,
+    pub objective: String,
+    pub model: String,
+    pub provider: String,
+    pub system_policy: String,
+    pub workspace_rules: String,
+    pub context_pack: String,
+}
+
+/// A tool request that was rejected or denied — kept as evidence.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct ToolOutcome {
+    pub call_id: String,
+    pub name: String,
+    /// Executed, with the result JSON.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<Value>,
+    /// Rejected/denied, with the reason (never executed).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refusal: Option<String>,
+}
+
+/// The durable result of one agent run.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct AgentRunResult {
+    pub task_id: String,
+    pub final_state: TurnState,
+    pub turns_used: u32,
+    pub assembled_text: String,
+    pub tool_outcomes: Vec<ToolOutcome>,
+    pub stop_reason: Option<String>,
+}
+
+#[derive(Debug)]
+pub enum AgentError {
+    Transport(String),
+    /// A turn state transition was illegal — a runtime bug, fail loudly.
+    IllegalTransition {
+        from: TurnState,
+        to: TurnState,
+    },
+}
+
+impl std::fmt::Display for AgentError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AgentError::Transport(e) => write!(f, "model transport: {e}"),
+            AgentError::IllegalTransition { from, to } => {
+                write!(f, "illegal turn transition {from:?} → {to:?}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for AgentError {}
+
+fn transition(state: &mut TurnState, to: TurnState) -> Result<(), AgentError> {
+    if !can_transition(*state, to) {
+        return Err(AgentError::IllegalTransition { from: *state, to });
+    }
+    *state = to;
+    Ok(())
+}
+
+/// One agent, one durable loop (docs/14): prompt → stream → typed events →
+/// policy-checked tools → verify → complete. Bounded by `max_turns`.
+pub struct OneAgentRuntime<'a> {
+    pub transport: &'a dyn ModelTransport,
+    pub registry: &'a ToolRegistry,
+    pub kernel: &'a PolicyKernel,
+    /// Capability grants the agent's tool calls ride on.
+    pub grants: &'a [modbit_policy::CapabilityGrant],
+    pub max_turns: u32,
+}
+
+impl<'a> OneAgentRuntime<'a> {
+    pub fn run(&self, task: &AgentTask) -> Result<AgentRunResult, AgentError> {
+        // Step 3: compile the prompt through the canonical compiler.
+        let compiled = compile(&CompilerInputs {
+            model: task.model.clone(),
+            provider: task.provider.clone(),
+            system_policy: task.system_policy.clone(),
+            workspace_rules: task.workspace_rules.clone(),
+            compaction_epoch: None,
+            task_context_pack: format!("objective: {}\n{}", task.objective, task.context_pack),
+            recent_events: String::new(),
+        });
+
+        let mut state = TurnState::Prepared;
+        transition(&mut state, TurnState::Streaming)?;
+        let mut turns_used = 0u32;
+        let mut assembled = String::new();
+        let mut tool_outcomes: Vec<ToolOutcome> = Vec::new();
+        let mut stop_reason: Option<String> = None;
+        // Conversation grows across the repair loop (tool results feed back).
+        let mut conversation: Vec<String> = vec![compiled.compiled.clone()];
+
+        loop {
+            if turns_used >= self.max_turns {
+                transition(&mut state, TurnState::Failed)?;
+                return Ok(AgentRunResult {
+                    task_id: task.task_id.clone(),
+                    final_state: state,
+                    turns_used,
+                    assembled_text: assembled.clone(),
+                    tool_outcomes,
+                    stop_reason: Some("max_turns_exceeded".into()),
+                });
+            }
+            turns_used += 1;
+
+            // Step 4: invoke the model through the normalized gateway shape.
+            let request = ModelRequest {
+                request_id: format!("{}-turn-{turns_used}", task.task_id),
+                model: task.model.clone(),
+                system: task.system_policy.clone(),
+                messages: conversation
+                    .iter()
+                    .map(|c| modbit_providers::gateway::ChatMessage {
+                        role: modbit_providers::gateway::Role::User,
+                        content: c.clone(),
+                    })
+                    .collect(),
+                max_output_tokens: 4096,
+                temperature: 0.2,
+            };
+            let events = self
+                .transport
+                .stream(&request)
+                .map_err(AgentError::Transport)?;
+
+            // Step 5: parse typed events; reject invalid tool payloads
+            // BEFORE side effects.
+            let mut requested_tools: Vec<(String, String, Value)> = Vec::new();
+            for event in events {
+                match event {
+                    StreamEvent::Delta(text) => {
+                        assembled.push_str(&text);
+                    }
+                    StreamEvent::Completed {
+                        stop_reason: reason,
+                    } => {
+                        stop_reason = reason;
+                    }
+                    StreamEvent::ToolRequest {
+                        call_id,
+                        name,
+                        arguments,
+                    } => {
+                        // Payload validation gate: arguments MUST parse to a
+                        // JSON object. Invalid payloads never reach tools.
+                        match serde_json::from_str::<Value>(&arguments) {
+                            Ok(v) if v.is_object() => {
+                                requested_tools.push((call_id, name, v));
+                            }
+                            _ => {
+                                tool_outcomes.push(ToolOutcome {
+                                    call_id,
+                                    name,
+                                    result: None,
+                                    refusal: Some(
+                                        "invalid tool payload: arguments must be a JSON object"
+                                            .to_string(),
+                                    ),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            if requested_tools.is_empty() {
+                // No tools requested: run the verification stage and
+                // complete. (Streaming → Executing → Verifying → Completed.)
+                transition(&mut state, TurnState::Executing)?;
+                transition(&mut state, TurnState::Verifying)?;
+                transition(&mut state, TurnState::Completed)?;
+                return Ok(AgentRunResult {
+                    task_id: task.task_id.clone(),
+                    final_state: state,
+                    turns_used,
+                    assembled_text: assembled,
+                    tool_outcomes,
+                    stop_reason,
+                });
+            }
+
+            // Steps 6-7: execute tools under capability leases and append
+            // the evidence into the conversation for the repair turn.
+            transition(&mut state, TurnState::Executing)?;
+            for (call_id, name, arguments) in requested_tools {
+                let name_for_log = name.clone();
+                let effect_class = self
+                    .registry
+                    .list()
+                    .iter()
+                    .find(|(n, _, _)| *n == name)
+                    .map(|(_, _, class)| *class)
+                    .unwrap_or(modbit_policy::EffectClass::ReadOnly);
+                let request = ToolCallRequest {
+                    tool: name.clone(),
+                    effect_class,
+                    arguments: arguments.clone(),
+                };
+                // Step 5 (cont.): the kernel decision is consumed by the
+                // fail-closed registry — denial means NO side effect.
+                let decision = self.kernel.check(&request, self.grants);
+                let outcome = match &decision {
+                    PolicyDecision::Deny { reason } => ToolOutcome {
+                        call_id,
+                        name,
+                        result: None,
+                        refusal: Some(format!("policy denied: {reason}")),
+                    },
+                    PolicyDecision::Allow => {
+                        match self.registry.execute(&name, &arguments, &decision) {
+                            Ok(execution) => ToolOutcome {
+                                call_id,
+                                name,
+                                result: Some(execution.result),
+                                refusal: None,
+                            },
+                            Err(e) => ToolOutcome {
+                                call_id,
+                                name,
+                                result: None,
+                                refusal: Some(format!("tool error: {e}")),
+                            },
+                        }
+                    }
+                };
+                conversation.push(format!(
+                    "tool {name_for_log} → {}",
+                    serde_json::to_string(&outcome).unwrap_or_default()
+                ));
+                tool_outcomes.push(outcome);
+            }
+            // Repair loop: back to streaming with the tool evidence.
+            transition(&mut state, TurnState::Streaming)?;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use modbit_policy::{CapabilityGrant, EffectClass};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    struct StubTransport {
+        /// Scripted responses, consumed per call.
+        script: Vec<Vec<StreamEvent>>,
+        calls: AtomicUsize,
+    }
+
+    impl StubTransport {
+        fn new(script: Vec<Vec<StreamEvent>>) -> Self {
+            Self {
+                script,
+                calls: AtomicUsize::new(0),
+            }
+        }
+    }
+
+    impl ModelTransport for StubTransport {
+        fn stream(&self, _request: &ModelRequest) -> Result<Vec<StreamEvent>, String> {
+            let index = self.calls.fetch_add(1, Ordering::SeqCst);
+            self.script
+                .get(index)
+                .cloned()
+                .ok_or_else(|| "script exhausted".to_string())
+        }
+    }
+
+    fn runtime<'a>(
+        transport: &'a StubTransport,
+        registry: &'a ToolRegistry,
+        kernel: &'a PolicyKernel,
+        grants: &'a [CapabilityGrant],
+    ) -> OneAgentRuntime<'a> {
+        OneAgentRuntime {
+            transport,
+            registry,
+            kernel,
+            grants,
+            max_turns: 4,
+        }
+    }
+
+    fn task() -> AgentTask {
+        AgentTask {
+            task_id: "task-1".into(),
+            objective: "summarize the workspace".into(),
+            model: "test-model".into(),
+            provider: "openai".into(),
+            system_policy: "be terse".into(),
+            workspace_rules: String::new(),
+            context_pack: String::new(),
+        }
+    }
+
+    /// The completion path: stream → events → verify → Completed, with the
+    /// prompt compiled through the canonical compiler.
+    #[test]
+    fn simple_task_completes_with_assembled_text() {
+        let transport = StubTransport::new(vec![vec![
+            StreamEvent::Delta("summary: ".into()),
+            StreamEvent::Delta("42 files".into()),
+            StreamEvent::Completed {
+                stop_reason: Some("stop".into()),
+            },
+        ]]);
+        let registry = ToolRegistry::new();
+        let kernel = PolicyKernel::new(vec![]);
+        let rt = runtime(&transport, &registry, &kernel, &[]);
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        assert_eq!(result.assembled_text, "summary: 42 files");
+        assert_eq!(result.turns_used, 1);
+        assert_eq!(result.stop_reason.as_deref(), Some("stop"));
+        assert!(result.tool_outcomes.is_empty());
+    }
+
+    /// A tool request is executed under policy and its result feeds the
+    /// repair turn (docs/14 steps 6-7).
+    #[test]
+    fn tool_request_executes_under_policy_and_feeds_back() {
+        use std::sync::Mutex;
+        let invocations = Arc::new(Mutex::new(Vec::<Value>::new()));
+        let sink = invocations.clone();
+
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-1".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"src/lib.rs"}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("file is 12 lines".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(move |args| {
+                    sink.lock().unwrap().push(args.clone());
+                    Ok(serde_json::json!({"lines": 12}))
+                }),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let rt = runtime(&transport, &registry, &kernel, &grants);
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        assert_eq!(result.turns_used, 2, "tool turn + repair turn");
+        assert_eq!(
+            result.tool_outcomes[0],
+            ToolOutcome {
+                call_id: "call-1".into(),
+                name: "modbit.file.read".into(),
+                result: Some(serde_json::json!({"lines": 12})),
+                refusal: None,
+            }
+        );
+        assert_eq!(
+            invocations.lock().unwrap().len(),
+            1,
+            "executed exactly once"
+        );
+    }
+
+    /// docs/14 step 5: an INVALID tool payload is rejected BEFORE any side
+    /// effect — the handler never runs.
+    #[test]
+    fn invalid_tool_payload_is_rejected_before_side_effects() {
+        let invoked = Arc::new(AtomicUsize::new(0));
+        let sink = invoked.clone();
+
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-bad".into(),
+                name: "modbit.file.read".into(),
+                arguments: "not json at all".into(),
+            }],
+            vec![
+                StreamEvent::Delta("handled".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(move |_args| {
+                    sink.fetch_add(1, Ordering::SeqCst);
+                    Ok(serde_json::json!({}))
+                }),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let rt = runtime(&transport, &registry, &kernel, &grants);
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        assert_eq!(invoked.load(Ordering::SeqCst), 0, "handler must not run");
+        assert!(result.tool_outcomes[0]
+            .refusal
+            .as_deref()
+            .unwrap()
+            .contains("invalid tool payload"));
+    }
+
+    /// A tool the kernel denies produces a refusal — never an execution.
+    #[test]
+    fn policy_denied_tool_is_refused_not_executed() {
+        let invoked = Arc::new(AtomicUsize::new(0));
+        let sink = invoked.clone();
+
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-2".into(),
+                name: "modbit.shell.run".into(),
+                arguments: r#"{"argv":["rm","-rf","/"]}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("refused and continued".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.shell.run",
+                "1.0.0",
+                EffectClass::External,
+                Arc::new(move |_args| {
+                    sink.fetch_add(1, Ordering::SeqCst);
+                    Ok(serde_json::json!({}))
+                }),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let rt = runtime(&transport, &registry, &kernel, &[]); // NO grants
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(invoked.load(Ordering::SeqCst), 0, "denied tool never runs");
+        assert!(result.tool_outcomes[0]
+            .refusal
+            .as_deref()
+            .unwrap()
+            .contains("policy denied"));
+    }
+
+    /// A runaway tool loop is bounded by max_turns and fails closed.
+    #[test]
+    fn runaway_tool_loop_is_bounded() {
+        let endless = || {
+            vec![StreamEvent::ToolRequest {
+                call_id: format!("call-{}", rand_suffix()),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"x"}"#.into(),
+            }]
+        };
+        fn rand_suffix() -> u32 {
+            use std::sync::atomic::AtomicU32;
+            static N: AtomicU32 = AtomicU32::new(0);
+            N.fetch_add(1, Ordering::SeqCst)
+        }
+
+        let transport = StubTransport::new((0..16).map(|_| endless()).collect());
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(|_args| Ok(serde_json::json!({"ok": true}))),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 3,
+        };
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Failed);
+        assert_eq!(result.turns_used, 3);
+        assert_eq!(result.stop_reason.as_deref(), Some("max_turns_exceeded"));
+    }
+}
