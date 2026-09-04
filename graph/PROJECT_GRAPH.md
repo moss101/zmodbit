@@ -44,7 +44,7 @@ One JSON file that answers *what exists, what depends on what, what proves what,
 flowchart LR
   M0["M0<br/>Repository and authority<br/>6/6 done"]
   M1["M1<br/>Durable local shell and Core<br/>31/31 done"]
-  M2["M2<br/>Real local engineering loop<br/>1/72 done"]
+  M2["M2<br/>Real local engineering loop<br/>2/72 done"]
   M3["M3<br/>Context intelligence<br/>0/54 done"]
   M4["M4<br/>Durable recovery spine<br/>0/11 done"]
   M5["M5<br/>Procedural runtime and skills<br/>0/39 done"]
@@ -92,7 +92,7 @@ Critical path (reliability spine): **M0 → M1 → M2 → M4**. Do not start bro
 |---|---|---|---:|---:|---:|---:|---|---|
 | M0 Repository and authority | COMPLETE | yes | 4 | 2 | 6 | 0 | — | clean clone build + architecture lint |
 | M1 Durable local shell and Core | COMPLETE | yes | 5 | 26 | 31 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
-| M2 Real local engineering loop | IN_PROGRESS | yes | 10 | 62 | 1 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
+| M2 Real local engineering loop | IN_PROGRESS | yes | 10 | 62 | 2 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
 | M3 Context intelligence | NOT_STARTED | no | 9 | 45 | 0 | 0 | M2 | profile A/B/C benchmark plus retrieval-before-edit visible in task evidence. |
 | M4 Durable recovery spine | NOT_STARTED | no | 6 | 5 | 0 | 0 | M2 | E2E-004/005/006/007/008. |
 | M5 Procedural runtime and skills | NOT_STARTED | no | 7 | 32 | 0 | 0 | M2 | E2E-011/012; direct and procedural mode yield equivalent receipts/policy behavior. |
@@ -222,7 +222,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
 | `M2.1` | COMPLETE | Workspace File Service with safe paths/revisions |  |
-| `M2.2` | REAL_TESTING | Git branch/worktree/diff operations |  |
+| `M2.2` | COMPLETE | Git branch/worktree/diff operations |  |
 | `M2.3` | NOT_STARTED | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
 | `M2.4` | NOT_STARTED | Tool Registry + direct `fs/git/shell/test` tools |  |
 | `M2.5` | NOT_STARTED | Capability Kernel + basic approval flow |  |
