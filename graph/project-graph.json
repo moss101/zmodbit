@@ -6535,10 +6535,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0027",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
+    "commit:e7929f1"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T10:33:44Z"
+   "status_changed_on": "2026-09-04T16:06:33Z"
   },
   {
    "id": "IMP-EV-0028",
@@ -7384,8 +7387,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0079",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
+    "commit:e7929f1"
+   ],
+   "status_changed_on": "2026-09-04T16:06:33Z"
   },
   {
    "id": "IMP-EV-0080",
@@ -7940,8 +7947,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0116",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
+    "commit:e7929f1"
+   ],
+   "status_changed_on": "2026-09-04T16:06:33Z"
   },
   {
    "id": "IMP-EV-0117",
@@ -8118,8 +8129,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0125",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
+    "commit:e7929f1"
+   ],
+   "status_changed_on": "2026-09-04T16:06:33Z"
   },
   {
    "id": "IMP-EV-0126",
@@ -8258,8 +8273,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0135",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
+    "commit:e7929f1"
+   ],
+   "status_changed_on": "2026-09-04T16:06:33Z"
   },
   {
    "id": "IMP-EV-0136",
@@ -24610,5 +24629,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T15:38:00Z"
+ "updated_on": "2026-09-04T16:06:33Z"
 }
