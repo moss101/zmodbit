@@ -91,6 +91,9 @@ fn snapshot_is_nondestructive_and_provenance_bound() {
 fn cloud_reconstruction_is_exact_and_cleanup_is_safe() {
     let local_root = repo_root("local");
     let local = GitRepo::init(&local_root).unwrap();
+    // Exactness test: no line-ending translation in either repo (Windows
+    // runners default to autocrlf=true).
+    git(&local_root, &["config", "core.autocrlf", "false"]);
     write(&local_root, "keep.txt", "unchanged\n");
     write(&local_root, "gone.txt", "will be deleted by the task\n");
     write(&local_root, "edit.txt", "v1\n");
@@ -99,6 +102,8 @@ fn cloud_reconstruction_is_exact_and_cleanup_is_safe() {
     // Cloud is a true clone, so both repos share the same base commit.
     let cloud_root = repo_root("cloud");
     let out = Command::new("git")
+        .arg("-c")
+        .arg("core.autocrlf=false")
         .arg("clone")
         .arg("--quiet")
         .arg(&local_root)
@@ -109,6 +114,7 @@ fn cloud_reconstruction_is_exact_and_cleanup_is_safe() {
         .unwrap();
     assert!(out.status.success(), "clone failed");
     let cloud = GitRepo::open(&cloud_root).unwrap();
+    git(&cloud_root, &["config", "core.autocrlf", "false"]);
 
     // Local task dirties the worktree: modify, add, delete.
     write(&local_root, "edit.txt", "v2 — task output\n");
