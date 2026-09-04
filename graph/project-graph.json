@@ -7531,10 +7531,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0119",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33838681554",
+    "commit:ec1bdf1"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T04:56:55Z",
+   "status_changed_on": "2026-09-04T05:02:19Z",
    "notes": [
     {
      "at": "2026-09-04T04:56:55Z",
@@ -8378,10 +8381,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0180",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33838681554",
+    "commit:ec1bdf1"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T04:56:55Z",
+   "status_changed_on": "2026-09-04T05:02:19Z",
    "notes": [
     {
      "at": "2026-09-04T04:56:55Z",
@@ -8528,10 +8534,13 @@
    "milestone": "M1",
    "qual": "QUAL-EV-0190",
    "source": "docs/41",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33838681554",
+    "commit:ec1bdf1"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T04:56:55Z",
+   "status_changed_on": "2026-09-04T05:02:19Z",
    "notes": [
     {
      "at": "2026-09-04T04:56:55Z",
@@ -24105,5 +24114,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T04:56:55Z"
+ "updated_on": "2026-09-04T05:02:19Z"
 }
