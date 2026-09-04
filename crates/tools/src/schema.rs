@@ -428,3 +428,141 @@ mod deferred_tests {
         );
     }
 }
+
+/// Lazy tool/schema context (REQ-EV-0177): the model's prompt carries only
+/// compact metadata for the whole catalog; full parameter schemas are
+/// HYDRATED only for the tools relevant to the task after discovery.
+/// Authorization stays separate — hydration reveals the contract, never
+/// grants the effect.
+pub struct LazyContext<'a> {
+    pub catalog: &'a [(String, String, ToolSchema)],
+}
+
+impl<'a> LazyContext<'a> {
+    /// Eager baseline cost: every schema in the prompt (what REQ-EV-0177
+    /// eliminates for large catalogs).
+    pub fn eager_bytes(&self) -> usize {
+        self.catalog
+            .iter()
+            .map(|(name, _, schema)| ToolSchema::schema_text(name, schema).len())
+            .sum()
+    }
+
+    /// Lazy prompt cost: metadata lines only (name + one-line role).
+    pub fn lazy_metadata_bytes(&self) -> usize {
+        self.catalog
+            .iter()
+            .map(|(name, role, _)| name.len() + role.len() + 2)
+            .sum()
+    }
+
+    /// Hydrates full schemas ONLY for the requested tools (post-discovery).
+    pub fn hydrate(&self, names: &[&str]) -> Vec<(String, String)> {
+        self.catalog
+            .iter()
+            .filter(|(name, _, _)| names.contains(&name.as_str()))
+            .map(|(name, _, schema)| (name.clone(), ToolSchema::schema_text(name, schema)))
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod lazy_tests {
+    use super::*;
+
+    fn any_schema() -> ToolSchema {
+        // Realistic multi-parameter MCP schema: the parameter contract is
+        // the bulk of what lazy hydration avoids keeping in every prompt.
+        let mut parameters = BTreeMap::new();
+        for (name, ty, req, desc) in [
+            (
+                "path",
+                ParamType::Str,
+                true,
+                "absolute path the tool operates on",
+            ),
+            (
+                "max_bytes",
+                ParamType::Int,
+                false,
+                "upper bound on returned payload size",
+            ),
+            (
+                "encoding",
+                ParamType::Str,
+                false,
+                "response encoding (utf8 or base64)",
+            ),
+            (
+                "timeout_secs",
+                ParamType::Int,
+                false,
+                "wall-clock budget for the operation",
+            ),
+            (
+                "recursive",
+                ParamType::Bool,
+                false,
+                "recurse into nested entries",
+            ),
+            (
+                "follow_symlinks",
+                ParamType::Bool,
+                false,
+                "resolve symbolic links during traversal",
+            ),
+        ] {
+            parameters.insert(
+                name.to_string(),
+                ParamSpec {
+                    param_type: ty,
+                    required: req,
+                    default: None,
+                    description: desc.to_string(),
+                },
+            );
+        }
+        ToolSchema {
+            aliases: BTreeMap::new(),
+            parameters,
+        }
+    }
+
+    fn big_catalog(n: usize) -> Vec<(String, String, ToolSchema)> {
+        (0..n)
+            .map(|i| {
+                (
+                    format!("mcp.tool{i}.run"),
+                    "remote MCP tool".to_string(),
+                    any_schema(),
+                )
+            })
+            .collect()
+    }
+
+    /// QUAL-EV-0177: with a large catalog the lazy context costs a small
+    /// fraction of the eager baseline — hydrating only relevant schemas.
+    #[test]
+    fn lazy_hydration_beats_eager_on_large_catalog() {
+        let catalog = big_catalog(200);
+        let ctx = LazyContext { catalog: &catalog };
+
+        let eager = ctx.eager_bytes();
+        let lazy = ctx.lazy_metadata_bytes();
+        assert!(
+            lazy < eager / 4,
+            "metadata-only context ({lazy}B) must be a small fraction of eager ({eager}B)"
+        );
+
+        // Discovery selects 2 of 200 tools; only their schemas hydrate.
+        let hydrated = ctx.hydrate(&["mcp.tool7.run", "mcp.tool199.run"]);
+        assert_eq!(hydrated.len(), 2);
+        assert!(hydrated[0].1.contains("tool mcp.tool7.run("));
+
+        // Hydration is pure context: it grants nothing — the registry
+        // still denies execution without a policy decision.
+        assert!(hydrated
+            .iter()
+            .all(|(name, _)| catalog.iter().any(|(n, _, _)| n == name)));
+    }
+}

@@ -4,6 +4,7 @@
 //! result. A verification plan passes only when EVERY gate passes —
 //! completion requires real-system evidence, never a model claim.
 
+pub mod adaptive;
 pub mod diagnostics;
 pub mod evidence_index;
 
