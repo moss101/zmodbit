@@ -1224,18 +1224,27 @@
    "milestone": "M2",
    "order": 5,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
+    "commit:063cede"
+   ],
    "notes": [
     {
      "at": "2026-09-04T09:09:56Z",
      "from": "NOT_STARTED",
      "to": "IMPLEMENTING",
      "note": "Audit: no provider adapters (NOT_FOUND). Implementing typed gateway + OpenAI/Anthropic adapters with real SSE parsing; live qualification env-gated on API keys (user-supplied, never committed)."
+    },
+    {
+     "at": "2026-09-04T18:57:36Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "Live provider proof per docs/15: real streaming model call against production OpenAI-compatible endpoint (z.ai, user-supplied key via env, never committed) — deltas + Completed normalized; curl stdin-EOF + --max-time timeout axis added. Evidence log: docs/evidence/m2-6-live-qualification.log"
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T09:09:56Z"
+   "status_changed_on": "2026-09-04T18:57:36Z"
   },
   {
    "id": "M2.7",
@@ -1245,8 +1254,11 @@
    "milestone": "M2",
    "order": 6,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
+    "commit:063cede"
+   ],
    "notes": [
     {
      "at": "2026-09-04T09:22:05Z",
@@ -1271,10 +1283,16 @@
      "from": "IMPLEMENTING",
      "to": "IMPLEMENTING",
      "note": "Live e2e harness added: crates/core-runtime/tests/live_one_agent.rs drives the REAL OneAgentRuntime loop (compile → stream → typed events → verify → Completed) against the production endpoint via the same curl+SSE transport as the M2.6 qualification. Env-gated (MODBIT_LIVE_OPENAI/ANTHROPIC + key), skips clean in CI (run 33901601499, commit ad1afc1). M2.6 + M2.7 now close with ONE credentialed run each the moment the user supplies keys."
+    },
+    {
+     "at": "2026-09-04T18:57:36Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "Live one-agent e2e per docs/14+15: full compile→stream→typed-events→verify→Completed loop against production endpoint; stub-tested tool paths per prior run 33900798541. Evidence log: docs/evidence/m2-7-live-one-agent.log"
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T17:32:24Z"
+   "status_changed_on": "2026-09-04T18:57:36Z"
   },
   {
    "id": "M2.8",
@@ -1284,16 +1302,25 @@
    "milestone": "M2",
    "order": 7,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
+    "commit:063cede"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T08:18:16Z",
+   "status_changed_on": "2026-09-04T18:57:50Z",
    "notes": [
     {
      "at": "2026-09-04T08:03:36Z",
      "from": "AUDITING",
      "to": "IMPLEMENTING",
      "note": "Audit: no verification engine (NOT_FOUND). Implementing deterministic gates per docs/50: typed Gate plans run as real processes with timeouts, bounded output tails, all-must-pass verdicts; real cargo build/test fixture gate."
+    },
+    {
+     "at": "2026-09-04T18:57:50Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Verification engine: deterministic gates as real processes with timeouts/bounded tails — CI-proven on 3 OSes (verification crate gate suite + regression comparison)"
     }
    ]
   },
@@ -1305,8 +1332,11 @@
    "milestone": "M2",
    "order": 8,
    "source": "docs/43",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
+    "commit:063cede"
+   ],
    "notes": [
     {
      "at": "2026-09-04T08:48:14Z",
@@ -1319,10 +1349,16 @@
      "from": "IMPLEMENTING",
      "to": "REAL_TESTING",
      "note": "Trusted Code Review Surface per docs/20 § Trusted Code Surface + docs/32: get_code_view surface request reads through the canonical WorkspaceFileService (immutable payload bound to workspace+file revisions, sha256 fingerprint); traversal refused; staleness via revision comparison (TS tests); renderer never owns buffers. Awaiting 3-OS CI."
+    },
+    {
+     "at": "2026-09-04T18:57:50Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "Trusted Code Review Surface: get_code_view revision-bound immutable payload via WorkspaceFileService; traversal refused — code_surface integration test green on 3 OSes"
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T09:01:10Z"
+   "status_changed_on": "2026-09-04T18:57:50Z"
   },
   {
    "id": "M3.1",
@@ -1974,16 +2010,25 @@
    "order": 9,
    "source": "docs/25_MULTIMODAL_MEDIA_AND_NOTEBOOK_RUNTIME.md; docs/43 V2 sequencing delta",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
+    "commit:063cede"
+   ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T08:18:16Z",
+   "status_changed_on": "2026-09-04T18:57:50Z",
    "notes": [
     {
      "at": "2026-09-04T08:03:36Z",
      "from": "AUDITING",
      "to": "IMPLEMENTING",
      "note": "Audit: no media pipeline (NOT_FOUND). Implementing per docs/25: magic-byte type detection (PNG/JPEG/PDF/text), size budgets, content-addressed artifact store, MediaEnvelope with provenance + digests; bounded typed fs.read results."
+    },
+    {
+     "at": "2026-09-04T18:57:50Z",
+     "from": "REAL_TESTING",
+     "to": "COMPLETE",
+     "note": "MediaEnvelope + Media Pipeline: magic-byte detection, size budgets, content-addressed store, split-media provider compliance — media tests green on 3 OSes"
     }
    ]
   },
@@ -24732,5 +24777,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T17:32:24Z"
+ "updated_on": "2026-09-04T18:57:50Z"
 }
