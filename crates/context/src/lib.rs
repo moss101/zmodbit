@@ -4,9 +4,12 @@
 //! Behavior lands with its scheduled milestone (M3).
 
 pub mod cache_economy;
+pub mod fast_subagent;
 pub mod inspector;
+pub mod metrics;
 pub mod pack_compiler;
 pub mod planner;
+pub mod policy;
 pub mod ports;
 pub mod provenance;
 pub mod recoverability;

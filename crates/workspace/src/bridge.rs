@@ -111,3 +111,90 @@ mod tests {
         assert!(err.contains("read-only"));
     }
 }
+
+/// Active-state retrieval signals (REQ-EV-0160): the selection and active
+/// symbol BOOST retrieval for their paths — the ranking input, kept
+/// provider-neutral.
+pub fn retrieval_boost(bridge: &EditorBridge) -> Vec<(String, f64)> {
+    let mut boosts = Vec::new();
+    if let Some(selection) = &bridge.selection {
+        boosts.push((selection.artifact_path.clone(), 1.5));
+    }
+    if let Some(symbol) = &bridge.active_symbol {
+        // "path::symbol" convention: boost the owning file.
+        if let Some(path) = symbol.split("::").next() {
+            if path.contains('.') {
+                boosts.push((path.to_string(), 0.3));
+            }
+        }
+    }
+    boosts
+}
+
+/// Applies boosts to a ranked candidate list (stable base order, boosted
+/// entries move up).
+pub fn apply_boost(ranked: &[(String, f64)], boosts: &[(String, f64)]) -> Vec<(String, f64)> {
+    let mut scored: Vec<(String, f64)> = ranked
+        .iter()
+        .map(|(path, score)| {
+            let boost = boosts
+                .iter()
+                .filter(|(p, _)| p == path)
+                .map(|(_, b)| b)
+                .sum::<f64>();
+            (path.clone(), score + boost)
+        })
+        .collect();
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    scored
+}
+
+/// The inspector-visible line for the active state (feeds the context
+/// window breakdown — the selection is VISIBLE in the inspector).
+pub fn inspector_line(bridge: &EditorBridge) -> Option<String> {
+    bridge.selection.as_ref().map(|s| {
+        format!(
+            "active-selection: {} lines {}-{}",
+            s.artifact_path, s.start_line, s.end_line
+        )
+    })
+}
+
+#[cfg(test)]
+mod active_state_tests {
+    use super::*;
+
+    /// QUAL-EV-0160: the selection influences retrieval ranking AND is
+    /// visible in the inspector.
+    #[test]
+    fn selection_influences_retrieval_and_is_visible_in_inspector() {
+        let mut bridge = EditorBridge::default();
+        bridge.select(Selection {
+            artifact_path: "reviews/pr-42.md".into(),
+            start_line: 10,
+            end_line: 24,
+        });
+        bridge.active_symbol = Some("src/lib.rs::replace".into());
+
+        // Ranking: without the bridge the low-ranked review artifact stays
+        // low; with the boost it rises to the top.
+        let base: Vec<(String, f64)> = vec![
+            ("src/lib.rs".into(), 0.9),
+            ("src/other.rs".into(), 0.8),
+            ("reviews/pr-42.md".into(), 0.2),
+        ];
+        let boosts = retrieval_boost(&bridge);
+        let boosted = apply_boost(&base, &boosts);
+        assert_eq!(
+            boosted[0].0, "reviews/pr-42.md",
+            "selection path boosted to top"
+        );
+        // src/lib.rs also boosted (active symbol's file) — now rank 1.
+        assert_eq!(boosted[1].0, "src/lib.rs");
+
+        // Inspector visibility: the active-state line is present.
+        let line = inspector_line(&bridge).expect("selection visible");
+        assert!(line.contains("reviews/pr-42.md"));
+        assert!(line.contains("lines 10-24"));
+    }
+}

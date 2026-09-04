@@ -20,7 +20,7 @@ pub struct Provenance {
 }
 
 /// A fragment in the prompt envelope.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvelopeFragment {
     pub text: String,
     /// Ephemeral fragments (scratchpad echoes) are exempt from
