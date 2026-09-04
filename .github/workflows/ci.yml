@@ -88,5 +88,11 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
 
+      - name: Coverage guard self-test (must prove traceability rules work)
+        run: python3 tools/coverage-guard.py --self-test
+
+      - name: Requirement-coverage CI and REQ→IMP→QUAL join (docs/45, M0.4)
+        run: python3 tools/coverage-guard.py
+
       - name: Dossier integrity gate
         run: python3 tools/check_dossier.py

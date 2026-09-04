@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 36,
+    "root_and_tooling": 37,
     "docs_bytes": 507950
   },
   "sections": [
@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 578106,
-      "sha256": "145664f86df41fb8c2b67e485eae0c56d9bd15415d4bd395f2cc2dc50ddec4fe"
+      "bytes": 578853,
+      "sha256": "febfe425de25b31e01ce4fc36e641063e266c2d8de5f0ab6c7249a68de45dcd5"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22231,
-      "sha256": "031e0f7e12cc8265296c8a3efcbfbd5aaf550983efd619a48ed0389721bfeefe"
+      "bytes": 22232,
+      "sha256": "1563e186ab3dbe104344b563a991af4bcb57e901cc4bbbc474141253d8639530"
     },
     {
       "path": "tools/build_manifest.py",
@@ -736,8 +736,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 2612,
-      "sha256": "683f9526407de9f0c2d55dcfbb064d0bd4697707dbe1e5712e50ea8a8a21ce62"
+      "bytes": 2872,
+      "sha256": "eeaa05aa3a5fb724185e18e0888d0aa830eac2bc415b441420fb3ed8717be956"
     },
     {
       "path": "Cargo.toml",
@@ -863,6 +863,11 @@
       "path": "tools/architecture-lint/lint.py",
       "bytes": 10866,
       "sha256": "59dc7f68e5725574d5dcc82ca5b618de8d6d0ace244d3b627b221222e2a1d481"
+    },
+    {
+      "path": "tools/coverage-guard.py",
+      "bytes": 11760,
+      "sha256": "72cd433655fd4afa141d6c663216838a1c6dbf45f004c42129230afbb2f85247"
     }
   ],
   "renames_v3_to_v3_1": {

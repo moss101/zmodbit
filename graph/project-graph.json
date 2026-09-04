@@ -1665,8 +1665,18 @@
    "order": 3,
    "source": "docs/45_REQUIREMENT_TO_TASK_TO_TEST_TRACEABILITY.md; docs/43 V2 sequencing delta",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "REAL_TESTING",
+   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-04T00:16:13Z",
+     "from": "NOT_STARTED",
+     "to": "REAL_TESTING",
+     "note": "Implemented tools/coverage-guard.py per docs/45 CI rules + docs/46 gates: R1 ADOPT/ADAPT row completeness (owner/IMP/QUAL), R2 COMPLETE-without-evidence across all 1152 graph tasks, R3 duplicate active implementations (ADR escape hatch), R4 owner drift between requirement and task, R5 join of docs/40 with graph (291 rows both sides, referenced ids exist), R6 placeholder/TBD language. Self-test 7/7; real-tamper injection (removed IMP link from REQ-EV-0208 row) caught exit 1, reverted. Wired into CI architecture job. Awaiting CI."
+    }
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-04T00:16:13Z"
   },
   {
    "id": "M2.10",
@@ -23754,5 +23764,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T00:11:38Z"
+ "updated_on": "2026-09-04T00:16:13Z"
 }
