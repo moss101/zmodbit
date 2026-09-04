@@ -182,8 +182,7 @@ impl ExecBroker {
         meta.ended_at_ms = Some(now_ms());
         fs::write(
             &meta_path,
-            serde_json::to_vec(&meta)
-                .map_err(|e| std::io::Error::other(e))?,
+            serde_json::to_vec(&meta).map_err(|e| std::io::Error::other(e))?,
         )?;
         Ok(())
     }
