@@ -1665,8 +1665,11 @@
    "order": 3,
    "source": "docs/45_REQUIREMENT_TO_TASK_TO_TEST_TRACEABILITY.md; docs/43 V2 sequencing delta",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "REAL_TESTING",
-   "evidence": [],
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33821105668",
+    "commit:0f7d2ae"
+   ],
    "notes": [
     {
      "at": "2026-09-04T00:16:13Z",
@@ -1676,7 +1679,7 @@
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-04T00:16:13Z"
+   "status_changed_on": "2026-09-04T00:18:50Z"
   },
   {
    "id": "M2.10",
@@ -23764,5 +23767,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-04T00:16:13Z"
+ "updated_on": "2026-09-04T00:18:50Z"
 }

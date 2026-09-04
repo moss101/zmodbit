@@ -4,7 +4,7 @@
 
 | Milestone | Scope | Status | Required proof |
 |---|---|---|---|
-| M0 | repository/CI/protocol generation | NOT_STARTED | clean clone build + architecture lint |
+| M0 | repository/CI/protocol generation | COMPLETE | clean clone build + architecture lint (CI runs 3-OS matrix + architecture/decision/coverage guards; runs 33820576307, 33821105668) |
 | M1 | durable local shell/Core | NOT_STARTED | create task, kill/restart app+Core, exact recovery |
 | M2 | real local coding loop | NOT_STARTED | live provider + real repo edit/test/review |
 | M3 | context intelligence | NOT_STARTED | fixed-revision retrieval benchmarks + freshness proof |

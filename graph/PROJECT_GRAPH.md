@@ -42,7 +42,7 @@ One JSON file that answers *what exists, what depends on what, what proves what,
 
 ```mermaid
 flowchart LR
-  M0["M0<br/>Repository and authority<br/>5/6 done"]
+  M0["M0<br/>Repository and authority<br/>6/6 done"]
   M1["M1<br/>Durable local shell and Core<br/>0/31 done"]
   M2["M2<br/>Real local engineering loop<br/>0/72 done"]
   M3["M3<br/>Context intelligence<br/>0/54 done"]
@@ -71,7 +71,7 @@ flowchart LR
   M7 --> M10
   M8 --> M10
   M9 --> M10
-  style M0 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M0 fill:#dcfce7,stroke:#16a34a,color:#111827
   style M1 fill:#f3f4f6,stroke:#9ca3af,color:#111827
   style M2 fill:#f3f4f6,stroke:#9ca3af,color:#111827
   style M3 fill:#f3f4f6,stroke:#9ca3af,color:#111827
@@ -90,8 +90,8 @@ Critical path (reliability spine): **M0 → M1 → M2 → M4**. Do not start bro
 
 | Milestone | State | Unblocked | Milestone tasks | IMP-EV tasks | Complete | Blocked | Depends on | Proof |
 |---|---|---|---:|---:|---:|---:|---|---|
-| M0 Repository and authority | IN_PROGRESS | yes | 4 | 2 | 5 | 0 | — | clean clone build + architecture lint |
-| M1 Durable local shell and Core | NOT_STARTED | no | 5 | 26 | 0 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
+| M0 Repository and authority | COMPLETE | yes | 4 | 2 | 6 | 0 | — | clean clone build + architecture lint |
+| M1 Durable local shell and Core | NOT_STARTED | yes | 5 | 26 | 0 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
 | M2 Real local engineering loop | NOT_STARTED | no | 10 | 62 | 0 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
 | M3 Context intelligence | NOT_STARTED | no | 9 | 45 | 0 | 0 | M2 | profile A/B/C benchmark plus retrieval-before-edit visible in task evidence. |
 | M4 Durable recovery spine | NOT_STARTED | no | 6 | 5 | 0 | 0 | M2 | E2E-004/005/006/007/008. |
@@ -205,7 +205,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M0.1` | COMPLETE | Create monorepo, Rust workspace, pnpm workspace, CI, architecture-lint | fresh clone builds on macOS/Linux/Windows CI; forbidden dependency test works. |
 | `M0.2` | COMPLETE | Add authoritative ADRs and status ledger | CI rejects changed locked architecture file without linked ADR metadata. |
 | `M0.3` | COMPLETE | Protobuf domain/protocol generation Rust↔TS | round-trip compatibility tests. |
-| `M0.4` | REAL_TESTING | Requirement-coverage CI and REQ→IMP→QUAL traceability parser | CI fails on ADOPT/ADAPT row without owner/IMP-EV/QUAL-EV, COMPLETE task without evidence, or duplicate active owner |
+| `M0.4` | COMPLETE | Requirement-coverage CI and REQ→IMP→QUAL traceability parser | CI fails on ADOPT/ADAPT row without owner/IMP-EV/QUAL-EV, COMPLETE task without evidence, or duplicate active owner |
 
 ### M1 — Durable local shell and Core
 
