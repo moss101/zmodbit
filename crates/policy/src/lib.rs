@@ -340,15 +340,11 @@ pub fn check_trust_sandbox_separation(
 ) -> Result<(), String> {
     let _ = trusted;
     match requested {
-        "network" => {
-            if !grants.network {
-                return Err("trusted workspace does not grant network access".into());
-            }
+        "network" if !grants.network => {
+            return Err("trusted workspace does not grant network access".into())
         }
-        "secrets" => {
-            if !grants.secrets {
-                return Err("trusted workspace does not grant secret access".into());
-            }
+        "secrets" if !grants.secrets => {
+            return Err("trusted workspace does not grant secret access".into())
         }
         _ => {}
     }
