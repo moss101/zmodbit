@@ -199,13 +199,6 @@ impl DetachedRun {
     }
 }
 
-fn now_ms() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
-}
-
 /// The reconnect check: a client may reattach if its lease epoch matches
 /// the run's; expansion stays disabled regardless.
 pub fn reconnect(run: &DetachedRun, client_lease_epoch: u64) -> Result<(), String> {
@@ -300,7 +293,7 @@ mod tests {
     /// with the right lease reconnects; privilege expansion stays off.
     #[test]
     fn detached_worker_survives_client_kill_and_reconnects() {
-        let mut run = DetachedRun::new("run-detach", 4, now_ms());
+        let mut run = DetachedRun::new("run-detach", 4, 1_000_000);
         // Worker keeps checkpointing while the client is gone.
         run.checkpoint_cursor = 250;
 
