@@ -225,6 +225,7 @@ async fn scheduler_runs_task_end_to_end_into_worktree_and_store() {
             repo_root: Some(repo_root.clone()),
             worktree_root: Some(worktree_root.clone()),
             request_timeout: Duration::from_secs(5),
+            execd_addr: None,
             max_turns: 4,
         },
     );
@@ -321,6 +322,7 @@ async fn provider_outage_parks_task_in_waiting() {
             repo_root: Some(repo_root.clone()),
             worktree_root: Some(worktree_root.clone()),
             request_timeout: Duration::from_secs(5),
+            execd_addr: None,
             max_turns: 2,
         },
     );

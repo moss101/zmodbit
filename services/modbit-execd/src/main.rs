@@ -90,7 +90,10 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
                         .collect()
                 })
                 .unwrap_or_default();
-            match broker.spawn(&id, &argv) {
+            // Optional cwd pins the run's working directory exactly
+            // (REQ-EV-0100 contract; absent means the broker's own cwd).
+            let cwd = get_str("cwd").map(std::path::PathBuf::from);
+            match broker.spawn_full(&id, &argv, cwd.as_deref(), &[]) {
                 Ok(()) => serde_json::json!({ "ok": true }).to_string(),
                 Err(e) => error_response(&e),
             }

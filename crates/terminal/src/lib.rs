@@ -16,6 +16,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
 pub mod broker_ext;
+pub mod client;
 pub mod command_contract;
 pub mod replay;
 
@@ -27,6 +28,9 @@ pub const READ_CHUNK_MAX: usize = 512 * 1024;
 #[derive(Debug)]
 pub enum TerminalError {
     UnknownRun(String),
+    /// A bounded wait elapsed before the run left the Running state; the
+    /// caller stopped it (no orphan processes).
+    Timeout(String),
     EmptyArgv,
     AlreadyExists(String),
     Io(std::io::Error),
@@ -37,6 +41,7 @@ impl fmt::Display for TerminalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TerminalError::UnknownRun(id) => write!(f, "unknown run {id}"),
+            TerminalError::Timeout(id) => write!(f, "timed out waiting for run {id} (stopped)"),
             TerminalError::EmptyArgv => write!(f, "empty argv"),
             TerminalError::AlreadyExists(p) => write!(f, "already exists: {p}"),
             TerminalError::Io(e) => write!(f, "io: {e}"),

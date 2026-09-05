@@ -468,6 +468,22 @@ impl WorkspaceFileService {
         self.replace(path, new_content.as_bytes(), expected_revision)
     }
 
+    /// Tracks an EXISTING on-disk file into the revision map (e.g. a file
+    /// checked out by git into a task worktree) so subsequent read/replace
+    /// carry revisions. Idempotent: an already-tracked, non-deleted path
+    /// keeps its current revision. The file must exist.
+    pub fn adopt(&self, path: &str) -> Result<FileRevision, WorkspaceError> {
+        let resolved = self.resolve(path)?;
+        let bytes = fs::read(&resolved)?;
+        let mut revisions = self.revisions.lock().expect("revisions mutex poisoned");
+        if let Some(record) = revisions.files.get(path).filter(|r| !r.deleted) {
+            return Ok(record.revision);
+        }
+        let rev = self.record(&mut revisions, path, &bytes);
+        self.save_revisions(&revisions)?;
+        Ok(rev)
+    }
+
     /// Deletes a file (revision tombstone; the path's history is kept).
     pub fn delete(&self, path: &str) -> Result<FileRevision, WorkspaceError> {
         let resolved = self.resolve(path)?;
