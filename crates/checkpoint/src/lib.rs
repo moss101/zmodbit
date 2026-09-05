@@ -12,6 +12,7 @@ pub mod cursor_meta;
 pub mod delta;
 pub mod failure;
 pub mod hook_bus;
+pub mod importers_plugins;
 pub mod lease;
 pub mod mcp_memory;
 
