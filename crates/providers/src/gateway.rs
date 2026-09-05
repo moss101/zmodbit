@@ -117,6 +117,9 @@ pub fn openai_request_body(request: &ModelRequest) -> Value {
         "max_tokens": request.max_output_tokens,
         "temperature": request.temperature,
         "stream": true,
+        // Usage capture (docs/15): OpenAI-compatible endpoints only emit the
+        // final usage chunk when this option is set.
+        "stream_options": { "include_usage": true },
     })
 }
 
@@ -260,6 +263,45 @@ pub fn sse_data_line(line: &str) -> Option<String> {
     }
 }
 
+/// Usage fields carried by ONE provider frame. Providers split usage across
+/// frames (Anthropic `message_start` → input, `message_delta` → output), so
+/// the transport merges successive frames into a full snapshot.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct UsageFrame {
+    pub input_tokens: Option<u64>,
+    pub output_tokens: Option<u64>,
+}
+
+/// Extracts usage fields from one usage-bearing SSE payload, if the frame
+/// carries any. OpenAI-compatible: the final chunk carries a top-level
+/// `usage` object (requested via `stream_options.include_usage`).
+/// Anthropic: `message_start` → `message.usage.input_tokens`;
+/// `message_delta` → `usage.output_tokens`.
+pub fn extract_usage_frame(provider: Provider, payload: &str) -> Option<UsageFrame> {
+    let value: Value = serde_json::from_str(payload).ok()?;
+    match provider {
+        Provider::OpenAi => {
+            let usage = value.get("usage")?;
+            Some(UsageFrame {
+                input_tokens: usage.get("prompt_tokens").and_then(|v| v.as_u64()),
+                output_tokens: usage.get("completion_tokens").and_then(|v| v.as_u64()),
+            })
+        }
+        Provider::Anthropic => {
+            let kind = value.get("type")?.as_str()?;
+            let usage = match kind {
+                "message_start" => value.get("message")?.get("usage")?,
+                "message_delta" => value.get("usage")?,
+                _ => return None,
+            };
+            Some(UsageFrame {
+                input_tokens: usage.get("input_tokens").and_then(|v| v.as_u64()),
+                output_tokens: usage.get("output_tokens").and_then(|v| v.as_u64()),
+            })
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -287,6 +329,38 @@ mod tests {
         assert_eq!(messages[0]["role"], "system");
         assert_eq!(messages[1]["role"], "user");
         assert_eq!(body["stream"], true);
+        assert_eq!(body["stream_options"]["include_usage"], true);
+    }
+
+    #[test]
+    fn usage_frames_extract_from_both_providers() {
+        // OpenAI-compatible final usage chunk.
+        let f = extract_usage_frame(
+            Provider::OpenAi,
+            r#"{"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":4}}"#,
+        )
+        .unwrap();
+        assert_eq!(f.input_tokens, Some(10));
+        assert_eq!(f.output_tokens, Some(4));
+        // Anthropic message_start (input) and message_delta (output).
+        let f = extract_usage_frame(
+            Provider::Anthropic,
+            r#"{"type":"message_start","message":{"usage":{"input_tokens":42,"output_tokens":1}}}"#,
+        )
+        .unwrap();
+        assert_eq!(f.input_tokens, Some(42));
+        let f = extract_usage_frame(
+            Provider::Anthropic,
+            r#"{"type":"message_delta","usage":{"output_tokens":9}}"#,
+        )
+        .unwrap();
+        assert_eq!(f.output_tokens, Some(9));
+        // Plain deltas carry no usage.
+        assert!(extract_usage_frame(
+            Provider::OpenAi,
+            r#"{"choices":[{"delta":{"content":"x"}}]}"#
+        )
+        .is_none());
     }
 
     #[test]
