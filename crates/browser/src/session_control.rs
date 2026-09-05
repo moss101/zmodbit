@@ -300,8 +300,10 @@ mod tests {
     /// the agent resumes after reacquisition.
     #[test]
     fn user_takeover_mid_run_without_restart() {
-        let mut session = SharedSession::default();
-        session.automation_controller = Some("agent-worker".into());
+        let mut session = SharedSession {
+            automation_controller: Some("agent-worker".into()),
+            ..Default::default()
+        };
         session.observe("user-dock", "docked");
 
         // Human takeover mid-run: controller revoked, browser NOT restarted.
