@@ -13,6 +13,7 @@ pub mod delta;
 pub mod failure;
 pub mod hook_bus;
 pub mod lease;
+pub mod mcp_memory;
 
 // ---------------------------------------------------------------------------
 // Epoch fencing (REQ-EV-0012)
