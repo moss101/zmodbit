@@ -1484,7 +1484,11 @@
     "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
     "scenario:E2E-001",
     "scenario:E2E-002",
-    "scenario:E2E-003"
+    "scenario:E2E-003",
+    "log:docs/evidence/phase2-1-message-roles-2026-09-06.log",
+    "receipt:56b1d297ede12a0e44fd4854532c3012e39f165669acad3e28dd134b0662e00f",
+    "run:2026-09-05T22:14Z/openai_wire_body_carries_typed_roles",
+    "run:2026-09-05T22:14Z/anthropic_wire_body_carries_typed_roles"
    ],
    "notes": [
     {
@@ -1534,10 +1538,40 @@
      "from": "REAL_TESTING",
      "to": "E2E_PROVEN",
      "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
+    },
+    {
+     "at": "2026-09-05T21:47:03Z",
+     "from": "E2E_PROVEN",
+     "to": "AUDITING",
+     "note": "Phase 2 item 1 (Future-tasks §2.1): audit conversation roles. Classification IMPLEMENTED-PARTIAL — gateway fully supports typed roles (assistant_with_tool_calls, tool_result keyed by call id; both body builders proven) but the runtime keeps Vec<String> (one_agent.rs L162), sends every entry as user (L204-207), appends tool results as 'tool {name} → json' strings (L369). First missing link: request messages built all-user; assistant turns never recorded; call-id linkage lost between turns."
+    },
+    {
+     "at": "2026-09-05T21:47:07Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Phase 2.1 slice: Vec<ChatMessage> conversation; per-turn assistant message carrying tool_calls exactly as issued (incl. invalid payloads, answered with is_error tool_result so provider call-id linkage stays well-formed); tool results as tool_result messages keyed by call id; refusal text as error content. Proofs: unit (captured ModelRequests), new always-on daemon_roles_e2e asserting exact OpenAI and Anthropic wire bodies on the fixture provider."
+    },
+    {
+     "at": "2026-09-05T22:15:43Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "Phase 2.1 implementation reaches production routing unchanged from before (scheduler drives OneAgentRuntime through LiveGatewayTransport); conversation now Vec<ChatMessage> with assistant tool_calls + call-id-keyed tool results on both provider bodies."
+    },
+    {
+     "at": "2026-09-05T22:15:43Z",
+     "from": "WIRED",
+     "to": "REAL_TESTING",
+     "note": "Always-on proofs green: unit (8 passed: roles, linkage, error tool results) + daemon_roles_e2e (2 passed: exact OpenAI and Anthropic repair-turn wire bodies against the real daemon/worktree/execd/fs.read with a body-capturing scripted fixture)."
+    },
+    {
+     "at": "2026-09-05T22:15:48Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Phase 2.1 (Future-tasks §2.1) closed: proper message roles E2E-proven through the real daemon on BOTH providers — exact wire bodies asserted (system/user/assistant/tool with tool_calls+tool_call_id; top-level system + tool_use/tool_result blocks keyed by tool_use_id). Mutation checks: linkage break and role flattening both detected by the E2E. Live-provider re-proof rides the nightly job (E2E-001..003 consume the same loop)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T20:40:00Z"
+   "status_changed_on": "2026-09-05T22:15:48Z"
   },
   {
    "id": "M2.8",

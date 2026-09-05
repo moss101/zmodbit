@@ -9,7 +9,7 @@
 use modbit_domain::turn::{can_transition, TurnState};
 use modbit_policy::{PolicyDecision, PolicyKernel, ToolCallRequest};
 use modbit_prompt_compiler::{compile, CompilerInputs};
-use modbit_providers::gateway::{ModelRequest, StreamEvent};
+use modbit_providers::gateway::{ChatMessage, ModelRequest, StreamEvent, ToolCallData};
 use modbit_tools::ToolRegistry;
 use serde::Serialize;
 use serde_json::Value;
@@ -121,6 +121,11 @@ fn transition(state: &mut TurnState, to: TurnState) -> Result<(), AgentError> {
     Ok(())
 }
 
+/// Refusal recorded when a model tool payload fails validation (docs/14
+/// step 5). Shared by the outcome evidence and the error tool result that
+/// answers the call on the conversation.
+const INVALID_TOOL_PAYLOAD: &str = "invalid tool payload: arguments must be a JSON object";
+
 /// One agent, one durable loop (docs/14): prompt → stream → typed events →
 /// policy-checked tools → verify → complete. Bounded by `max_turns`.
 pub struct OneAgentRuntime<'a> {
@@ -158,8 +163,11 @@ impl<'a> OneAgentRuntime<'a> {
         let mut tool_outcomes: Vec<ToolOutcome> = Vec::new();
         let mut stop_reason: Option<String> = None;
         let mut last_usage: Option<modbit_providers::TokenUsage> = None;
-        // Conversation grows across the repair loop (tool results feed back).
-        let mut conversation: Vec<String> = vec![compiled.compiled.clone()];
+        // Conversation carries typed roles across the repair loop (docs/15
+        // § Provider contract): the compiled prompt as the user turn, then
+        // each model turn as an assistant message (with the tool calls it
+        // issued) answered by tool-result messages keyed by call id.
+        let mut conversation: Vec<ChatMessage> = vec![ChatMessage::user(compiled.compiled.clone())];
 
         loop {
             if turns_used >= self.max_turns {
@@ -201,10 +209,7 @@ impl<'a> OneAgentRuntime<'a> {
                 request_id: format!("{}-turn-{turns_used}", task.task_id),
                 model: task.model.clone(),
                 system: task.system_policy.clone(),
-                messages: conversation
-                    .iter()
-                    .map(|c| modbit_providers::gateway::ChatMessage::user(c.clone()))
-                    .collect(),
+                messages: conversation.clone(),
                 max_output_tokens: 4096,
                 temperature: 0.2,
                 tools,
@@ -231,10 +236,13 @@ impl<'a> OneAgentRuntime<'a> {
             // Step 5: parse typed events; reject invalid tool payloads
             // BEFORE side effects. Fragmented tool calls are merged by the
             // assembler so both providers yield the same uniform contract.
+            let mut turn_text = String::new();
+            let mut issued_calls: Vec<ToolCallData> = Vec::new();
             let mut requested_tools: Vec<(String, String, Value)> = Vec::new();
             for event in events {
                 match event {
                     StreamEvent::Delta(text) => {
+                        turn_text.push_str(&text);
                         assembled.push_str(&text);
                     }
                     StreamEvent::Usage(usage) => {
@@ -257,6 +265,15 @@ impl<'a> OneAgentRuntime<'a> {
                         name,
                         arguments,
                     } => {
+                        // EVERY issued call is recorded on the assistant
+                        // turn — providers require each tool call to be
+                        // answered by exactly one tool result, including
+                        // calls whose payload is rejected below.
+                        issued_calls.push(ToolCallData {
+                            call_id: call_id.clone(),
+                            name: name.clone(),
+                            arguments: arguments.clone(),
+                        });
                         // Payload validation gate: arguments MUST parse to a
                         // JSON object. Invalid payloads never reach tools.
                         match serde_json::from_str::<Value>(&arguments) {
@@ -268,10 +285,7 @@ impl<'a> OneAgentRuntime<'a> {
                                     call_id,
                                     name,
                                     result: None,
-                                    refusal: Some(
-                                        "invalid tool payload: arguments must be a JSON object"
-                                            .to_string(),
-                                    ),
+                                    refusal: Some(INVALID_TOOL_PAYLOAD.to_string()),
                                 });
                             }
                         }
@@ -285,7 +299,7 @@ impl<'a> OneAgentRuntime<'a> {
                 o.model_invoke_finished(&turn_id, &model_step, last_usage);
             }
 
-            if requested_tools.is_empty() {
+            if issued_calls.is_empty() {
                 // No tools requested: run the verification stage and
                 // complete. (Streaming → Executing → Verifying → Completed.)
                 transition(&mut state, TurnState::Executing)?;
@@ -307,13 +321,35 @@ impl<'a> OneAgentRuntime<'a> {
                 });
             }
 
-            // Steps 6-7: execute tools under capability leases and append
-            // the evidence into the conversation for the repair turn.
+            // Steps 6-7: record the assistant turn exactly as issued (its
+            // text plus the tool calls), then answer EVERY call in issued
+            // order — executed results for valid payloads, error results
+            // for rejected ones — so the conversation stays provider-
+            // well-formed (docs/15: tool_result / tool role keyed by id).
+            conversation.push(ChatMessage::assistant_with_tool_calls(
+                turn_text,
+                issued_calls.clone(),
+            ));
             transition(&mut state, TurnState::Executing)?;
-            for (call_id, name, arguments) in requested_tools {
+            let parsed_arguments: std::collections::HashMap<String, Value> = requested_tools
+                .into_iter()
+                .map(|(call_id, _name, arguments)| (call_id, arguments))
+                .collect();
+            for call in &issued_calls {
+                let call_id = call.call_id.clone();
+                let name = call.name.clone();
+                let Some(arguments) = parsed_arguments.get(&call_id).cloned() else {
+                    // Payload rejected during parsing: the call never ran,
+                    // but it MUST still be answered by an error result.
+                    conversation.push(ChatMessage::tool_result(
+                        call_id,
+                        INVALID_TOOL_PAYLOAD.to_string(),
+                        true,
+                    ));
+                    continue;
+                };
                 let tool_step = modbit_domain::RunStepId::generate().to_string();
                 let call_id_for_step = call_id.clone();
-                let name = name.clone();
                 if let Some(o) = self.observer {
                     o.tool_step_started(&turn_id, &tool_step, &call_id_for_step, &name);
                 }
@@ -366,9 +402,18 @@ impl<'a> OneAgentRuntime<'a> {
                         outcome.refusal.is_none(),
                     );
                 }
-                conversation.push(format!(
-                    "tool {name_for_log} → {}",
-                    serde_json::to_string(&outcome).unwrap_or_default()
+                // The tool-result message answers THIS call id: the result
+                // JSON on success, the refusal text as an error otherwise.
+                let is_error = outcome.refusal.is_some();
+                let content = match (&outcome.result, &outcome.refusal) {
+                    (Some(result), _) => result.to_string(),
+                    (None, Some(refusal)) => refusal.clone(),
+                    (None, None) => String::new(),
+                };
+                conversation.push(ChatMessage::tool_result(
+                    outcome.call_id.clone(),
+                    content,
+                    is_error,
                 ));
                 tool_outcomes.push(outcome);
             }
@@ -389,6 +434,8 @@ mod tests {
         /// Scripted responses, consumed per call.
         script: Vec<Vec<StreamEvent>>,
         calls: AtomicUsize,
+        /// Every request the runtime sent (asserted by role tests).
+        seen: std::sync::Mutex<Vec<ModelRequest>>,
     }
 
     impl StubTransport {
@@ -396,12 +443,17 @@ mod tests {
             Self {
                 script,
                 calls: AtomicUsize::new(0),
+                seen: std::sync::Mutex::new(Vec::new()),
             }
         }
     }
 
     impl ModelTransport for StubTransport {
-        fn stream(&self, _request: &ModelRequest) -> Result<Vec<StreamEvent>, String> {
+        fn stream(&self, request: &ModelRequest) -> Result<Vec<StreamEvent>, String> {
+            self.seen
+                .lock()
+                .expect("seen requests")
+                .push(request.clone());
             let index = self.calls.fetch_add(1, Ordering::SeqCst);
             self.script
                 .get(index)
@@ -519,6 +571,177 @@ mod tests {
             1,
             "executed exactly once"
         );
+    }
+
+    /// Phase 2.1 (Future-tasks §2.1): the repair-turn request carries typed
+    /// roles — user prompt, assistant turn WITH the tool calls it issued,
+    /// and a tool-result message keyed by the SAME call id. No flattened
+    /// "tool <name> → …" user strings.
+    #[test]
+    fn repair_turn_carries_typed_roles_and_call_id_linkage() {
+        use modbit_providers::gateway::Role;
+        let transport = StubTransport::new(vec![
+            vec![
+                StreamEvent::Delta("reading the file first".into()),
+                StreamEvent::ToolRequest {
+                    call_id: "call-1".into(),
+                    name: "modbit.file.read".into(),
+                    arguments: r#"{"path":"src/lib.rs"}"#.into(),
+                },
+                StreamEvent::Completed {
+                    stop_reason: Some("tool_calls".into()),
+                },
+            ],
+            vec![
+                StreamEvent::Delta("done".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(|_args| Ok(serde_json::json!({"lines": 12}))),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let rt = runtime(&transport, &registry, &kernel, &grants);
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+
+        let seen = transport.seen.lock().unwrap();
+        assert_eq!(seen.len(), 2, "tool turn + repair turn");
+        let first = &seen[0];
+        // Turn 1: exactly one user message — the compiled prompt.
+        assert_eq!(first.messages.len(), 1);
+        assert_eq!(first.messages[0].role, Role::User);
+        assert!(!first.messages[0].content.is_empty());
+
+        let second = &seen[1];
+        assert_eq!(second.messages.len(), 3, "user + assistant + tool result");
+        // Assistant turn carries the model's text AND the issued call.
+        let assistant = &second.messages[1];
+        assert_eq!(assistant.role, Role::Assistant);
+        assert_eq!(assistant.content, "reading the file first");
+        assert_eq!(assistant.tool_calls.len(), 1);
+        assert_eq!(assistant.tool_calls[0].call_id, "call-1");
+        assert_eq!(assistant.tool_calls[0].name, "modbit.file.read");
+        assert_eq!(assistant.tool_calls[0].arguments, r#"{"path":"src/lib.rs"}"#);
+        // Tool result answers the same call id with the result JSON.
+        let tool = &second.messages[2];
+        assert_eq!(tool.role, Role::Tool);
+        assert_eq!(tool.tool_call_id.as_deref(), Some("call-1"));
+        assert!(!tool.is_error);
+        let content: Value = serde_json::from_str(&tool.content).unwrap();
+        assert_eq!(content, serde_json::json!({"lines": 12}));
+        // The old flattened format is gone.
+        assert!(second
+            .messages
+            .iter()
+            .all(|m| !(m.role == Role::User && m.content.starts_with("tool "))));
+    }
+
+    /// Phase 2.1: a call with an INVALID payload is still recorded on the
+    /// assistant turn and answered by an error tool result — providers
+    /// require every tool call to be answered exactly once.
+    #[test]
+    fn invalid_payload_call_is_answered_with_error_tool_result() {
+        use modbit_providers::gateway::Role;
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-bad".into(),
+                name: "modbit.file.read".into(),
+                arguments: "not json".into(),
+            }],
+            vec![
+                StreamEvent::Delta("handled".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(|_args| Ok(serde_json::json!({}))),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let rt = runtime(&transport, &registry, &kernel, &grants);
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+
+        let seen = transport.seen.lock().unwrap();
+        let second = &seen[1];
+        let assistant = &second.messages[1];
+        assert_eq!(assistant.role, Role::Assistant);
+        assert_eq!(assistant.tool_calls.len(), 1, "invalid call still recorded");
+        assert_eq!(assistant.tool_calls[0].call_id, "call-bad");
+        let tool = &second.messages[2];
+        assert_eq!(tool.role, Role::Tool);
+        assert_eq!(tool.tool_call_id.as_deref(), Some("call-bad"));
+        assert!(tool.is_error, "refusal marks the tool result as error");
+        assert!(tool.content.contains("invalid tool payload"));
+    }
+
+    /// Phase 2.1: a policy-denied call feeds back as an error tool result
+    /// so the model can repair — with no side effect (existing behavior,
+    /// now asserted on the wire shape too).
+    #[test]
+    fn denied_call_feeds_back_as_error_tool_result() {
+        use modbit_providers::gateway::Role;
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-2".into(),
+                name: "modbit.shell.run".into(),
+                arguments: r#"{"argv":["rm","-rf","/"]}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("refused".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.shell.run",
+                "1.0.0",
+                EffectClass::External,
+                Arc::new(|_args| Ok(serde_json::json!({}))),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let rt = runtime(&transport, &registry, &kernel, &[]); // NO grants
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        let seen = transport.seen.lock().unwrap();
+        let tool = &seen[1].messages[2];
+        assert_eq!(tool.role, Role::Tool);
+        assert_eq!(tool.tool_call_id.as_deref(), Some("call-2"));
+        assert!(tool.is_error);
+        assert!(tool.content.contains("policy denied"));
     }
 
     /// docs/14 step 5: an INVALID tool payload is rejected BEFORE any side
