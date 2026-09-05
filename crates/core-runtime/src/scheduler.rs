@@ -167,14 +167,17 @@ impl Scheduler {
 
         // 1. Worktree + revision allocation (E2E-001), through the shared
         // layout source (the GetDiff surface reads the same truth).
-        let source: Arc<dyn WorktreeSource> = self.config.worktrees.clone().unwrap_or_else(|| {
-            Arc::new(EnvWorktreeSource::from_env().unwrap_or_else(|| {
-                panic!("no repository configured for runs (set MODBIT_REPO_ROOT)")
-            }))
-        });
-        let layout = source.layout(&task_id.to_string()).ok_or_else(|| {
-            "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string()
-        })?;
+        // No configured repository is a typed failure (task parks), never
+        // a scheduler panic — the poller must survive misconfiguration.
+        let source: Arc<dyn WorktreeSource> = self
+            .config
+            .worktrees
+            .clone()
+            .or_else(|| EnvWorktreeSource::from_env().map(|s| Arc::new(s) as Arc<dyn WorktreeSource>))
+            .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?;
+        let layout = source
+            .layout(&task_id.to_string())
+            .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?;
         let worktree_path = layout.worktree.clone();
         let base_revision = layout.base_revision.clone();
         let repo = GitRepo::open(

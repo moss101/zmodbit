@@ -93,14 +93,21 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
             // Optional cwd pins the run's working directory exactly
             // (REQ-EV-0100 contract; absent means the broker's own cwd).
             let cwd = get_str("cwd").map(std::path::PathBuf::from);
-            match broker.spawn_full(&id, &argv, cwd.as_deref(), &[]) {
+            let result = broker.spawn_full(&id, &argv, cwd.as_deref(), &[]);
+            eprintln!(
+                "modbit-execd: spawn id={id:?} argv={argv:?} cwd={cwd:?} -> {}",
+                result.is_ok()
+            );
+            match result {
                 Ok(()) => serde_json::json!({ "ok": true }).to_string(),
                 Err(e) => error_response(&e),
             }
         }
         "status" => {
             let id = get_str("id").unwrap_or_default();
-            match broker.status(&id) {
+            let meta = broker.status(&id);
+            eprintln!("modbit-execd: status id={id:?} -> {:?}", meta.as_ref().map(|m| (&m.state, m.pid)));
+            match meta {
                 Ok(meta) => {
                     let state = match meta.state {
                         modbit_terminal::RunState::Running => "running".to_string(),
