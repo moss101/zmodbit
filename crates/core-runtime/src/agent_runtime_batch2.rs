@@ -51,7 +51,7 @@ pub fn resume_terminal_child(
     Ok(AgentAttempt {
         attempt_id: format!(
             "{agent_id}-attempt-{}",
-            sha256_hex(new_prompt.as_bytes())[..8].to_string()
+            &sha256_hex(new_prompt.as_bytes())[..8]
         ),
         parent_agent: agent_id.to_string(),
         prior_status: prior_status.to_string(),
