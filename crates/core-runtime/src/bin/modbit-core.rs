@@ -36,7 +36,7 @@ fn main() {
         modbit_core_runtime::scheduler::SchedulerConfig::from_env(),
     );
 
-    // Optional multi-client HTTP+SSE daemon (headless mode, REQ-EV-0126):
+    // Optional multi-client HTTP+SSE daemon (headless mode):
     // MODBIT_HTTP_ADDR=127.0.0.1:0 binds it alongside the socket transport.
     if let Ok(addr) = std::env::var("MODBIT_HTTP_ADDR") {
         match modbit_core_runtime::daemon::Daemon::bind(&addr, store.clone(), services.clone()) {
