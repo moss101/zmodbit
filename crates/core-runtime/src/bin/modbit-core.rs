@@ -86,14 +86,18 @@ fn main() {
         }
     };
 
-    // stdout IS the inherited secure channel (docs/30 § Local SurfaceProtocol).
-    println!(
+    // stdout IS the inherited secure channel (docs/30 § Local
+    // SurfaceProtocol). Writes tolerate a parent that stops reading
+    // (println! panics on a closed pipe and would kill the core).
+    use std::io::Write;
+    let mut stdout = std::io::stdout();
+    let _ = writeln!(
+        stdout,
         "{}",
         serde_json::json!({ "socket": socket_display, "secret": secret_hex })
     );
-    println!("ready");
-    use std::io::Write;
-    std::io::stdout().flush().expect("flush boot line");
+    let _ = writeln!(stdout, "ready");
+    let _ = stdout.flush();
 
     eprintln!("modbit-core: serving on {socket_display}");
     transport::serve(

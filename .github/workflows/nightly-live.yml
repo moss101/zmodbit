@@ -1,0 +1,62 @@
+# Nightly live M2 proof (docs/15 § Live provider proof; M2.11): runs the
+# daemon-driven E2E suite against a LIVE model with the repository secret.
+# The scripted (no-secret) stage runs first — machinery failures never burn
+# provider credits. Evidence logs upload as artifacts; copy the run's log
+# into docs/evidence/ when closing the milestone (typed evidence).
+#
+# Requires the repository secret OPENAI_API_KEY (added by the owner; this
+# workflow never echoes it).
+name: nightly-live
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC daily
+  workflow_dispatch: {}
+
+jobs:
+  live-m2:
+    if: github.repository == 'moss101/zmodbit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      - name: Build binaries (modbit-core, modbit-execd)
+        run: cargo build -p modbit-core-runtime -p modbit-execd
+
+      - name: Stage 1 — scripted daemon E2E (no credentials)
+        run: |
+          cargo test -p modbit-core-runtime --test daemon_scripted_e2e -- --test-threads=1 --nocapture \
+            | tee docs/evidence/m2-11-scripted-e2e.log
+          grep -q "test result: ok" docs/evidence/m2-11-scripted-e2e.log
+
+      - name: Stage 2 — live daemon E2E (E2E-001/002/003)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MODBIT_LIVE_E2E: "1"
+          MODBIT_LIVE_MODEL: ${{ vars.MODBIT_LIVE_MODEL || 'gpt-4o-mini' }}
+          MODBIT_BASE_URL: ${{ vars.MODBIT_BASE_URL }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY secret not configured — live stage skipped (docs/15 pending)."
+            exit 0
+          fi
+          cargo test -p modbit-core-runtime --test daemon_live_e2e -- --test-threads=1 --nocapture \
+            | tee "docs/evidence/m2-11-live-e2e-$(date -u +%Y-%m-%dT%H%MZ).log"
+          ls docs/evidence/m2-11-live-e2e-*.log | head -1 | xargs grep -q "test result: ok"
+
+      - name: Secret scan evidence
+        run: |
+          ! grep -rEn "sk-[A-Za-z0-9]{20,}|Bearer [A-Za-z0-9]{20,}" docs/evidence/
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m2-live-evidence
+          path: docs/evidence/
+          retention-days: 30
