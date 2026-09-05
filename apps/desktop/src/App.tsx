@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { groupFleet, FLEET_VIEW_ORDER, FLEET_VIEW_LABELS, TASK_STATUS, type TaskCard } from "./fleet/grouping";
 import { superviseFleet } from "./fleet/supervision";
 import { statusSummary } from "./status-center/status";
+import { TaskWorkspace } from "./task-workspace/TaskWorkspace";
 
 // docs/32: the renderer never fabricates completion — every card renders
 // from Core data (projections derived from committed events only).
@@ -11,6 +12,7 @@ export default function App() {
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -26,10 +28,12 @@ export default function App() {
     }
   }, []);
 
+  // Event-driven updates (docs/30 § SubscribeEvents): one initial snapshot,
+  // then the forwarded Core event stream drives refreshes — the 1.5s poll
+  // is gone. Any task event implies fleet state may have changed.
   useEffect(() => {
     void refresh();
-    const timer = setInterval(() => void refresh(), 1500);
-    return () => clearInterval(timer);
+    return window.modbit.onCoreEvent(() => void refresh());
   }, [refresh]);
 
   const submit = useCallback(async () => {
@@ -52,6 +56,7 @@ export default function App() {
   const grouped = groupFleet(tasks);
   const summary = statusSummary(tasks);
   const supervised = superviseFleet(tasks);
+  const workspaceTask = tasks.find((t) => t.taskId === selectedTask) ?? null;
 
   return (
     <main>
@@ -100,7 +105,16 @@ export default function App() {
             <p className="empty">none</p>
           ) : (
             grouped[view].map((t) => (
-              <article key={t.taskId}>
+              <article
+                key={t.taskId}
+                className={selectedTask === t.taskId ? "task-card selected" : "task-card"}
+                tabIndex={0}
+                role="button"
+                onClick={() => setSelectedTask(t.taskId)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setSelectedTask(t.taskId);
+                }}
+              >
                 <strong>{t.title}</strong>
                 <span> {t.taskId}</span>
               </article>
@@ -108,6 +122,9 @@ export default function App() {
           )}
         </section>
       ))}
+      {workspaceTask ? (
+        <TaskWorkspace task={workspaceTask} onClose={() => setSelectedTask(null)} />
+      ) : null}
     </main>
   );
 }

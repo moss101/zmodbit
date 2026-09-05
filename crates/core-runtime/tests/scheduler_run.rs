@@ -22,6 +22,27 @@ use modbit_git::GitRepo;
 use modbit_providers::gateway::Provider;
 use modbit_providers::transport::{SecretBroker, TransportError};
 
+/// Fixed layout source for tests (explicit roots, no env).
+struct FixedSource {
+    repo_root: std::path::PathBuf,
+    worktree_root: std::path::PathBuf,
+    base_revision: String,
+}
+
+impl modbit_core_runtime::scheduler::WorktreeSource for FixedSource {
+    fn layout(&self, task_id: &str) -> Option<modbit_core_runtime::scheduler::WorktreeLayout> {
+        Some(modbit_core_runtime::scheduler::WorktreeLayout {
+            worktree: self.worktree_root.join(task_id),
+            branch: format!("modbit/{}", &task_id[..12]),
+            base_revision: self.base_revision.clone(),
+        })
+    }
+
+    fn repo_root(&self) -> Option<std::path::PathBuf> {
+        Some(self.repo_root.clone())
+    }
+}
+
 struct FixtureBroker;
 impl SecretBroker for FixtureBroker {
     fn credential(&self, _name: &str) -> Result<String, TransportError> {
@@ -222,9 +243,13 @@ async fn scheduler_runs_task_end_to_end_into_worktree_and_store() {
             model: "fixture-model".into(),
             base_url: Some(format!("http://{fixture_addr}")),
             broker: Arc::new(FixtureBroker),
-            repo_root: Some(repo_root.clone()),
-            worktree_root: Some(worktree_root.clone()),
+            worktrees: Some(Arc::new(FixedSource {
+                repo_root: repo_root.clone(),
+                worktree_root: worktree_root.clone(),
+                base_revision: GitRepo::open(&repo_root).unwrap().head().unwrap(),
+            })),
             request_timeout: Duration::from_secs(5),
+            execd_addr: None,
             max_turns: 4,
         },
     );
@@ -318,9 +343,13 @@ async fn provider_outage_parks_task_in_waiting() {
             model: "fixture-model".into(),
             base_url: Some(format!("http://{dead_addr}")),
             broker: Arc::new(FixtureBroker),
-            repo_root: Some(repo_root.clone()),
-            worktree_root: Some(worktree_root.clone()),
+            worktrees: Some(Arc::new(FixedSource {
+                repo_root: repo_root.clone(),
+                worktree_root: worktree_root.clone(),
+                base_revision: GitRepo::open(&repo_root).unwrap().head().unwrap(),
+            })),
             request_timeout: Duration::from_secs(5),
+            execd_addr: None,
             max_turns: 2,
         },
     );

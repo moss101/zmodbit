@@ -96,6 +96,51 @@ const CHANNELS = {
             return { kind: "codeView", path };
         },
     },
+    "task:runDetail": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId"]);
+            const taskId = requireString(payload, "taskId", 64);
+            return { kind: "runDetail", taskId };
+        },
+    },
+    "task:diff": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId"]);
+            const taskId = requireString(payload, "taskId", 64);
+            return { kind: "diff", taskId };
+        },
+    },
+    "task:steer": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId", "note"]);
+            const taskId = requireString(payload, "taskId", 64);
+            const note = requireString(payload, "note", MAX_PROMPT);
+            return { kind: "steer", taskId, note };
+        },
+    },
+    "task:pause": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId"]);
+            const taskId = requireString(payload, "taskId", 64);
+            return { kind: "pause", taskId };
+        },
+    },
+    "task:stop": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId", "reason"]);
+            const taskId = requireString(payload, "taskId", 64);
+            const reason = payload.reason === undefined ? "" : payload.reason;
+            if (typeof reason !== "string" || reason.length > MAX_PROMPT) {
+                throw new Rejected("reason must be a bounded string");
+            }
+            return { kind: "stop", taskId, reason };
+        },
+    },
     "session:create": {
         validate(payload) {
             if (!isPlainObject(payload)) throw new Rejected("payload must be an object");

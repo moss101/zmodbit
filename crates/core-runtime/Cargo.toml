@@ -14,6 +14,7 @@ modbit-tools = { path = "../tools" }
 modbit-providers = { path = "../providers" }
 modbit-prompt-compiler = { path = "../prompt-compiler" }
 modbit-git = { path = "../git" }
+modbit-verification = { path = "../verification" }
 tokio = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }

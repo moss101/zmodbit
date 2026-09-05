@@ -216,6 +216,43 @@ impl GitRepo {
         Ok(diffs)
     }
 
+    /// Working-tree + index status as porcelain entries (git.status tool;
+    /// `xy` is the two-letter porcelain code, path is repo-relative).
+    pub fn status_porcelain(&self) -> Result<Vec<(String, String)>, GitError> {
+        let out = self.git("status", &["--porcelain=v1"])?;
+        let text = Self::stdout_text(&out);
+        let mut entries = Vec::new();
+        for line in text.lines() {
+            if line.len() < 4 {
+                continue;
+            }
+            let xy = line[..2].to_string();
+            let path = line[3..].to_string();
+            entries.push((xy, path));
+        }
+        Ok(entries)
+    }
+
+    /// Numstat diff of the working tree against a base revision
+    /// (git.diff tool: uncommitted changes bound to the current worktree).
+    pub fn diff_workdir_numstat(&self, base: &str) -> Result<Vec<FileDiff>, GitError> {
+        let out = self.git("diff", &["--numstat", base])?;
+        let text = Self::stdout_text(&out);
+        let mut diffs = Vec::new();
+        for line in text.lines() {
+            let mut parts = line.split('\t');
+            if let (Some(add), Some(del), Some(path)) = (parts.next(), parts.next(), parts.next()) {
+                let parse = |v: &str| v.parse::<u64>().unwrap_or(0);
+                diffs.push(FileDiff {
+                    path: path.to_string(),
+                    additions: parse(add),
+                    deletions: parse(del),
+                });
+            }
+        }
+        Ok(diffs)
+    }
+
     /// HEAD commit hash.
     pub fn head(&self) -> Result<String, GitError> {
         let out = self.git("rev-parse", &["HEAD"])?;

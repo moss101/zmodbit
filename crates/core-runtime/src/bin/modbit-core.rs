@@ -26,7 +26,11 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let services = Arc::new(CoreServices::new(store.clone()));
+    let mut services = CoreServices::new(store.clone());
+    if let Some(source) = modbit_core_runtime::scheduler::EnvWorktreeSource::from_env() {
+        services = services.with_task_worktrees(std::sync::Arc::new(source));
+    }
+    let services = Arc::new(services);
 
     // The single scheduler (docs/14): tails the store for task_started and
     // owns every run. Started in every host mode so runs begin whichever

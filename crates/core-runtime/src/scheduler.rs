@@ -38,6 +38,7 @@ use modbit_providers::transport::{
     HttpStreamTransport, ModelTransport as ProvidersTransport, OutgoingRequest, SecretBroker,
     TransportEvent,
 };
+use modbit_terminal::client::ExecdClient;
 use modbit_tools::schema::{ParamSpec, ParamType, ToolSchema};
 use modbit_tools::ToolRegistry;
 use modbit_workspace::WorkspaceFileService;
@@ -55,13 +56,14 @@ pub struct SchedulerConfig {
     /// Pins the provider base URL (tests point this at a local fixture).
     pub base_url: Option<String>,
     pub broker: Arc<dyn SecretBroker>,
-    /// Repository whose worktrees isolate task runs (E2E-001).
-    pub repo_root: Option<PathBuf>,
-    /// Where task worktrees are allocated (defaults to
-    /// `<repo_root>/../.modbit/worktrees`).
-    pub worktree_root: Option<PathBuf>,
     pub request_timeout: Duration,
     pub max_turns: u32,
+    /// modbit-execd broker address (docs/21). shell.run routes through it;
+    /// unset means shell execution is unavailable and fails closed.
+    pub execd_addr: Option<String>,
+    /// Task-worktree layout source (repo + worktree roots). Defaults to
+    /// the env-backed source when unset.
+    pub worktrees: Option<Arc<dyn WorktreeSource>>,
 }
 
 impl SchedulerConfig {
@@ -70,22 +72,16 @@ impl SchedulerConfig {
             Ok("anthropic") => Provider::Anthropic,
             _ => Provider::OpenAi,
         };
-        let repo_root = std::env::var("MODBIT_REPO_ROOT")
-            .ok()
-            .map(PathBuf::from)
-            .or_else(|| {
-                let cwd = std::env::current_dir().ok()?;
-                (cwd.join(".git").exists()).then_some(cwd)
-            });
         SchedulerConfig {
             provider,
             model: std::env::var("MODBIT_MODEL").unwrap_or_else(|_| "gpt-4o-mini".into()),
             base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
             broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
-            repo_root,
-            worktree_root: None,
+            worktrees: EnvWorktreeSource::from_env()
+                .map(|s| Arc::new(s) as Arc<dyn WorktreeSource>),
             request_timeout: Duration::from_secs(180),
             max_turns: 8,
+            execd_addr: std::env::var("MODBIT_EXECD_ADDR").ok().filter(|s| !s.is_empty()),
         }
     }
 }
@@ -169,21 +165,26 @@ impl Scheduler {
             task: task_id.to_string(),
         };
 
-        // 1. Worktree + revision allocation (E2E-001).
-        let repo_root = self.config.repo_root.clone().ok_or_else(|| {
-            "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string()
-        })?;
-        let repo = GitRepo::open(&repo_root).map_err(|e| format!("open repo: {e}"))?;
-        let base_revision = repo.head().map_err(|e| format!("read HEAD: {e}"))?;
-        let worktree_root = self
+        // 1. Worktree + revision allocation (E2E-001), through the shared
+        // layout source (the GetDiff surface reads the same truth).
+        // No configured repository is a typed failure (task parks), never
+        // a scheduler panic — the poller must survive misconfiguration.
+        let source: Arc<dyn WorktreeSource> = self
             .config
-            .worktree_root
+            .worktrees
             .clone()
-            .unwrap_or_else(|| default_worktree_root(&repo_root));
-        let worktree_path = worktree_root.join(task_id.to_string());
-        // worktree_add creates the task branch (-b) at the current HEAD.
-        let branch = format!("modbit/{}", &task_id.to_string()[..12.min(task_id.to_string().len())]);
-        repo.worktree_add(&worktree_path, &branch)
+            .or_else(|| EnvWorktreeSource::from_env().map(|s| Arc::new(s) as Arc<dyn WorktreeSource>))
+            .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?;
+        let layout = source
+            .layout(&task_id.to_string())
+            .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?;
+        let worktree_path = layout.worktree.clone();
+        let base_revision = layout.base_revision.clone();
+        let repo = GitRepo::open(
+            &source.repo_root().ok_or("worktree source has no repository root")?,
+        )
+        .map_err(|e| format!("open repo: {e}"))?;
+        repo.worktree_add(&worktree_path, &layout.branch)
             .map_err(|e| format!("allocate worktree: {e}"))?;
 
         // 2. Context pack through the canonical file service on the worktree.
@@ -192,8 +193,15 @@ impl Scheduler {
         );
         let context_pack = build_context_pack(&ws, &title, &prompt);
 
-        // 3. Task-scoped tools bound to the worktree.
-        let registry = build_worktree_registry(&ws, &worktree_path);
+        // 3. Task-scoped tools bound to the worktree. shell.run routes
+        // through modbit-execd (durable broker); everything stays inside the
+        // worktree boundary.
+        let execd = self
+            .config
+            .execd_addr
+            .as_deref()
+            .and_then(|addr| ExecdClient::connect(addr).ok());
+        let registry = build_worktree_registry(&ws, &worktree_path, execd.as_ref());
         let kernel = PolicyKernel::new(vec![]);
         for grant in worktree_grants() {
             kernel.grant(grant);
@@ -291,6 +299,79 @@ fn tail(s: &str, max: usize) -> String {
     s.chars().rev().take(max).collect::<Vec<_>>().into_iter().rev().collect()
 }
 
+/// The deterministic task-worktree layout shared by the scheduler and the
+/// GetDiff surface: path, branch and base revision for a task id.
+pub struct WorktreeLayout {
+    pub worktree: PathBuf,
+    pub branch: String,
+    pub base_revision: String,
+}
+
+/// Source of task-worktree layouts, shared by the scheduler and the GetDiff
+/// surface. Explicit configuration beats ambient env inside dispatch.
+pub trait WorktreeSource: Send + Sync + 'static {
+    /// The deterministic layout (path, branch, base revision) for a task.
+    fn layout(&self, task_id: &str) -> Option<WorktreeLayout>;
+    /// The backing repository root, when the source knows it.
+    fn repo_root(&self) -> Option<std::path::PathBuf> {
+        None
+    }
+}
+
+/// Env-backed source for host wiring (MODBIT_REPO_ROOT / cwd git repo,
+/// MODBIT_WORKTREE_ROOT override). The bin constructs it once at boot.
+pub struct EnvWorktreeSource {
+    repo_root: PathBuf,
+    worktree_root: PathBuf,
+    base_revision: String,
+}
+
+impl EnvWorktreeSource {
+    pub fn from_env() -> Option<Self> {
+        let repo_root = std::env::var("MODBIT_REPO_ROOT")
+            .ok()
+            .map(PathBuf::from)
+            .or_else(|| {
+                let cwd = std::env::current_dir().ok()?;
+                (cwd.join(".git").exists()).then_some(cwd)
+            })?;
+        let repo = GitRepo::open(&repo_root).ok()?;
+        let base_revision = repo.head().ok()?;
+        let worktree_root = std::env::var("MODBIT_WORKTREE_ROOT")
+            .ok()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| default_worktree_root(&repo_root));
+        Some(EnvWorktreeSource {
+            repo_root,
+            worktree_root,
+            base_revision,
+        })
+    }
+
+    pub fn repo_root(&self) -> &std::path::Path {
+        &self.repo_root
+    }
+
+    pub fn worktree_root(&self) -> &std::path::Path {
+        &self.worktree_root
+    }
+}
+
+impl WorktreeSource for EnvWorktreeSource {
+    fn layout(&self, task_id: &str) -> Option<WorktreeLayout> {
+        let branch = format!("modbit/{}", &task_id[..12.min(task_id.len())]);
+        Some(WorktreeLayout {
+            worktree: self.worktree_root.join(task_id),
+            branch,
+            base_revision: self.base_revision.clone(),
+        })
+    }
+
+    fn repo_root(&self) -> Option<std::path::PathBuf> {
+        Some(self.repo_root.clone())
+    }
+}
+
 fn default_worktree_root(repo_root: &std::path::Path) -> PathBuf {
     repo_root
         .parent()
@@ -377,11 +458,20 @@ fn param(spec: ParamType, required: bool, description: &str) -> ParamSpec {
     }
 }
 
-/// Task-scoped tools bound to the worktree. Paths go through the canonical
-/// safe-path file service; shell commands run with the worktree as cwd.
-fn build_worktree_registry(ws: &Arc<WorkspaceFileService>, worktree: &std::path::Path) -> ToolRegistry {
+/// Task-scoped tools bound to the worktree (docs/17 tool families; Phase 1
+/// item 4): safe-path fs access, execd-routed shell, change engine edits
+/// behind an edit gate, literal search, git status/diff, and verification
+/// runners. Every effector is the canonical owner crate — no local
+/// reimplementation.
+#[allow(clippy::too_many_lines)]
+pub fn build_worktree_registry(
+    ws: &Arc<WorkspaceFileService>,
+    worktree: &std::path::Path,
+    execd: Option<&ExecdClient>,
+) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
+    // ---- fs.read / fs.list: canonical safe-path file service ----------
     let mut read_params = std::collections::BTreeMap::new();
     read_params.insert("path".into(), param(ParamType::Str, true, "File path inside the worktree"));
     registry
@@ -395,6 +485,9 @@ fn build_worktree_registry(ws: &Arc<WorkspaceFileService>, worktree: &std::path:
                 let ws = ws.clone();
                 Arc::new(move |args| {
                     let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
+                    // Files checked out by git are adopted on first touch so
+                    // reads carry revisions (canonical change-engine guard).
+                    let _ = ws.adopt(path);
                     let (bytes, rev) = ws.read(path).map_err(|e| e.to_string())?;
                     Ok(serde_json::json!({
                         "content": String::from_utf8_lossy(&bytes),
@@ -425,6 +518,9 @@ fn build_worktree_registry(ws: &Arc<WorkspaceFileService>, worktree: &std::path:
         )
         .expect("register fs.list");
 
+    // ---- shell.run: routed through modbit-execd (docs/21) -------------
+    // Output is durable and offset-addressable in the broker's run dir —
+    // E2E-003 output survival. Fails closed when no broker is configured.
     let mut shell_params = std::collections::BTreeMap::new();
     shell_params.insert(
         "argv".into(),
@@ -440,11 +536,15 @@ fn build_worktree_registry(ws: &Arc<WorkspaceFileService>, worktree: &std::path:
             "shell.run",
             "1.0.0",
             EffectClass::External,
-            "Run a command in the task worktree (structured argv; output captured)",
+            "Run a command in the task worktree through the durable process broker (output captured)",
             Some(ToolSchema { aliases: Default::default(), parameters: shell_params }),
             {
+                let execd = execd.cloned();
                 let worktree = worktree.to_path_buf();
                 Arc::new(move |args| {
+                    let execd = execd.as_ref().ok_or(
+                        "shell execution unavailable: no modbit-execd broker configured (set MODBIT_EXECD_ADDR)",
+                    )?;
                     let argv = args
                         .get("argv")
                         .and_then(|v| v.as_str())
@@ -455,33 +555,287 @@ fn build_worktree_registry(ws: &Arc<WorkspaceFileService>, worktree: &std::path:
                     if argv.is_empty() {
                         return Err("empty argv".into());
                     }
-                    // Routing through modbit-execd lands in Phase 1 item 4;
-                    // the boundary contract (cwd pinned to the worktree,
-                    // captured output) is identical.
-                    let out = std::process::Command::new(&argv[0])
-                        .args(&argv[1..])
-                        .current_dir(&worktree)
-                        .output()
-                        .map_err(|e| e.to_string())?;
+                    let run_id = format!("task-{}", uuid::Uuid::now_v7().simple());
+                    let (status, output) = execd
+                        .run_capture(
+                            &run_id,
+                            &argv,
+                            Some(&worktree),
+                            Duration::from_secs(600),
+                            256 * 1024,
+                        )
+                        .map_err(|e| format!("execd: {e}"))?;
+                    let exit_code = match status.state {
+                        modbit_terminal::RunState::Exited(code) => code,
+                        _ => -1,
+                    };
                     Ok(serde_json::json!({
-                        "exit_code": out.status.code(),
-                        "stdout": tail(&String::from_utf8_lossy(&out.stdout), 8_000),
-                        "stderr": tail(&String::from_utf8_lossy(&out.stderr), 8_000),
+                        "exit_code": exit_code,
+                        "state": format!("{:?}", status.state),
+                        "output": tail(&String::from_utf8_lossy(&output), 8_000),
+                        "broker_run_id": run_id,
                     }))
                 })
             },
         )
         .expect("register shell.run");
 
+    // ---- change.propose / change.apply: edit gate + change engine -----
+    let mut propose_params = std::collections::BTreeMap::new();
+    propose_params.insert("path".into(), param(ParamType::Str, true, "File to edit"));
+    propose_params.insert("old_text".into(), param(ParamType::Str, true, "Exact existing text to replace (must occur exactly once)"));
+    propose_params.insert("new_text".into(), param(ParamType::Str, true, "Replacement text"));
+    registry
+        .register_with_schema(
+            "change.propose",
+            "1.0.0",
+            EffectClass::ReadOnly,
+            "Preview an edit WITHOUT writing: verifies the old text occurs exactly once and returns the resulting content head",
+            Some(ToolSchema { aliases: Default::default(), parameters: propose_params }),
+            {
+                let ws = ws.clone();
+                Arc::new(move |args| {
+                    let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
+                    let old = args.get("old_text").and_then(|v| v.as_str()).ok_or("missing old_text")?;
+                    let new = args.get("new_text").and_then(|v| v.as_str()).ok_or("missing new_text")?;
+                    let _ = ws.adopt(path);
+                    let (bytes, rev) = ws.read(path).map_err(|e| e.to_string())?;
+                    let content = String::from_utf8_lossy(&bytes).to_string();
+                    let count = content.matches(old).count();
+                    if count != 1 {
+                        return Ok(serde_json::json!({
+                            "ok": false,
+                            "occurrences": count,
+                            "reason": "old_text must occur exactly once (edit gate; blind writes are refused)",
+                        }));
+                    }
+                    let proposed = content.replacen(old, new, 1);
+                    Ok(serde_json::json!({
+                        "ok": true,
+                        "occurrences": 1,
+                        "file_revision": rev,
+                        "preview_head": tail(&proposed, 600),
+                    }))
+                })
+            },
+        )
+        .expect("register change.propose");
+
+    let mut apply_params = std::collections::BTreeMap::new();
+    apply_params.insert("path".into(), param(ParamType::Str, true, "File to edit"));
+    apply_params.insert("old_text".into(), param(ParamType::Str, true, "Exact existing text to replace (must occur exactly once)"));
+    apply_params.insert("new_text".into(), param(ParamType::Str, true, "Replacement text"));
+    apply_params.insert("expected_revision".into(), param(ParamType::Int, false, "File revision from the read that produced old_text (optimistic concurrency guard)"));
+    registry
+        .register_with_schema(
+            "change.apply",
+            "1.0.0",
+            EffectClass::Write,
+            "Apply an edit through the change engine: edit gate (unique match) + revision-guarded atomic replace",
+            Some(ToolSchema { aliases: Default::default(), parameters: apply_params }),
+            {
+                let ws = ws.clone();
+                Arc::new(move |args| {
+                    let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
+                    let old = args.get("old_text").and_then(|v| v.as_str()).ok_or("missing old_text")?;
+                    let new = args.get("new_text").and_then(|v| v.as_str()).ok_or("missing new_text")?;
+                    let _ = ws.adopt(path);
+                    let (bytes, rev) = ws.read(path).map_err(|e| e.to_string())?;
+                    if let Some(expected) = args.get("expected_revision").and_then(|v| v.as_i64()) {
+                        if expected >= 0 && expected as u64 != rev {
+                            return Ok(serde_json::json!({
+                                "ok": false,
+                                "reason": format!("stale revision: expected {expected}, file is at {rev}; re-read and re-propose"),
+                            }));
+                        }
+                    }
+                    let content = String::from_utf8_lossy(&bytes).to_string();
+                    let count = content.matches(old).count();
+                    if count != 1 {
+                        return Ok(serde_json::json!({
+                            "ok": false,
+                            "occurrences": count,
+                            "reason": "old_text must occur exactly once (edit gate)",
+                        }));
+                    }
+                    let updated = content.replacen(old, new, 1);
+                    let new_rev = ws
+                        .replace(path, updated.as_bytes(), rev)
+                        .map_err(|e| e.to_string())?;
+                    Ok(serde_json::json!({ "ok": true, "file_revision": new_rev }))
+                })
+            },
+        )
+        .expect("register change.apply");
+
+    // ---- search.grep: literal search, bounded (index arrives with M3) --
+    let mut grep_params = std::collections::BTreeMap::new();
+    grep_params.insert("pattern".into(), param(ParamType::Str, true, "Literal text to find"));
+    grep_params.insert("path".into(), param(ParamType::Str, false, "Limit search to this directory (default: worktree root)"));
+    registry
+        .register_with_schema(
+            "search.grep",
+            "1.0.0",
+            EffectClass::ReadOnly,
+            "Search file contents in the worktree for a literal string; returns path:line matches (bounded)",
+            Some(ToolSchema { aliases: Default::default(), parameters: grep_params }),
+            {
+                let worktree = worktree.to_path_buf();
+                Arc::new(move |args| {
+                    let pattern = args.get("pattern").and_then(|v| v.as_str()).ok_or("missing pattern")?;
+                    let base = args
+                        .get("path")
+                        .and_then(|v| v.as_str())
+                        .map(|p| worktree.join(p))
+                        .unwrap_or_else(|| worktree.clone());
+                    let mut matches = Vec::new();
+                    let mut visited = 0usize;
+                    walk_files(&base, &mut |path| {
+                        visited += 1;
+                        if visited > 2_000 || matches.len() >= 200 {
+                            return;
+                        }
+                        let Ok(meta) = std::fs::metadata(path) else { return };
+                        if !meta.is_file() || meta.len() > 256 * 1024 {
+                            return;
+                        }
+                        let Ok(bytes) = std::fs::read(path) else { return };
+                        let text = String::from_utf8_lossy(&bytes);
+                        for (idx, line) in text.lines().enumerate() {
+                            if line.contains(pattern) {
+                                let rel = path.strip_prefix(&worktree).unwrap_or(path);
+                                matches.push(format!("{}:{}", rel.display(), idx + 1));
+                                if matches.len() >= 200 {
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    Ok(serde_json::json!({ "matches": matches, "files_searched": visited }))
+                })
+            },
+        )
+        .expect("register search.grep");
+
+    // ---- git.status / git.diff: canonical git crate --------------------
+    let status_params = std::collections::BTreeMap::new();
+    registry
+        .register_with_schema(
+            "git.status",
+            "1.0.0",
+            EffectClass::ReadOnly,
+            "Working-tree status of the task worktree (porcelain codes)",
+            Some(ToolSchema { aliases: Default::default(), parameters: status_params }),
+            {
+                let worktree = worktree.to_path_buf();
+                Arc::new(move |_args| {
+                    let repo = GitRepo::open(&worktree).map_err(|e| e.to_string())?;
+                    let entries = repo.status_porcelain().map_err(|e| e.to_string())?;
+                    Ok(serde_json::json!({
+                        "entries": entries.iter()
+                            .map(|(xy, path)| serde_json::json!({ "code": xy, "path": path }))
+                            .collect::<Vec<_>>(),
+                    }))
+                })
+            },
+        )
+        .expect("register git.status");
+
+    let diff_params = std::collections::BTreeMap::new();
+    registry
+        .register_with_schema(
+            "git.diff",
+            "1.0.0",
+            EffectClass::ReadOnly,
+            "Numstat diff of the worktree's uncommitted changes against HEAD",
+            Some(ToolSchema { aliases: Default::default(), parameters: diff_params }),
+            {
+                let worktree = worktree.to_path_buf();
+                Arc::new(move |_args| {
+                    let repo = GitRepo::open(&worktree).map_err(|e| e.to_string())?;
+                    let diffs = repo.diff_workdir_numstat("HEAD").map_err(|e| e.to_string())?;
+                    Ok(serde_json::json!({
+                        "files": diffs.iter()
+                            .map(|d| serde_json::json!({ "path": d.path, "additions": d.additions, "deletions": d.deletions }))
+                            .collect::<Vec<_>>(),
+                    }))
+                })
+            },
+        )
+        .expect("register git.diff");
+
+    // ---- test.run: verification engine with runner adapters -----------
+    let mut test_params = std::collections::BTreeMap::new();
+    test_params.insert("runner".into(), param(ParamType::Str, true, "Test runner: cargo | vitest | pytest"));
+    test_params.insert("args".into(), param(ParamType::Str, false, "Extra args appended to the runner invocation"));
+    registry
+        .register_with_schema(
+            "test.run",
+            "1.0.0",
+            EffectClass::External,
+            "Run the project's test suite in the worktree through a runner adapter (cargo/vitest/pytest)",
+            Some(ToolSchema { aliases: Default::default(), parameters: test_params }),
+            {
+                let worktree = worktree.to_path_buf();
+                Arc::new(move |args| {
+                    let runner = args.get("runner").and_then(|v| v.as_str()).ok_or("missing runner")?;
+                    let extra = args.get("args").and_then(|v| v.as_str()).unwrap_or("");
+                    let mut argv: Vec<String> = match runner {
+                        "cargo" => vec!["cargo", "test"],
+                        "vitest" => vec!["pnpm", "exec", "vitest", "run"],
+                        "pytest" => vec!["python3", "-m", "pytest"],
+                        other => return Err(format!("unknown runner {other:?} (cargo|vitest|pytest)")),
+                    }
+                    .into_iter()
+                    .map(String::from)
+                    .collect();
+                    argv.extend(extra.split_whitespace().map(String::from));
+                    let gate = modbit_verification::Gate::new(runner, &[], 900)
+                        .with_cwd(worktree.clone());
+                    let gate = modbit_verification::Gate { argv, ..gate };
+                    let report = modbit_verification::run_plan(&[gate]).map_err(|e| e.to_string())?;
+                    Ok(serde_json::to_value(&report).unwrap_or_default())
+                })
+            },
+        )
+        .expect("register test.run");
+
     registry
 }
 
-/// Host-issued capability grants for the worktool toolset.
+/// Bounded depth-first walk over regular files (search.grep substrate).
+fn walk_files(dir: &std::path::Path, f: &mut dyn FnMut(&std::path::Path)) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(meta) = std::fs::metadata(&path) else { continue };
+        if meta.is_dir() {
+            let name = entry.file_name();
+            // Skip VCS and dependency dirs: never search those.
+            if name == ".git" || name == "node_modules" || name == "target" {
+                continue;
+            }
+            walk_files(&path, f);
+        } else if meta.is_file() {
+            f(&path);
+        }
+    }
+}
+
+/// Host-issued capability grants for the worktree toolset. Grants are
+/// least-privilege per effect class (docs/16); approvals can revoke any of
+/// these without touching the others.
 fn worktree_grants() -> Vec<CapabilityGrant> {
     vec![
         CapabilityGrant { grant_id: "g-fs-read".into(), tool: "fs.read".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-fs-list".into(), tool: "fs.list".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-grep".into(), tool: "search.grep".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-git-status".into(), tool: "git.status".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-git-diff".into(), tool: "git.diff".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-change-propose".into(), tool: "change.propose".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-change-apply".into(), tool: "change.apply".into(), effect_class: EffectClass::Write },
         CapabilityGrant { grant_id: "g-shell-run".into(), tool: "shell.run".into(), effect_class: EffectClass::External },
+        CapabilityGrant { grant_id: "g-test-run".into(), tool: "test.run".into(), effect_class: EffectClass::External },
     ]
 }
 

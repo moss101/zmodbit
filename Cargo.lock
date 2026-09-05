@@ -821,6 +821,7 @@ dependencies = [
  "modbit-providers",
  "modbit-terminal",
  "modbit-tools",
+ "modbit-verification",
  "modbit-workspace",
  "prost",
  "prost-types",
@@ -998,6 +999,7 @@ dependencies = [
 name = "modbit-terminal"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "modbit-git",
  "serde",
  "serde_json",

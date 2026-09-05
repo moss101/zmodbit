@@ -16,6 +16,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
 pub mod broker_ext;
+pub mod client;
 pub mod command_contract;
 pub mod replay;
 
@@ -27,6 +28,9 @@ pub const READ_CHUNK_MAX: usize = 512 * 1024;
 #[derive(Debug)]
 pub enum TerminalError {
     UnknownRun(String),
+    /// A bounded wait elapsed before the run left the Running state; the
+    /// caller stopped it (no orphan processes).
+    Timeout(String),
     EmptyArgv,
     AlreadyExists(String),
     Io(std::io::Error),
@@ -37,6 +41,7 @@ impl fmt::Display for TerminalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TerminalError::UnknownRun(id) => write!(f, "unknown run {id}"),
+            TerminalError::Timeout(id) => write!(f, "timed out waiting for run {id} (stopped)"),
             TerminalError::EmptyArgv => write!(f, "empty argv"),
             TerminalError::AlreadyExists(p) => write!(f, "already exists: {p}"),
             TerminalError::Io(e) => write!(f, "io: {e}"),
@@ -151,6 +156,12 @@ impl ExecBroker {
         Ok(())
     }
 
+    /// Whether this broker holds an in-memory child handle for the run
+    /// (diagnostics for the detached/reattach paths).
+    pub fn has_child(&self, run_id: &str) -> bool {
+        self.children.lock().expect("poisoned").contains_key(run_id)
+    }
+
     pub fn status(&self, run_id: &str) -> Result<RunMeta, TerminalError> {
         if !self.run_dir(run_id).exists() {
             return Err(TerminalError::UnknownRun(run_id.to_string()));
@@ -158,24 +169,46 @@ impl ExecBroker {
         let path = self.run_dir(run_id).join("status.json");
         let mut meta: RunMeta = serde_json::from_slice(&fs::read(path)?)?;
         if meta.state == RunState::Running {
-            let reaped = self
-                .children
-                .lock()
-                .expect("poisoned")
-                .get_mut(run_id)
-                .and_then(|c| c.try_wait().ok().flatten())
-                .map(|s| s.code().unwrap_or(-1));
-            if let Some(code) = reaped {
-                meta.state = RunState::Exited(code as i64);
-                self.persist_meta(run_id, &meta)?;
-            } else if let Some(pid) = meta.pid {
-                // Detached run: this broker owns no child handle. Probe
-                // liveness by pid; if the process is gone, the run ended
-                // while detached — typed Interrupted, not a stuck Running.
-                if !pid_alive(pid) {
-                    meta.state = RunState::Interrupted;
-                    meta.ended_at_ms = Some(now_ms());
+            // A HELD child handle is the only truth while we own it:
+            // try_wait(None) means running — never fall through to the
+            // detached pid probe for a run this broker spawned (a just-exited
+            // child can look dead to `ps` before the reaping happens here).
+            // Option<io::Result<Option<i32>>>: None = no handle (detached);
+            // Some(Ok(None)) = held and genuinely running.
+            let held: Option<std::io::Result<Option<i32>>> = {
+                let mut children = self.children.lock().expect("poisoned");
+                match children.get_mut(run_id) {
+                    Some(child) => match child.try_wait() {
+                        Ok(Some(status)) => Some(Ok(Some(status.code().unwrap_or(-1)))),
+                        Ok(None) => Some(Ok(None)),
+                        Err(e) => Some(Err(e)),
+                    },
+                    None => None,
+                }
+            };
+            match held {
+                Some(Ok(Some(code))) => {
+                    meta.state = RunState::Exited(code as i64);
                     self.persist_meta(run_id, &meta)?;
+                }
+                // Held and running, or reaped by a concurrent poll (the
+                // terminal state is already persisted or arrives next).
+                Some(Ok(None)) | Some(Err(_)) => {
+                    // Reaped by a concurrent status; the persisted meta (or
+                    // the next read) already carries the terminal state.
+                    // Never downgrade a held run to Interrupted here.
+                }
+                None => {
+                    // Detached run: this broker owns no child handle. Probe
+                    // liveness by pid; if the process is gone, the run ended
+                    // while detached — typed Interrupted, not stuck Running.
+                    if let Some(pid) = meta.pid {
+                        if !pid_alive(pid) {
+                            meta.state = RunState::Interrupted;
+                            meta.ended_at_ms = Some(now_ms());
+                            self.persist_meta(run_id, &meta)?;
+                        }
+                    }
                 }
             }
         }

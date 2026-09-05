@@ -18,5 +18,10 @@
     "typescript": "5.9.2",
     "vite": "6.0.7",
     "vitest": "3.2.4"
+  },
+  "dependencies": {
+    "@modbit/design-tokens": "workspace:*",
+    "@modbit/ui": "workspace:*",
+    "@modbit/surface-protocol": "workspace:*"
   }
 }

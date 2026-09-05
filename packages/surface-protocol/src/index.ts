@@ -7,6 +7,16 @@
 export type { SchemaVersion } from "./generated/modbit/protocol/v1/common";
 export { TaskStatus } from "./generated/modbit/protocol/v1/domain";
 export type {
+  RunDetailView,
+  TurnView,
+  RunStepView,
+  DiffView,
+  DiffFileView,
+  SteerTaskCommand,
+  PauseTaskCommand,
+  StopTaskCommand,
+} from "./generated/modbit/protocol/v1/surface";
+export type {
   CommandEnvelope,
   CreateSessionCommand,
   CreateTaskCommand,

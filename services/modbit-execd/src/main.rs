@@ -32,11 +32,14 @@ fn main() {
     let broker = Arc::new(ExecBroker::open(Path::new(&runs_dir)).expect("open runs dir"));
     let listener = std::net::TcpListener::bind(&addr).expect("bind execd");
     let local = listener.local_addr().expect("local addr").to_string();
-    // Boot channel: the bound address as one json line on stdout.
-    println!("{}", serde_json::json!({ "addr": local }));
-    println!("ready");
+    // Boot channel: the bound address as one json line on stdout. The
+    // trailing lines must not kill the broker when the parent stops
+    // reading (Windows: ERROR_BROKEN_PIPE panics println!).
     use std::io::Write as _;
-    std::io::stdout().flush().ok();
+    let mut stdout = std::io::stdout();
+    let _ = writeln!(stdout, "{}", serde_json::json!({ "addr": local }));
+    let _ = writeln!(stdout, "ready");
+    let _ = stdout.flush();
 
     eprintln!("modbit-execd: serving on {local} (runs: {runs_dir})");
     for stream in listener.incoming() {
@@ -90,7 +93,10 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
                         .collect()
                 })
                 .unwrap_or_default();
-            match broker.spawn(&id, &argv) {
+            // Optional cwd pins the run's working directory exactly
+            // (REQ-EV-0100 contract; absent means the broker's own cwd).
+            let cwd = get_str("cwd").map(std::path::PathBuf::from);
+            match broker.spawn_full(&id, &argv, cwd.as_deref(), &[]) {
                 Ok(()) => serde_json::json!({ "ok": true }).to_string(),
                 Err(e) => error_response(&e),
             }
