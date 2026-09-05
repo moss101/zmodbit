@@ -16,6 +16,16 @@ importers:
         version: 3.2.4(@types/node@24.3.1)(jsdom@25.0.1)
 
   apps/desktop:
+    dependencies:
+      '@modbit/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
+      '@modbit/surface-protocol':
+        specifier: workspace:*
+        version: link:../../packages/surface-protocol
+      '@modbit/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
     devDependencies:
       '@types/react':
         specifier: 18.3.12

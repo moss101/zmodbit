@@ -73,12 +73,12 @@ describe("SteerComposer", () => {
 describe("ActionButton", () => {
   it("blocks clicks when disabled", () => {
     let clicked = 0;
-    const { getByRole } = render(
+    const { getAllByRole } = render(
       <ActionButton onClick={() => clicked++} disabled>
         Go
       </ActionButton>,
     );
-    fireEvent.click(getByRole("button"));
+    fireEvent.click(getAllByRole("button")[0]!);
     expect(clicked).toBe(0);
   });
 });
