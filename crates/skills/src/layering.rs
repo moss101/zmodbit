@@ -111,7 +111,7 @@ pub fn resolve_layers(layers: &[LayeredInstruction], now_ms: i64) -> Vec<Resolve
     }
     let mut out = Vec::new();
     for (_subject, mut group) in by_subject {
-        group.sort_by(|a, b| a.scope.cmp(&b.scope));
+        group.sort_by_key(|l| l.scope);
         let winner = group[0].clone();
         let conflicts = group[1..]
             .iter()
