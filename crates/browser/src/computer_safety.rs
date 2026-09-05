@@ -202,7 +202,7 @@ impl ClipboardGuard {
     /// secret value never recorded — only its digest.
     pub fn safe_type_secret(
         &mut self,
-        destination: &str,
+        _destination: &str,
         editable: bool,
         secret: &str,
     ) -> Result<SafeTypingResult, String> {
