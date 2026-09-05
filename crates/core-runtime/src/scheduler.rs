@@ -74,7 +74,11 @@ impl SchedulerConfig {
         };
         SchedulerConfig {
             provider,
-            model: std::env::var("MODBIT_MODEL").unwrap_or_else(|_| "gpt-4o-mini".into()),
+            // MODBIT_LIVE_MODEL is the documented live-proof override (the
+            // qualification script exports it); MODBIT_MODEL takes precedence.
+            model: std::env::var("MODBIT_MODEL")
+                .or_else(|_| std::env::var("MODBIT_LIVE_MODEL"))
+                .unwrap_or_else(|_| "gpt-4o-mini".into()),
             base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
             broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
             worktrees: EnvWorktreeSource::from_env()
