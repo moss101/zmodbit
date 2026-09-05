@@ -154,6 +154,7 @@ impl ToolRegistry {
 
 /// Direct fs/shell tools (docs/17 § Direct tools: fs/git/shell/test).
 pub mod media;
+pub mod multimodal;
 pub mod output_pagination;
 pub mod pipeline;
 pub mod schema;
