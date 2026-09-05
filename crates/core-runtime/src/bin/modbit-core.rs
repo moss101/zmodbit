@@ -136,10 +136,12 @@ fn main() {
 /// die with the process; resume is the M4 spine's job).
 fn spawn_embedded_execd() -> Result<String, String> {
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    // Windows binaries carry the .exe suffix; both live beside the core.
+    let execd_name = if cfg!(windows) { "modbit-execd.exe" } else { "modbit-execd" };
     let execd_path = exe
         .parent()
         .ok_or("no parent dir for core binary")?
-        .join("modbit-execd");
+        .join(execd_name);
     if !execd_path.is_file() {
         return Err(format!("no modbit-execd beside the core ({})", execd_path.display()));
     }
