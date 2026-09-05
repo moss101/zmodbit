@@ -8,6 +8,7 @@
 //! Canonical owner subsystem: core-runtime (docs/81). Layout: docs/12.
 
 pub mod agent_fleet;
+pub mod agent_runtime_batch2;
 pub mod config;
 pub mod daemon;
 pub mod delegation;
