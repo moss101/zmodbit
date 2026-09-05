@@ -117,7 +117,9 @@ export interface SurfaceResponse {
 
 /**
  * Steering: durable control event applied at safe boundaries (docs/14 §
- * Steering). The note becomes part of the task's input queue.
+ * Steering). The note is queued in a race-free per-task outbox and rides
+ * as a user message on the in-flight run's NEXT turn boundary (or the
+ * next run's first boundary if none is live).
  */
 export interface SteerTaskCommand {
   taskId: string;
@@ -125,16 +127,18 @@ export interface SteerTaskCommand {
 }
 
 /**
- * Pause parks a running task in Waiting(UserInput); the scheduler stops
- * starting new turns for it until resumed.
+ * Pause parks a running task in Waiting(UserInput); the in-flight run
+ * parks at the next turn boundary (the current turn, including its tool,
+ * finishes or is stopped by Stop).
  */
 export interface PauseTaskCommand {
   taskId: string;
 }
 
 /**
- * Stop cancels the task: in-flight effects reconcile before completion
- * (docs/14); no new turns start.
+ * Stop cancels the task: the in-flight model stream aborts, the broker
+ * tool run is killed (no orphan process), the run aborts at or before the
+ * next turn boundary, and no new turns start (docs/14).
  */
 export interface StopTaskCommand {
   taskId: string;

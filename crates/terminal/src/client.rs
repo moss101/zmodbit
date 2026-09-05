@@ -138,6 +138,39 @@ impl ExecdClient {
         Ok((status, bytes))
     }
 
+    /// Cancellable capture (Phase 2.3): while the run is executing, the
+    /// supplied flag is polled; when it flips the broker run is STOPPED
+    /// (killed, no orphan process) and the typed `Cancelled` error
+    /// returns — never a hang, never an unbounded wait.
+    pub fn run_capture_cancellable(
+        &self,
+        run_id: &str,
+        argv: &[String],
+        cwd: Option<&Path>,
+        timeout: Duration,
+        max_output: usize,
+        cancelled: &std::sync::atomic::AtomicBool,
+    ) -> Result<(SpawnStatus, Vec<u8>), TerminalError> {
+        self.spawn(run_id, argv, cwd)?;
+        let deadline = Instant::now() + timeout;
+        loop {
+            if cancelled.load(std::sync::atomic::Ordering::SeqCst) {
+                self.stop(run_id)?;
+                return Err(TerminalError::Cancelled(run_id.to_string()));
+            }
+            let status = self.status(run_id)?;
+            if status.state != RunState::Running {
+                let (bytes, _) = self.read_output(run_id, 0, max_output)?;
+                return Ok((status, bytes));
+            }
+            if Instant::now() >= deadline {
+                self.stop(run_id)?;
+                return Err(TerminalError::Timeout(run_id.to_string()));
+            }
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    }
+
     fn expect_ok(&self, request: &Value) -> Result<(), TerminalError> {
         let response = self.call(request)?;
         if response.get("ok").and_then(|v| v.as_bool()).unwrap_or(false) {

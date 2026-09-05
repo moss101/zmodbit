@@ -1491,7 +1491,12 @@
     "run:2026-09-05T22:14Z/anthropic_wire_body_carries_typed_roles",
     "log:docs/evidence/phase2-2-compaction-2026-09-06.log",
     "receipt:2cdc3408fe8399a0d6c272dce6a167b4e6a48d62c2dcfeb0a20cb7cf1dab55da",
-    "run:2026-09-05T22:30Z/over_budget_daemon_compacts_and_records_the_event"
+    "run:2026-09-05T22:30Z/over_budget_daemon_compacts_and_records_the_event",
+    "log:docs/evidence/phase2-3-cancellation-2026-09-06.log",
+    "receipt:1063bc3bbdeb50ece9bfb6a6e0b2db0b115520c1f2633fa431562e22b7a12bb4",
+    "run:2026-09-05T23:10Z/stop_task_aborts_long_running_tool_and_cancels",
+    "run:2026-09-05T23:10Z/pause_task_parks_the_run_at_the_boundary",
+    "run:2026-09-05T23:10Z/steer_task_note_rides_the_next_request"
    ],
    "notes": [
     {
@@ -1601,10 +1606,28 @@
      "from": "REAL_TESTING",
      "to": "E2E_PROVEN",
      "note": "Phase 2.2 (Future-tasks §2.2) closed: hot-path compaction proven through the real daemon (MODBIT_MAX_INPUT_TOKENS=700): wire body shows truncated tool result with intact call-id linkage; durable store carries compaction_applied with manifest digest. Per-model settings ride the body (max_tokens 4096 BASE; reasoning_effort absent unless opted in). Mutations A (budget neutralized) and B (linkage broken) both detected by the E2E."
+    },
+    {
+     "at": "2026-09-05T22:45:46Z",
+     "from": "E2E_PROVEN",
+     "to": "AUDITING",
+     "note": "Phase 2 item 3 (Future-tasks §2.5): audit cancellation. BROKEN-DRIFTED — Stop/Pause/Steer wrote durable events only; no signal reached the in-flight model stream or execd run (Stop during a 30s tool waited it out); steer notes stored but never injected into the conversation. First missing link: no control path from surface dispatch to the running loop."
+    },
+    {
+     "at": "2026-09-05T22:45:46Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Phase 2.3 slice: RunControl trait on the loop (steer drain -> user message; cancelled/paused boundary aborts); scheduler RunSignal/RunControls registry wired into surface dispatch (stop/pause signal, steer via race-free per-task outbox); LiveGatewayTransport races the stream against the cancel flag (100ms); execd run_capture_cancellable kills the broker run; post-run never overwrites Cancelled/Waiting with a run outcome."
+    },
+    {
+     "at": "2026-09-05T22:48:05Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Phase 2.3 (Future-tasks §2.5) closed: Stop/Pause/Steer reach the in-flight run through production routing — StopTask kills a REAL 30s broker run and writes durable run_failed(cancelled) within seconds (asserted in the daemon's SQLite); PauseTask parks at the boundary with no further invokes; SteerTask notes ride as user messages on the fixture-captured next request. Mutation (signal disconnected) detected by the run-plane assertion after the test was strengthened to catch the events-only escape."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T22:35:37Z"
+   "status_changed_on": "2026-09-05T22:48:05Z"
   },
   {
    "id": "M2.8",

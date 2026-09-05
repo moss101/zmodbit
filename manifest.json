@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 807443,
-      "sha256": "6b604510dc539426d11824ec03a8c9078a6ab2942d1b0dcf9214355f1bafdd7b"
+      "bytes": 809431,
+      "sha256": "2e227eb6a855a1cc7349f74f9ea1bb107f5a547ef74b5bca616a98988f3e9a17"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22624,
-      "sha256": "e48b1a9b438be77532f7bcb3d3af4a9bf0341c9bd3e454285f69ba28f7449e86"
+      "bytes": 22622,
+      "sha256": "c2a28ed67d8da6d62ba0360050378f69da4f95afae75d4c6ad9f9b69117d1927"
     },
     {
       "path": "tools/build_manifest.py",
@@ -1001,8 +1001,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 73042,
-      "sha256": "1723dab3eae15242ee3c973e1cbb6d5fa475b73d31a2a4d6734dabea0c0a0fde"
+      "bytes": 73333,
+      "sha256": "5a29fdaf2a22f24e1a8171d5834c819adf460ec6f69dbb2764b19f831ac14782"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",

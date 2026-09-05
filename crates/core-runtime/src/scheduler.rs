@@ -43,7 +43,7 @@ use modbit_tools::schema::{ParamSpec, ParamType, ToolSchema};
 use modbit_tools::ToolRegistry;
 use modbit_workspace::WorkspaceFileService;
 
-use crate::one_agent::{AgentTask, OneAgentRuntime, RunObserver};
+use crate::one_agent::{AgentTask, OneAgentRuntime, RunControl, RunObserver};
 
 /// Poll cadence for the store tail.
 const POLL_INTERVAL: Duration = Duration::from_millis(150);
@@ -134,15 +134,146 @@ pub struct Scheduler {
     /// Tasks with an in-flight run; guards the poller against a concurrent
     /// direct `run_task` claim racing the worktree allocation.
     in_flight: std::sync::Mutex<std::collections::HashSet<String>>,
+    /// Live stop/pause/steer signals for in-flight runs (Phase 2.3),
+    /// shared with the surface handlers through `controls()`.
+    controls: Arc<RunControls>,
+}
+
+/// Per-run control signal (Phase 2.3). Cheap atomics; steer notes drain
+/// from the shared per-task outbox (race-free: a note queued before the
+/// run registered still rides the run's next turn).
+pub struct RunSignal {
+    task_id: String,
+    cancelled: Arc<std::sync::atomic::AtomicBool>,
+    paused: std::sync::atomic::AtomicBool,
+    notes: Arc<NoteOutbox>,
+}
+
+impl RunSignal {
+    fn new(task_id: String, notes: Arc<NoteOutbox>) -> Self {
+        RunSignal {
+            task_id,
+            cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            paused: std::sync::atomic::AtomicBool::new(false),
+            notes,
+        }
+    }
+
+    /// The cancellation flag shared with the transport and execd tools.
+    pub fn cancel_token(&self) -> Arc<std::sync::atomic::AtomicBool> {
+        self.cancelled.clone()
+    }
+}
+
+impl crate::one_agent::RunControl for RunSignal {
+    fn is_cancelled(&self) -> bool {
+        self.cancelled.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    fn is_paused(&self) -> bool {
+        self.paused.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    fn take_steer_notes(&self) -> Vec<String> {
+        self.notes
+            .0
+            .lock()
+            .expect("steer outbox")
+            .get_mut(&self.task_id)
+            .map(|queue| queue.drain(..).collect())
+            .unwrap_or_default()
+    }
+}
+
+/// Per-task steer-note outbox shared by every RunSignal of a task.
+#[derive(Default)]
+struct NoteOutbox(
+    std::sync::Mutex<std::collections::HashMap<String, std::collections::VecDeque<String>>>,
+);
+
+/// Shared registry of live run signals: the surface (Stop/Pause/Steer
+/// RPCs) signals in-flight runs; the scheduler registers and finishes
+/// them around each run.
+#[derive(Default)]
+pub struct RunControls {
+    runs: std::sync::Mutex<std::collections::HashMap<String, Arc<RunSignal>>>,
+    notes: Arc<NoteOutbox>,
+}
+
+impl RunControls {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    fn register(&self, task_id: &str) -> Arc<RunSignal> {
+        let signal = Arc::new(RunSignal::new(task_id.to_string(), self.notes.clone()));
+        self.runs
+            .lock()
+            .expect("run controls")
+            .insert(task_id.to_string(), signal.clone());
+        signal
+    }
+
+    fn finish(&self, task_id: &str) {
+        self.runs.lock().expect("run controls").remove(task_id);
+        // Notes stay in the outbox: a steer that raced ahead of the next
+        // run still rides that run's first turn boundary.
+    }
+
+    /// StopTask: abort the in-flight run (stream + broker tool) at or
+    /// before the next turn boundary. Returns false when no run is live
+    /// (the durable CancelTask command still applies).
+    pub fn cancel(&self, task_id: &str) -> bool {
+        match self.runs.lock().expect("run controls").get(task_id) {
+            Some(signal) => {
+                signal
+                    .cancelled
+                    .store(true, std::sync::atomic::Ordering::SeqCst);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// PauseTask: park the in-flight run at the next turn boundary.
+    pub fn pause(&self, task_id: &str) -> bool {
+        match self.runs.lock().expect("run controls").get(task_id) {
+            Some(signal) => {
+                signal.paused.store(true, std::sync::atomic::Ordering::SeqCst);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// SteerTask: queue a note the run injects as a user message on the
+    /// next turn. The outbox is race-free — the note rides the next turn
+    /// boundary even if it arrives before the run registers.
+    pub fn steer(&self, task_id: &str, note: String) {
+        self.notes
+            .0
+            .lock()
+            .expect("steer outbox")
+            .entry(task_id.to_string())
+            .or_default()
+            .push_back(note);
+    }
 }
 
 impl Scheduler {
+    /// Live run-control surface (Phase 2.3): the wire handlers signal
+    /// in-flight runs through this shared handle.
+    pub fn controls(&self) -> Arc<RunControls> {
+        self.controls.clone()
+    }
+
     /// Starts the poller thread that tails the store for `task_started`.
     pub fn spawn(store: Arc<EventStore>, config: SchedulerConfig) -> Arc<Self> {
         let scheduler = Arc::new(Self {
             store,
             config,
             in_flight: std::sync::Mutex::new(std::collections::HashSet::new()),
+            controls: Arc::new(RunControls::new()),
         });
         let weak = Arc::downgrade(&scheduler);
         std::thread::Builder::new()
@@ -241,7 +372,12 @@ impl Scheduler {
             .execd_addr
             .as_deref()
             .and_then(|addr| ExecdClient::connect(addr).ok());
-        let registry = build_worktree_registry(&ws, &worktree_path, execd.as_ref());
+        // Phase 2.3: this run's cancellation signal — StopTask flips
+        // `cancelled` (transport aborts the stream, execd kills the broker
+        // run), PauseTask flips `paused` (park at the next turn boundary),
+        // SteerTask queues notes for the next turn.
+        let signal = self.controls.register(&task_id.to_string());
+        let registry = build_worktree_registry(&ws, &worktree_path, execd.as_ref(), signal.cancel_token());
         let kernel = PolicyKernel::new(vec![]);
         for grant in worktree_grants() {
             kernel.grant(grant);
@@ -257,7 +393,7 @@ impl Scheduler {
             sequences: std::sync::Mutex::new(std::collections::HashMap::new()),
             current_run: std::sync::Mutex::new(None),
         };
-        let transport = LiveGatewayTransport::new(&self.config);
+        let transport = LiveGatewayTransport::new(&self.config, signal.cancel_token());
         let runtime = OneAgentRuntime {
             transport: &transport,
             registry: &registry,
@@ -265,6 +401,7 @@ impl Scheduler {
             grants: &grants,
             max_turns: self.config.max_turns,
             observer: Some(&observer),
+            control: Some(&*signal),
         };
         let task = AgentTask {
             task_id: task_id.to_string(),
@@ -279,10 +416,26 @@ impl Scheduler {
         };
         let processor = CommandProcessor::new(self.store.clone());
         let result = runtime.run(&task);
+        // Phase 2.3: the run signal leaves the control registry when the
+        // run ends — a later Stop/Steer for this task must not hit a dead
+        // run (it lands on the durable state instead).
+        self.controls.finish(&task_id.to_string());
 
         // 6. Transition the task from REAL outcomes (REQ-EV-0119: the host
         // decides; a model claim is never sufficient).
         match result {
+            // Phase 2.3: Stop/Pause already transitioned the durable task
+            // state from the surface; the run aborted at the boundary (or
+            // mid-stream). Never overwrite Cancelled/Waiting with a run
+            // outcome.
+            Ok(run) if run.cancelled || run.paused => {
+                eprintln!(
+                    "modbit scheduler: task {task_id} run {} (stop_reason {:?})",
+                    if run.cancelled { "cancelled" } else { "paused" },
+                    run.stop_reason
+                );
+                Ok(())
+            }
             Ok(run) => match run.final_state {
                 modbit_domain::turn::TurnState::Completed => {
                     execute(
@@ -305,6 +458,15 @@ impl Scheduler {
             // the task parks in Waiting(Provider) for retry, never silently
             // retried here (docs/15 failover runs before effects only).
             Err(err) => {
+                // Phase 2.3: a stream aborted by StopTask returns here with
+                // the signal already flipped — the task is Cancelled on the
+                // store side; parking it in Waiting would resurrect it.
+                if signal.is_cancelled() {
+                    eprintln!(
+                        "modbit scheduler: task {task_id} stream aborted by stop ({err})"
+                    );
+                    return Ok(());
+                }
                 // Surface the transport failure: a parked task with no
                 // diagnostics is undebuggable from the outside.
                 eprintln!("modbit scheduler: task {task_id} run errored: {err}");
@@ -515,6 +677,7 @@ pub fn build_worktree_registry(
     ws: &Arc<WorkspaceFileService>,
     worktree: &std::path::Path,
     execd: Option<&ExecdClient>,
+    cancel: Arc<std::sync::atomic::AtomicBool>,
 ) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
@@ -588,6 +751,7 @@ pub fn build_worktree_registry(
             {
                 let execd = execd.cloned();
                 let worktree = worktree.to_path_buf();
+                let cancel = cancel.clone();
                 Arc::new(move |args| {
                     let execd = execd.as_ref().ok_or(
                         "shell execution unavailable: no modbit-execd broker configured (set MODBIT_EXECD_ADDR)",
@@ -603,13 +767,17 @@ pub fn build_worktree_registry(
                         return Err("empty argv".into());
                     }
                     let run_id = format!("task-{}", uuid::Uuid::now_v7().simple());
+                    // Phase 2.3: the run's cancellation flag races the
+                    // wait — StopTask kills the broker run (no orphan
+                    // process) and surfaces a typed cancellation.
                     let (status, output) = execd
-                        .run_capture(
+                        .run_capture_cancellable(
                             &run_id,
                             &argv,
                             Some(&worktree),
                             Duration::from_secs(600),
                             256 * 1024,
+                            &cancel,
                         )
                         .map_err(|e| format!("execd: {e}"))?;
                     let exit_code = match status.state {
@@ -905,14 +1073,20 @@ impl Drop for ClaimGuard<'_> {
 /// builds the provider body, streams over `HttpStreamTransport` on a
 /// dedicated tokio runtime, parses per provider and returns the normalized
 /// event vector (fragment merging happens inside the runtime loop).
+/// Phase 2.3: the run's cancellation flag races the stream — StopTask
+/// aborts an in-flight model stream instead of waiting it out.
 struct LiveGatewayTransport<'a> {
     config: &'a SchedulerConfig,
     runtime: tokio::runtime::Runtime,
     transport: HttpStreamTransport,
+    cancel: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl<'a> LiveGatewayTransport<'a> {
-    fn new(config: &'a SchedulerConfig) -> Self {
+    fn new(
+        config: &'a SchedulerConfig,
+        cancel: Arc<std::sync::atomic::AtomicBool>,
+    ) -> Self {
         let transport = HttpStreamTransport::new(config.broker.clone())
             .expect("build provider transport");
         LiveGatewayTransport {
@@ -922,6 +1096,7 @@ impl<'a> LiveGatewayTransport<'a> {
                 .build()
                 .expect("scheduler tokio runtime"),
             transport,
+            cancel,
         }
     }
 
@@ -965,7 +1140,19 @@ impl<'a> crate::one_agent::ModelTransport for LiveGatewayTransport<'a> {
                 .map_err(|e| e.to_string())?;
             let mut events = Vec::new();
             loop {
-                match stream.recv().await {
+                // Phase 2.3: race the stream against the cancellation flag
+                // (100ms cadence) so StopTask aborts a stalled provider
+                // stream instead of blocking the run for the full timeout.
+                let event = tokio::select! {
+                    event = stream.recv() => event,
+                    _ = tokio::time::sleep(Duration::from_millis(100)) => {
+                        if self.cancel.load(std::sync::atomic::Ordering::SeqCst) {
+                            return Err("run cancelled during model stream".into());
+                        }
+                        continue;
+                    }
+                };
+                match event {
                     Some(Ok(TransportEvent::SseData(payload))) => {
                         let parsed = match self.config.provider {
                             Provider::OpenAi => parse_openai_sse_payload(&payload),

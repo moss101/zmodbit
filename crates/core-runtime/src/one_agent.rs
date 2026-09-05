@@ -20,6 +20,26 @@ pub trait ModelTransport {
     fn stream(&self, request: &ModelRequest) -> Result<Vec<StreamEvent>, String>;
 }
 
+/// Live run control (Phase 2.3): the scheduler's stop/pause/steer surface
+/// reaches the loop through this trait. All methods default to "no
+/// control" so unit tests run uncontrolled.
+pub trait RunControl: Sync + Send {
+    /// StopTask fired: abort at the next boundary (or sooner from the
+    /// transport); the task state is already Cancelled on the store side.
+    fn is_cancelled(&self) -> bool {
+        false
+    }
+    /// PauseTask fired: park the run at the next turn boundary.
+    fn is_paused(&self) -> bool {
+        false
+    }
+    /// SteerTask notes queued since the last turn; injected as user
+    /// messages BEFORE the next invoke.
+    fn take_steer_notes(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
 /// Durable-run observer (docs/13 Run/Turn/RunStep): the runtime reports
 /// every state change it drives; the scheduler writes them as events into
 /// the store. All methods default to no-ops so tests observe subsets.
@@ -125,6 +145,12 @@ pub struct AgentRunResult {
     pub assembled_text: String,
     pub tool_outcomes: Vec<ToolOutcome>,
     pub stop_reason: Option<String>,
+    /// The run aborted at a turn boundary because StopTask fired
+    /// (Phase 2.3); the task state is Cancelled on the store side.
+    pub cancelled: bool,
+    /// The run parked at a turn boundary because PauseTask fired
+    /// (Phase 2.3); the task state is Waiting(UserInput).
+    pub paused: bool,
     /// Last usage snapshot reported by the provider stream (docs/15).
     pub usage: Option<modbit_providers::TokenUsage>,
 }
@@ -176,6 +202,8 @@ pub struct OneAgentRuntime<'a> {
     pub max_turns: u32,
     /// Durable-run observer (the scheduler); None in unit tests.
     pub observer: Option<&'a dyn RunObserver>,
+    /// Live stop/pause/steer control (Phase 2.3); None in unit tests.
+    pub control: Option<&'a dyn RunControl>,
 }
 
 impl<'a> OneAgentRuntime<'a> {
@@ -226,6 +254,8 @@ impl<'a> OneAgentRuntime<'a> {
                     assembled_text: assembled.clone(),
                     tool_outcomes,
                     stop_reason: Some("max_turns_exceeded".into()),
+                    cancelled: false,
+                    paused: false,
                     usage: last_usage,
                 });
             }
@@ -233,6 +263,52 @@ impl<'a> OneAgentRuntime<'a> {
             let turn_id = modbit_domain::TurnId::generate().to_string();
             if let Some(o) = self.observer {
                 o.turn_prepared(&turn_id, turns_used);
+            }
+
+            // Phase 2.3 — turn boundary control surface:
+            // 1. queued steer notes ride as user messages BEFORE the invoke;
+            // 2. StopTask aborts the run here (or sooner, from the transport);
+            // 3. PauseTask parks the run here.
+            if let Some(control) = self.control {
+                for note in control.take_steer_notes() {
+                    conversation.push(ChatMessage::user(format!("user steer: {note}")));
+                }
+                if control.is_cancelled() {
+                    if let Some(o) = self.observer {
+                        o.turn_failed(&turn_id, "cancelled");
+                        o.run_failed(&run_id, "cancelled");
+                    }
+                    return Ok(AgentRunResult {
+                        task_id: task.task_id.clone(),
+                        run_id,
+                        final_state: state,
+                        turns_used,
+                        assembled_text: assembled,
+                        tool_outcomes,
+                        stop_reason: Some("cancelled".into()),
+                        cancelled: true,
+                        paused: false,
+                        usage: last_usage,
+                    });
+                }
+                if control.is_paused() {
+                    if let Some(o) = self.observer {
+                        o.turn_failed(&turn_id, "paused");
+                        o.run_failed(&run_id, "paused");
+                    }
+                    return Ok(AgentRunResult {
+                        task_id: task.task_id.clone(),
+                        run_id,
+                        final_state: state,
+                        turns_used,
+                        assembled_text: assembled,
+                        tool_outcomes,
+                        stop_reason: Some("paused".into()),
+                        cancelled: false,
+                        paused: true,
+                        usage: last_usage,
+                    });
+                }
             }
 
             // Token budget (Phase 2.2, docs/19 § compaction): when the
@@ -433,6 +509,8 @@ impl<'a> OneAgentRuntime<'a> {
                     assembled_text: assembled,
                     tool_outcomes,
                     stop_reason,
+                    cancelled: false,
+                    paused: false,
                     usage: last_usage,
                 });
             }
@@ -591,6 +669,7 @@ mod tests {
             grants,
             max_turns: 4,
             observer: None,
+            control: None,
         }
     }
 
@@ -993,6 +1072,7 @@ mod tests {
             grants: &grants,
             max_turns: 3,
             observer: None,
+            control: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1074,6 +1154,7 @@ mod tests {
             grants: &grants,
             max_turns: 4,
             observer: Some(&observer),
+            control: None,
         };
         let result = rt.run(&small_budget).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -1129,6 +1210,7 @@ mod tests {
             grants: &grants,
             max_turns: 4,
             observer: None,
+            control: None,
         };
         rt.run(&task()).unwrap();
         let seen = transport.seen.lock().unwrap();
@@ -1138,5 +1220,215 @@ mod tests {
             .find(|m| m.role == Role::Tool)
             .unwrap();
         assert!(tool.content.len() > 8_000, "verbatim under default budget");
+    }
+
+    /// Phase 2.3 boundary control stub: flags flip at a given turn
+    /// ordinal; steer notes drain once per turn.
+    struct BoundaryControl {
+        turn: std::sync::atomic::AtomicUsize,
+        cancel_at: Option<usize>,
+        pause_at: Option<usize>,
+        notes: std::sync::Mutex<std::collections::VecDeque<String>>,
+    }
+
+    impl BoundaryControl {
+        fn new() -> Self {
+            BoundaryControl {
+                turn: std::sync::atomic::AtomicUsize::new(0),
+                cancel_at: None,
+                pause_at: None,
+                notes: std::sync::Mutex::new(std::collections::VecDeque::new()),
+            }
+        }
+
+        fn cancelled_at(mut self, turn: usize) -> Self {
+            self.cancel_at = Some(turn);
+            self
+        }
+
+        fn paused_at(mut self, turn: usize) -> Self {
+            self.pause_at = Some(turn);
+            self
+        }
+
+        fn queue_note(&self, note: &str) {
+            self.notes.lock().unwrap().push_back(note.to_string());
+        }
+    }
+
+    impl RunControl for BoundaryControl {
+        fn is_cancelled(&self) -> bool {
+            self.cancel_at == Some(self.turn.load(Ordering::SeqCst))
+        }
+
+        fn is_paused(&self) -> bool {
+            self.pause_at == Some(self.turn.load(Ordering::SeqCst))
+        }
+
+        fn take_steer_notes(&self) -> Vec<String> {
+            self.turn.fetch_add(1, Ordering::SeqCst);
+            self.notes.lock().unwrap().drain(..).collect()
+        }
+    }
+
+    /// Phase 2.3: StopTask aborts the run at the next turn boundary — no
+    /// further invokes, cancelled result, run-level failure code recorded.
+    #[test]
+    fn stop_aborts_the_run_at_the_turn_boundary() {
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-1".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"x"}"#.into(),
+            }],
+            // Turn 2 never happens: the boundary check fires first.
+            vec![
+                StreamEvent::Delta("unreachable".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(|_args| Ok(serde_json::json!({"ok": true}))),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let control = BoundaryControl::new().cancelled_at(2);
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 8,
+            observer: None,
+            control: Some(&control),
+        };
+
+        let result = rt.run(&task()).unwrap();
+        assert!(result.cancelled);
+        assert!(!result.paused);
+        assert_eq!(result.stop_reason.as_deref(), Some("cancelled"));
+        assert_eq!(result.turns_used, 2, "boundary consumed turn 2");
+        assert_eq!(
+            transport.seen.lock().unwrap().len(),
+            1,
+            "no invoke after the stop boundary"
+        );
+    }
+
+    /// Phase 2.3: PauseTask parks the run at the next turn boundary.
+    #[test]
+    fn pause_parks_the_run_at_the_turn_boundary() {
+        let transport = StubTransport::new(vec![vec![StreamEvent::ToolRequest {
+            call_id: "call-1".into(),
+            name: "modbit.file.read".into(),
+            arguments: r#"{"path":"x"}"#.into(),
+        }]]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(|_args| Ok(serde_json::json!({"ok": true}))),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let control = BoundaryControl::new().paused_at(2);
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 8,
+            observer: None,
+            control: Some(&control),
+        };
+
+        let result = rt.run(&task()).unwrap();
+        assert!(result.paused);
+        assert!(!result.cancelled);
+        assert_eq!(result.stop_reason.as_deref(), Some("paused"));
+    }
+
+    /// Phase 2.3: SteerTask notes ride as user messages before the next
+    /// invoke (Future-tasks §2.5: stored AND injected).
+    #[test]
+    fn steer_notes_are_injected_as_user_messages() {
+        use modbit_providers::gateway::Role;
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-1".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"x"}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("steered".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        let control = Arc::new(BoundaryControl::new());
+        let queuer = control.clone();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(move |_args| {
+                    // The steer arrives mid-turn-1 (while the tool runs);
+                    // the loop must inject it before the NEXT invoke.
+                    queuer.queue_note("prefer the typed roles");
+                    Ok(serde_json::json!({"ok": true}))
+                }),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 8,
+            observer: None,
+            control: Some(&*control),
+        };
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        let seen = transport.seen.lock().unwrap();
+        let second = &seen[1];
+        let steer = second
+            .messages
+            .iter()
+            .find(|m| m.role == Role::User && m.content.starts_with("user steer: "))
+            .expect("steer note rides as a user message");
+        assert!(steer.content.contains("prefer the typed roles"));
+        // Placement: after the tool result it answers, before the invoke
+        // consumes it — i.e. it is the LAST message of the request.
+        assert_eq!(steer.content, second.messages.last().unwrap().content);
     }
 }

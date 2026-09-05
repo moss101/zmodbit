@@ -23,6 +23,9 @@ pub struct CoreServices {
     /// Task-worktree layout for GetDiff (explicit; no process-env reads
     /// inside dispatch). Set by the host binary at construction.
     task_worktrees: Option<std::sync::Arc<dyn crate::scheduler::WorktreeSource>>,
+    /// Live run-control signals (Phase 2.3): Stop/Pause/Steer reach the
+    /// in-flight run through the scheduler's registry.
+    run_controls: Option<std::sync::Arc<crate::scheduler::RunControls>>,
 }
 
 #[derive(Default, Clone)]
@@ -45,7 +48,19 @@ impl CoreServices {
             store,
             workspace: None,
             task_worktrees: None,
+            run_controls: None,
         }
+    }
+
+    /// Attaches the scheduler's live run-control registry (Phase 2.3):
+    /// StopTask/PauseTask/SteerTask signal in-flight runs in addition to
+    /// writing the durable lifecycle events.
+    pub fn with_run_controls(
+        mut self,
+        controls: std::sync::Arc<crate::scheduler::RunControls>,
+    ) -> Self {
+        self.run_controls = Some(controls);
+        self
     }
 
     /// Attaches the task-worktree layout source (GetDiff): the shared
@@ -254,31 +269,54 @@ impl CoreServices {
                     },
                 }
             }
-            Some(pb::surface_request::Request::SteerTask(steer)) => self.lifecycle_response(
-                &steer.task_id,
-                CommandPayload::SteerTask {
-                    task_id: parse_task_id(&steer.task_id),
-                    steer_note: steer.note,
-                },
-            ),
-            Some(pb::surface_request::Request::PauseTask(pause)) => self.lifecycle_response(
-                &pause.task_id,
-                CommandPayload::TaskWaiting {
-                    task_id: parse_task_id(&pause.task_id),
-                    reason: modbit_domain::events::WaitingReason::UserInput,
-                },
-            ),
-            Some(pb::surface_request::Request::StopTask(stop)) => self.lifecycle_response(
-                &stop.task_id,
-                CommandPayload::CancelTask {
-                    task_id: parse_task_id(&stop.task_id),
-                    reason: if stop.reason.is_empty() {
-                        "stopped by user".into()
-                    } else {
-                        stop.reason
+            Some(pb::surface_request::Request::SteerTask(steer)) => {
+                // Phase 2.3: queue the note for the in-flight run (injected
+                // as a user message on the next turn), then record the
+                // durable steer event.
+                if let Some(controls) = &self.run_controls {
+                    controls.steer(&steer.task_id, steer.note.clone());
+                }
+                self.lifecycle_response(
+                    &steer.task_id,
+                    CommandPayload::SteerTask {
+                        task_id: parse_task_id(&steer.task_id),
+                        steer_note: steer.note,
                     },
-                },
-            ),
+                )
+            }
+            Some(pb::surface_request::Request::PauseTask(pause)) => {
+                // Phase 2.3: signal the in-flight run to park at the next
+                // turn boundary BEFORE parking the durable state.
+                if let Some(controls) = &self.run_controls {
+                    controls.pause(&pause.task_id);
+                }
+                self.lifecycle_response(
+                    &pause.task_id,
+                    CommandPayload::TaskWaiting {
+                        task_id: parse_task_id(&pause.task_id),
+                        reason: modbit_domain::events::WaitingReason::UserInput,
+                    },
+                )
+            }
+            Some(pb::surface_request::Request::StopTask(stop)) => {
+                // Phase 2.3: signal the in-flight run FIRST (abort the
+                // model stream, kill the broker tool), then record the
+                // durable cancellation.
+                if let Some(controls) = &self.run_controls {
+                    controls.cancel(&stop.task_id);
+                }
+                self.lifecycle_response(
+                    &stop.task_id,
+                    CommandPayload::CancelTask {
+                        task_id: parse_task_id(&stop.task_id),
+                        reason: if stop.reason.is_empty() {
+                            "stopped by user".into()
+                        } else {
+                            stop.reason
+                        },
+                    },
+                )
+            },
             Some(pb::surface_request::Request::GetRunDetail(get)) => match self.run_detail(&get.task_id) {
                 Ok(run_detail) => pb::SurfaceResponse {
                     ok: true,

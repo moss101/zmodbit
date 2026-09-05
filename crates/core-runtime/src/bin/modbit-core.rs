@@ -30,15 +30,18 @@ fn main() {
     if let Some(source) = modbit_core_runtime::scheduler::EnvWorktreeSource::from_env() {
         services = services.with_task_worktrees(std::sync::Arc::new(source));
     }
-    let services = Arc::new(services);
 
     // The single scheduler (docs/14): tails the store for task_started and
     // owns every run. Started in every host mode so runs begin whichever
     // surface executed the command (socket or HTTP daemon).
-    let _scheduler = modbit_core_runtime::scheduler::Scheduler::spawn(
+    let scheduler = modbit_core_runtime::scheduler::Scheduler::spawn(
         store.clone(),
         modbit_core_runtime::scheduler::SchedulerConfig::from_env(),
     );
+    // Phase 2.3: the surface signals in-flight runs (Stop/Pause/Steer)
+    // through the scheduler's live control registry.
+    services = services.with_run_controls(scheduler.controls());
+    let services = Arc::new(services);
 
     // Optional multi-client HTTP+SSE daemon (headless mode):
     // MODBIT_HTTP_ADDR=127.0.0.1:0 binds it alongside the socket transport.
