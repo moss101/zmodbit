@@ -36,8 +36,6 @@ fn tempdir(tag: &str) -> PathBuf {
 }
 
 const BROKEN: &str = "function validateQuantity(q) {\n  return true;\n}\nmodule.exports = { validateQuantity };\n";
-const FIXED: &str =
-    "function validateQuantity(q) {\n  if (q < 0) throw new Error('negative');\n  return true;\n}\nmodule.exports = { validateQuantity };\n";
 
 fn ts_webapp_fixture(tag: &str) -> PathBuf {
     let root = tempdir(tag);

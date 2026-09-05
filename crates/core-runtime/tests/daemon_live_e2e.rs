@@ -18,7 +18,6 @@
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use prost::Message;
