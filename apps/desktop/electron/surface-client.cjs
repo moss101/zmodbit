@@ -82,6 +82,30 @@ function encodeGetTaskEvents(taskId) {
   return encodeLenField(8, inner);
 }
 
+function str(fieldNo, value) {
+  return encodeLenField(fieldNo, Buffer.from(value, "utf8"));
+}
+
+function encodeSteerTask(taskId, note) {
+  return encodeLenField(10, Buffer.concat([str(1, taskId), str(2, note)]));
+}
+
+function encodePauseTask(taskId) {
+  return encodeLenField(11, str(1, taskId));
+}
+
+function encodeStopTask(taskId, reason) {
+  return encodeLenField(12, Buffer.concat([str(1, taskId), str(2, reason)]));
+}
+
+function encodeGetRunDetail(taskId) {
+  return encodeLenField(13, str(1, taskId));
+}
+
+function encodeGetDiff(taskId) {
+  return encodeLenField(14, str(1, taskId));
+}
+
 function encodeSurfaceRequest(request) {
   if (request.createSession !== undefined) return encodeCreateSession(request.createSession);
   if (request.createTask !== undefined) {
@@ -89,7 +113,70 @@ function encodeSurfaceRequest(request) {
     return encodeCreateTask(t.sessionId, t.title, t.prompt);
   }
   if (request.taskEvents !== undefined) return encodeGetTaskEvents(request.taskEvents);
+  if (request.steerTask !== undefined) {
+    return encodeSteerTask(request.steerTask.taskId, request.steerTask.note);
+  }
+  if (request.pauseTask !== undefined) return encodePauseTask(request.pauseTask.taskId);
+  if (request.stopTask !== undefined) {
+    return encodeStopTask(request.stopTask.taskId, request.stopTask.reason || "");
+  }
+  if (request.getRunDetail !== undefined) return encodeGetRunDetail(request.getRunDetail.taskId);
+  if (request.getDiff !== undefined) return encodeGetDiff(request.getDiff.taskId);
   return encodeGetFleet();
+}
+
+function decodeRunStepView(buf) {
+  const step = { stepId: "", turnId: "", stepType: "", state: "", failureCode: "" };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) step.stepId = v.toString("utf8");
+    else if (f === 2) step.turnId = v.toString("utf8");
+    else if (f === 3) step.stepType = v.toString("utf8");
+    else if (f === 4) step.state = v.toString("utf8");
+    else if (f === 5) step.failureCode = v.toString("utf8");
+  }
+  return step;
+}
+
+function decodeTurnView(buf) {
+  const turn = { turnId: "", state: "", steps: [] };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) turn.turnId = v.toString("utf8");
+    else if (f === 2) turn.state = v.toString("utf8");
+    else if (f === 3) turn.steps.push(decodeRunStepView(v));
+  }
+  return turn;
+}
+
+function decodeRunDetailView(buf) {
+  const detail = { taskId: "", turns: [], runState: "", failureCode: "" };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) detail.taskId = v.toString("utf8");
+    else if (f === 2) detail.turns.push(decodeTurnView(v));
+    else if (f === 3) detail.runState = v.toString("utf8");
+    else if (f === 4) detail.failureCode = v.toString("utf8");
+  }
+  return detail;
+}
+
+function decodeDiffFileView(buf) {
+  const file = { path: "", additions: "0", deletions: "0" };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) file.path = v.toString("utf8");
+    else if (f === 2) file.additions = v.toString();
+    else if (f === 3) file.deletions = v.toString();
+  }
+  return file;
+}
+
+function decodeDiffView(buf) {
+  const diff = { taskId: "", branch: "", baseRevision: "", files: [] };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) diff.taskId = v.toString("utf8");
+    else if (f === 2) diff.branch = v.toString("utf8");
+    else if (f === 3) diff.baseRevision = v.toString("utf8");
+    else if (f === 4) diff.files.push(decodeDiffFileView(v));
+  }
+  return diff;
 }
 
 function decodeTaskEvents(buf) {
@@ -178,6 +265,8 @@ function decodeSurfaceResponse(buf) {
     task: null,
     sessionId: "",
     taskEvents: null,
+    runDetail: null,
+    diff: null,
   };
   for (const [fieldNo, value] of decodeFields(buf)) {
     if (fieldNo === 1) response.ok = value !== 0n;
@@ -186,6 +275,8 @@ function decodeSurfaceResponse(buf) {
     else if (fieldNo === 4) response.task = decodeTaskView(value);
     else if (fieldNo === 5) response.sessionId = value.toString("utf8");
     else if (fieldNo === 6) response.taskEvents = decodeTaskEvents(value);
+    else if (fieldNo === 8) response.runDetail = decodeRunDetailView(value);
+    else if (fieldNo === 9) response.diff = decodeDiffView(value);
   }
   return response;
 }
