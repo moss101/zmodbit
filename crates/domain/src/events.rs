@@ -155,6 +155,19 @@ pub enum DomainEvent {
         /// JSON array of the gateway ChatMessage projection.
         conversation_json: String,
     },
+    /// One streamed chunk of a tool's output (docs/21 § durable terminal,
+    /// Future-tasks Phase 2 item 6): emitted DURING execution so the run
+    /// plane shows progress. Bounded preview; the full bytes live behind
+    /// the paginated OutputRef in the runtime store.
+    ToolOutputChunk {
+        /// The broker run that produced the bytes.
+        broker_run_id: String,
+        /// Byte offset of this chunk within the run's output stream.
+        offset: u64,
+        byte_length: u64,
+        /// Lossy UTF-8 preview (bounded; full bytes are in the OutputRef).
+        preview: String,
+    },
     /// Session fork (REQ-EV-0122): a new branch carries the selected
     /// decisions/evidence capsule and NEVER pending approvals.
     SessionForked {
@@ -291,6 +304,7 @@ impl EventEnvelope {
             DomainEvent::RunStepFailed { .. } => "run_step_failed",
             DomainEvent::CompactionApplied { .. } => "compaction_applied",
             DomainEvent::ConversationCheckpointed { .. } => "conversation_checkpointed",
+            DomainEvent::ToolOutputChunk { .. } => "tool_output_chunk",
             DomainEvent::SessionForked { .. } => "session_forked",
             DomainEvent::SessionRewound { .. } => "session_rewound",
             DomainEvent::GoalSet { .. } => "goal_set",

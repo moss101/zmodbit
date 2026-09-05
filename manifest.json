@@ -7,7 +7,7 @@
   "counts": {
     "docs": 70,
     "root_and_tooling": 84,
-    "docs_bytes": 510671
+    "docs_bytes": 511243
   },
   "sections": [
     {
@@ -202,8 +202,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Terminal, Execution Router, and Sandbox Architecture",
-      "bytes": 3332,
-      "sha256": "b36b4bb9b3e8d837e2c62e048147acf9b236b74cc006e8fbfc2fc8d751f102ff"
+      "bytes": 3904,
+      "sha256": "42a2f1260120d4bd2d05ebd4a43ecad6494df54357eb21d3dcaff513e6c4cb72"
     },
     {
       "path": "docs/22_BROWSER_AND_COMPUTER_USE.md",
@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 814275,
-      "sha256": "ce89bcfe1c2dcd43516bf8b17aa59d6a3cd20850f3908f00b00791e7ba63e9ca"
+      "bytes": 815665,
+      "sha256": "93a4168764be986e57f304b5e40dea4e3f474038704efd202e68fdacd224771a"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22620,
-      "sha256": "f566586048f212eb81736d8766065998fcc77e9fd8d84e5745d82c13a8c776d5"
+      "bytes": 22624,
+      "sha256": "e48b1a9b438be77532f7bcb3d3af4a9bf0341c9bd3e454285f69ba28f7449e86"
     },
     {
       "path": "tools/build_manifest.py",
@@ -1001,8 +1001,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 73333,
-      "sha256": "5a29fdaf2a22f24e1a8171d5834c819adf460ec6f69dbb2764b19f831ac14782"
+      "bytes": 82148,
+      "sha256": "e356458807e78cdd6fbf1483d2db3379644edc21c50f6f608e15d7d334233a0a"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",

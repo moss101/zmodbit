@@ -48,6 +48,8 @@ Shell-string convenience is parsed into an argv-aware request and clearly marked
 
 A small broker owns local PTYs/processes and a bounded replay log. Core sends authenticated commands over local socket. UI can detach/reconnect without losing output. Core acknowledges output cursor; broker retains a sliding replay window and spills large output to OutputRef/object store. Broker is not authorized to create capabilities or decide policy.
 
+Phase 2 implementation: `shell.run` drains the broker's offset-addressed output WHILE the process runs — every drain emits a bounded `tool_output_chunk` run event (≤256-char preview) so the durable run plane shows progress during execution — and at completion stores the full bytes behind a paginated OutputRef in the runtime store's `output_refs` table; the tool result carries `{output_ref_id, byte_length, preview}` plus a short inline tail, and readers page through the exact bytes via the `ReadOutputRef` surface RPC (offset/max ranges, server-clamped pages).
+
 ## Command failure semantics
 
 Non-zero exit is a valid tool result. It emits `CommandExited` with status and output; Agent Runtime may inspect, repair and retry. `ToolCallFailed` means execution infrastructure/schema/policy failure. `TurnFailed` occurs only when runtime can no longer make progress under policy/budget.

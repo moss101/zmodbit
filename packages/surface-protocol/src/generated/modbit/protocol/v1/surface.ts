@@ -32,6 +32,7 @@ export interface SurfaceRequest {
   stopTask?: StopTaskCommand | undefined;
   getRunDetail?: GetRunDetailRequest | undefined;
   getDiff?: GetDiffRequest | undefined;
+  readOutputRef?: ReadOutputRefRequest | undefined;
 }
 
 export interface GetFleetRequest {
@@ -113,6 +114,25 @@ export interface SurfaceResponse {
   codeView: CodeViewModel | undefined;
   runDetail: RunDetailView | undefined;
   diff: DiffView | undefined;
+  outputChunk: OutputRefChunkView | undefined;
+}
+
+/**
+ * Paginated read of a stored tool-output reference (Phase 2.6): the full
+ * output of a shell.run lives behind the OutputRef in the runtime store;
+ * readers page through it with offset/max ranges.
+ */
+export interface ReadOutputRefRequest {
+  outputRefId: string;
+  offset: string;
+  maxBytes: string;
+}
+
+export interface OutputRefChunkView {
+  outputRefId: string;
+  offset: string;
+  data: Uint8Array;
+  totalLength: string;
 }
 
 /**
@@ -218,6 +238,7 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     stopTask: undefined,
     getRunDetail: undefined,
     getDiff: undefined,
+    readOutputRef: undefined,
   };
 }
 
@@ -264,6 +285,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getDiff !== undefined) {
       GetDiffRequest.encode(message.getDiff, writer.uint32(114).fork()).join();
+    }
+    if (message.readOutputRef !== undefined) {
+      ReadOutputRefRequest.encode(message.readOutputRef, writer.uint32(122).fork()).join();
     }
     return writer;
   },
@@ -387,6 +411,14 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.getDiff = GetDiffRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.readOutputRef = ReadOutputRefRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -414,6 +446,7 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       stopTask: isSet(object.stopTask) ? StopTaskCommand.fromJSON(object.stopTask) : undefined,
       getRunDetail: isSet(object.getRunDetail) ? GetRunDetailRequest.fromJSON(object.getRunDetail) : undefined,
       getDiff: isSet(object.getDiff) ? GetDiffRequest.fromJSON(object.getDiff) : undefined,
+      readOutputRef: isSet(object.readOutputRef) ? ReadOutputRefRequest.fromJSON(object.readOutputRef) : undefined,
     };
   },
 
@@ -460,6 +493,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getDiff !== undefined) {
       obj.getDiff = GetDiffRequest.toJSON(message.getDiff);
+    }
+    if (message.readOutputRef !== undefined) {
+      obj.readOutputRef = ReadOutputRefRequest.toJSON(message.readOutputRef);
     }
     return obj;
   },
@@ -510,6 +546,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.getDiff = (object.getDiff !== undefined && object.getDiff !== null)
       ? GetDiffRequest.fromPartial(object.getDiff)
+      : undefined;
+    message.readOutputRef = (object.readOutputRef !== undefined && object.readOutputRef !== null)
+      ? ReadOutputRefRequest.fromPartial(object.readOutputRef)
       : undefined;
     return message;
   },
@@ -1351,6 +1390,7 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     codeView: undefined,
     runDetail: undefined,
     diff: undefined,
+    outputChunk: undefined,
   };
 }
 
@@ -1382,6 +1422,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.diff !== undefined) {
       DiffView.encode(message.diff, writer.uint32(74).fork()).join();
+    }
+    if (message.outputChunk !== undefined) {
+      OutputRefChunkView.encode(message.outputChunk, writer.uint32(82).fork()).join();
     }
     return writer;
   },
@@ -1465,6 +1508,14 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.diff = DiffView.decode(reader, reader.uint32());
           continue;
         }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.outputChunk = OutputRefChunkView.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1485,6 +1536,7 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       codeView: isSet(object.codeView) ? CodeViewModel.fromJSON(object.codeView) : undefined,
       runDetail: isSet(object.runDetail) ? RunDetailView.fromJSON(object.runDetail) : undefined,
       diff: isSet(object.diff) ? DiffView.fromJSON(object.diff) : undefined,
+      outputChunk: isSet(object.outputChunk) ? OutputRefChunkView.fromJSON(object.outputChunk) : undefined,
     };
   },
 
@@ -1517,6 +1569,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.diff !== undefined) {
       obj.diff = DiffView.toJSON(message.diff);
     }
+    if (message.outputChunk !== undefined) {
+      obj.outputChunk = OutputRefChunkView.toJSON(message.outputChunk);
+    }
     return obj;
   },
 
@@ -1540,6 +1595,209 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       ? RunDetailView.fromPartial(object.runDetail)
       : undefined;
     message.diff = (object.diff !== undefined && object.diff !== null) ? DiffView.fromPartial(object.diff) : undefined;
+    message.outputChunk = (object.outputChunk !== undefined && object.outputChunk !== null)
+      ? OutputRefChunkView.fromPartial(object.outputChunk)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseReadOutputRefRequest(): ReadOutputRefRequest {
+  return { outputRefId: "", offset: "0", maxBytes: "0" };
+}
+
+export const ReadOutputRefRequest: MessageFns<ReadOutputRefRequest> = {
+  encode(message: ReadOutputRefRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.outputRefId !== "") {
+      writer.uint32(10).string(message.outputRefId);
+    }
+    if (message.offset !== "0") {
+      writer.uint32(16).uint64(message.offset);
+    }
+    if (message.maxBytes !== "0") {
+      writer.uint32(24).uint64(message.maxBytes);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReadOutputRefRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReadOutputRefRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.outputRefId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.offset = reader.uint64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.maxBytes = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReadOutputRefRequest {
+    return {
+      outputRefId: isSet(object.outputRefId) ? globalThis.String(object.outputRefId) : "",
+      offset: isSet(object.offset) ? globalThis.String(object.offset) : "0",
+      maxBytes: isSet(object.maxBytes) ? globalThis.String(object.maxBytes) : "0",
+    };
+  },
+
+  toJSON(message: ReadOutputRefRequest): unknown {
+    const obj: any = {};
+    if (message.outputRefId !== "") {
+      obj.outputRefId = message.outputRefId;
+    }
+    if (message.offset !== "0") {
+      obj.offset = message.offset;
+    }
+    if (message.maxBytes !== "0") {
+      obj.maxBytes = message.maxBytes;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ReadOutputRefRequest>, I>>(base?: I): ReadOutputRefRequest {
+    return ReadOutputRefRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ReadOutputRefRequest>, I>>(object: I): ReadOutputRefRequest {
+    const message = createBaseReadOutputRefRequest();
+    message.outputRefId = object.outputRefId ?? "";
+    message.offset = object.offset ?? "0";
+    message.maxBytes = object.maxBytes ?? "0";
+    return message;
+  },
+};
+
+function createBaseOutputRefChunkView(): OutputRefChunkView {
+  return { outputRefId: "", offset: "0", data: new Uint8Array(0), totalLength: "0" };
+}
+
+export const OutputRefChunkView: MessageFns<OutputRefChunkView> = {
+  encode(message: OutputRefChunkView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.outputRefId !== "") {
+      writer.uint32(10).string(message.outputRefId);
+    }
+    if (message.offset !== "0") {
+      writer.uint32(16).uint64(message.offset);
+    }
+    if (message.data.length !== 0) {
+      writer.uint32(26).bytes(message.data);
+    }
+    if (message.totalLength !== "0") {
+      writer.uint32(32).uint64(message.totalLength);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): OutputRefChunkView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseOutputRefChunkView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.outputRefId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.offset = reader.uint64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.data = reader.bytes();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.totalLength = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OutputRefChunkView {
+    return {
+      outputRefId: isSet(object.outputRefId) ? globalThis.String(object.outputRefId) : "",
+      offset: isSet(object.offset) ? globalThis.String(object.offset) : "0",
+      data: isSet(object.data) ? bytesFromBase64(object.data) : new Uint8Array(0),
+      totalLength: isSet(object.totalLength) ? globalThis.String(object.totalLength) : "0",
+    };
+  },
+
+  toJSON(message: OutputRefChunkView): unknown {
+    const obj: any = {};
+    if (message.outputRefId !== "") {
+      obj.outputRefId = message.outputRefId;
+    }
+    if (message.offset !== "0") {
+      obj.offset = message.offset;
+    }
+    if (message.data.length !== 0) {
+      obj.data = base64FromBytes(message.data);
+    }
+    if (message.totalLength !== "0") {
+      obj.totalLength = message.totalLength;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<OutputRefChunkView>, I>>(base?: I): OutputRefChunkView {
+    return OutputRefChunkView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<OutputRefChunkView>, I>>(object: I): OutputRefChunkView {
+    const message = createBaseOutputRefChunkView();
+    message.outputRefId = object.outputRefId ?? "";
+    message.offset = object.offset ?? "0";
+    message.data = object.data ?? new Uint8Array(0);
+    message.totalLength = object.totalLength ?? "0";
     return message;
   },
 };
@@ -2393,6 +2651,31 @@ export const DiffView: MessageFns<DiffView> = {
     return message;
   },
 };
+
+function bytesFromBase64(b64: string): Uint8Array {
+  if ((globalThis as any).Buffer) {
+    return Uint8Array.from(globalThis.Buffer.from(b64, "base64"));
+  } else {
+    const bin = globalThis.atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; ++i) {
+      arr[i] = bin.charCodeAt(i);
+    }
+    return arr;
+  }
+}
+
+function base64FromBytes(arr: Uint8Array): string {
+  if ((globalThis as any).Buffer) {
+    return globalThis.Buffer.from(arr).toString("base64");
+  } else {
+    const bin: string[] = [];
+    arr.forEach((byte) => {
+      bin.push(globalThis.String.fromCharCode(byte));
+    });
+    return globalThis.btoa(bin.join(""));
+  }
+}
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 

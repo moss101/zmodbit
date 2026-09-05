@@ -14,14 +14,14 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | Section | Range | Files | Bytes |
 |---|---|---:|---:|
 | Authority and orientation | 00–09 | 5 | 26678 |
-| Architecture and subsystems | 10–29 | 17 | 78821 |
+| Architecture and subsystems | 10–29 | 17 | 79393 |
 | Implementation specifications | 30–39 | 8 | 30178 |
 | Requirements, tasks and traceability | 40–49 | 9 | 292645 |
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
 | Live state | 98–99 | 1 | 2382 |
-| **Total docs** | | **70** | **510671** |
+| **Total docs** | | **70** | **511243** |
 
 ## Specification files (`docs/`)
 
@@ -43,7 +43,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 18 | `docs/18_CONTEXT_RETRIEVAL_AND_ENGINEERING_KNOWLEDGE.md` | Context, Retrieval, and Engineering Knowledge Engine | architecture | 4771 | `1899b5869afba2502a22576bceb56edf5fc728d5a36bb192b75798e1c2c97b2a` |
 | 19 | `docs/19_DURABLE_STATE_MEMORY_COMPACTION_CHECKPOINTS.md` | Durable State, Memory, Compaction, and Checkpoints | architecture | 4691 | `cd6aadf4fe77a36b099a02bbe2dbd4570fd25467b08649e33cd7bacd22511b77` |
 | 20 | `docs/20_WORKSPACE_GIT_AND_TRUSTED_CODE_SURFACE.md` | Workspace, Git, Worktrees, Diagnostics, and Trusted Code Surface | architecture | 2883 | `0f1d42c9d0915595c582ca2b73f16040caed17bf2e20638c0464f64f3df3d469` |
-| 21 | `docs/21_TERMINAL_EXECUTION_AND_SANDBOX.md` | Terminal, Execution Router, and Sandbox Architecture | architecture | 3332 | `b36b4bb9b3e8d837e2c62e048147acf9b236b74cc006e8fbfc2fc8d751f102ff` |
+| 21 | `docs/21_TERMINAL_EXECUTION_AND_SANDBOX.md` | Terminal, Execution Router, and Sandbox Architecture | architecture | 3904 | `42a2f1260120d4bd2d05ebd4a43ecad6494df54357eb21d3dcaff513e6c4cb72` |
 | 22 | `docs/22_BROWSER_AND_COMPUTER_USE.md` | Browser and Computer-Use Architecture | architecture | 3961 | `a7e441d9bc60785aea7dcc62fe8cef5946f3aa2551665368a360d4ec3519220b` |
 | 23 | `docs/23_SECURITY_POLICY_EFFECT_LEDGER.md` | Security, Policy, Capabilities, Secrets, and Effect Ledger | architecture | 3408 | `218e02653a8b7b086672051c0534581f7767d8dae8c8e969e32b99c5025f5297` |
 | 24 | `docs/24_CLOUD_CONTROL_PLANE_AND_SYNC.md` | Cloud Control Plane, Remote Execution, and Sync | architecture | 2971 | `adbd0235a34e23792054573eb80b94de23bac62e9e959d8d17824adfb2d22f8f` |
@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
-| `graph/project-graph.json` | project driver graph with live status | 814275 | `ce89bcfe1c2dcd43516bf8b17aa59d6a3cd20850f3908f00b00791e7ba63e9ca` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22620 | `f566586048f212eb81736d8766065998fcc77e9fd8d84e5745d82c13a8c776d5` |
+| `graph/project-graph.json` | project driver graph with live status | 815665 | `93a4168764be986e57f304b5e40dea4e3f474038704efd202e68fdacd224771a` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22624 | `e48b1a9b438be77532f7bcb3d3af4a9bf0341c9bd3e454285f69ba28f7449e86` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
@@ -165,7 +165,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3659 | `47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2886 | `eab432c06eb3fc6480a201930f869418ed42236bf040e85dace4e00c50e59f8b` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23242 | `f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 73333 | `5a29fdaf2a22f24e1a8171d5834c819adf460ec6f69dbb2764b19f831ac14782` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 82148 | `e356458807e78cdd6fbf1483d2db3379644edc21c50f6f608e15d7d334233a0a` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts` |  | 11854 | `c1eb6739e86a75a80872a57916f9526bcd90607a3096efff3067b100e18b3133` |
 | `packages/surface-protocol/src/index.ts` |  | 923 | `31d1ec5391123ce8b673687d677619415eb53f54651239d1599263e46e1e862e` |
 | `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |

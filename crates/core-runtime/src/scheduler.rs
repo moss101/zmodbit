@@ -22,7 +22,7 @@
 
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use modbit_domain::events::{Actor, ActorType, AggregateType, DomainEvent, EventEnvelope, StepType};
 use modbit_domain::ids::{RunId, RunStepId, SessionId, TaskId, TurnId};
@@ -423,7 +423,22 @@ impl Scheduler {
         // run), PauseTask flips `paused` (park at the next turn boundary),
         // SteerTask queues notes for the next turn.
         let signal = self.controls.register(&task_id.to_string());
-        let registry = build_worktree_registry(&ws, &worktree_path, execd.as_ref(), signal.cancel_token());
+        // Phase 2.6: the output sink shares run-plane state with the
+        // observer (sequences + current run) so streamed chunk events and
+        // lifecycle events interleave on one consistent aggregate.
+        let shared = Arc::new(RunPlaneShared::default());
+        let output_sink: Arc<dyn ToolOutputSink> = Arc::new(RunPlaneOutputSink {
+            store: self.store.clone(),
+            session_id,
+            shared: shared.clone(),
+        });
+        let registry = build_worktree_registry(
+            &ws,
+            &worktree_path,
+            execd.as_ref(),
+            signal.cancel_token(),
+            Some(output_sink),
+        );
         let kernel = PolicyKernel::new(vec![]);
         for grant in worktree_grants() {
             kernel.grant(grant);
@@ -436,8 +451,7 @@ impl Scheduler {
             store: self.store.clone(),
             session_id,
             task_id,
-            sequences: std::sync::Mutex::new(std::collections::HashMap::new()),
-            current_run: std::sync::Mutex::new(None),
+            shared,
         };
         let transport = LiveGatewayTransport::new(&self.config, signal.cancel_token());
         let runtime = OneAgentRuntime {
@@ -826,6 +840,7 @@ pub fn build_worktree_registry(
     worktree: &std::path::Path,
     execd: Option<&ExecdClient>,
     cancel: Arc<std::sync::atomic::AtomicBool>,
+    output_sink: Option<Arc<dyn ToolOutputSink>>,
 ) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
@@ -900,6 +915,7 @@ pub fn build_worktree_registry(
                 let execd = execd.cloned();
                 let worktree = worktree.to_path_buf();
                 let cancel = cancel.clone();
+                let sink = output_sink.clone();
                 Arc::new(move |args| {
                     let execd = execd.as_ref().ok_or(
                         "shell execution unavailable: no modbit-execd broker configured (set MODBIT_EXECD_ADDR)",
@@ -927,29 +943,47 @@ pub fn build_worktree_registry(
                         return Err("empty argv".into());
                     }
                     let run_id = format!("task-{}", uuid::Uuid::now_v7().simple());
-                    // Phase 2.3: the run's cancellation flag races the
-                    // wait — StopTask kills the broker run (no orphan
-                    // process) and surfaces a typed cancellation.
-                    let (status, output) = execd
-                        .run_capture_cancellable(
-                            &run_id,
-                            &argv,
-                            Some(&worktree),
-                            Duration::from_secs(600),
-                            256 * 1024,
-                            &cancel,
-                        )
-                        .map_err(|e| format!("execd: {e}"))?;
+                    // Phase 2.6: stream output DURING execution — every
+                    // drain emits a bounded chunk event through the sink
+                    // (progress in the durable run plane) — and keep the
+                    // full bytes for a paginated OutputRef at completion.
+                    // Phase 2.3 semantics unchanged: the cancellation flag
+                    // races the wait; StopTask kills the broker run (no
+                    // orphan process).
+                    let (status, output) = run_streaming_capture(
+                        execd,
+                        &run_id,
+                        &argv,
+                        &worktree,
+                        &cancel,
+                        sink.as_deref(),
+                    )
+                    .map_err(|e| format!("execd: {e}"))?;
                     let exit_code = match status.state {
                         modbit_terminal::RunState::Exited(code) => code,
                         _ => -1,
                     };
-                    Ok(serde_json::json!({
+                    // Full output -> paginated OutputRef (runtime table);
+                    // the inline tail stays short.
+                    let output_ref = sink.as_deref().and_then(|sink| {
+                        sink.store_full(&run_id, &output).map(|stored| {
+                            serde_json::json!({
+                                "output_ref_id": stored.output_ref_id,
+                                "byte_length": stored.byte_length,
+                                "preview": stored.preview,
+                            })
+                        })
+                    });
+                    let mut result = serde_json::json!({
                         "exit_code": exit_code,
                         "state": format!("{:?}", status.state),
-                        "output": tail(&String::from_utf8_lossy(&output), 8_000),
+                        "output": tail(&String::from_utf8_lossy(&output), 2_000),
                         "broker_run_id": run_id,
-                    }))
+                    });
+                    if let Some(output_ref) = output_ref {
+                        result["output_ref"] = output_ref;
+                    }
+                    Ok(result)
                 })
             },
         )
@@ -1255,6 +1289,174 @@ fn interrupted_tasks(store: &Arc<EventStore>) -> Vec<String> {
     })
 }
 
+/// Stored full output handle (Phase 2.6): the paginated OutputRef.
+pub struct StoredOutput {
+    pub output_ref_id: String,
+    pub byte_length: u64,
+    pub preview: String,
+}
+
+/// Streaming sink for tool output (Future-tasks Phase 2 item 6): tools
+/// that produce incremental output emit bounded chunk events DURING
+/// execution and store the full bytes behind a paginated OutputRef in
+/// the runtime store (docs/31 § Core tables).
+pub trait ToolOutputSink: Send + Sync {
+    /// One streamed chunk: bounded preview rides a durable run event.
+    fn chunk(&self, broker_run_id: &str, offset: u64, bytes: &[u8]);
+    /// Stores the full output; returns the paginated reference.
+    fn store_full(&self, broker_run_id: &str, bytes: &[u8]) -> Option<StoredOutput>;
+}
+
+/// State shared by the observer and the output sink for one run: the
+/// current run id and per-aggregate sequence accounting (both append to
+/// the same run aggregate, so sequences MUST be reserved under one lock).
+#[derive(Default)]
+struct RunPlaneShared {
+    run: std::sync::Mutex<Option<RunId>>,
+    sequences: std::sync::Mutex<std::collections::HashMap<String, u64>>,
+}
+
+/// Production sink: chunk events on the Run aggregate (run id arrives
+/// with run_started through the shared cell); full output into the
+/// runtime store's output_refs table.
+struct RunPlaneOutputSink {
+    store: Arc<EventStore>,
+    session_id: SessionId,
+    shared: Arc<RunPlaneShared>,
+}
+
+impl RunPlaneOutputSink {
+    /// Mirrors EventStoreObserver::append's envelope + sequence rules.
+    fn append_chunk(&self, run_id: &RunId, payload: DomainEvent) {
+        let aggregate_id = run_id.to_string();
+        let mut envelope = EventEnvelope {
+            event_id: uuid::Uuid::now_v7().to_string(),
+            session_id: self.session_id,
+            task_id: None,
+            run_id: Some(*run_id),
+            turn_id: None,
+            step_id: None,
+            aggregate_type: AggregateType::Run,
+            aggregate_id: aggregate_id.clone(),
+            sequence: 0,
+            event_type: EventEnvelope::event_type_of(&payload).to_string(),
+            schema_version: modbit_domain::SCHEMA_VERSION,
+            occurred_at: now_rfc3339(),
+            actor: Actor {
+                actor_type: ActorType::System,
+                actor_id: "scheduler".into(),
+            },
+            causation_id: None,
+            correlation_id: None,
+            payload,
+            payload_object_hash: None,
+            integrity_hash: String::new(),
+        };
+        let mut sequences = self.shared.sequences.lock().expect("observer mutex");
+        let next = sequences.get(&aggregate_id).copied().unwrap_or(1);
+        envelope.sequence = next;
+        envelope.seal();
+        sequences.insert(aggregate_id, next + 1);
+        drop(sequences);
+        if let Err(e) = self.store.append(&mut [envelope]) {
+            eprintln!("modbit scheduler: append output chunk failed: {e}");
+        }
+    }
+}
+
+/// Bounded preview length for streamed chunk events (matches the runtime
+/// store's bounded-preview philosophy, docs/31).
+const CHUNK_PREVIEW_CHARS: usize = 256;
+
+impl ToolOutputSink for RunPlaneOutputSink {
+    fn chunk(&self, broker_run_id: &str, offset: u64, bytes: &[u8]) {
+        let run_id = match *self.shared.run.lock().expect("run cell") {
+            Some(id) => id,
+            None => return,
+        };
+        let preview: String = String::from_utf8_lossy(bytes)
+            .chars()
+            .take(CHUNK_PREVIEW_CHARS)
+            .collect();
+        self.append_chunk(
+            &run_id,
+            DomainEvent::ToolOutputChunk {
+                broker_run_id: broker_run_id.to_string(),
+                offset,
+                byte_length: bytes.len() as u64,
+                preview,
+            },
+        );
+    }
+
+    fn store_full(&self, broker_run_id: &str, bytes: &[u8]) -> Option<StoredOutput> {
+        let output_ref_id = format!("outref-{broker_run_id}");
+        let stored = self
+            .store
+            .runtime()
+            .write_output_ref(&output_ref_id, "text/plain", bytes)
+            .ok()?;
+        Some(StoredOutput {
+            output_ref_id: stored.output_ref_id,
+            byte_length: stored.byte_length,
+            preview: stored.preview_text,
+        })
+    }
+}
+
+/// Streams a broker run to completion (Phase 2.6): drains output while
+/// the process runs — each drain emits a chunk event through the sink —
+/// then a final drain collects the tail. Cancellation and timeout
+/// semantics match run_capture_cancellable (kill, no orphan process).
+fn run_streaming_capture(
+    execd: &ExecdClient,
+    run_id: &str,
+    argv: &[String],
+    cwd: &std::path::Path,
+    cancel: &std::sync::atomic::AtomicBool,
+    sink: Option<&dyn ToolOutputSink>,
+) -> Result<(modbit_terminal::client::SpawnStatus, Vec<u8>), modbit_terminal::TerminalError> {
+    use std::sync::atomic::Ordering;
+    const TIMEOUT: Duration = Duration::from_secs(600);
+    const DRAIN_MAX: usize = 256 * 1024;
+    execd.spawn(run_id, argv, Some(cwd))?;
+    let mut offset: u64 = 0;
+    let mut collected: Vec<u8> = Vec::new();
+    let deadline = Instant::now() + TIMEOUT;
+    loop {
+        if cancel.load(Ordering::SeqCst) {
+            execd.stop(run_id)?;
+            return Err(modbit_terminal::TerminalError::Cancelled(run_id.to_string()));
+        }
+        let (bytes, new_offset) = execd.read_output(run_id, offset, DRAIN_MAX)?;
+        if !bytes.is_empty() {
+            if let Some(sink) = sink {
+                sink.chunk(run_id, offset, &bytes);
+            }
+            collected.extend_from_slice(&bytes);
+            offset = new_offset;
+        }
+        let status = execd.status(run_id)?;
+        if status.state != modbit_terminal::RunState::Running {
+            // Final drain after exit (bytes written between last poll and
+            // termination).
+            let (bytes, _final_offset) = execd.read_output(run_id, offset, DRAIN_MAX)?;
+            if !bytes.is_empty() {
+                if let Some(sink) = sink {
+                    sink.chunk(run_id, offset, &bytes);
+                }
+                collected.extend_from_slice(&bytes);
+            }
+            return Ok((status, collected));
+        }
+        if Instant::now() >= deadline {
+            execd.stop(run_id)?;
+            return Err(modbit_terminal::TerminalError::Timeout(run_id.to_string()));
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
 /// Shell word splitting for the string form of `shell.run` argv (Phase
 /// 2.6): whitespace-separated words with single/double-quoted segments
 /// honored (a quote makes whitespace literal until the matching close).
@@ -1425,8 +1627,9 @@ struct EventStoreObserver {
     store: Arc<EventStore>,
     session_id: SessionId,
     task_id: TaskId,
-    sequences: std::sync::Mutex<std::collections::HashMap<String, u64>>,
-    current_run: std::sync::Mutex<Option<RunId>>,
+    /// Sequence accounting + current run, SHARED with the output sink
+    /// (both append to the same run aggregate).
+    shared: Arc<RunPlaneShared>,
 }
 
 impl EventStoreObserver {
@@ -1477,7 +1680,7 @@ impl EventStoreObserver {
             payload_object_hash: None,
             integrity_hash: String::new(),
         };
-        let mut sequences = self.sequences.lock().expect("observer mutex");
+        let mut sequences = self.shared.sequences.lock().expect("observer mutex");
         let next = sequences.get(aggregate_id).copied().unwrap_or(1);
         envelope.sequence = next;
         envelope.seal();
@@ -1491,14 +1694,14 @@ impl EventStoreObserver {
 
 impl EventStoreObserver {
     fn run_of(&self) -> Option<RunId> {
-        *self.current_run.lock().expect("observer mutex")
+        *self.shared.run.lock().expect("observer mutex")
     }
 }
 
 impl RunObserver for EventStoreObserver {
     fn run_started(&self, run_id: &str, attempt: u32) {
         let Ok(parsed) = RunId::parse(run_id) else { return };
-        *self.current_run.lock().expect("observer mutex") = Some(parsed);
+        *self.shared.run.lock().expect("observer mutex") = Some(parsed);
         self.append(
             AggregateType::Run,
             run_id,

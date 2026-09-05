@@ -25,6 +25,7 @@ message SurfaceRequest {
     StopTaskCommand stop_task = 12;
     GetRunDetailRequest get_run_detail = 13;
     GetDiffRequest get_diff = 14;
+    ReadOutputRefRequest read_output_ref = 15;
   }
 }
 
@@ -97,6 +98,23 @@ message SurfaceResponse {
   CodeViewModel code_view = 7;
   RunDetailView run_detail = 8;
   DiffView diff = 9;
+  OutputRefChunkView output_chunk = 10;
+}
+
+// Paginated read of a stored tool-output reference (Phase 2.6): the full
+// output of a shell.run lives behind the OutputRef in the runtime store;
+// readers page through it with offset/max ranges.
+message ReadOutputRefRequest {
+  string output_ref_id = 1;
+  uint64 offset = 2;
+  uint64 max_bytes = 3;
+}
+
+message OutputRefChunkView {
+  string output_ref_id = 1;
+  uint64 offset = 2;
+  bytes data = 3;
+  uint64 total_length = 4;
 }
 
 // Steering: durable control event applied at safe boundaries (docs/14 §

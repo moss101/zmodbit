@@ -1,0 +1,75 @@
+Phase 2 item 6 (second half) — streamed tool output + paginated OutputRef
+==========================================================================
+Node: M2.7 (Basic Prompt Compiler and one-agent runtime)
+Item: Future-tasks.md Phase 2 item 6, second half (§2.4 defect)
+Revision: commit "Phase 2.6: streamed tool output as run events +
+paginated OutputRef" (amended to carry this file), phase2/loop-hardening
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: NOT-FOUND for streaming; the runtime
+output_refs table had ZERO callers)
+------------------------------------------------------------------------
+shell.run captured output fully and tailed 8KB inline — no progress
+during execution, no pagination.
+
+- domain: ToolOutputChunk run event (broker_run_id, offset,
+  byte_length, bounded preview <=256 chars).
+- event-store: EventStore holds the RuntimeStore on the SAME db file —
+  the runtime tables are wired into production for the first time;
+  read_output_range gives clamped ranges with the true total.
+- scheduler: ToolOutputSink flows through the registry boundary. The
+  production sink shares run-plane state with the EventStoreObserver
+  (sequence accounting + current-run cell under one lock), so lifecycle
+  events and chunk events interleave on one consistent Run aggregate.
+- run_streaming_capture: drains offset-addressed broker output every
+  25ms while the process runs (chunk event per drain), final-drains
+  after exit, stores the full bytes as a content-addressed OutputRef
+  (outref-<broker_run_id>). Cancellation and timeout semantics are
+  unchanged from Phase 2.3 (kill the broker run, no orphan process).
+- shell.run result: 2KB inline tail + output_ref {output_ref_id,
+  byte_length, preview}.
+- surface: ReadOutputRef RPC — offset/max ranges, server-clamped 512KB
+  pages, opaque ids (primary keys; no path surface). TS bindings
+  regenerated in the same commit. docs/21 updated.
+
+PROOFS (all always-on)
+----------------------
+Unit (2026-09-06T01:0xZ): event-store runtime range tests — clamping,
+true totals, offset-beyond-end empty, missing id typed error.
+
+Daemon E2E daemon_output_e2e (2026-09-06T01:1xZ) — real daemon +
+scheduler + git worktree + real execd running a REAL bursty command
+(echo first-burst; sleep 1; echo second-burst):
+  shell_output_streams_and_pages_through_output_refs ... ok (2.3s)
+  - >= 2 tool_output_chunk events in the daemon's real SQLite, previews
+    carrying both burst texts (chunks streamed DURING execution, not a
+    lump at completion)
+  - the model-visible tool result (fixture-captured body) carries
+    output_ref with byte_length == 25 (exact)
+  - the output_refs runtime table row holds the exact full payload
+    b"first-burst\nsecond-burst\n"
+  - two ReadOutputRef RPC ranges ([0,11) and [11,..)) concatenate to
+    the exact bytes; total_length correct
+
+MUTATION CHECKS (docs/55), 2026-09-06T01:2xZ — both against the
+committed implementation, bin rebuilt before each run:
+  A. chunk emission removed from the drain loop:
+     E2E FAILED at the chunk-count assertion (exit 101)
+  B. store_full pinned to None (no OutputRef stored):
+     E2E FAILED at the output_ref-on-result assertion (exit 101)
+  Restored after each; final clean run green.
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo build --workspace --all-targets                   exit 0
+  cargo test --workspace                                  exit 0 (463 passed)
+  pnpm install/generate + regenerated bindings committed; typecheck/test exit 0
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+
+RESULT: M2.7 closed E2E_PROVEN with typed evidence; Phase 2 item 6
+COMPLETE (first half commit dfc923a, this commit). All six Phase 2
+items implemented. Remaining for the phase EXIT only: M2/M4 roll-ups
+per graph rules + nightly live job green five consecutive nights
+(calendar-gated; starts at merge).

@@ -341,6 +341,21 @@ impl CoreServices {
                     ..Default::default()
                 },
             },
+            // Phase 2.6: paginated read of a stored tool-output reference.
+            Some(pb::surface_request::Request::ReadOutputRef(read)) => {
+                match self.read_output_ref(&read.output_ref_id, read.offset, read.max_bytes) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        output_chunk: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             None => pb::SurfaceResponse {
                 ok: false,
                 error: "empty SurfaceRequest".into(),
@@ -703,6 +718,29 @@ impl CoreServices {
     /// Revision-bound diff of the task's worktree against its base revision
     /// (E2E-001 review substrate). The worktree location follows the
     /// scheduler's deterministic allocation.
+    /// Paginated OutputRef read (Phase 2.6): bounded ranges over the
+    /// runtime store's content-addressed output payloads. Ids are opaque
+    /// primary keys — no path surface, no traversal.
+    fn read_output_ref(
+        &self,
+        output_ref_id: &str,
+        offset: u64,
+        max_bytes: u64,
+    ) -> Result<pb::OutputRefChunkView, String> {
+        const MAX_PAGE: u64 = 512 * 1024;
+        let (data, total_length) = self
+            .store
+            .runtime()
+            .read_output_range(output_ref_id, offset, max_bytes.min(MAX_PAGE))
+            .map_err(|e| e.to_string())?;
+        Ok(pb::OutputRefChunkView {
+            output_ref_id: output_ref_id.to_string(),
+            offset,
+            data,
+            total_length,
+        })
+    }
+
     fn diff(&self, task_id: &str) -> Result<pb::DiffView, String> {
         let source = self.task_worktrees.as_ref().ok_or_else(|| {
             "task worktrees not configured on this core (host must attach the layout)".to_string()

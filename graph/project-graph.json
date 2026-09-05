@@ -1473,7 +1473,7 @@
    "milestone": "M2",
    "order": 6,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
     "commit:063cede",
@@ -1503,7 +1503,10 @@
     "log:docs/evidence/phase2-5-run-resume-2026-09-06.log",
     "receipt:aba88a5b66765c374de548c132be8732e3675fb4992cdb882623523d8485a806",
     "run:2026-09-06T00:10Z/core_kill_mid_run_resumes_from_checkpoint",
-    "run:2026-09-06T00:10Z/core_kill_first_tool_resumes_with_note"
+    "run:2026-09-06T00:10Z/core_kill_first_tool_resumes_with_note",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "receipt:92fb66867ff120151ddd83804be5aca1d360bd548d4333bf71429d47aeb97fa0",
+    "run:2026-09-06T01:10Z/shell_output_streams_and_pages_through_output_refs"
    ],
    "notes": [
     {
@@ -1679,10 +1682,22 @@
      "from": "AUDITING",
      "to": "IMPLEMENTING",
      "note": "Phase 2 item 6 PARTIAL (commit dfc923a): argv JSON-array form + shell-words string parsing DONE (unit + always-on daemon coverage through e2e_002 array form); Core-spawned modbit-execd when MODBIT_EXECD_ADDR unset DONE (daemon test core_spawns_its_own_execd_when_none_is_configured). REMAINING before item close: stream output chunks as run events during execution and raise the 8KB captured tail to a paginated OutputRef (needs a streaming sink through the tool-handler boundary)."
+    },
+    {
+     "at": "2026-09-05T23:46:37Z",
+     "from": "IMPLEMENTING",
+     "to": "IMPLEMENTING",
+     "note": "Phase 2.6 second half slice: ToolOutputSink through the registry boundary (shared run-plane sequence accounting + run cell with the observer); shell.run drains broker output DURING execution (chunk events with bounded previews) and stores the full bytes behind a paginated OutputRef (runtime output_refs table wired into EventStore); ReadOutputRef surface RPC pages ranges server-clamped."
+    },
+    {
+     "at": "2026-09-05T23:47:41Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Phase 2 item 6 COMPLETE (with dfc923a): shell.run accepts JSON-array argv + shell-words strings, the Core spawns its own execd broker, output streams as bounded tool_output_chunk run events DURING execution, and the full bytes live behind a paginated OutputRef read over the new ReadOutputRef surface RPC. Runtime output_refs table wired into production for the first time. Mutations A (no chunks) and B (no OutputRef) both detected. ALL SIX Phase 2 items now implemented; only the phase exit roll-ups and the five-night nightly gate remain."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T23:13:59Z"
+   "status_changed_on": "2026-09-05T23:47:41Z"
   },
   {
    "id": "M2.8",
