@@ -210,7 +210,7 @@ pub fn record_effect(
         return Err(LedgerError::CompensationReceiptRequired);
     }
     Ok(EffectRecord {
-        effect_id: format!("effect-{}", sha256_hex(name.as_bytes())[..12].to_string()),
+        effect_id: format!("effect-{}", &sha256_hex(name.as_bytes())[..12]),
         name: name.to_string(),
         reversibility,
         compensation_receipt: compensation_receipt.map(|s| s.to_string()),
