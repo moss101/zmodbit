@@ -1697,8 +1697,20 @@
    "milestone": "M5",
    "order": 0,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
+    "commit:a4719eb"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-05T06:04:34Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks (task-scoped projection 0096, isolated composition sandbox 0231 with no ambient authority, registry-routed bindings 0210, exec/wait/request_user_input 0097, manifest/selector/compiler with sha256 provenance pinning 0105/0114/0181, token-economics benchmark 0116+0213, evolution lab shadow/EXPERIMENT 0196-0207/0247/0248) — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-05T06:04:34Z"
   },
   {
    "id": "M5.2",
@@ -1708,8 +1720,20 @@
    "milestone": "M5",
    "order": 1,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
+    "commit:a4719eb"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-05T06:04:34Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks (task-scoped projection 0096, isolated composition sandbox 0231 with no ambient authority, registry-routed bindings 0210, exec/wait/request_user_input 0097, manifest/selector/compiler with sha256 provenance pinning 0105/0114/0181, token-economics benchmark 0116+0213, evolution lab shadow/EXPERIMENT 0196-0207/0247/0248) — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-05T06:04:34Z"
   },
   {
    "id": "M5.3",
@@ -1719,8 +1743,20 @@
    "milestone": "M5",
    "order": 2,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
+    "commit:a4719eb"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-05T06:04:34Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks (task-scoped projection 0096, isolated composition sandbox 0231 with no ambient authority, registry-routed bindings 0210, exec/wait/request_user_input 0097, manifest/selector/compiler with sha256 provenance pinning 0105/0114/0181, token-economics benchmark 0116+0213, evolution lab shadow/EXPERIMENT 0196-0207/0247/0248) — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-05T06:04:34Z"
   },
   {
    "id": "M5.4",
@@ -1730,8 +1766,20 @@
    "milestone": "M5",
    "order": 3,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
+    "commit:a4719eb"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-05T06:04:34Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks (task-scoped projection 0096, isolated composition sandbox 0231 with no ambient authority, registry-routed bindings 0210, exec/wait/request_user_input 0097, manifest/selector/compiler with sha256 provenance pinning 0105/0114/0181, token-economics benchmark 0116+0213, evolution lab shadow/EXPERIMENT 0196-0207/0247/0248) — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-05T06:04:34Z"
   },
   {
    "id": "M5.5",
@@ -1741,8 +1789,20 @@
    "milestone": "M5",
    "order": 4,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
+    "commit:a4719eb"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-05T06:04:34Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks (task-scoped projection 0096, isolated composition sandbox 0231 with no ambient authority, registry-routed bindings 0210, exec/wait/request_user_input 0097, manifest/selector/compiler with sha256 provenance pinning 0105/0114/0181, token-economics benchmark 0116+0213, evolution lab shadow/EXPERIMENT 0196-0207/0247/0248) — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-05T06:04:34Z"
   },
   {
    "id": "M5.6",
@@ -1752,8 +1812,20 @@
    "milestone": "M5",
    "order": 5,
    "source": "docs/43",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
+    "commit:a4719eb"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-05T06:04:34Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks (task-scoped projection 0096, isolated composition sandbox 0231 with no ambient authority, registry-routed bindings 0210, exec/wait/request_user_input 0097, manifest/selector/compiler with sha256 provenance pinning 0105/0114/0181, token-economics benchmark 0116+0213, evolution lab shadow/EXPERIMENT 0196-0207/0247/0248) — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-05T06:04:34Z"
   },
   {
    "id": "M6.1",
@@ -2205,8 +2277,20 @@
    "order": 6,
    "source": "docs/26_SKILL_REGISTRY_AND_EVOLUTION.md; docs/57_SKILL_EVOLUTION_REAL_TESTS.md",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
+    "commit:a4719eb"
+   ],
+   "notes": [
+    {
+     "at": "2026-09-05T06:04:34Z",
+     "from": "NOT_STARTED",
+     "to": "COMPLETE",
+     "note": "Capability landed via constituent IMP tasks (task-scoped projection 0096, isolated composition sandbox 0231 with no ambient authority, registry-routed bindings 0210, exec/wait/request_user_input 0097, manifest/selector/compiler with sha256 provenance pinning 0105/0114/0181, token-economics benchmark 0116+0213, evolution lab shadow/EXPERIMENT 0196-0207/0247/0248) — all green on 3-OS CI"
+    }
+   ],
+   "status_changed_on": "2026-09-05T06:04:34Z"
   },
   {
    "id": "M6.7",
@@ -25269,5 +25353,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-05T06:03:07Z"
+ "updated_on": "2026-09-05T06:04:34Z"
 }
