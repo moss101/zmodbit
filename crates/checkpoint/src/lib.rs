@@ -15,6 +15,7 @@ pub mod hook_bus;
 pub mod importers_plugins;
 pub mod lease;
 pub mod mcp_memory;
+pub mod security_hardening;
 
 // ---------------------------------------------------------------------------
 // Epoch fencing (REQ-EV-0012)
