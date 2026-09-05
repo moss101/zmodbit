@@ -311,6 +311,74 @@ fn spawn_core(
     (child, daemon.expect("daemon addr"))
 }
 
+/// Phase 2.6: spawn the core with NO MODBIT_EXECD_ADDR — the Core must
+/// spawn its own modbit-execd child (every host path gets a broker).
+fn spawn_core_without_execd(
+    repo_root: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String) {
+    let db_dir = tempdir("db");
+    let exe = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-core");
+    let mut command = Command::new(exe);
+    let mut command = command.env("MODBIT_CORE_DB", db_dir.join("core.db"));
+    if !cfg!(windows) {
+        command = command.env("MODBIT_SOCKET", db_dir.join("s.sock"));
+    }
+    let mut child = command
+        .env("MODBIT_HTTP_ADDR", "127.0.0.1:0")
+        .env("MODBIT_REPO_ROOT", repo_root)
+        .env("MODBIT_WORKTREE_ROOT", worktree_root)
+        .env_remove("MODBIT_EXECD_ADDR")
+        .env("MODBIT_BASE_URL", format!("http://{model_addr}"))
+        .env("MODBIT_MODEL", "fixture-model")
+        .env("MODBIT_PROVIDER", "openai")
+        .env("OPENAI_API_KEY", "fixture-key")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn modbit-core");
+
+    let stdout = child.stdout.take().unwrap();
+    let mut reader = BufReader::new(stdout);
+    let mut line = String::new();
+    reader.read_line(&mut line).expect("core boot line");
+    std::thread::spawn(move || {
+        for _ in reader.lines() {}
+    });
+
+    let stderr = child.stderr.take().unwrap();
+    let mut err_reader = BufReader::new(stderr);
+    let mut daemon = None;
+    let mut spawned_execd = false;
+    while daemon.is_none() {
+        let mut l = String::new();
+        match err_reader.read_line(&mut l) {
+            Ok(0) => break,
+            Ok(_) => {
+                eprintln!("[core] {}", l.trim_end());
+                if l.contains("spawned modbit-execd on ") {
+                    spawned_execd = true;
+                }
+                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                    daemon = Some(addr.to_string());
+                }
+            }
+            Err(_) => break,
+        }
+    }
+    assert!(
+        spawned_execd,
+        "the Core must spawn its own execd when MODBIT_EXECD_ADDR is unset"
+    );
+    std::thread::spawn(move || {
+        for line in err_reader.lines().map_while(Result::ok) {
+            eprintln!("[core] {line}");
+        }
+    });
+    (child, daemon.expect("daemon addr"))
+}
+
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
     let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
@@ -472,6 +540,43 @@ fn anthropic_wire_body_carries_typed_roles() {
     let content: serde_json::Value =
         serde_json::from_str(rblocks[0]["content"].as_str().unwrap()).unwrap();
     assert!(content["content"].as_str().unwrap().contains("ship proper message roles"));
+
+    core.kill().ok();
+    core.wait().ok();
+}
+
+/// Phase 2.6 (Future-tasks §2.4): with no broker address provided, the
+/// Core spawns modbit-execd itself — a real shell.run works end to end
+/// (the string argv form with quotes rides the same turn).
+#[test]
+fn core_spawns_its_own_execd_when_none_is_configured() {
+    let _guard = E2E_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+    let repo = notes_fixture("ee");
+    let worktrees = tempdir("ew");
+    let (model, _bodies) = spawn_model_fixture(vec![
+        openai_tool_turn("c1", "shell.run", r#"{"argv":["sh","-c","echo broker-ok"]}"#),
+        text_turn("done"),
+    ]);
+    let (mut core, daemon) = spawn_core_without_execd(&repo, &worktrees, model);
+
+    let created = request(
+        &daemon,
+        pb::surface_request::Request::CreateTask(pb::CreateTaskCommand {
+            session_id: String::new(),
+            title: "shell without exported broker".into(),
+            prompt: "Run the echo command.".into(),
+        }),
+    );
+    assert!(created.ok, "{}", created.error);
+    let task_id = created.task.unwrap().task_id;
+    for payload in [
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+    ] {
+        let r = request(&daemon, payload);
+        assert!(r.ok, "{}", r.error);
+    }
+    wait_ready_for_review(&daemon, &task_id);
 
     core.kill().ok();
     core.wait().ok();

@@ -227,7 +227,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M2.4` | E2E_PROVEN | Tool Registry + direct `fs/git/shell/test` tools |  |
 | `M2.5` | E2E_PROVEN | Capability Kernel + basic approval flow |  |
 | `M2.6` | E2E_PROVEN | Provider Gateway OpenAI + Anthropic streaming |  |
-| `M2.7` | E2E_PROVEN | Basic Prompt Compiler and one-agent runtime |  |
+| `M2.7` | AUDITING | Basic Prompt Compiler and one-agent runtime |  |
 | `M2.8` | E2E_PROVEN | Verification engine build/test checks |  |
 | `M2.9` | E2E_PROVEN | Trusted Code Review Surface |  |
 | `M2.10` | WIRED | MediaEnvelope + Media Pipeline (before any multimodal provider/tool feature) | real PNG/JPEG/text-PDF read through fs.read with provenance, budgets and artifact digests |

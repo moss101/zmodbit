@@ -882,7 +882,7 @@ pub fn build_worktree_registry(
             param_type: ParamType::Str,
             required: true,
             default: None,
-            description: "Whitespace-separated command argv (structured argv only, no shell)".into(),
+            description: "Command argv: a JSON array of strings (preferred, exact argv semantics) or a single string parsed with shell word splitting (quotes honored, no shell expansion)".into(),
         },
     );
     registry
@@ -900,13 +900,25 @@ pub fn build_worktree_registry(
                     let execd = execd.as_ref().ok_or(
                         "shell execution unavailable: no modbit-execd broker configured (set MODBIT_EXECD_ADDR)",
                     )?;
-                    let argv = args
-                        .get("argv")
-                        .and_then(|v| v.as_str())
-                        .ok_or("missing argv")?
-                        .split_whitespace()
-                        .map(String::from)
-                        .collect::<Vec<_>>();
+                    // Phase 2.6: argv accepts a JSON array (exact argv) or a
+                    // string split on shell words (quotes honored).
+                    let argv = match args.get("argv") {
+                        Some(serde_json::Value::Array(items)) => {
+                            let mut argv = Vec::with_capacity(items.len());
+                            for item in items {
+                                let part = item
+                                    .as_str()
+                                    .ok_or("argv array entries must be strings")?;
+                                if part.is_empty() {
+                                    return Err("argv array entries must be non-empty".into());
+                                }
+                                argv.push(part.to_string());
+                            }
+                            argv
+                        }
+                        Some(serde_json::Value::String(command)) => split_shell_words(command)?,
+                        _ => return Err("missing argv (JSON array of strings, or a command string)".into()),
+                    };
                     if argv.is_empty() {
                         return Err("empty argv".into());
                     }
@@ -1237,6 +1249,48 @@ fn interrupted_tasks(store: &Arc<EventStore>) -> Vec<String> {
             .map(|rows| rows.flatten().collect())
             .unwrap_or_default()
     })
+}
+
+/// Shell word splitting for the string form of `shell.run` argv (Phase
+/// 2.6): whitespace-separated words with single/double-quoted segments
+/// honored (a quote makes whitespace literal until the matching close).
+/// No expansions, no escapes beyond the quotes themselves — the argv is
+/// still passed to exec WITHOUT a shell.
+fn split_shell_words(command: &str) -> Result<Vec<String>, String> {
+    let mut words = Vec::new();
+    let mut current = String::new();
+    let mut in_single = false;
+    let mut in_double = false;
+    let mut started = false;
+    for ch in command.chars() {
+        match ch {
+            '\'' if !in_double => {
+                in_single = !in_single;
+                started = true;
+            }
+            '"' if !in_single => {
+                in_double = !in_double;
+                started = true;
+            }
+            c if c.is_whitespace() && !in_single && !in_double => {
+                if started {
+                    words.push(std::mem::take(&mut current));
+                    started = false;
+                }
+            }
+            c => {
+                current.push(c);
+                started = true;
+            }
+        }
+    }
+    if in_single || in_double {
+        return Err("unterminated quote in argv string".into());
+    }
+    if started {
+        words.push(current);
+    }
+    Ok(words)
 }
 
 /// Releases the in-flight claim when the run ends (success or failure).
@@ -1607,6 +1661,31 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
+#[cfg(test)]
+mod shell_words_tests {
+    use super::split_shell_words;
+
+    /// Phase 2.6: the string form honors quotes; the array form is exact.
+    #[test]
+    fn shell_words_splitting_honors_quotes() {
+        assert_eq!(
+            split_shell_words("sh run_tests.sh").unwrap(),
+            vec!["sh".to_string(), "run_tests.sh".to_string()]
+        );
+        assert_eq!(
+            split_shell_words("echo \"hello world\" tail").unwrap(),
+            vec!["echo".to_string(), "hello world".to_string(), "tail".to_string()]
+        );
+        assert_eq!(
+            split_shell_words("echo 'a  b' \"c d\"").unwrap(),
+            vec!["echo".to_string(), "a  b".to_string(), "c d".to_string()]
+        );
+        assert_eq!(split_shell_words("  ").unwrap(), Vec::<String>::new());
+        assert!(split_shell_words("echo \"unterminated").is_err());
+        assert!(split_shell_words("echo 'unterminated").is_err());
+    }
 }
 
 #[cfg(test)]

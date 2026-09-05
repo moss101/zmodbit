@@ -1473,7 +1473,7 @@
    "milestone": "M2",
    "order": 6,
    "source": "docs/43",
-   "status": "E2E_PROVEN",
+   "status": "AUDITING",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
     "commit:063cede",
@@ -1667,10 +1667,16 @@
      "from": "REAL_TESTING",
      "to": "E2E_PROVEN",
      "note": "Phase 2.5 (M4 recovery spine) closed: REAL SIGKILL mid-run on two docs/54 kill points; restart resumes from the durable checkpoint (typed roles + call-id linkage + checkpointed result content asserted on the post-restart wire request); checkpoint-less kills resume as fresh attempts carrying the interruption note; checkpoints durable in SQLite. Mutation (loader pinned to None) detected. E2E-004's approval half remains for Phase 5 (approval loop unbuilt); M4 milestone itself stays open for its remaining tasks (protocol-state/checkpoint crate linkage where behavior requires them)."
+    },
+    {
+     "at": "2026-09-05T23:10:56Z",
+     "from": "E2E_PROVEN",
+     "to": "AUDITING",
+     "note": "Phase 2 item 6 (Future-tasks §2.4): audit shell.run. BROKEN-DRIFTED — argv accepts only a string split on whitespace (no quoting, no JSON array form despite the schema docs); output is fully captured then tailed 8KB (no paginated OutputRef, no streamed chunks); the Core never spawns modbit-execd — every host must export MODBIT_EXECD_ADDR by hand (the desktop path has no shell otherwise)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T23:10:32Z"
+   "status_changed_on": "2026-09-05T23:10:56Z"
   },
   {
    "id": "M2.8",
