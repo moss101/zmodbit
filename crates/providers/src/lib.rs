@@ -6,14 +6,16 @@ pub mod gateway;
 pub mod media_split;
 pub mod routing;
 pub mod transport;
+pub mod usage;
 pub use gateway::{
     anthropic_request_body, extract_usage_frame, openai_request_body, parse_anthropic_sse_payload,
-    parse_openai_sse_payload, sse_data_line, test_request, ChatMessage, ModelRequest, Role,
-    StreamEvent, UsageFrame,
+    parse_openai_sse_payload, sse_data_line, test_request, ChatMessage, ToolCallAssembler,
+    ToolCallData, ToolDefinition, ModelRequest, Role, StreamEvent, UsageFrame,
 };
+pub use usage::TokenUsage;
 pub use transport::{
     EnvSecretBroker, EventStream, HttpStreamTransport, ModelTransport, OutgoingRequest, RetryPolicy,
-    SecretBroker, TokenUsage, TransportError, TransportEvent,
+    SecretBroker, TransportError, TransportEvent,
 };
 pub use routing::{
     fallback_chain, route, EnterprisePolicy, ModelCapability, RouteDecision, TaskFingerprint,

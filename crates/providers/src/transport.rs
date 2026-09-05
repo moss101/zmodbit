@@ -110,11 +110,8 @@ pub struct OutgoingRequest {
 }
 
 /// Provider-neutral usage snapshot captured from usage-bearing frames.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub struct TokenUsage {
-    pub input_tokens: u64,
-    pub output_tokens: u64,
-}
+/// (Definition shared with the SSE parsers: `crate::usage::TokenUsage`.)
+pub use crate::usage::TokenUsage;
 
 /// One incrementally delivered transport event.
 #[derive(Clone, Debug, PartialEq, Eq)]

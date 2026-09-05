@@ -54,6 +54,8 @@ pub struct AgentRunResult {
     pub assembled_text: String,
     pub tool_outcomes: Vec<ToolOutcome>,
     pub stop_reason: Option<String>,
+    /// Last usage snapshot reported by the provider stream (docs/15).
+    pub usage: Option<modbit_providers::TokenUsage>,
 }
 
 #[derive(Debug)]
@@ -117,6 +119,7 @@ impl<'a> OneAgentRuntime<'a> {
         let mut assembled = String::new();
         let mut tool_outcomes: Vec<ToolOutcome> = Vec::new();
         let mut stop_reason: Option<String> = None;
+        let mut last_usage: Option<modbit_providers::TokenUsage> = None;
         // Conversation grows across the repair loop (tool results feed back).
         let mut conversation: Vec<String> = vec![compiled.compiled.clone()];
 
@@ -130,24 +133,35 @@ impl<'a> OneAgentRuntime<'a> {
                     assembled_text: assembled.clone(),
                     tool_outcomes,
                     stop_reason: Some("max_turns_exceeded".into()),
+                    usage: last_usage,
                 });
             }
             turns_used += 1;
 
             // Step 4: invoke the model through the normalized gateway shape.
+            // Tool projection (docs/15): the registry's typed schemas
+            // travel to the provider so the model can call real tools.
+            let tools = self
+                .registry
+                .tool_definitions()
+                .into_iter()
+                .map(|t| modbit_providers::gateway::ToolDefinition {
+                    name: t.name,
+                    description: t.description,
+                    parameters: t.parameters,
+                })
+                .collect();
             let request = ModelRequest {
                 request_id: format!("{}-turn-{turns_used}", task.task_id),
                 model: task.model.clone(),
                 system: task.system_policy.clone(),
                 messages: conversation
                     .iter()
-                    .map(|c| modbit_providers::gateway::ChatMessage {
-                        role: modbit_providers::gateway::Role::User,
-                        content: c.clone(),
-                    })
+                    .map(|c| modbit_providers::gateway::ChatMessage::user(c.clone()))
                     .collect(),
                 max_output_tokens: 4096,
                 temperature: 0.2,
+                tools,
             };
             let events = self
                 .transport
@@ -155,17 +169,30 @@ impl<'a> OneAgentRuntime<'a> {
                 .map_err(AgentError::Transport)?;
 
             // Step 5: parse typed events; reject invalid tool payloads
-            // BEFORE side effects.
+            // BEFORE side effects. Fragmented tool calls are merged by the
+            // assembler so both providers yield the same uniform contract.
+            let mut assembler = modbit_providers::gateway::ToolCallAssembler::new();
             let mut requested_tools: Vec<(String, String, Value)> = Vec::new();
             for event in events {
+                for event in assembler.feed(event) {
                 match event {
                     StreamEvent::Delta(text) => {
                         assembled.push_str(&text);
+                    }
+                    StreamEvent::Usage(usage) => {
+                        last_usage = Some(usage);
                     }
                     StreamEvent::Completed {
                         stop_reason: reason,
                     } => {
                         stop_reason = reason;
+                    }
+                    StreamEvent::ToolCallDelta { .. } => {
+                        // The assembler consumes fragments; reaching this
+                        // arm is a runtime invariant violation.
+                        return Err(AgentError::Transport(
+                            "internal: ToolCallDelta escaped the assembler".into(),
+                        ));
                     }
                     StreamEvent::ToolRequest {
                         call_id,
@@ -192,6 +219,7 @@ impl<'a> OneAgentRuntime<'a> {
                         }
                     }
                 }
+                }
             }
 
             if requested_tools.is_empty() {
@@ -207,6 +235,7 @@ impl<'a> OneAgentRuntime<'a> {
                     assembled_text: assembled,
                     tool_outcomes,
                     stop_reason,
+                    usage: last_usage,
                 });
             }
 

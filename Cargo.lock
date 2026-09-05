@@ -811,6 +811,7 @@ dependencies = [
 name = "modbit-core-runtime"
 version = "0.1.0"
 dependencies = [
+ "futures",
  "modbit-domain",
  "modbit-event-store",
  "modbit-policy",
@@ -826,6 +827,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "tokio",
  "uuid",
 ]
 
