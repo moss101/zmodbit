@@ -10,6 +10,7 @@
 pub mod agent_fleet;
 pub mod agent_profiles_plans;
 pub mod agent_runtime_batch2;
+pub mod agent_runtime_batch3;
 pub mod config;
 pub mod daemon;
 pub mod delegation;
