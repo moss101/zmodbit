@@ -8911,8 +8911,9 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0144",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-05T06:41:20Z"
   },
   {
    "id": "IMP-EV-0145",
@@ -8925,8 +8926,9 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0145",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-05T06:41:20Z"
   },
   {
    "id": "IMP-EV-0146",
@@ -8975,8 +8977,9 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0150",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-05T06:41:20Z"
   },
   {
    "id": "IMP-EV-0151",
@@ -8989,8 +8992,9 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0151",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-05T06:41:20Z"
   },
   {
    "id": "IMP-EV-0152",
@@ -10776,8 +10780,9 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0267",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-05T06:41:20Z"
   },
   {
    "id": "IMP-EV-0268",
@@ -10858,8 +10863,9 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0272",
    "source": "docs/41",
-   "status": "NOT_STARTED",
-   "evidence": []
+   "status": "IMPLEMENTING",
+   "evidence": [],
+   "status_changed_on": "2026-09-05T06:41:20Z"
   },
   {
    "id": "IMP-EV-0273",
@@ -25429,5 +25435,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-05T06:35:28Z"
+ "updated_on": "2026-09-05T06:41:20Z"
 }

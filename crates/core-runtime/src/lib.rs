@@ -13,6 +13,7 @@ pub mod agent_runtime_batch2;
 pub mod config;
 pub mod daemon;
 pub mod delegation;
+pub mod fleet_admission;
 pub mod one_agent;
 pub mod surface;
 
