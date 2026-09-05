@@ -348,7 +348,7 @@ fn e2e_001_fresh_local_coding_task_end_to_end() {
     // Events stream over the daemon while the run proceeds (docs/30).
     let _events = stream_events_until(&core, |events| events.len() >= 2, Duration::from_secs(20));
 
-    let state = wait_for_terminal(&core, &task_id, Duration::from_secs(600));
+    let state = wait_for_terminal(&core, &task_id, Duration::from_secs(1800));
     assert_eq!(
         state,
         pb::TaskStatus::ReadyForReview as i32,
@@ -388,7 +388,7 @@ fn e2e_002_command_failure_repair_not_task_failure() {
         E2E001_PROMPT,
     );
 
-    let state = wait_for_terminal(&core, &task_id, Duration::from_secs(600));
+    let state = wait_for_terminal(&core, &task_id, Duration::from_secs(1800));
     assert_ne!(
         state,
         pb::TaskStatus::Failed as i32,
@@ -472,5 +472,5 @@ fn e2e_003_stream_reconnect_replays_losslessly() {
             || state == pb::TaskStatus::Waiting as i32,
         "task continues across stream reconnect, got {state}"
     );
-    wait_for_terminal(&core, &task_id, Duration::from_secs(600));
+    wait_for_terminal(&core, &task_id, Duration::from_secs(1800));
 }

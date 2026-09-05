@@ -79,7 +79,10 @@ impl SchedulerConfig {
             broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
             worktrees: EnvWorktreeSource::from_env()
                 .map(|s| Arc::new(s) as Arc<dyn WorktreeSource>),
-            request_timeout: Duration::from_secs(180),
+            // Total-request budget: reasoning-tier models legitimately
+            // stream one response for several minutes; 180s killed healthy
+            // streams (observed live: first invoke never completed).
+            request_timeout: Duration::from_secs(600),
             max_turns: 8,
             execd_addr: std::env::var("MODBIT_EXECD_ADDR").ok().filter(|s| !s.is_empty()),
         }
