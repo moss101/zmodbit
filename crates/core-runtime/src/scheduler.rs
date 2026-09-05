@@ -742,10 +742,13 @@ fn read_workspace_rules(worktree: &std::path::Path) -> String {
             .collect();
         mdc.sort();
         for path in mdc {
+            // Display paths are canonicalized to forward slashes so the
+            // provenance (and the model-visible segment) is OS-uniform.
             let display = path
                 .strip_prefix(worktree)
                 .map(|p| p.display().to_string())
-                .unwrap_or_else(|_| path.display().to_string());
+                .unwrap_or_else(|_| path.display().to_string())
+                .replace('\\', "/");
             add_file(&mut sections, &path, &display);
         }
     }
@@ -771,7 +774,8 @@ fn read_workspace_rules(worktree: &std::path::Path) -> String {
                         let display = path
                             .strip_prefix(worktree)
                             .map(|p| p.display().to_string())
-                            .unwrap_or_else(|_| path.display().to_string());
+                            .unwrap_or_else(|_| path.display().to_string())
+                            .replace('\\', "/");
                         add_file(sections, &path, &display);
                     }
                 }
