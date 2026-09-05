@@ -6,8 +6,8 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 68,
-    "docs_bytes": 508235
+    "root_and_tooling": 84,
+    "docs_bytes": 508472
   },
   "sections": [
     {
@@ -301,8 +301,8 @@
       "section": "implementation",
       "section_title": "Implementation specifications",
       "title": "Dependency and Binding Decisions",
-      "bytes": 1492,
-      "sha256": "96725161310f8c53975cc067e437c164e4d8def3c1efbfb40394573ec71ae4c6"
+      "bytes": 1729,
+      "sha256": "f25c4f8270ea42e0ea9273884c5826f5c3f3e02c297703a510ebdda327f790ae"
     },
     {
       "path": "docs/36_BUILD_BUY_DEPENDENCY_AND_LICENSE_POLICY.md",
@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 791132,
-      "sha256": "eb69f5e7309a90b07db0c60ab8234c0de093f3c6b128229690390adb5dc2ece2"
+      "bytes": 796315,
+      "sha256": "f85c23e79e2e32063ede4fcffccddc4defa7bf19f08ae6e3b66066ad48032a72"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -741,8 +741,8 @@
     },
     {
       "path": "Cargo.toml",
-      "bytes": 484,
-      "sha256": "0e74629caa64c7d248556e7c48acb53e70da550c36c99c20948504b8fd6995a7"
+      "bytes": 737,
+      "sha256": "3219aa934f67eb7460eefaf8d933e7822c106ff1d2dff81405c8de4bd3160a4a"
     },
     {
       "path": "pnpm-workspace.yaml",
@@ -771,23 +771,28 @@
     },
     {
       "path": "apps/desktop/electron/bridge-schema.cjs",
-      "bytes": 4651,
-      "sha256": "25c3a73660ed33a15151993b127111d8ec729590951bfdec70cd204d67df4b62"
+      "bytes": 6596,
+      "sha256": "243e063290b3e20f734e95f1fada49d94e1e7ac8c4dca8979daddb555df30327"
+    },
+    {
+      "path": "apps/desktop/electron/event-stream.cjs",
+      "bytes": 2901,
+      "sha256": "e32366e9970eecf2325129f9dff40f427107d0e864d2d24ea5db5552b2001a65"
     },
     {
       "path": "apps/desktop/electron/main.cjs",
-      "bytes": 5045,
-      "sha256": "7073604d0cb8f0247bd4f3d0bfd28647d6600c19b73a7ef43dba9262de4019ab"
+      "bytes": 7829,
+      "sha256": "f891cd90a31f1297513cf038c9559815d9676227ac59ff2a8fee614d163e1bd6"
     },
     {
       "path": "apps/desktop/electron/preload.cjs",
-      "bytes": 692,
-      "sha256": "7970aa0ef8822ecc426ff163d560636cce1a28b0d5748454e7efbc71d4a5476d"
+      "bytes": 1661,
+      "sha256": "be309ab695ab1f1c5f438d3beaa6ebbbaf16d2b0862fab879edcf67adb533f54"
     },
     {
       "path": "apps/desktop/electron/surface-client.cjs",
-      "bytes": 11768,
-      "sha256": "92020c6ecc6838bb4e7eced9e05263bc75d5c5b3e6795f650b91327bff192b75"
+      "bytes": 14973,
+      "sha256": "3eb9f05287f05c7385fb5d8b1c0e58f78c82789809e951f31c2619f08b8b0999"
     },
     {
       "path": "apps/desktop/index.html",
@@ -796,13 +801,18 @@
     },
     {
       "path": "apps/desktop/package.json",
-      "bytes": 485,
-      "sha256": "e29470ae01c6516082c8a466b4b361a55c9a76b4605afa9a4b2198f965fafce8"
+      "bytes": 633,
+      "sha256": "8d7e6bcfcb00c699953c7235723c6476088dcf64c355ae88bdf7ca3a95d4074e"
     },
     {
       "path": "apps/desktop/src/App.tsx",
-      "bytes": 3764,
-      "sha256": "8ccd9ef39784bdcde1777e3276977c988ed9f71af87dd89ba6430bf2a3c59990"
+      "bytes": 4651,
+      "sha256": "46b6bcbdcf95d44805a46072db10bf3271f9fd00731d65512d1a044bedee3ee9"
+    },
+    {
+      "path": "apps/desktop/src/bridge-schema.test.ts",
+      "bytes": 1527,
+      "sha256": "6df5ce2dced367e8f6c7b939d8bd09aad0448896934dc1028083244013b0027b"
     },
     {
       "path": "apps/desktop/src/code-review/revisions.test.ts",
@@ -823,6 +833,11 @@
       "path": "apps/desktop/src/context-inspector/inspector.ts",
       "bytes": 1518,
       "sha256": "f38ab87c66e744fa8c0a1b6b5433c445655b5bddcacbf72dea4b41b608503d8b"
+    },
+    {
+      "path": "apps/desktop/src/event-stream.test.ts",
+      "bytes": 1611,
+      "sha256": "303fb241aa58f729bd55e224c333a1004efba8e814ff88383fa1119cd2c57685"
     },
     {
       "path": "apps/desktop/src/fleet/grouping.test.ts",
@@ -846,8 +861,8 @@
     },
     {
       "path": "apps/desktop/src/global.d.ts",
-      "bytes": 654,
-      "sha256": "1c577b7c9682d24ee958c8969c3069174126ad402a4c7b6db85bfe6ab58dd15f"
+      "bytes": 1891,
+      "sha256": "28ef286e8ab3c1501dab8cbf4da70d96f26f6ffffc8ff78867a51528537a04cd"
     },
     {
       "path": "apps/desktop/src/main.ts",
@@ -871,8 +886,23 @@
     },
     {
       "path": "apps/desktop/src/styles.css",
-      "bytes": 785,
-      "sha256": "80b36bcf1afafab6a373c59063fa8358e50fd36cad614dd69ccd13631e7b7862"
+      "bytes": 4024,
+      "sha256": "ebb7b83f7347d098ec019701e4acb02779b024d9d93db302aa46154c4d1d1dbc"
+    },
+    {
+      "path": "apps/desktop/src/task-workspace/TaskWorkspace.tsx",
+      "bytes": 5621,
+      "sha256": "70a8eaa2585fb0f20776da32ecc071fffb26030990f90c4b49ca517dfe541b63"
+    },
+    {
+      "path": "apps/desktop/src/task-workspace/view.test.ts",
+      "bytes": 3375,
+      "sha256": "653a9108b6f1f4e4621f394d85058287273735dfdf0cbd103131772816d89146"
+    },
+    {
+      "path": "apps/desktop/src/task-workspace/view.ts",
+      "bytes": 4945,
+      "sha256": "109337688351c06b4711e92936eef524d896ef62d44e36992bc00b25e90f60ad"
     },
     {
       "path": "apps/desktop/test/bridge.test.ts",
@@ -900,9 +930,14 @@
       "sha256": "2fcf3eafcce3ccff939244c77c9faa0ebf7106edf2ba7f1cbc9d300524100379"
     },
     {
+      "path": "docs/decisions/ADR-0002-tokio-reqwest-rustls-transport.md",
+      "bytes": 5471,
+      "sha256": "6328af18e0ecf484d1819e7c4009867dd836894d2d73042cdc550f2543bd14a9"
+    },
+    {
       "path": "docs/decisions/README.md",
-      "bytes": 1657,
-      "sha256": "59264591f661d13c95c0e384f27a04852164fbaa878c5ec172ac219b2e748847"
+      "bytes": 1862,
+      "sha256": "2108152c6046929fe40d278036ea9f2911fd8567ccf8663b53bd88a5b3833493"
     },
     {
       "path": "docs/decisions/TEMPLATE.md",
@@ -911,13 +946,18 @@
     },
     {
       "path": "packages/design-tokens/package.json",
-      "bytes": 234,
-      "sha256": "20d0f683df2fdb5748ef6582f73d8a643158b2403bc9f1472be1baf0ccb9847a"
+      "bytes": 440,
+      "sha256": "1dc8d96ad306773e185e560b26b6e4b3f0adf98374450f5ad61e5db3b1f733f0"
+    },
+    {
+      "path": "packages/design-tokens/src/index.test.ts",
+      "bytes": 1580,
+      "sha256": "09c9606db66d738f91d8c148a6d747aaac7f1944f5c4ad1c6a845411ef778963"
     },
     {
       "path": "packages/design-tokens/src/index.ts",
-      "bytes": 204,
-      "sha256": "f2d07647db91487425dbc9e901b36f5f78b22a83719c3cb65cbaf3d8abe78d55"
+      "bytes": 4177,
+      "sha256": "b4df97eb07a1e8481b8906e57e95ec15e581d427504e50c709bcdb8d39db4c80"
     },
     {
       "path": "packages/design-tokens/tsconfig.json",
@@ -926,8 +966,8 @@
     },
     {
       "path": "packages/surface-protocol/package.json",
-      "bytes": 420,
-      "sha256": "bbb218f7a79544c401d7df1f6d606a9fb69a4ee6ab6e208b2189bbf37130dda8"
+      "bytes": 577,
+      "sha256": "7f9a4c0ea8b862692872943f1dd8a3491fd1a6e452dabdd5e98e03b8730f799a"
     },
     {
       "path": "packages/surface-protocol/scripts/generate.mjs",
@@ -961,8 +1001,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 41596,
-      "sha256": "67724e8d0b3d3c28f56b3e36efac82a49c0ec235078e99de802d178593d81d90"
+      "bytes": 73042,
+      "sha256": "1723dab3eae15242ee3c973e1cbb6d5fa475b73d31a2a4d6734dabea0c0a0fde"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",
@@ -971,8 +1011,8 @@
     },
     {
       "path": "packages/surface-protocol/src/index.ts",
-      "bytes": 729,
-      "sha256": "11be0e5c80215d6c2e4d98b96cddfd9c09496a4c8aae680fe0c96f629c672e10"
+      "bytes": 923,
+      "sha256": "31d1ec5391123ce8b673687d677619415eb53f54651239d1599263e46e1e862e"
     },
     {
       "path": "packages/surface-protocol/test/wire-compat.test.ts",
@@ -986,18 +1026,58 @@
     },
     {
       "path": "packages/ui/package.json",
-      "bytes": 223,
-      "sha256": "0690dc195afbe986050db57fe4dbc696df44362c4264502aa4768ed43d6d6bfd"
+      "bytes": 652,
+      "sha256": "14d0cd2a83c8a1d583e71b4b4d538ca51f257fb492c452d32c6b30ac69681ac7"
+    },
+    {
+      "path": "packages/ui/src/ActionButton.tsx",
+      "bytes": 553,
+      "sha256": "095b65ee4d712ae854661e9e20603bf89521e30b930b5b062cc8e6580ab50f2a"
+    },
+    {
+      "path": "packages/ui/src/DiffFileRow.tsx",
+      "bytes": 453,
+      "sha256": "fb6db992c1d28c20e29178c097c517f463474f04de59ef54bef5d02675fc2380"
+    },
+    {
+      "path": "packages/ui/src/Panel.tsx",
+      "bytes": 494,
+      "sha256": "c455680e0bd7e43e03f2f344e533f56677da24020b0a9fcb97a482bf4623c323"
+    },
+    {
+      "path": "packages/ui/src/StatusPill.tsx",
+      "bytes": 665,
+      "sha256": "65e14d7bd2833cae49ce32405c8bfb0cf69ae70ce536dbac6df15cc49e6bbc00"
+    },
+    {
+      "path": "packages/ui/src/SteerComposer.tsx",
+      "bytes": 874,
+      "sha256": "c4e51cdadd02eb94ab62f8fc12dab43da9285533a77f0e79c7b48db70a144aa2"
+    },
+    {
+      "path": "packages/ui/src/Timeline.tsx",
+      "bytes": 967,
+      "sha256": "6924de226512941d22d92c8c3fcb6a2e5a8977ed47de4691dd9584e0133c6d3d"
+    },
+    {
+      "path": "packages/ui/src/components.test.tsx",
+      "bytes": 2541,
+      "sha256": "30ecae5306b57c03ef84c63d51b090b86921cf35b27991ef26ff752d3f9e1ff9"
     },
     {
       "path": "packages/ui/src/index.ts",
-      "bytes": 194,
-      "sha256": "a526d54c14940b3a22dbaae3cf68391b692ee26b4b3f0a67a5a612d91db21b66"
+      "bytes": 496,
+      "sha256": "ecdbb6631ef69d9779ab131518f5ac2664bd2bc38fbb0a9be94385a5516049ff"
     },
     {
       "path": "packages/ui/tsconfig.json",
-      "bytes": 323,
-      "sha256": "8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110"
+      "bytes": 402,
+      "sha256": "21fbf660d6be3854ebe1f4fa6fa84521b64b16885bd784c314dfdac3047074e0"
+    },
+    {
+      "path": "packages/ui/vitest.config.ts",
+      "bytes": 155,
+      "sha256": "efd3d605aae54974fcf5505d7b6e432132d05bf6fc177cf6cf88e159d71f86c1"
     },
     {
       "path": "tools/architecture-lint/lint.py",

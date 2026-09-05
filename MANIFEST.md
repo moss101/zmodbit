@@ -15,13 +15,13 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 |---|---|---:|---:|
 | Authority and orientation | 00–09 | 5 | 26678 |
 | Architecture and subsystems | 10–29 | 17 | 76622 |
-| Implementation specifications | 30–39 | 8 | 29941 |
+| Implementation specifications | 30–39 | 8 | 30178 |
 | Requirements, tasks and traceability | 40–49 | 9 | 292645 |
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
 | Live state | 98–99 | 1 | 2382 |
-| **Total docs** | | **70** | **508235** |
+| **Total docs** | | **70** | **508472** |
 
 ## Specification files (`docs/`)
 
@@ -54,7 +54,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 32 | `docs/32_DESKTOP_FRONTEND_IMPLEMENTATION.md` | Desktop Frontend Implementation | implementation | 4183 | `fb96b5be03dd7699e5b3c236e179e2338c3abcf2fd71c723ec098d7ce33dc2c0` |
 | 33 | `docs/33_CORE_AND_CLOUD_BACKEND_IMPLEMENTATION.md` | Core and Cloud Backend Implementation | implementation | 4169 | `ccf8a07c3afc5ec451b6dac6a7464bc83566f630f0a68f303acfef6a05163635` |
 | 34 | `docs/34_OBSERVABILITY_COST_AND_OPERATIONS_DATA.md` | Observability, Cost, and Operations Data | implementation | 2849 | `0be1a2c47a758c70b75e1678efcadd06fdb27994beb5a1ed6769611792064243` |
-| 35 | `docs/35_DEPENDENCY_AND_BINDING_DECISIONS.md` | Dependency and Binding Decisions | implementation | 1492 | `96725161310f8c53975cc067e437c164e4d8def3c1efbfb40394573ec71ae4c6` |
+| 35 | `docs/35_DEPENDENCY_AND_BINDING_DECISIONS.md` | Dependency and Binding Decisions | implementation | 1729 | `f25c4f8270ea42e0ea9273884c5826f5c3f3e02c297703a510ebdda327f790ae` |
 | 36 | `docs/36_BUILD_BUY_DEPENDENCY_AND_LICENSE_POLICY.md` | Build / Buy / Dependency / License Decisions | implementation | 3363 | `538f768996bec4254231f7671517e68bea6cf529f51b60588a5b2dd91007071a` |
 | 37 | `docs/37_EXISTING_CODE_DONOR_AND_REUSE_POLICY.md` | Existing-Code Donor and Reuse Policy | implementation | 2968 | `3b694bd3111e152492f2973edaf293f3d0afa40d1e87b1362deda9e31f7e91b6` |
 | 40 | `docs/40_EVIDENCE_DERIVED_REQUIREMENT_LEDGER.md` | Evidence-Derived Requirement Ledger — Build Edition | requirements | 76383 | `d673606834f48960f015f4719c0b6fd956988469c39348aa859c4c0d91e20336` |
@@ -105,7 +105,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 791132 | `eb69f5e7309a90b07db0c60ab8234c0de093f3c6b128229690390adb5dc2ece2` |
+| `graph/project-graph.json` | project driver graph with live status | 796315 | `f85c23e79e2e32063ede4fcffccddc4defa7bf19f08ae6e3b66066ad48032a72` |
 | `graph/PROJECT_GRAPH.md` | human view of the graph | 22382 | `a899208ff67fdb61fd20e1cdc34c4f4ffc1ea7f4b0c03768d7e913412ba9788e` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
@@ -113,58 +113,74 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `tools/check_dossier.py` | integrity gate | 10310 | `a65618968ad3d57d0c22dbdfa74f2481e2849063c6bf4152a3fef300a05c5023` |
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
 | `.github/workflows/ci.yml` |  | 2984 | `21a25c6b6729e5457261ee403ba7251045c3111b90fce01ec385b33d6bca0f3e` |
-| `Cargo.toml` |  | 484 | `0e74629caa64c7d248556e7c48acb53e70da550c36c99c20948504b8fd6995a7` |
+| `Cargo.toml` |  | 737 | `3219aa934f67eb7460eefaf8d933e7822c106ff1d2dff81405c8de4bd3160a4a` |
 | `pnpm-workspace.yaml` |  | 93 | `4f1844ac535cd5c2607091352d8e97cd8b04a48acaf48fb69674de6597a1c1aa` |
 | `package.json` |  | 278 | `36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c` |
 | `apps/desktop/dist/assets/index-BngEqeZV.js` |  | 146638 | `e2e0c547a033d2e8e1cbef8e576bbf394c5f488745d80c2bf376906fce067f61` |
 | `apps/desktop/dist/assets/index-DrM0Ho-V.css` |  | 664 | `e0f5b17ca79348d107ea783cbc7cf8118ecae0a838287dbc82973ee6e5bfffc4` |
 | `apps/desktop/dist/index.html` |  | 448 | `5a322bc5abed3f7d0a907a96f4a5015bfe135d17db2d4d3eaebe8bfbdc2e02e1` |
-| `apps/desktop/electron/bridge-schema.cjs` |  | 4651 | `25c3a73660ed33a15151993b127111d8ec729590951bfdec70cd204d67df4b62` |
-| `apps/desktop/electron/main.cjs` |  | 5045 | `7073604d0cb8f0247bd4f3d0bfd28647d6600c19b73a7ef43dba9262de4019ab` |
-| `apps/desktop/electron/preload.cjs` |  | 692 | `7970aa0ef8822ecc426ff163d560636cce1a28b0d5748454e7efbc71d4a5476d` |
-| `apps/desktop/electron/surface-client.cjs` |  | 11768 | `92020c6ecc6838bb4e7eced9e05263bc75d5c5b3e6795f650b91327bff192b75` |
+| `apps/desktop/electron/bridge-schema.cjs` |  | 6596 | `243e063290b3e20f734e95f1fada49d94e1e7ac8c4dca8979daddb555df30327` |
+| `apps/desktop/electron/event-stream.cjs` |  | 2901 | `e32366e9970eecf2325129f9dff40f427107d0e864d2d24ea5db5552b2001a65` |
+| `apps/desktop/electron/main.cjs` |  | 7829 | `f891cd90a31f1297513cf038c9559815d9676227ac59ff2a8fee614d163e1bd6` |
+| `apps/desktop/electron/preload.cjs` |  | 1661 | `be309ab695ab1f1c5f438d3beaa6ebbbaf16d2b0862fab879edcf67adb533f54` |
+| `apps/desktop/electron/surface-client.cjs` |  | 14973 | `3eb9f05287f05c7385fb5d8b1c0e58f78c82789809e951f31c2619f08b8b0999` |
 | `apps/desktop/index.html` |  | 348 | `fe3a3fc8fb9f256a4f651b6252eede9328674eaef7d67dc9ebba05e3366b0f5d` |
-| `apps/desktop/package.json` |  | 485 | `e29470ae01c6516082c8a466b4b361a55c9a76b4605afa9a4b2198f965fafce8` |
-| `apps/desktop/src/App.tsx` |  | 3764 | `8ccd9ef39784bdcde1777e3276977c988ed9f71af87dd89ba6430bf2a3c59990` |
+| `apps/desktop/package.json` |  | 633 | `8d7e6bcfcb00c699953c7235723c6476088dcf64c355ae88bdf7ca3a95d4074e` |
+| `apps/desktop/src/App.tsx` |  | 4651 | `46b6bcbdcf95d44805a46072db10bf3271f9fd00731d65512d1a044bedee3ee9` |
+| `apps/desktop/src/bridge-schema.test.ts` |  | 1527 | `6df5ce2dced367e8f6c7b939d8bd09aad0448896934dc1028083244013b0027b` |
 | `apps/desktop/src/code-review/revisions.test.ts` |  | 1796 | `cecdc9b266d2a291273dd8738489ec374a4f9d2079755e9cffe582d2c287c6ab` |
 | `apps/desktop/src/command-center/commands.ts` |  | 2241 | `789f1cecc06fd978e60eb5304fcdc04995bceeb489d404de82008dafeee33f24` |
 | `apps/desktop/src/context-inspector/inspector.test.ts` |  | 1213 | `3d2009a9090dd04b6793af794c894cd64c3df8ad2cb0d821fa8bd48c55ca65b2` |
 | `apps/desktop/src/context-inspector/inspector.ts` |  | 1518 | `f38ab87c66e744fa8c0a1b6b5433c445655b5bddcacbf72dea4b41b608503d8b` |
+| `apps/desktop/src/event-stream.test.ts` |  | 1611 | `303fb241aa58f729bd55e224c333a1004efba8e814ff88383fa1119cd2c57685` |
 | `apps/desktop/src/fleet/grouping.test.ts` |  | 1567 | `c42b72324ab747e334366296b626c18f5922c7e5ac182c675e5996822c3f7004` |
 | `apps/desktop/src/fleet/grouping.ts` |  | 2067 | `289eced8443546348bb7f941b247405307ba92df798dfd1c98546785bfe5c55e` |
 | `apps/desktop/src/fleet/supervision.test.ts` |  | 1085 | `b5bcfae4e3b7c1e7e3d2cdf336765e4c2d5cc6382f7d4ae15bde0c6313993283` |
 | `apps/desktop/src/fleet/supervision.ts` |  | 918 | `7676a5b0d2bd6909b23c281d741d623743fcaa627048efb55f885f096c15aee4` |
-| `apps/desktop/src/global.d.ts` |  | 654 | `1c577b7c9682d24ee958c8969c3069174126ad402a4c7b6db85bfe6ab58dd15f` |
+| `apps/desktop/src/global.d.ts` |  | 1891 | `28ef286e8ab3c1501dab8cbf4da70d96f26f6ffffc8ff78867a51528537a04cd` |
 | `apps/desktop/src/main.ts` |  | 188 | `e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42` |
 | `apps/desktop/src/main.tsx` |  | 232 | `ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140` |
 | `apps/desktop/src/status-center/status.test.ts` |  | 1210 | `21829549ac56b4673383e5f91af4f9fd61bf875816d55eb877813f3d7b7d1005` |
 | `apps/desktop/src/status-center/status.ts` |  | 1251 | `b5bac21314e4e4a7d79ad2d05626714e24057e35eb6591ff29ec744ab2e37b3d` |
-| `apps/desktop/src/styles.css` |  | 785 | `80b36bcf1afafab6a373c59063fa8358e50fd36cad614dd69ccd13631e7b7862` |
+| `apps/desktop/src/styles.css` |  | 4024 | `ebb7b83f7347d098ec019701e4acb02779b024d9d93db302aa46154c4d1d1dbc` |
+| `apps/desktop/src/task-workspace/TaskWorkspace.tsx` |  | 5621 | `70a8eaa2585fb0f20776da32ecc071fffb26030990f90c4b49ca517dfe541b63` |
+| `apps/desktop/src/task-workspace/view.test.ts` |  | 3375 | `653a9108b6f1f4e4621f394d85058287273735dfdf0cbd103131772816d89146` |
+| `apps/desktop/src/task-workspace/view.ts` |  | 4945 | `109337688351c06b4711e92936eef524d896ef62d44e36992bc00b25e90f60ad` |
 | `apps/desktop/test/bridge.test.ts` |  | 2632 | `64ee3d705a2f2b483ac6b9334159181f517bcfa5d2b423de9f646bddece98efe` |
 | `apps/desktop/test/surface.e2e.test.ts` |  | 4444 | `caed16f7a4ba2cf16e0fb35285d065f3f5454f7be9a22681b7810247be0fa4eb` |
 | `apps/desktop/tsconfig.json` |  | 384 | `04d41467686090e811fa48d26f64694df7722dfffa12891b0559143d781b62ff` |
 | `apps/desktop/vite.config.ts` |  | 150 | `ce36fc4ce9db762ab99a5056aabd3c722f73f37010e639c1f1a2c992c63e5f4d` |
 | `docs/decisions/ADR-0001-baseline-decision-register.md` |  | 2328 | `2fcf3eafcce3ccff939244c77c9faa0ebf7106edf2ba7f1cbc9d300524100379` |
-| `docs/decisions/README.md` |  | 1657 | `59264591f661d13c95c0e384f27a04852164fbaa878c5ec172ac219b2e748847` |
+| `docs/decisions/ADR-0002-tokio-reqwest-rustls-transport.md` |  | 5471 | `6328af18e0ecf484d1819e7c4009867dd836894d2d73042cdc550f2543bd14a9` |
+| `docs/decisions/README.md` |  | 1862 | `2108152c6046929fe40d278036ea9f2911fd8567ccf8663b53bd88a5b3833493` |
 | `docs/decisions/TEMPLATE.md` |  | 1195 | `666bfdf99aa951eec878352547e20d9a4ea69e8ac18cb2e935b407d71bc2fca3` |
-| `packages/design-tokens/package.json` |  | 234 | `20d0f683df2fdb5748ef6582f73d8a643158b2403bc9f1472be1baf0ccb9847a` |
-| `packages/design-tokens/src/index.ts` |  | 204 | `f2d07647db91487425dbc9e901b36f5f78b22a83719c3cb65cbaf3d8abe78d55` |
+| `packages/design-tokens/package.json` |  | 440 | `1dc8d96ad306773e185e560b26b6e4b3f0adf98374450f5ad61e5db3b1f733f0` |
+| `packages/design-tokens/src/index.test.ts` |  | 1580 | `09c9606db66d738f91d8c148a6d747aaac7f1944f5c4ad1c6a845411ef778963` |
+| `packages/design-tokens/src/index.ts` |  | 4177 | `b4df97eb07a1e8481b8906e57e95ec15e581d427504e50c709bcdb8d39db4c80` |
 | `packages/design-tokens/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
-| `packages/surface-protocol/package.json` |  | 420 | `bbb218f7a79544c401d7df1f6d606a9fb69a4ee6ab6e208b2189bbf37130dda8` |
+| `packages/surface-protocol/package.json` |  | 577 | `7f9a4c0ea8b862692872943f1dd8a3491fd1a6e452dabdd5e98e03b8730f799a` |
 | `packages/surface-protocol/scripts/generate.mjs` |  | 2626 | `c36bf3f4982af8158048f0d8cde5ff230d10d02ecb605776d89770f0cabdabb8` |
 | `packages/surface-protocol/src/generated/google/protobuf/timestamp.ts` |  | 7992 | `41bead303f2e6d23d691fb4f0b00760fe41ac02fe984fcf657274029cdaa1db2` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts` |  | 16905 | `65f4121c6c049dcdf27797ccaf0f08cacad2b8de49d654ee59f2bcf891bf1eb5` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3659 | `47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2886 | `eab432c06eb3fc6480a201930f869418ed42236bf040e85dace4e00c50e59f8b` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23242 | `f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 41596 | `67724e8d0b3d3c28f56b3e36efac82a49c0ec235078e99de802d178593d81d90` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 73042 | `1723dab3eae15242ee3c973e1cbb6d5fa475b73d31a2a4d6734dabea0c0a0fde` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts` |  | 11854 | `c1eb6739e86a75a80872a57916f9526bcd90607a3096efff3067b100e18b3133` |
-| `packages/surface-protocol/src/index.ts` |  | 729 | `11be0e5c80215d6c2e4d98b96cddfd9c09496a4c8aae680fe0c96f629c672e10` |
+| `packages/surface-protocol/src/index.ts` |  | 923 | `31d1ec5391123ce8b673687d677619415eb53f54651239d1599263e46e1e862e` |
 | `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |
 | `packages/surface-protocol/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
-| `packages/ui/package.json` |  | 223 | `0690dc195afbe986050db57fe4dbc696df44362c4264502aa4768ed43d6d6bfd` |
-| `packages/ui/src/index.ts` |  | 194 | `a526d54c14940b3a22dbaae3cf68391b692ee26b4b3f0a67a5a612d91db21b66` |
-| `packages/ui/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
+| `packages/ui/package.json` |  | 652 | `14d0cd2a83c8a1d583e71b4b4d538ca51f257fb492c452d32c6b30ac69681ac7` |
+| `packages/ui/src/ActionButton.tsx` |  | 553 | `095b65ee4d712ae854661e9e20603bf89521e30b930b5b062cc8e6580ab50f2a` |
+| `packages/ui/src/DiffFileRow.tsx` |  | 453 | `fb6db992c1d28c20e29178c097c517f463474f04de59ef54bef5d02675fc2380` |
+| `packages/ui/src/Panel.tsx` |  | 494 | `c455680e0bd7e43e03f2f344e533f56677da24020b0a9fcb97a482bf4623c323` |
+| `packages/ui/src/StatusPill.tsx` |  | 665 | `65e14d7bd2833cae49ce32405c8bfb0cf69ae70ce536dbac6df15cc49e6bbc00` |
+| `packages/ui/src/SteerComposer.tsx` |  | 874 | `c4e51cdadd02eb94ab62f8fc12dab43da9285533a77f0e79c7b48db70a144aa2` |
+| `packages/ui/src/Timeline.tsx` |  | 967 | `6924de226512941d22d92c8c3fcb6a2e5a8977ed47de4691dd9584e0133c6d3d` |
+| `packages/ui/src/components.test.tsx` |  | 2541 | `30ecae5306b57c03ef84c63d51b090b86921cf35b27991ef26ff752d3f9e1ff9` |
+| `packages/ui/src/index.ts` |  | 496 | `ecdbb6631ef69d9779ab131518f5ac2664bd2bc38fbb0a9be94385a5516049ff` |
+| `packages/ui/tsconfig.json` |  | 402 | `21fbf660d6be3854ebe1f4fa6fa84521b64b16885bd784c314dfdac3047074e0` |
+| `packages/ui/vitest.config.ts` |  | 155 | `efd3d605aae54974fcf5505d7b6e432132d05bf6fc177cf6cf88e159d71f86c1` |
 | `tools/architecture-lint/lint.py` |  | 22843 | `7d6420abc07ab8aa6a7c11c72f7fcabf41ac711815da568851970821a529431b` |
 | `tools/architecture-lint/placement_allowlist.json` |  | 14711 | `76d255e7149eb8ac0815094e19a29c4a7e587c251c94f3e083ac72d495ea8f67` |
 | `tools/coverage-guard.py` |  | 13187 | `05bf43a96ca03c9f537ebb6045497443e499a4aa4f3b52aaf85eb967ee00d68f` |

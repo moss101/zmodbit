@@ -29,6 +29,7 @@ name = "modbit-core"
 path = "src/bin/modbit-core.rs"
 
 [dev-dependencies]
+reqwest = { workspace = true, features = ["blocking"] }
 uuid = { workspace = true }
 modbit-workspace = { path = "../workspace" }
 tokio = { workspace = true }
