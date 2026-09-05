@@ -103,16 +103,16 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | File | Role | Bytes | SHA-256 |
 |---|---|---:|---|
 | `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
-| `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
-| `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 801897 | `fca080024155f50dafa6059ede61cecfc884fbb2522c73a4e28650d22d2a3d57` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22382 | `a899208ff67fdb61fd20e1cdc34c4f4ffc1ea7f4b0c03768d7e913412ba9788e` |
+| `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
+| `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
+| `graph/project-graph.json` | project driver graph with live status | 801858 | `7f8fb8684534dde2e5a27cf6d6347891ef4485ef77e8700f24fc3ca829d7482f` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22622 | `c2a28ed67d8da6d62ba0360050378f69da4f95afae75d4c6ad9f9b69117d1927` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
 | `tools/check_dossier.py` | integrity gate | 10310 | `a65618968ad3d57d0c22dbdfa74f2481e2849063c6bf4152a3fef300a05c5023` |
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
-| `.github/workflows/ci.yml` |  | 2984 | `6c800eed248636ec8850c0c6e5aaab8c478aaae5fd5ff30a074764865542c39f` |
+| `.github/workflows/ci.yml` |  | 2984 | `f5ffdddd6ca0f844640ad686e145db4a528a654ff31309f075c9cb21bd9b0072` |
 | `Cargo.toml` |  | 737 | `3219aa934f67eb7460eefaf8d933e7822c106ff1d2dff81405c8de4bd3160a4a` |
 | `pnpm-workspace.yaml` |  | 93 | `4f1844ac535cd5c2607091352d8e97cd8b04a48acaf48fb69674de6597a1c1aa` |
 | `package.json` |  | 278 | `36a409ec8e4504484b1a773d166a5ec917d8f6903d01858b2b6dd282615fbe6c` |

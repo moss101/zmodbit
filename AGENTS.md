@@ -16,6 +16,7 @@ SKILLS.md                 catalog of governed procedures agents must follow
 MANIFEST.md / manifest.json   package integrity: every file, SHA-256, section, old name
 graph/project-graph.json  THE driver: milestones, tasks, subsystems, requirements, tests, status
 graph/PROJECT_GRAPH.md    human view of the graph (mermaid) + how to query it
+Future-tasks.md           the phased work order (section 4) and the record of closed phases (section 1)
 tools/                    build_graph.py, graph.py, check_dossier.py, build_manifest.py
 docs/                     the specification dossier, uniquely numbered 00–98
 ```
@@ -33,6 +34,7 @@ Skipping a stage is allowed only when the task card explicitly marks it non-appl
 ## Before modifying code
 
 1. Run `python3 tools/graph.py ready` and take a task whose dependencies are `COMPLETE`. Do not start work on a milestone whose upstream milestone is not proven.
+   Within the ready set, take the lowest open phase and item in `Future-tasks.md` section 4, in the order written. Do not start phase N+1 until phase N's exit condition is met and recorded in section 1. Do not reorder items.
 2. Read `docs/01_START_HERE_FOR_BUILD_AGENTS.md` and follow its read order.
 3. Read the authoritative subsystem specification(s) linked from the task's subsystem node in the graph.
 4. Read every `REQ-EV-*` requirement attached to the task (`docs/40_EVIDENCE_DERIVED_REQUIREMENT_LEDGER.md`).
@@ -101,3 +103,4 @@ Every handoff states exact task IDs, requirements, commit/revision, files change
 - Requirement rows, dispositions and canonical owners are **LOCKED** (`docs/46_REQUIREMENT_COVERAGE_FREEZE_GATE.md`). Changing them requires a Decision Record per `docs/02_AUTHORITY_AND_DECISIONS.md`.
 - After any edit under `docs/`, run `python3 tools/build_manifest.py && python3 tools/build_graph.py && python3 tools/check_dossier.py` and commit the regenerated `MANIFEST.md`, `manifest.json` and `graph/project-graph.json`.
 - Never renumber files. Numbers are stable identifiers; new files take the next free number in their section.
+- When a phase in `Future-tasks.md` closes, move its items from section 4 to section 1 with evidence references and refresh the facts table (`SKILLS.md` → `phase-closure`). A handoff that leaves `Future-tasks.md` stale is invalid.

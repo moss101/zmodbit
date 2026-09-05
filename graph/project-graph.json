@@ -3,7 +3,7 @@
  "product": "Modbit",
  "edition": "V3.1",
  "authority_date": "2026-09-03",
- "generated_on": "2026-09-05",
+ "generated_on": "2026-09-06",
  "generator": "tools/build_graph.py",
  "status_vocabulary": [
   "NOT_STARTED",
@@ -1669,7 +1669,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33909577371",
     "commit:b3515bb"
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:42Z",
@@ -1677,7 +1676,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:42Z"
   },
   {
    "id": "M3.2",
@@ -1692,7 +1692,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:42Z",
@@ -1700,7 +1699,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:42Z"
   },
   {
    "id": "M3.3",
@@ -2266,7 +2266,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2274,7 +2273,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M6.2",
@@ -2434,7 +2434,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2442,7 +2441,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M7.2",
@@ -2544,7 +2544,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
     "commit:79466b5"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2552,7 +2551,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M7.6",
@@ -2567,7 +2567,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2575,7 +2574,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M7.7",
@@ -2590,7 +2590,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2598,7 +2597,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M7.8",
@@ -2613,7 +2613,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2621,7 +2620,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.1",
@@ -2636,7 +2636,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2644,7 +2643,8 @@
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.2",
@@ -2659,7 +2659,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2667,7 +2666,8 @@
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.3",
@@ -2682,7 +2682,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2690,7 +2689,8 @@
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.4",
@@ -2705,7 +2705,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2713,7 +2712,8 @@
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.5",
@@ -2728,7 +2728,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2736,7 +2735,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.6",
@@ -2751,7 +2751,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2759,7 +2758,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.7",
@@ -2774,7 +2774,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2782,7 +2781,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.8",
@@ -2797,7 +2797,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2805,7 +2804,8 @@
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M8.9",
@@ -2820,7 +2820,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2828,7 +2827,8 @@
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M9.1",
@@ -2843,7 +2843,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:43Z",
@@ -2851,7 +2850,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:43Z"
   },
   {
    "id": "M9.2",
@@ -2866,7 +2866,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:44Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:44Z",
@@ -2874,7 +2873,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:44Z"
   },
   {
    "id": "M9.3",
@@ -2889,7 +2889,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:44Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:44Z",
@@ -2897,7 +2896,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:44Z"
   },
   {
    "id": "M9.4",
@@ -2912,7 +2912,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:44Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:44Z",
@@ -2920,7 +2919,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:44Z"
   },
   {
    "id": "M9.5",
@@ -2935,7 +2935,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:44Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:44Z",
@@ -2943,7 +2942,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:44Z"
   },
   {
    "id": "M9.6",
@@ -2958,7 +2958,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:44Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:44Z",
@@ -2966,7 +2965,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:44Z"
   },
   {
    "id": "M10.1",
@@ -2981,7 +2981,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -2989,7 +2988,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "M10.2",
@@ -3004,7 +3004,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -3012,7 +3011,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "M10.3",
@@ -3027,7 +3027,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -3035,7 +3034,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "M10.4",
@@ -3050,7 +3050,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -3058,7 +3057,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "M10.5",
@@ -3073,7 +3073,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -3081,7 +3080,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "M10.6",
@@ -3096,7 +3096,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -3104,7 +3103,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "M0.4",
@@ -3292,7 +3292,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -3300,7 +3299,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "governance",
@@ -7333,7 +7333,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33910186850",
     "commit:98e4fed"
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:31Z",
@@ -7341,7 +7340,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:31Z"
   },
   {
    "id": "IMP-EV-0002",
@@ -7359,7 +7359,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33909577371",
     "commit:b3515bb"
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:31Z",
@@ -7367,7 +7366,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:31Z"
   },
   {
    "id": "IMP-EV-0003",
@@ -7385,7 +7385,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33910186850",
     "commit:98e4fed"
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:31Z",
@@ -7393,7 +7392,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:31Z"
   },
   {
    "id": "IMP-EV-0004",
@@ -7411,7 +7411,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33909577371",
     "commit:b3515bb"
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:31Z",
@@ -7419,7 +7418,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:31Z"
   },
   {
    "id": "IMP-EV-0005",
@@ -7437,7 +7437,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
     "commit:5c65e96"
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:31Z",
@@ -7445,7 +7444,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:31Z"
   },
   {
    "id": "IMP-EV-0006",
@@ -7463,7 +7463,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7471,7 +7470,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0007",
@@ -7489,7 +7489,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7497,7 +7496,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0008",
@@ -7515,7 +7515,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7523,7 +7522,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0009",
@@ -7541,7 +7541,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7549,7 +7548,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0010",
@@ -7609,8 +7609,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33860508030",
     "commit:2df101f"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7618,7 +7616,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0012",
@@ -7636,7 +7636,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
     "commit:c4303ed"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7644,7 +7643,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0013",
@@ -7662,7 +7662,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
     "commit:c4303ed"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7670,7 +7669,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0014",
@@ -7689,8 +7689,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33860508030",
     "commit:2df101f"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7698,7 +7696,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0015",
@@ -7759,8 +7759,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33860508030",
     "commit:2df101f"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7768,7 +7766,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0017",
@@ -7786,7 +7786,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7794,7 +7793,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0018",
@@ -7887,7 +7887,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33910186850",
     "commit:98e4fed"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7895,7 +7894,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0021",
@@ -7948,8 +7948,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33882459686",
     "commit:d602139"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7957,7 +7955,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0023",
@@ -7975,7 +7975,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -7983,7 +7982,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0024",
@@ -8001,7 +8001,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -8009,7 +8008,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0025",
@@ -8062,8 +8062,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33862287543",
     "commit:0035212"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -8071,7 +8069,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0027",
@@ -8089,8 +8089,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
     "commit:e7929f1"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -8098,7 +8096,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0028",
@@ -8116,8 +8116,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33863214970",
     "commit:faa2773"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -8125,7 +8123,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0029",
@@ -8143,8 +8143,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33863214970",
     "commit:faa2773"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -8152,7 +8150,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0030",
@@ -8170,8 +8170,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33863214970",
     "commit:faa2773"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:32Z",
@@ -8179,7 +8177,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:32Z"
   },
   {
    "id": "IMP-EV-0031",
@@ -8197,8 +8197,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33863214970",
     "commit:faa2773"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8206,7 +8204,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0032",
@@ -8224,7 +8224,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8232,7 +8231,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0035",
@@ -8252,8 +8252,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:38Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:38Z",
@@ -8261,7 +8259,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:38Z"
   },
   {
    "id": "IMP-EV-0036",
@@ -8314,8 +8314,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:38Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:38Z",
@@ -8323,7 +8321,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:38Z"
   },
   {
    "id": "IMP-EV-0039",
@@ -8343,8 +8343,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:38Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:38Z",
@@ -8352,7 +8350,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:38Z"
   },
   {
    "id": "IMP-EV-0040",
@@ -8370,8 +8370,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33867259225",
     "commit:6f2141a"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8379,7 +8377,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0041",
@@ -8397,8 +8397,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33867259225",
     "commit:6f2141a"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8406,7 +8404,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0042",
@@ -8424,7 +8424,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
     "commit:d15f4c9"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8432,7 +8431,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0043",
@@ -8450,8 +8450,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33867259225",
     "commit:6f2141a"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8459,7 +8457,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0044",
@@ -8477,8 +8477,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33867259225",
     "commit:6f2141a"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8486,7 +8484,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0045",
@@ -8504,8 +8504,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33882459686",
     "commit:d602139"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8513,7 +8511,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0046",
@@ -8531,7 +8531,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8539,7 +8538,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0047",
@@ -8557,7 +8557,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8565,7 +8564,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0048",
@@ -8583,7 +8583,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8591,7 +8590,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0049",
@@ -8609,7 +8609,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
     "commit:4e8be7f"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8617,7 +8616,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0050",
@@ -8635,7 +8635,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
     "commit:fe3d7eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8643,7 +8642,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0051",
@@ -8661,7 +8661,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
     "commit:fe3d7eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8669,7 +8668,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0052",
@@ -8687,7 +8687,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
     "commit:fe3d7eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8695,7 +8694,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0053",
@@ -8713,7 +8713,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
     "commit:fe3d7eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8721,7 +8720,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0054",
@@ -8780,7 +8780,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
     "commit:c4303ed"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8788,7 +8787,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0056",
@@ -8806,7 +8806,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33910791895",
     "commit:a9f7c0c"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8814,7 +8813,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0057",
@@ -8832,7 +8832,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33910791895",
     "commit:a9f7c0c"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8840,7 +8839,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0058",
@@ -8858,7 +8858,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33910791895",
     "commit:a9f7c0c"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8866,7 +8865,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0059",
@@ -8884,7 +8884,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
     "commit:7411892"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8892,7 +8891,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0060",
@@ -8910,7 +8910,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
     "commit:5c65e96"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8918,7 +8917,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0061",
@@ -8936,7 +8936,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
     "commit:7411892"
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:33Z",
@@ -8944,7 +8943,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:33Z"
   },
   {
    "id": "IMP-EV-0062",
@@ -9094,7 +9094,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
     "commit:d15f4c9"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9102,7 +9101,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0067",
@@ -9120,8 +9120,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33890230648",
     "commit:3a408c8"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9129,7 +9127,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0068",
@@ -9149,8 +9149,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
     "commit:6973749"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9158,7 +9156,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0069",
@@ -9176,7 +9176,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33895447403",
     "commit:fea173b"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9184,7 +9183,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0070",
@@ -9204,8 +9204,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
     "commit:6973749"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9213,7 +9211,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0071",
@@ -9233,8 +9233,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
     "commit:6973749"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9242,7 +9240,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0072",
@@ -9260,7 +9260,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9268,7 +9267,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0073",
@@ -9286,7 +9286,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
     "commit:c4303ed"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9294,7 +9293,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0075",
@@ -9312,7 +9312,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9320,7 +9319,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0076",
@@ -9338,7 +9338,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9346,7 +9345,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0077",
@@ -9366,8 +9366,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -9375,7 +9373,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0078",
@@ -9393,7 +9393,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
     "commit:fe3d7eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9401,7 +9400,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0079",
@@ -9419,7 +9419,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
     "commit:e7929f1"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9427,7 +9426,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0080",
@@ -9447,8 +9447,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
     "commit:6973749"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9456,7 +9454,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0081",
@@ -9474,7 +9474,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9482,7 +9481,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0082",
@@ -9500,7 +9500,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9508,7 +9507,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0083",
@@ -9526,7 +9526,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9534,7 +9533,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0084",
@@ -9552,7 +9552,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9560,7 +9559,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0085",
@@ -9578,7 +9578,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9586,7 +9585,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0086",
@@ -9604,7 +9604,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
     "commit:79466b5"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9612,7 +9611,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0087",
@@ -9630,7 +9630,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
     "commit:79466b5"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9638,7 +9637,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0088",
@@ -9656,7 +9656,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33895447403",
     "commit:fea173b"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9664,7 +9663,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0089",
@@ -9682,7 +9682,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
     "commit:79466b5"
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:34Z",
@@ -9690,7 +9689,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:34Z"
   },
   {
    "id": "IMP-EV-0090",
@@ -9708,7 +9708,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
     "commit:79466b5"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9716,7 +9715,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0091",
@@ -9736,8 +9736,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
     "commit:6973749"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9745,7 +9743,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0092",
@@ -9763,7 +9763,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
     "commit:efa4135"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9771,7 +9770,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0093",
@@ -9789,8 +9789,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33882459686",
     "commit:db98825"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9798,7 +9796,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0096",
@@ -9816,8 +9816,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33899207592",
     "commit:8d178a0"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9825,7 +9823,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0097",
@@ -9843,7 +9843,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
     "commit:7411892"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9851,7 +9850,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0098",
@@ -9904,7 +9904,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
     "commit:93473bc"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9912,7 +9911,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0100",
@@ -9930,8 +9930,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33890230648",
     "commit:3a408c8"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -9939,7 +9937,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0101",
@@ -9959,8 +9959,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -9968,7 +9966,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0102",
@@ -10023,8 +10023,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -10032,7 +10030,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0104",
@@ -10050,7 +10050,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33953675878",
     "commit:d057e07"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10058,7 +10057,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0105",
@@ -10076,7 +10076,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
     "commit:7411892"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10084,7 +10083,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0106",
@@ -10102,8 +10102,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33890230648",
     "commit:3a408c8"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10111,7 +10109,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0107",
@@ -10129,7 +10129,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
     "commit:93473bc"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10137,7 +10136,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0108",
@@ -10190,7 +10190,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10198,7 +10197,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0110",
@@ -10216,7 +10216,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10224,7 +10223,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0111",
@@ -10242,7 +10242,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
     "commit:efa4135"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10250,7 +10249,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0112",
@@ -10268,7 +10268,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33894159340",
     "commit:e4c0d11"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10276,7 +10275,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0114",
@@ -10294,7 +10294,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
     "commit:7411892"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10302,7 +10301,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0115",
@@ -10320,7 +10320,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
     "commit:6a88e13"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10328,7 +10327,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0116",
@@ -10346,7 +10346,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
     "commit:e7929f1"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10354,7 +10353,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0117",
@@ -10372,7 +10372,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
     "commit:6a88e13"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10380,7 +10379,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0118",
@@ -10398,7 +10398,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
     "commit:6a88e13"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10406,7 +10405,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0119",
@@ -10459,7 +10459,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
     "commit:6a88e13"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10467,7 +10466,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0121",
@@ -10590,7 +10590,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33894159340",
     "commit:e4c0d11"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10598,7 +10597,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0125",
@@ -10616,7 +10616,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
     "commit:e7929f1"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10624,7 +10623,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0126",
@@ -10642,7 +10642,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:35Z",
@@ -10650,7 +10649,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:35Z"
   },
   {
    "id": "IMP-EV-0127",
@@ -10668,7 +10668,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
     "commit:6a88e13"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10676,7 +10675,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0128",
@@ -10694,7 +10694,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33953675878",
     "commit:d057e07"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10702,7 +10701,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0129",
@@ -10720,7 +10720,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33946212071",
     "commit:7ec3619"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10728,7 +10727,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0130",
@@ -10746,7 +10746,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
     "commit:efa4135"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10754,7 +10753,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0131",
@@ -10772,7 +10772,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
     "commit:efa4135"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10780,7 +10779,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0132",
@@ -10798,7 +10798,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33894159340",
     "commit:e4c0d11"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10806,7 +10805,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0133",
@@ -10824,7 +10824,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33894159340",
     "commit:e4c0d11"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10832,7 +10831,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0134",
@@ -10850,7 +10850,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33894159340",
     "commit:e4c0d11"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10858,7 +10857,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0135",
@@ -10876,7 +10876,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
     "commit:e7929f1"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10884,7 +10883,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0136",
@@ -10902,8 +10902,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33882459686",
     "commit:db98825"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10911,7 +10909,9 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0137",
@@ -10929,7 +10929,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
     "commit:e3fce5e"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10937,7 +10936,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0138",
@@ -10955,7 +10955,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
     "commit:e3fce5e"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10963,7 +10962,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0139",
@@ -10981,7 +10981,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
     "commit:d15f4c9"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -10989,7 +10988,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0141",
@@ -11007,7 +11007,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
     "commit:efa4135"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11015,7 +11014,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0142",
@@ -11033,7 +11033,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11041,7 +11040,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0143",
@@ -11061,8 +11061,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -11070,7 +11068,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0144",
@@ -11088,7 +11088,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
     "commit:77544df"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11096,7 +11095,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0145",
@@ -11114,7 +11114,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
     "commit:77544df"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11122,7 +11121,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0146",
@@ -11140,7 +11140,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33895447403",
     "commit:fea173b"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11148,7 +11147,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0147",
@@ -11166,7 +11166,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33896950274",
     "commit:236ed01"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11174,7 +11173,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0150",
@@ -11192,7 +11192,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
     "commit:77544df"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11200,7 +11199,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0151",
@@ -11218,7 +11218,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
     "commit:77544df"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11226,7 +11225,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0152",
@@ -11246,8 +11246,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -11255,7 +11253,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0153",
@@ -11273,7 +11273,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
     "commit:5c65e96"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11281,7 +11280,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0154",
@@ -11299,7 +11299,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
     "commit:5c65e96"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11307,7 +11306,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0155",
@@ -11325,7 +11325,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
     "commit:5c65e96"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11333,7 +11332,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0157",
@@ -11351,7 +11351,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
     "commit:5c65e96"
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:36Z",
@@ -11359,7 +11358,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:36Z"
   },
   {
    "id": "IMP-EV-0158",
@@ -11377,7 +11377,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
     "commit:3e3fbf1"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11385,7 +11384,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0159",
@@ -11403,7 +11403,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
     "commit:3e3fbf1"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11411,7 +11410,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0160",
@@ -11429,7 +11429,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
     "commit:45e4dc5"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11437,7 +11436,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0161",
@@ -11455,7 +11455,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
     "commit:3e3fbf1"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11463,7 +11462,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0162",
@@ -11481,7 +11481,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33953675878",
     "commit:d057e07"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11489,7 +11488,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0163",
@@ -11507,7 +11507,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
     "commit:3e3fbf1"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11515,7 +11514,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0164",
@@ -11533,7 +11533,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
     "commit:8a19e6f"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11541,7 +11540,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0165",
@@ -11559,7 +11559,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
     "commit:8a19e6f"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11567,7 +11566,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0166",
@@ -11585,7 +11585,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
     "commit:8a19e6f"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11593,7 +11592,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0167",
@@ -11611,7 +11611,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
     "commit:8a19e6f"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11619,7 +11618,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0168",
@@ -11637,7 +11637,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
     "commit:485c781"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11645,7 +11644,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0169",
@@ -11663,7 +11663,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
     "commit:485c781"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11671,7 +11670,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0170",
@@ -11689,7 +11689,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
     "commit:485c781"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11697,7 +11696,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0171",
@@ -11715,7 +11715,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
     "commit:485c781"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11723,7 +11722,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0172",
@@ -11741,7 +11741,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
     "commit:485c781"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11749,7 +11748,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0173",
@@ -11767,7 +11767,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
     "commit:45e4dc5"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11775,7 +11774,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0174",
@@ -11793,7 +11793,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
     "commit:45e4dc5"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11801,7 +11800,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0175",
@@ -11821,8 +11821,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -11830,7 +11828,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0176",
@@ -11848,7 +11848,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33895447403",
     "commit:fea173b"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11856,7 +11855,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0177",
@@ -11874,7 +11874,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33895447403",
     "commit:fea173b"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11882,7 +11881,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0178",
@@ -11900,7 +11900,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
     "commit:93473bc"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11908,7 +11907,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0179",
@@ -11926,7 +11926,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
     "commit:93473bc"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11934,7 +11933,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0180",
@@ -11987,7 +11987,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33946212071",
     "commit:7ec3619"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -11995,7 +11994,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0182",
@@ -12013,7 +12013,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
     "commit:93473bc"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -12021,7 +12020,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0183",
@@ -12039,7 +12039,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
     "commit:e3fce5e"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -12047,7 +12046,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0184",
@@ -12065,7 +12065,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
     "commit:80a3070"
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:37Z",
@@ -12073,7 +12072,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:37Z"
   },
   {
    "id": "IMP-EV-0185",
@@ -12091,7 +12091,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
     "commit:80a3070"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12099,7 +12098,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0186",
@@ -12117,7 +12117,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
     "commit:80a3070"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12125,7 +12124,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0187",
@@ -12143,7 +12143,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
     "commit:80a3070"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12151,7 +12150,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0188",
@@ -12169,7 +12169,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33896950274",
     "commit:236ed01"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12177,7 +12176,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0189",
@@ -12195,7 +12195,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33896950274",
     "commit:236ed01"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12203,7 +12202,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0190",
@@ -12258,8 +12258,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -12267,7 +12265,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0192",
@@ -12332,7 +12332,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
     "commit:e3fce5e"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12340,7 +12339,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0194",
@@ -12358,7 +12358,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33896950274",
     "commit:236ed01"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12366,7 +12365,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0196",
@@ -12384,7 +12384,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
     "commit:c205186"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12392,7 +12391,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0197",
@@ -12410,7 +12410,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
     "commit:c205186"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12418,7 +12417,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0198",
@@ -12436,7 +12436,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
     "commit:c205186"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12444,7 +12443,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0199",
@@ -12462,7 +12462,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
     "commit:c205186"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12470,7 +12469,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0200",
@@ -12488,7 +12488,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
     "commit:c205186"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12496,7 +12495,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0201",
@@ -12514,7 +12514,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
     "commit:cb0ea93"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12522,7 +12521,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0202",
@@ -12540,7 +12540,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
     "commit:cb0ea93"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12548,7 +12547,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0203",
@@ -12566,7 +12566,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
     "commit:45e4dc5"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12574,7 +12573,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0204",
@@ -12592,7 +12592,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
     "commit:cb0ea93"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12600,7 +12599,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0205",
@@ -12618,7 +12618,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
     "commit:cb0ea93"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12626,7 +12625,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0206",
@@ -12644,7 +12644,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
     "commit:cb0ea93"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12652,7 +12651,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0207",
@@ -12670,7 +12670,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
     "commit:cb0ea93"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12678,7 +12677,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0208",
@@ -12737,7 +12737,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
     "commit:0ff8255"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12745,7 +12744,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0210",
@@ -12763,7 +12763,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
     "commit:0ff8255"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12771,7 +12770,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0211",
@@ -12789,7 +12789,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12797,7 +12796,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0212",
@@ -12815,7 +12815,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33896950274",
     "commit:236ed01"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12823,7 +12822,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0213",
@@ -12841,7 +12841,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
     "commit:0ff8255"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12849,7 +12848,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0214",
@@ -12867,7 +12867,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
     "commit:0ff8255"
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:38Z",
@@ -12875,7 +12874,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:38Z"
   },
   {
    "id": "IMP-EV-0215",
@@ -12893,7 +12893,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -12901,7 +12900,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0217",
@@ -12919,7 +12919,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
     "commit:09fc533"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -12927,7 +12926,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0218",
@@ -12945,7 +12945,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -12953,7 +12952,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0219",
@@ -12971,7 +12971,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -12979,7 +12978,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0220",
@@ -12997,7 +12997,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13005,7 +13004,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0221",
@@ -13058,7 +13058,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
     "commit:09fc533"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13066,7 +13065,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0223",
@@ -13084,7 +13084,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
     "commit:0ff8255"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13092,7 +13091,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0224",
@@ -13110,7 +13110,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13118,7 +13117,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0225",
@@ -13136,7 +13136,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13144,7 +13143,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0229",
@@ -13162,7 +13162,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
     "commit:09fc533"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13170,7 +13169,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0230",
@@ -13188,7 +13188,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
     "commit:a4719eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13196,7 +13195,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0231",
@@ -13214,7 +13214,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
     "commit:a4719eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13222,7 +13221,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0233",
@@ -13240,7 +13240,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13248,7 +13247,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0234",
@@ -13266,7 +13266,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13274,7 +13273,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0237",
@@ -13292,7 +13292,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
     "commit:a4719eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13300,7 +13299,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0238",
@@ -13318,7 +13318,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13326,7 +13325,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0239",
@@ -13344,7 +13344,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
     "commit:09fc533"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13352,7 +13351,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0240",
@@ -13370,7 +13370,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
     "commit:d15f4c9"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13378,7 +13377,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0241",
@@ -13396,7 +13396,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13404,7 +13403,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0242",
@@ -13463,7 +13463,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13471,7 +13470,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0245",
@@ -13489,7 +13489,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
     "commit:c4303ed"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13497,7 +13496,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0246",
@@ -13515,7 +13515,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
     "commit:1b4c40d"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13523,7 +13522,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0247",
@@ -13541,7 +13541,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
     "commit:a4719eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13549,7 +13548,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0248",
@@ -13567,7 +13567,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
     "commit:a4719eb"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13575,7 +13574,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0249",
@@ -13593,7 +13593,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:39Z",
@@ -13601,7 +13600,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:39Z"
   },
   {
    "id": "IMP-EV-0250",
@@ -13619,7 +13619,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13627,7 +13626,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0251",
@@ -13645,7 +13645,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13653,7 +13652,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0252",
@@ -13671,7 +13671,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13679,7 +13678,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0253",
@@ -13697,7 +13697,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13705,7 +13704,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0254",
@@ -13723,7 +13723,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13731,7 +13730,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0255",
@@ -13749,7 +13749,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13757,7 +13756,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0256",
@@ -13775,7 +13775,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13783,7 +13782,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0261",
@@ -13803,8 +13803,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -13812,7 +13810,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0262",
@@ -13832,8 +13832,6 @@
     "log:docs/evidence/2026-09-05-m0-m1-reverification.log",
     "receipt:dd7eb073f1088cb10468b7ef6b8224e1c51dbd1fab91dd800425054069035a62"
    ],
-   "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T10:00:39Z",
    "notes": [
     {
      "at": "2026-09-05T10:00:39Z",
@@ -13841,7 +13839,9 @@
      "to": "COMPLETE",
      "note": "typed evidence added per Future-tasks.md section 4 item 1 (reverification of M0/M1 on 2026-09-05); prior untyped run:/commit: refs kept as history"
     }
-   ]
+   ],
+   "owner_agent": "zcode",
+   "status_changed_on": "2026-09-05T10:00:39Z"
   },
   {
    "id": "IMP-EV-0263",
@@ -13859,7 +13859,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13867,7 +13866,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0265",
@@ -13885,7 +13885,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33898661734",
     "commit:b2fa516"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13893,7 +13892,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0267",
@@ -13911,7 +13911,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
     "commit:77544df"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13919,7 +13918,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0268",
@@ -13937,7 +13937,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13945,7 +13944,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0269",
@@ -13963,7 +13963,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
     "commit:09fc533"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13971,7 +13970,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0270",
@@ -13989,7 +13989,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -13997,7 +13996,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0271",
@@ -14015,7 +14015,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33898661734",
     "commit:b2fa516"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14023,7 +14022,8 @@
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0272",
@@ -14041,7 +14041,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
     "commit:77544df"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14049,7 +14048,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0273",
@@ -14108,7 +14108,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14116,7 +14115,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0275",
@@ -14134,7 +14134,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
     "commit:9e1f19f"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14142,7 +14141,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0276",
@@ -14160,7 +14160,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14168,7 +14167,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0277",
@@ -14186,7 +14186,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14194,7 +14193,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0278",
@@ -14212,7 +14212,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14220,7 +14219,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0279",
@@ -14238,7 +14238,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14246,7 +14245,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0280",
@@ -14264,7 +14264,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
     "commit:fb1cf8b"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14272,7 +14271,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0281",
@@ -14290,7 +14290,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14298,7 +14297,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0282",
@@ -14316,7 +14316,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:40Z",
@@ -14324,7 +14323,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:40Z"
   },
   {
    "id": "IMP-EV-0283",
@@ -14342,7 +14342,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
     "commit:6341c3a"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14350,7 +14349,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0284",
@@ -14368,7 +14368,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
     "commit:a596a94"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14376,7 +14375,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0285",
@@ -14394,7 +14394,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14402,7 +14401,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0286",
@@ -14420,7 +14420,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14428,7 +14427,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0287",
@@ -14446,7 +14446,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14454,7 +14453,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0288",
@@ -14472,7 +14472,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
     "commit:66f5d08"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14480,7 +14479,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0289",
@@ -14498,7 +14498,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14506,7 +14505,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0290",
@@ -14524,7 +14524,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14532,7 +14531,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "IMP-EV-0291",
@@ -14550,7 +14550,6 @@
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7"
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z",
    "notes": [
     {
      "at": "2026-09-05T09:56:41Z",
@@ -14558,7 +14557,8 @@
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
-   ]
+   ],
+   "status_changed_on": "2026-09-05T09:56:41Z"
   },
   {
    "id": "QUAL-EV-0001",
@@ -30014,6 +30014,5 @@
    "to": "eval-bench",
    "type": "constrains"
   }
- ],
- "updated_on": "2026-09-05T21:04:23Z"
+ ]
 }

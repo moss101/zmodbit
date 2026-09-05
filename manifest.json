@@ -691,23 +691,23 @@
     },
     {
       "path": "AGENTS.md",
-      "bytes": 6595,
-      "sha256": "4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25"
+      "bytes": 7157,
+      "sha256": "ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4"
     },
     {
       "path": "SKILLS.md",
-      "bytes": 13482,
-      "sha256": "e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf"
+      "bytes": 15088,
+      "sha256": "52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb"
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 801897,
-      "sha256": "fca080024155f50dafa6059ede61cecfc884fbb2522c73a4e28650d22d2a3d57"
+      "bytes": 801858,
+      "sha256": "7f8fb8684534dde2e5a27cf6d6347891ef4485ef77e8700f24fc3ca829d7482f"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22382,
-      "sha256": "a899208ff67fdb61fd20e1cdc34c4f4ffc1ea7f4b0c03768d7e913412ba9788e"
+      "bytes": 22622,
+      "sha256": "c2a28ed67d8da6d62ba0360050378f69da4f95afae75d4c6ad9f9b69117d1927"
     },
     {
       "path": "tools/build_manifest.py",
@@ -737,7 +737,7 @@
     {
       "path": ".github/workflows/ci.yml",
       "bytes": 2984,
-      "sha256": "6c800eed248636ec8850c0c6e5aaab8c478aaae5fd5ff30a074764865542c39f"
+      "sha256": "f5ffdddd6ca0f844640ad686e145db4a528a654ff31309f075c9cb21bd9b0072"
     },
     {
       "path": "Cargo.toml",
