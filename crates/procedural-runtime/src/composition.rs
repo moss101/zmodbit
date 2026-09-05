@@ -9,7 +9,6 @@
 //! attempting an unauthorized tool is denied by the SAME capability
 //! kernel, with execution/output caps preventing runaway composition.
 
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
 
