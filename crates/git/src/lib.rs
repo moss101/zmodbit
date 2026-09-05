@@ -68,9 +68,17 @@ impl GitRepo {
             if out.status.success() {
                 Ok(out)
             } else {
+                let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+                // Some failures (lock contention, early exit) print to
+                // stdout only; keep the error diagnosable either way.
+                let message = if stderr.is_empty() {
+                    String::from_utf8_lossy(&out.stdout).trim().to_string()
+                } else {
+                    stderr
+                };
                 Err(GitError::Git {
                     operation: format!("{operation} {}", args.join(" ")),
-                    message: String::from_utf8_lossy(&out.stderr).trim().to_string(),
+                    message,
                 })
             }
         })
@@ -156,7 +164,13 @@ impl GitRepo {
     /// Commits all changes; returns the new HEAD hash.
     pub fn commit_all(&self, message: &str) -> Result<String, GitError> {
         self.git("add", &["-A"])?;
-        self.git("commit", &["-m", message])?;
+        // One bounded retry: transient index.lock contention under
+        // concurrent operations must not fail the commit.
+        let commit = self.git("commit", &["-m", message]).or_else(|_| {
+            std::thread::sleep(std::time::Duration::from_millis(150));
+            self.git("commit", &["-m", message])
+        });
+        commit?;
         let out = self.git("rev-parse", &["HEAD"])?;
         Ok(Self::stdout_text(&out))
     }
