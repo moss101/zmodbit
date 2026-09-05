@@ -304,7 +304,7 @@ pub fn build_child_prompt(
         prompt.push_str(&format!("context: {ctx}\n"));
     }
     let leaked_memory = parent_only_memory.iter().any(|m| prompt.contains(*m));
-    let leaked_transcript = transcript.len() > 0 && prompt.contains(transcript[0]);
+    let leaked_transcript = !transcript.is_empty() && prompt.contains(transcript[0]);
     if leaked_memory || leaked_transcript {
         return Err("child prompt leaked parent-only material".into());
     }
@@ -407,8 +407,9 @@ mod tests {
         // serialization — identical state, identical digest.
         let bytes = serde_json::to_vec(&plan.nodes).unwrap();
         let restored_nodes: BTreeMap<String, PlanNode> = serde_json::from_slice(&bytes).unwrap();
-        let mut restored = PlanGraph::default();
-        restored.nodes = restored_nodes;
+        let mut restored = PlanGraph {
+            nodes: restored_nodes,
+        };
         assert_eq!(restored.canonical_digest(), digest);
 
         // Ready nodes respect dependencies.
