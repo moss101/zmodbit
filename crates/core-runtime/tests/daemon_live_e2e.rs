@@ -299,6 +299,8 @@ const E2E001_PROMPT: &str =
 
 fn wait_for_terminal(core: &CoreProc, task_id: &str, timeout: Duration) -> i32 {
     let deadline = Instant::now() + timeout;
+    let started = Instant::now();
+    let mut last_report = Instant::now() - Duration::from_secs(10);
     loop {
         let state = CoreProj(core).state(task_id);
         if matches!(
@@ -307,10 +309,23 @@ fn wait_for_terminal(core: &CoreProc, task_id: &str, timeout: Duration) -> i32 {
                 || s == pb::TaskStatus::Failed as i32
                 || s == pb::TaskStatus::Cancelled as i32
         ) {
+            eprintln!(
+                "[e2e] task {task_id} terminal after {}s: state={state}",
+                started.elapsed().as_secs()
+            );
             return state;
         }
         if Instant::now() > deadline {
             panic!("task never reached a terminal state (last {state})");
+        }
+        // Liveness in the log: a live reasoning model can stream for many
+        // silent minutes; show the run is alive, not hung.
+        if last_report.elapsed() >= Duration::from_secs(30) {
+            eprintln!(
+                "[e2e] waiting for {task_id}: state={state}, {}s elapsed (model may stream silently)",
+                started.elapsed().as_secs()
+            );
+            last_report = Instant::now();
         }
         std::thread::sleep(Duration::from_millis(500));
     }
