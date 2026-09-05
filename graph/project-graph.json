@@ -9707,9 +9707,12 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0201",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T05:33:33Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
+    "commit:cb0ea93"
+   ],
+   "status_changed_on": "2026-09-05T05:37:24Z"
   },
   {
    "id": "IMP-EV-0202",
@@ -9722,9 +9725,12 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0202",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T05:33:33Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
+    "commit:cb0ea93"
+   ],
+   "status_changed_on": "2026-09-05T05:37:24Z"
   },
   {
    "id": "IMP-EV-0203",
@@ -9755,9 +9761,12 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0204",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T05:33:33Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
+    "commit:cb0ea93"
+   ],
+   "status_changed_on": "2026-09-05T05:37:24Z"
   },
   {
    "id": "IMP-EV-0205",
@@ -9770,9 +9779,12 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0205",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T05:33:33Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
+    "commit:cb0ea93"
+   ],
+   "status_changed_on": "2026-09-05T05:37:24Z"
   },
   {
    "id": "IMP-EV-0206",
@@ -9785,9 +9797,12 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0206",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T05:33:33Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
+    "commit:cb0ea93"
+   ],
+   "status_changed_on": "2026-09-05T05:37:24Z"
   },
   {
    "id": "IMP-EV-0207",
@@ -9800,9 +9815,12 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0207",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T05:33:33Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
+    "commit:cb0ea93"
+   ],
+   "status_changed_on": "2026-09-05T05:37:24Z"
   },
   {
    "id": "IMP-EV-0208",
@@ -25211,5 +25229,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-05T05:33:33Z"
+ "updated_on": "2026-09-05T05:37:24Z"
 }
