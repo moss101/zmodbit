@@ -31,6 +31,7 @@ jobs:
 
       - name: Stage 1 — scripted daemon E2E (no credentials)
         run: |
+          mkdir -p docs/evidence
           cargo test -p modbit-core-runtime --test daemon_scripted_e2e -- --test-threads=1 --nocapture \
             | tee docs/evidence/m2-11-scripted-e2e.log
           grep -q "test result: ok" docs/evidence/m2-11-scripted-e2e.log
@@ -42,6 +43,7 @@ jobs:
           MODBIT_LIVE_MODEL: ${{ vars.MODBIT_LIVE_MODEL || 'gpt-4o-mini' }}
           MODBIT_BASE_URL: ${{ vars.MODBIT_BASE_URL }}
         run: |
+          mkdir -p docs/evidence
           if [ -z "$OPENAI_API_KEY" ]; then
             echo "OPENAI_API_KEY secret not configured — live stage skipped (docs/15 pending)."
             exit 0

@@ -1,0 +1,150 @@
+# Modbit M0/M1 reverification evidence log
+# Date: 2026-09-05T09:54:40Z
+# Host: Darwin 25.5.0 arm64
+# Purpose: typed evidence for M0/M1 COMPLETE nodes after Future-tasks.md section 4 governance changes.
+
+## Governance gates (M0 tooling)
+$ python3 tools/architecture-lint/lint.py --self-test
+SELF-TEST OK: forbidden-edge detection works (6/6 injections caught, clean graph passes)
+  reachability: out-of-closure COMPLETE rejected       OK
+  reachability: added seed unblocks (cloud-worker path) OK
+  placement: cross-subsystem REQ tag rejected          OK
+  placement: crate dir extraction                      OK
+exit=0
+
+$ python3 tools/decision-guard.py --self-test
+decision-guard self-test:
+  locked change, no ADR                         OK
+  locked change, valid ADR in changeset         OK
+  unlocked change only                          OK
+  locked change, ADR missing approval           OK
+  locked change, ADR not ACCEPTED               OK
+exit=0
+
+$ python3 tools/coverage-guard.py --self-test
+coverage-guard self-test:
+  R1 missing IMP link                      OK
+  R2 COMPLETE without evidence             OK
+  R2 COMPLETE with untyped refs only       OK
+  R2 COMPLETE with typed ref passes        OK
+  R3 duplicate active owner                OK
+  R5 missing graph id                      OK
+  R4 owner drift                           OK
+  clean ledger passes                      OK
+exit=0
+
+$ python3 tools/examples_runner.py --self-test
+examples-runner self-test: OK (drift detection verified)
+exit=0
+
+$ cargo clippy --workspace --all-targets -- -D warnings
+exit=0 (warnings policy clean)
+
+## Rust test suite (M1 durable shell + all crates)
+$ cargo test --workspace
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 26 tests
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 10 tests
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+running 2 tests
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+running 7 tests
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+running 19 tests
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.65s
+running 5 tests
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+running 18 tests
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.01s
+running 3 tests
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 12 tests
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+running 6 tests
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+running 10 tests
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+running 3 tests
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+cargo test exit: 0
+
+## TypeScript (M1 desktop + protocol bindings)
+$ pnpm -r typecheck
+packages/surface-protocol typecheck$ tsc --noEmit
+packages/ui typecheck$ tsc --noEmit
+packages/ui typecheck: Done
+packages/design-tokens typecheck: Done
+packages/surface-protocol typecheck: Done
+apps/desktop typecheck: Done
+typecheck exit: 0
+
+$ pnpm -r test
+packages/surface-protocol test:    Start at  12:56:25
+packages/surface-protocol test:    Duration  418ms (transform 89ms, setup 0ms, collect 109ms, tests 5ms, environment 0ms, prepare 120ms)
+apps/desktop test: modbit-core: serving on /var/folders/_1/1xvpd9n50m97rq8_c4ylpw940000gn/T/modbit-core-8ac840f49a9bd65d.sock
+apps/desktop test: modbit-core: serving on /var/folders/_1/1xvpd9n50m97rq8_c4ylpw940000gn/T/modbit-core-41c4dd68138eff01.sock
+apps/desktop test: modbit transport: handshake failed: auth rejected: boot secret proof mismatch
+apps/desktop test:  ✓ test/surface.e2e.test.ts (3 tests) 50ms
+apps/desktop test:  Test Files  7 passed (7)
+apps/desktop test:       Tests  22 passed (22)
+apps/desktop test:    Start at  12:56:25
+apps/desktop test:    Duration  378ms (transform 96ms, setup 0ms, collect 166ms, tests 68ms, environment 1ms, prepare 363ms)
+packages/surface-protocol test: Done
+apps/desktop test: Done
+pnpm test exit: 0
