@@ -248,4 +248,26 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
     let diff = resp.diff.unwrap();
     assert_eq!(diff.task_id, tid);
     assert!(diff.files.iter().any(|f| f.path == "f.txt"), "{:?}", diff.files);
+
+    // An agent that COMMITS its work must not empty the diff: GetDiff is
+    // bound to the task's base revision, not the worktree's moved HEAD
+    // (observed live: a coding agent naturally commits).
+    let worktree = worktree_root.join(&tid);
+    let repo = GitRepo::open(&worktree).unwrap();
+    repo.set_config("user.email", "agent@modbit.test").unwrap();
+    repo.set_config("user.name", "Agent").unwrap();
+    std::fs::write(worktree.join("f.txt"), "one\ntwo\nthree\n").unwrap();
+    std::fs::write(worktree.join("extra.txt"), "new file\n").unwrap();
+    repo.commit_all("agent commits its work").unwrap();
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::GetDiff(pb::GetDiffRequest { task_id: tid.clone() }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    let diff = resp.diff.unwrap();
+    assert!(
+        diff.files.iter().any(|f| f.path == "f.txt"),
+        "committed work stays in the diff: {:?}",
+        diff.files
+    );
 }
