@@ -13,6 +13,8 @@ modbit-policy = { path = "../policy" }
 modbit-tools = { path = "../tools" }
 modbit-providers = { path = "../providers" }
 modbit-prompt-compiler = { path = "../prompt-compiler" }
+modbit-git = { path = "../git" }
+tokio = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
 serde_json = { workspace = true }

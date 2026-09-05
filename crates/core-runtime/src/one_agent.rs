@@ -20,6 +20,36 @@ pub trait ModelTransport {
     fn stream(&self, request: &ModelRequest) -> Result<Vec<StreamEvent>, String>;
 }
 
+/// Durable-run observer (docs/13 Run/Turn/RunStep): the runtime reports
+/// every state change it drives; the scheduler writes them as events into
+/// the store. All methods default to no-ops so tests observe subsets.
+pub trait RunObserver: Sync + Send {
+    fn run_started(&self, _run_id: &str, _attempt: u32) {}
+    fn turn_prepared(&self, _turn_id: &str, _ordinal: u32) {}
+    fn model_invoke_started(&self, _turn_id: &str, _step_id: &str) {}
+    fn model_invoke_finished(
+        &self,
+        _turn_id: &str,
+        _step_id: &str,
+        _usage: Option<modbit_providers::TokenUsage>,
+    ) {
+    }
+    fn tool_step_started(&self, _turn_id: &str, _step_id: &str, _call_id: &str, _name: &str) {}
+    fn tool_step_finished(
+        &self,
+        _turn_id: &str,
+        _step_id: &str,
+        _call_id: &str,
+        _name: &str,
+        _ok: bool,
+    ) {
+    }
+    fn turn_completed(&self, _turn_id: &str) {}
+    fn turn_failed(&self, _turn_id: &str, _failure_code: &str) {}
+    fn run_completed(&self, _run_id: &str) {}
+    fn run_failed(&self, _run_id: &str, _failure_code: &str) {}
+}
+
 /// The task the agent is asked to run.
 #[derive(Clone, Debug, Default)]
 pub struct AgentTask {
@@ -49,6 +79,8 @@ pub struct ToolOutcome {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct AgentRunResult {
     pub task_id: String,
+    /// The run aggregate id (docs/13 § Run) of this execution attempt.
+    pub run_id: String,
     pub final_state: TurnState,
     pub turns_used: u32,
     pub assembled_text: String,
@@ -98,10 +130,16 @@ pub struct OneAgentRuntime<'a> {
     /// Capability grants the agent's tool calls ride on.
     pub grants: &'a [modbit_policy::CapabilityGrant],
     pub max_turns: u32,
+    /// Durable-run observer (the scheduler); None in unit tests.
+    pub observer: Option<&'a dyn RunObserver>,
 }
 
 impl<'a> OneAgentRuntime<'a> {
     pub fn run(&self, task: &AgentTask) -> Result<AgentRunResult, AgentError> {
+        let run_id = modbit_domain::RunId::generate().to_string();
+        if let Some(o) = self.observer {
+            o.run_started(&run_id, 1);
+        }
         // Step 3: compile the prompt through the canonical compiler.
         let compiled = compile(&CompilerInputs {
             model: task.model.clone(),
@@ -126,8 +164,12 @@ impl<'a> OneAgentRuntime<'a> {
         loop {
             if turns_used >= self.max_turns {
                 transition(&mut state, TurnState::Failed)?;
+                if let Some(o) = self.observer {
+                    o.run_failed(&run_id, "max_turns_exceeded");
+                }
                 return Ok(AgentRunResult {
                     task_id: task.task_id.clone(),
+                    run_id,
                     final_state: state,
                     turns_used,
                     assembled_text: assembled.clone(),
@@ -137,6 +179,10 @@ impl<'a> OneAgentRuntime<'a> {
                 });
             }
             turns_used += 1;
+            let turn_id = modbit_domain::TurnId::generate().to_string();
+            if let Some(o) = self.observer {
+                o.turn_prepared(&turn_id, turns_used);
+            }
 
             // Step 4: invoke the model through the normalized gateway shape.
             // Tool projection (docs/15): the registry's typed schemas
@@ -163,18 +209,30 @@ impl<'a> OneAgentRuntime<'a> {
                 temperature: 0.2,
                 tools,
             };
+            let model_step = modbit_domain::RunStepId::generate().to_string();
+            if let Some(o) = self.observer {
+                o.model_invoke_started(&turn_id, &model_step);
+            }
             let events = self
                 .transport
                 .stream(&request)
                 .map_err(AgentError::Transport)?;
+            let events = {
+                // Merge streamed tool-call fragments into the uniform
+                // contract before the runtime consumes them (docs/14 step 5).
+                let mut assembler = modbit_providers::gateway::ToolCallAssembler::new();
+                let mut normalized = Vec::with_capacity(events.len());
+                for event in events {
+                    normalized.extend(assembler.feed(event));
+                }
+                normalized
+            };
 
             // Step 5: parse typed events; reject invalid tool payloads
             // BEFORE side effects. Fragmented tool calls are merged by the
             // assembler so both providers yield the same uniform contract.
-            let mut assembler = modbit_providers::gateway::ToolCallAssembler::new();
             let mut requested_tools: Vec<(String, String, Value)> = Vec::new();
             for event in events {
-                for event in assembler.feed(event) {
                 match event {
                     StreamEvent::Delta(text) => {
                         assembled.push_str(&text);
@@ -219,7 +277,12 @@ impl<'a> OneAgentRuntime<'a> {
                         }
                     }
                 }
-                }
+            }
+
+            // The model step ends once its whole event stream is parsed
+            // (usage arrives in the final frames, so report after parsing).
+            if let Some(o) = self.observer {
+                o.model_invoke_finished(&turn_id, &model_step, last_usage);
             }
 
             if requested_tools.is_empty() {
@@ -228,8 +291,13 @@ impl<'a> OneAgentRuntime<'a> {
                 transition(&mut state, TurnState::Executing)?;
                 transition(&mut state, TurnState::Verifying)?;
                 transition(&mut state, TurnState::Completed)?;
+                if let Some(o) = self.observer {
+                    o.turn_completed(&turn_id);
+                    o.run_completed(&run_id);
+                }
                 return Ok(AgentRunResult {
                     task_id: task.task_id.clone(),
+                    run_id,
                     final_state: state,
                     turns_used,
                     assembled_text: assembled,
@@ -243,6 +311,12 @@ impl<'a> OneAgentRuntime<'a> {
             // the evidence into the conversation for the repair turn.
             transition(&mut state, TurnState::Executing)?;
             for (call_id, name, arguments) in requested_tools {
+                let tool_step = modbit_domain::RunStepId::generate().to_string();
+                let call_id_for_step = call_id.clone();
+                let name = name.clone();
+                if let Some(o) = self.observer {
+                    o.tool_step_started(&turn_id, &tool_step, &call_id_for_step, &name);
+                }
                 let name_for_log = name.clone();
                 let effect_class = self
                     .registry
@@ -283,6 +357,15 @@ impl<'a> OneAgentRuntime<'a> {
                         }
                     }
                 };
+                if let Some(o) = self.observer {
+                    o.tool_step_finished(
+                        &turn_id,
+                        &tool_step,
+                        &call_id_for_step,
+                        &name_for_log,
+                        outcome.refusal.is_none(),
+                    );
+                }
                 conversation.push(format!(
                     "tool {name_for_log} → {}",
                     serde_json::to_string(&outcome).unwrap_or_default()
@@ -339,6 +422,7 @@ mod tests {
             kernel,
             grants,
             max_turns: 4,
+            observer: None,
         }
     }
 
@@ -568,6 +652,7 @@ mod tests {
             kernel: &kernel,
             grants: &grants,
             max_turns: 3,
+            observer: None,
         };
 
         let result = rt.run(&task()).unwrap();

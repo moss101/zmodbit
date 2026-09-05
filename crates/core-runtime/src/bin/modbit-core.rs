@@ -26,7 +26,31 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let services = CoreServices::new(store);
+    let services = Arc::new(CoreServices::new(store.clone()));
+
+    // The single scheduler (docs/14): tails the store for task_started and
+    // owns every run. Started in every host mode so runs begin whichever
+    // surface executed the command (socket or HTTP daemon).
+    let _scheduler = modbit_core_runtime::scheduler::Scheduler::spawn(
+        store.clone(),
+        modbit_core_runtime::scheduler::SchedulerConfig::from_env(),
+    );
+
+    // Optional multi-client HTTP+SSE daemon (headless mode, REQ-EV-0126):
+    // MODBIT_HTTP_ADDR=127.0.0.1:0 binds it alongside the socket transport.
+    if let Ok(addr) = std::env::var("MODBIT_HTTP_ADDR") {
+        match modbit_core_runtime::daemon::Daemon::bind(&addr, store.clone(), services.clone()) {
+            Ok(daemon) => {
+                let bound = daemon.local_addr().unwrap_or_default();
+                eprintln!("modbit-core: http daemon on {bound}");
+                std::thread::spawn(move || daemon.serve());
+            }
+            Err(e) => {
+                eprintln!("modbit-core: cannot bind http daemon on {addr}: {e}");
+                std::process::exit(1);
+            }
+        }
+    }
 
     let (secret, secret_hex) = match std::env::var("MODBIT_BOOT_SECRET") {
         Ok(hex) => match BootSecret::from_hex(&hex) {

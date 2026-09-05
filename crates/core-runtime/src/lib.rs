@@ -17,6 +17,7 @@ pub mod daemon;
 pub mod delegation;
 pub mod fleet_admission;
 pub mod one_agent;
+pub mod scheduler;
 pub mod reminder_engine;
 pub mod surface;
 
