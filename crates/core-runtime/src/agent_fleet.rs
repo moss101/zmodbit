@@ -128,6 +128,7 @@ impl fmt::Display for FleetError {
 impl std::error::Error for FleetError {}
 
 /// The fleet: all agent nodes + the durable journal.
+#[derive(Default)]
 pub struct AgentFleet {
     nodes: BTreeMap<String, AgentNode>,
     idempotency: BTreeMap<String, String>,
@@ -137,11 +138,7 @@ pub struct AgentFleet {
 impl AgentFleet {
     /// In-memory fleet (tests / already-loaded state).
     pub fn new() -> Self {
-        Self {
-            nodes: BTreeMap::new(),
-            idempotency: BTreeMap::new(),
-            journal: None,
-        }
+        Self::default()
     }
 
     /// Loads a fleet from a durable journal file (restart path).
