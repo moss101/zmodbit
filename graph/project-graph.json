@@ -1980,9 +1980,20 @@
    "milestone": "M7",
    "order": 1,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T07:13:37Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
+    "commit:fb1cf8b"
+   ],
+   "status_changed_on": "2026-09-05T07:19:14Z",
+   "notes": [
+    {
+     "at": "2026-09-05T07:19:14Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "Capability landed in browser lib.rs: semantic entities with stable element refs (M7.2), state fingerprints + delta stream (M7.3), semantic actions recorded as graph transitions with postcondition deltas (M7.4)"
+    }
+   ]
   },
   {
    "id": "M7.3",
@@ -1992,9 +2003,20 @@
    "milestone": "M7",
    "order": 2,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T07:13:37Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
+    "commit:fb1cf8b"
+   ],
+   "status_changed_on": "2026-09-05T07:19:14Z",
+   "notes": [
+    {
+     "at": "2026-09-05T07:19:14Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "Capability landed in browser lib.rs: semantic entities with stable element refs (M7.2), state fingerprints + delta stream (M7.3), semantic actions recorded as graph transitions with postcondition deltas (M7.4)"
+    }
+   ]
   },
   {
    "id": "M7.4",
@@ -2004,9 +2026,20 @@
    "milestone": "M7",
    "order": 3,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
-   "evidence": [],
-   "status_changed_on": "2026-09-05T07:13:37Z"
+   "status": "COMPLETE",
+   "evidence": [
+    "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
+    "commit:fb1cf8b"
+   ],
+   "status_changed_on": "2026-09-05T07:19:14Z",
+   "notes": [
+    {
+     "at": "2026-09-05T07:19:14Z",
+     "from": "IMPLEMENTING",
+     "to": "COMPLETE",
+     "note": "Capability landed in browser lib.rs: semantic entities with stable element refs (M7.2), state fingerprints + delta stream (M7.3), semantic actions recorded as graph transitions with postcondition deltas (M7.4)"
+    }
+   ]
   },
   {
    "id": "M7.5",
@@ -25620,5 +25653,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-05T07:17:33Z"
+ "updated_on": "2026-09-05T07:19:14Z"
 }
