@@ -103,6 +103,15 @@ impl ToolRegistry {
         Ok(())
     }
 
+    /// Removes a tool from the registry (reload workflows).
+    pub fn remove(&self, name: &str) -> Result<(), ToolError> {
+        let mut tools = self.tools.lock().expect("registry mutex poisoned");
+        if tools.remove(name).is_none() {
+            return Err(ToolError::UnknownTool(name.to_string()));
+        }
+        Ok(())
+    }
+
     pub fn list(&self) -> Vec<(String, String, EffectClass)> {
         self.tools
             .lock()

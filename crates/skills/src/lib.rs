@@ -14,10 +14,14 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::Path;
 
+pub mod compact_mode;
 pub mod eval_harness;
 pub mod evolution;
 pub mod impact_log;
 pub mod layering;
+pub mod media_budgets;
+pub mod packaging;
+pub mod sdk;
 pub mod wiki_index;
 
 pub fn sha256_hex(bytes: &[u8]) -> String {

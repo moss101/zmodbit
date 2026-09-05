@@ -552,6 +552,8 @@ version = "0.1.0"
 name = "modbit-skills"
 version = "0.1.0"
 dependencies = [
+ "modbit-policy",
+ "modbit-tools",
  "serde",
  "serde_json",
  "sha2",
