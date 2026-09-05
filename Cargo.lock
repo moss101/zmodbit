@@ -814,6 +814,7 @@ dependencies = [
  "futures",
  "modbit-domain",
  "modbit-event-store",
+ "modbit-git",
  "modbit-policy",
  "modbit-prompt-compiler",
  "modbit-protocol",
