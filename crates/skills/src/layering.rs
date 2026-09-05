@@ -42,6 +42,9 @@ pub enum InstructionScope {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LayeredInstruction {
     pub scope: InstructionScope,
+    /// The subject this instruction governs — conflicting rules share a
+    /// subject and resolve to one winner.
+    pub subject: String,
     pub text: String,
     /// Optional expiry (unix ms): expired instructions drop out.
     pub ttl_expires_ms: Option<i64>,
@@ -49,9 +52,15 @@ pub struct LayeredInstruction {
 }
 
 impl LayeredInstruction {
-    pub fn new(scope: InstructionScope, text: &str, ttl_expires_ms: Option<i64>) -> Self {
+    pub fn new(
+        scope: InstructionScope,
+        subject: &str,
+        text: &str,
+        ttl_expires_ms: Option<i64>,
+    ) -> Self {
         Self {
             scope,
+            subject: subject.to_string(),
             text: text.to_string(),
             ttl_expires_ms,
             sha256: sha256_hex(text.as_bytes()),
@@ -86,11 +95,8 @@ impl std::error::Error for LayerError {}
 /// Resolves instruction layers at `now_ms`: expired items drop out;
 /// items with identical normalized text CONFLICT — the highest-precedence
 /// scope wins and the losers are recorded as diagnostics with sources.
-pub fn resolve_layers(
-    layers: &[LayeredInstruction],
-    now_ms: i64,
-) -> Vec<ResolvedInstruction> {
-    let mut by_text: BTreeMap<String, Vec<&LayeredInstruction>> = BTreeMap::new();
+pub fn resolve_layers(layers: &[LayeredInstruction], now_ms: i64) -> Vec<ResolvedInstruction> {
+    let mut by_subject: BTreeMap<String, Vec<&LayeredInstruction>> = BTreeMap::new();
     for layer in layers {
         // TTL: expired instructions are gone.
         if let Some(expires) = layer.ttl_expires_ms {
@@ -98,23 +104,20 @@ pub fn resolve_layers(
                 continue;
             }
         }
-        by_text
-            .entry(layer.text.to_lowercase())
+        by_subject
+            .entry(layer.subject.to_lowercase())
             .or_default()
             .push(layer);
     }
     let mut out = Vec::new();
-    for (_normalized, mut group) in by_text {
+    for (_subject, mut group) in by_subject {
         group.sort_by(|a, b| a.scope.cmp(&b.scope));
         let winner = group[0].clone();
         let conflicts = group[1..]
             .iter()
             .map(|l| (l.scope, l.text.clone()))
             .collect();
-        out.push(ResolvedInstruction {
-            winner,
-            conflicts,
-        });
+        out.push(ResolvedInstruction { winner, conflicts });
     }
     out
 }
@@ -143,7 +146,10 @@ impl fmt::Display for ExtensionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ExtensionError::HashMismatch { expected, actual } => {
-                write!(f, "extension hash mismatch: expected {expected}, got {actual}")
+                write!(
+                    f,
+                    "extension hash mismatch: expected {expected}, got {actual}"
+                )
             }
             ExtensionError::InvalidManifest(why) => write!(f, "invalid extension manifest: {why}"),
             ExtensionError::EscalationRefused { skill } => {
@@ -184,7 +190,8 @@ pub fn install_extension(
         }
     }
     let name = name.ok_or_else(|| ExtensionError::InvalidManifest("missing name".into()))?;
-    let version = version.ok_or_else(|| ExtensionError::InvalidManifest("missing version".into()))?;
+    let version =
+        version.ok_or_else(|| ExtensionError::InvalidManifest("missing version".into()))?;
     Ok(InstalledExtension {
         name,
         version,
@@ -216,14 +223,21 @@ mod tests {
     fn conflicting_rules_resolve_to_winner_with_source() {
         let now = 1_000_000;
         let layers = vec![
-            LayeredInstruction::new(InstructionScope::Memory, "always run clippy before commit", None),
+            LayeredInstruction::new(
+                InstructionScope::Memory,
+                "commit-policy",
+                "always run clippy before commit",
+                None,
+            ),
             LayeredInstruction::new(
                 InstructionScope::User,
+                "commit-policy",
                 "ALWAYS run clippy before commit, with -D warnings",
                 None,
             ),
             LayeredInstruction::new(
                 InstructionScope::Project,
+                "commit-policy",
                 "run clippy before commit using the CI profile",
                 Some(now + 60_000), // still valid
             ),
@@ -236,12 +250,19 @@ mod tests {
         assert!(position.winner.text.contains("-D warnings"));
         // The losers are recorded as conflicts with their sources.
         assert_eq!(position.conflicts.len(), 2);
-        assert!(position.conflicts.iter().any(|(scope, _)| *scope == InstructionScope::Project));
-        assert!(position.conflicts.iter().any(|(scope, _)| *scope == InstructionScope::Memory));
+        assert!(position
+            .conflicts
+            .iter()
+            .any(|(scope, _)| *scope == InstructionScope::Project));
+        assert!(position
+            .conflicts
+            .iter()
+            .any(|(scope, _)| *scope == InstructionScope::Memory));
 
         // A TTL-expired instruction drops out entirely.
         let expired = vec![LayeredInstruction::new(
             InstructionScope::User,
+            "api-choice",
             "use the old API",
             Some(now - 1),
         )];
@@ -256,8 +277,7 @@ mod tests {
         let sha256 = sha256_hex(manifest);
 
         // Valid hash: installs with provenance.
-        let installed =
-            install_extension(manifest, &sha256, "extension:acme-tools").unwrap();
+        let installed = install_extension(manifest, &sha256, "extension:acme-tools").unwrap();
         assert_eq!(installed.name, "helper");
         assert_eq!(installed.sha256, sha256);
 
@@ -269,18 +289,28 @@ mod tests {
 
         // Activation WITHOUT escalation: read-only request under a
         // read-only ceiling works; an escalation attempt is refused.
-        let capsule =
-            activate_extension(&installed, RequestedAuthority::ReadOnly, AuthorityCeiling::ReadOnly)
-                .unwrap();
+        let capsule = activate_extension(
+            &installed,
+            RequestedAuthority::ReadOnly,
+            AuthorityCeiling::ReadOnly,
+        )
+        .unwrap();
         assert_eq!(capsule.effective_authority, AuthorityCeiling::ReadOnly);
         assert!(matches!(
-            activate_extension(&installed, RequestedAuthority::Admin, AuthorityCeiling::External),
+            activate_extension(
+                &installed,
+                RequestedAuthority::Admin,
+                AuthorityCeiling::External
+            ),
             Err(ExtensionError::EscalationRefused { .. })
         ));
         // The capsule narrowed an External request to the Write ceiling.
-        let narrowed =
-            activate_extension(&installed, RequestedAuthority::External, AuthorityCeiling::Write)
-                .unwrap();
+        let narrowed = activate_extension(
+            &installed,
+            RequestedAuthority::External,
+            AuthorityCeiling::Write,
+        )
+        .unwrap();
         assert_eq!(narrowed.effective_authority, AuthorityCeiling::Write);
     }
 }
