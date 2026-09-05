@@ -21,6 +21,7 @@ pub mod impact_log;
 pub mod layering;
 pub mod media_budgets;
 pub mod packaging;
+pub mod profile_evolution;
 pub mod sdk;
 pub mod wiki_index;
 

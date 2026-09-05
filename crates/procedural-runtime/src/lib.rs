@@ -7,6 +7,8 @@
 //! Canonical owner subsystem: procedural-runtime (docs/81). Layout:
 //! docs/12.
 
+pub mod composition;
+
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
