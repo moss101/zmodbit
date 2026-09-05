@@ -1138,13 +1138,18 @@
    "milestone": "M2",
    "order": 0,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33843562145",
     "commit:5a7abda",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -1176,10 +1181,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.2",
@@ -1189,13 +1200,18 @@
    "milestone": "M2",
    "order": 1,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33844688327",
     "commit:a8c685a",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -1221,10 +1237,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.3",
@@ -1234,13 +1256,18 @@
    "milestone": "M2",
    "order": 2,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33848939826",
     "commit:ef91e2f",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -1266,10 +1293,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.4",
@@ -1279,13 +1312,18 @@
    "milestone": "M2",
    "order": 3,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33848939826",
     "commit:ef91e2f",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -1305,10 +1343,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.5",
@@ -1318,13 +1362,17 @@
    "milestone": "M2",
    "order": 4,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33850860865",
     "commit:038feea",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002"
    ],
    "notes": [
     {
@@ -1350,10 +1398,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.6",
@@ -1363,13 +1417,18 @@
    "milestone": "M2",
    "order": 5,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
     "commit:063cede",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -1395,10 +1454,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.7",
@@ -1408,13 +1473,18 @@
    "milestone": "M2",
    "order": 6,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
     "commit:063cede",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -1458,10 +1528,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.8",
@@ -1471,13 +1547,17 @@
    "milestone": "M2",
    "order": 7,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
     "commit:063cede",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002"
    ],
    "notes": [
     {
@@ -1503,10 +1583,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M2.9",
@@ -1516,13 +1602,18 @@
    "milestone": "M2",
    "order": 8,
    "source": "docs/43",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
     "commit:063cede",
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -1554,10 +1645,16 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M3.1",
@@ -3088,11 +3185,16 @@
    "order": 10,
    "source": "docs/51_E2E_ACCEPTANCE_TEST_CATALOG.md; Future-tasks.md section 5 Phase 1 item 7",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "REAL_TESTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "log:docs/evidence/m2-11-scripted-e2e.log",
     "receipt:2218cd9879d4a2c2910f56a66a4ce5f2723068366dafe12b28d4434adcde4484",
-    "run:local/daemon_scripted_e2e"
+    "run:local/daemon_scripted_e2e",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20:25Z.log",
+    "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
+    "scenario:E2E-001",
+    "scenario:E2E-002",
+    "scenario:E2E-003"
    ],
    "notes": [
     {
@@ -3106,9 +3208,15 @@
      "from": "WIRED",
      "to": "REAL_TESTING",
      "note": "REAL_TESTING via the daemon-driven scripted E2E (real modbit-core binary + scheduler + git worktrees + execd broker + real tool effectors; model scripted locally). Live-model proof (M2.11 → E2E_PROVEN) pending provider credentials."
+    },
+    {
+     "at": "2026-09-05T20:40:00Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
     }
    ],
-   "status_changed_on": "2026-09-05T15:31:16Z"
+   "status_changed_on": "2026-09-05T20:40:00Z"
   },
   {
    "id": "M5.7",
@@ -29907,5 +30015,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-05T15:31:16Z"
+ "updated_on": "2026-09-05T20:40:00Z"
 }
