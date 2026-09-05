@@ -409,7 +409,7 @@ impl Scheduler {
             model: self.config.model.clone(),
             provider: format!("{:?}", self.config.provider).to_lowercase(),
             system_policy: system_policy(&worktree_path, &base_revision),
-            workspace_rules: String::new(),
+            workspace_rules: read_workspace_rules(&worktree_path),
             context_pack,
             model_settings: self.config.model_settings,
             max_input_tokens: self.config.max_input_tokens,
@@ -645,6 +645,103 @@ fn build_context_pack(ws: &WorkspaceFileService, title: &str, prompt: &str) -> S
         shown.join("\n"),
         entries.len()
     )
+}
+
+/// Workspace rules files (Future-tasks Phase 2 item 4, docs/14 step 3):
+/// read the repo's instruction files into the `workspace_rules` prompt
+/// segment with per-file sha256 provenance. Sources, in order: root
+/// AGENTS.md, root CLAUDE.md, `.modbit/rules.md`, then every
+/// `.cursor/rules/*.mdc` (sorted), then AGENTS.md/CLAUDE.md found in
+/// subdirectories (bounded walk, root-first so deeper files appear
+/// later). Content is repo data: it rides as context, never as system
+/// authority (docs/52 — external content is not instruction).
+fn read_workspace_rules(worktree: &std::path::Path) -> String {
+    let mut sections: Vec<String> = Vec::new();
+
+    fn add_file(sections: &mut Vec<String>, path: &std::path::Path, display: &str) {
+        const MAX: usize = 64 * 1024;
+        let Ok(bytes) = std::fs::read(path) else { return };
+        let digest = {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(&bytes);
+            format!("{:x}", hasher.finalize())
+        };
+        let truncated = bytes.len() > MAX;
+        let mut text =
+            String::from_utf8_lossy(&bytes[..bytes.len().min(MAX)]).to_string();
+        if truncated {
+            text.push_str("\n…[rules file truncated at 64 KiB]\n");
+        }
+        sections.push(format!(
+            "## {display} (sha256:{digest}{extra})\n{text}",
+            extra = if truncated { ", truncated" } else { "" }
+        ));
+    }
+
+    // Root-level canonical sources.
+    for name in ["AGENTS.md", "CLAUDE.md", ".modbit/rules.md"] {
+        let path = worktree.join(name);
+        if path.is_file() {
+            add_file(&mut sections, &path, name);
+        }
+    }
+    // Cursor-style rule packs.
+    if let Ok(entries) = std::fs::read_dir(worktree.join(".cursor/rules")) {
+        let mut mdc: Vec<_> = entries
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|e| e == "mdc"))
+            .collect();
+        mdc.sort();
+        for path in mdc {
+            let display = path
+                .strip_prefix(worktree)
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| path.display().to_string());
+            add_file(&mut sections, &path, &display);
+        }
+    }
+    // Directory-scoped AGENTS.md/CLAUDE.md down the tree (root-first
+    // order; deeper entries appear later and override by proximity).
+    fn walk(dir: &std::path::Path, worktree: &std::path::Path, depth: usize, sections: &mut Vec<String>) {
+        const MAX_WALK_DEPTH: usize = 4;
+        if depth > MAX_WALK_DEPTH {
+            return;
+        }
+        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        let mut children: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+        children.sort();
+        for child in children {
+            if child.is_dir() {
+                let name = child.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if name == ".git" || name.starts_with('.') || name == "node_modules" || name == "target" {
+                    continue;
+                }
+                for rule in ["AGENTS.md", "CLAUDE.md"] {
+                    let path = child.join(rule);
+                    if path.is_file() {
+                        let display = path
+                            .strip_prefix(worktree)
+                            .map(|p| p.display().to_string())
+                            .unwrap_or_else(|_| path.display().to_string());
+                        add_file(sections, &path, &display);
+                    }
+                }
+                walk(&child, worktree, depth + 1, sections);
+            }
+        }
+    }
+    walk(worktree, worktree, 1, &mut sections);
+
+    if sections.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "# Workspace rules (repo-provided, provenance-hashed)\n\n{}\n",
+            sections.join("\n\n")
+        )
+    }
 }
 
 fn system_policy(worktree: &std::path::Path, base_revision: &str) -> String {
@@ -1406,4 +1503,61 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
+#[cfg(test)]
+mod rules_tests {
+    use super::read_workspace_rules;
+
+    fn tempdir(tag: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("modbit-rules-{tag}-{}", uuid::Uuid::now_v7().simple()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    /// Phase 2.4: the four canonical sources are read with per-file
+    /// sha256 provenance; subdirectory AGENTS.md appears after the root;
+    /// empty repos yield an empty segment.
+    #[test]
+    fn rules_sources_read_with_provenance() {
+        let root = tempdir("full");
+        std::fs::write(root.join("AGENTS.md"), "root: always run clippy").unwrap();
+        std::fs::write(root.join("CLAUDE.md"), "claude: be terse").unwrap();
+        std::fs::create_dir_all(root.join(".modbit")).unwrap();
+        std::fs::write(root.join(".modbit/rules.md"), "modbit: prefer tools").unwrap();
+        std::fs::create_dir_all(root.join(".cursor/rules")).unwrap();
+        std::fs::write(root.join(".cursor/rules/testing.mdc"), "cursor: test first").unwrap();
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::write(root.join("src/AGENTS.md"), "src: no unsafe").unwrap();
+
+        let rules = read_workspace_rules(&root);
+        assert!(rules.contains("# Workspace rules (repo-provided, provenance-hashed)"));
+        assert!(rules.contains("## AGENTS.md (sha256:"));
+        assert!(rules.contains("root: always run clippy"));
+        assert!(rules.contains("## .cursor/rules/testing.mdc (sha256:"));
+        assert!(rules.contains("test first"));
+        // Provenance hashes are the real sha256 of the file bytes.
+        let digest = {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(b"root: always run clippy");
+            format!("{:x}", hasher.finalize())
+        };
+        assert!(rules.contains(&digest), "provenance hash must match file bytes");
+        // Ordering: root AGENTS.md before the subdirectory's.
+        let root_pos = rules.find("root: always run clippy").unwrap();
+        let src_pos = rules.find("src: no unsafe").unwrap();
+        assert!(root_pos < src_pos, "root rules precede subdirectory rules");
+        // .git-like directories are skipped.
+        std::fs::create_dir_all(root.join(".git")).unwrap();
+        std::fs::write(root.join(".git/AGENTS.md"), "poison").unwrap();
+        let rules = read_workspace_rules(&root);
+        assert!(!rules.contains("poison"), "hidden directories are skipped");
+    }
+
+    #[test]
+    fn no_rules_files_yield_empty_segment() {
+        let root = tempdir("empty");
+        assert_eq!(read_workspace_rules(&root), "");
+    }
 }

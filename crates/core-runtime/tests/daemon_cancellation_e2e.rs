@@ -362,7 +362,7 @@ fn pause_task_parks_the_run_at_the_boundary() {
         tool_call_turn("c1", "shell.run", r#"{"argv":"sleep 3"}"#),
         text_turn("never reached"),
     ]);
-    let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
+    let (mut core, daemon, _db_path) = spawn_core(&repo, &worktrees, model);
 
     let task_id = start_task(&daemon, "pause mid tool", "Run the sleep.");
     std::thread::sleep(Duration::from_millis(1_000));
@@ -399,7 +399,7 @@ fn steer_task_note_rides_the_next_request() {
         tool_call_turn("c1", "fs.read", r#"{"path":"notes.txt"}"#),
         text_turn("steered"),
     ]);
-    let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
+    let (mut core, daemon, _db_path) = spawn_core(&repo, &worktrees, model);
 
     let task_id = start_task(&daemon, "steer me", "Read the notes.");
     // Steer while turn 1 is in flight: the note must land on request 2.

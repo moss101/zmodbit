@@ -1496,7 +1496,10 @@
     "receipt:1063bc3bbdeb50ece9bfb6a6e0b2db0b115520c1f2633fa431562e22b7a12bb4",
     "run:2026-09-05T23:10Z/stop_task_aborts_long_running_tool_and_cancels",
     "run:2026-09-05T23:10Z/pause_task_parks_the_run_at_the_boundary",
-    "run:2026-09-05T23:10Z/steer_task_note_rides_the_next_request"
+    "run:2026-09-05T23:10Z/steer_task_note_rides_the_next_request",
+    "log:docs/evidence/phase2-4-rules-files-2026-09-06.log",
+    "receipt:c4d8ba4ea2ac38230ab40fb27bde63f3a38a864f559fb2ea4082c7d819590bc9",
+    "run:2026-09-05T23:45Z/rules_files_ride_the_compiled_prompt_with_provenance"
    ],
    "notes": [
     {
@@ -1624,10 +1627,28 @@
      "from": "REAL_TESTING",
      "to": "E2E_PROVEN",
      "note": "Phase 2.3 (Future-tasks §2.5) closed: Stop/Pause/Steer reach the in-flight run through production routing — StopTask kills a REAL 30s broker run and writes durable run_failed(cancelled) within seconds (asserted in the daemon's SQLite); PauseTask parks at the boundary with no further invokes; SteerTask notes ride as user messages on the fixture-captured next request. Mutation (signal disconnected) detected by the run-plane assertion after the test was strengthened to catch the events-only escape."
+    },
+    {
+     "at": "2026-09-05T22:48:36Z",
+     "from": "E2E_PROVEN",
+     "to": "AUDITING",
+     "note": "Phase 2 item 4 (Future-tasks §2.3): audit rules files. NOT-FOUND — workspace_rules is always String::new() in the scheduler's AgentTask; AGENTS.md / CLAUDE.md / .cursor/rules/*.mdc / .modbit/rules.md in the target repo are never read; build_context_pack emits title+prompt+top-50 listing only."
+    },
+    {
+     "at": "2026-09-05T22:52:27Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Phase 2.4 slice: read_workspace_rules in the scheduler (root AGENTS.md/CLAUDE.md/.modbit/rules.md + .cursor/rules/*.mdc + subdirectory AGENTS.md/CLAUDE.md, bounded walk, 64KiB per-file cap, sha256 provenance per file) feeding AgentTask.workspace_rules; rules ride the compiled prompt's workspace-rules segment as repo DATA (never system authority)."
+    },
+    {
+     "at": "2026-09-05T22:53:04Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Phase 2.4 (Future-tasks §2.3) closed: rules files (root + .cursor/rules + subdirectory AGENTS/CLAUDE, provenance-hashed, bounded) ride the compiled prompt through the real daemon; asserted on the fixture-captured first request body. Mutation (reading disconnected) detected."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T22:48:05Z"
+   "status_changed_on": "2026-09-05T22:53:04Z"
   },
   {
    "id": "M2.8",

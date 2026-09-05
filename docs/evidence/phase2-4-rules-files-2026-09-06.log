@@ -1,0 +1,62 @@
+Phase 2 item 4 — repo rules files ride the compiled prompt
+===========================================================
+Node: M2.7 (Basic Prompt Compiler and one-agent runtime)
+Defect: Future-tasks.md section 2 item 3 (audit 2026-09-06)
+Revision: commit "Phase 2.4: repo rules files ride the compiled prompt
+with provenance" (amended to carry this file) on phase2/loop-hardening
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: NOT-FOUND)
+--------------------------------------------
+workspace_rules was always String::new(); the target repo's AGENTS.md /
+CLAUDE.md / .cursor/rules/*.mdc / .modbit/rules.md were never read.
+
+scheduler::read_workspace_rules now collects, in order: root AGENTS.md,
+root CLAUDE.md, .modbit/rules.md, sorted .cursor/rules/*.mdc, then
+subdirectory AGENTS.md/CLAUDE.md (walk depth <= 4; .git, hidden dirs,
+node_modules, target skipped; root-first so deeper files appear later).
+Each file: 64 KiB cap with a visible truncation marker and a per-file
+sha256 provenance header. The combined segment feeds AgentTask.
+workspace_rules and rides the prompt compiler's workspace-rules segment
+as repo DATA — never system authority (docs/52).
+
+PROOFS (always-on)
+------------------
+Unit (2026-09-05T23:4xZ), scheduler rules_tests:
+  rules_sources_read_with_provenance — all four sources read; the
+  provenance hash equals the file's real sha256 (recomputed in the
+  test); root AGENTS.md precedes subdirectory rules; a .git/AGENTS.md
+  poison file is skipped
+  no_rules_files_yield_empty_segment — empty repo yields ""
+  test result: ok. 2 passed
+
+Daemon E2E daemon_roles_e2e::rules_files_ride_the_compiled_prompt_
+with_provenance (2026-09-05T23:4xZ) — real daemon + scheduler + linked
+git worktree over a repo with COMMITTED AGENTS.md and
+.cursor/rules/testing.mdc (rules must be committed: the run works in a
+linked worktree at the base revision — untracked files never reach it;
+found while writing the test):
+  test result: ok. 3 passed in 1.78s (whole file; the rules test asserts
+  the fixture-captured FIRST request body carries both rule texts, the
+  "sha256:" provenance and the "# Workspace rules" segment header)
+
+MUTATION CHECK (docs/55), 2026-09-05T23:5xZ
+--------------------------------------------
+M-R: workspace_rules pinned back to String::new() (reading
+disconnected), bin rebuilt before the run:
+  rules_files test FAILED at the AGENTS.md assertion (exit 101).
+  Restored; clean run green.
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (456 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (pnpm gates unaffected: no TS/protocol change in this item;
+   verified green in this item's session — generate drift CLEAN,
+   typecheck/test exit 0)
+
+RESULT: M2.7 E2E_PROVEN with typed evidence; Future-tasks §2.3 cleared.
+Remaining for Phase 2: item 5 (M4 recovery, E2E-004), item 6 (shell
+correctness) + 5 green nightly runs.

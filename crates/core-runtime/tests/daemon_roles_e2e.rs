@@ -46,6 +46,53 @@ fn notes_fixture(tag: &str) -> PathBuf {
     root
 }
 
+/// Phase 2.4 (Future-tasks §2.3): the repo's rules files ride the
+/// compiled prompt with per-file sha256 provenance — asserted on the
+/// FIRST request body the daemon sends to the provider.
+#[test]
+fn rules_files_ride_the_compiled_prompt_with_provenance() {
+    let _guard = E2E_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+    let repo = notes_fixture("rf");
+    std::fs::write(repo.join("AGENTS.md"), "Always run the tests before claiming done.").unwrap();
+    std::fs::create_dir_all(repo.join(".cursor/rules")).unwrap();
+    std::fs::write(repo.join(".cursor/rules/testing.mdc"), "Prefer node.test for new tests.").unwrap();
+    // Rules must be COMMITTED: the run works in a linked worktree checked
+    // out at the base revision — untracked files never reach it.
+    GitRepo::open(&repo).unwrap().commit_all("rules files").expect("rules commit");
+    let worktrees = tempdir("rw");
+    let (model, bodies) = spawn_model_fixture(vec![text_turn("noted")]);
+    let (mut core, daemon) = spawn_core(&repo, &worktrees, model, "openai");
+
+    let task_id = run_read_task(&daemon);
+    wait_ready_for_review(&daemon, &task_id);
+
+    let bodies = bodies.lock().unwrap();
+    assert!(!bodies.is_empty(), "fixture captured the first request");
+    let messages = bodies[0]["messages"].as_array().expect("messages");
+    // The compiled prompt is the user turn right after the system message.
+    let user = messages
+        .iter()
+        .find(|m| m["role"] == "user")
+        .expect("user turn carries the compiled prompt");
+    let content = user["content"].as_str().unwrap();
+    assert!(
+        content.contains("Always run the tests before claiming done."),
+        "AGENTS.md rides the prompt"
+    );
+    assert!(
+        content.contains("Prefer node.test for new tests."),
+        ".cursor/rules/*.mdc rides the prompt"
+    );
+    assert!(content.contains("sha256:"), "provenance hashes ride the prompt");
+    assert!(
+        content.contains("# Workspace rules"),
+        "rules ride as the workspace_rules segment"
+    );
+
+    core.kill().ok();
+    core.wait().ok();
+}
+
 /// Serves a scripted agent script (one SSE body per connection) and records
 /// every incoming request body for wire-shape assertions.
 fn spawn_model_fixture(script: Vec<String>) -> (SocketAddr, Arc<Mutex<Vec<serde_json::Value>>>) {
