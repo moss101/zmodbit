@@ -8,6 +8,7 @@ pub mod adaptive;
 pub mod browser_evidence;
 pub mod diagnostics;
 pub mod evidence_index;
+pub mod release_hardening;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
