@@ -146,6 +146,7 @@ fn live_one_agent_loop_reaches_completed() {
         max_turns: 2,
         observer: None,
         control: None,
+        resume_conversation: None,
     };
 
     let result = rt.run(&task()).unwrap();

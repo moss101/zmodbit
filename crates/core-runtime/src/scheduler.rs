@@ -279,6 +279,22 @@ impl Scheduler {
         std::thread::Builder::new()
             .name("modbit-scheduler".into())
             .spawn(move || {
+                // Phase 2.5 boot scan: tasks still `running` when the
+                // daemon died are interrupted runs — resume each from its
+                // last committed conversation checkpoint (docs/19 §
+                // Checkpoint epochs). Sequential, before tailing.
+                if let Some(s) = weak.upgrade() {
+                    for task_id in interrupted_tasks(&s.store) {
+                        eprintln!(
+                            "modbit scheduler: resuming interrupted task {task_id}"
+                        );
+                        if let Err(err) = s.resume_task(&task_id) {
+                            eprintln!(
+                                "modbit scheduler: task {task_id} resume failed: {err}"
+                            );
+                        }
+                    }
+                }
                 let mut offset: u64 = 0;
                 loop {
                     let Some(s) = weak.upgrade() else { return };
@@ -314,6 +330,29 @@ impl Scheduler {
     /// poller calls this for each `task_started`; tests drive it directly.
     /// This is the ONLY entry that starts a run.
     pub fn run_task(&self, task_id_str: &str) -> Result<(), String> {
+        self.run_task_inner(task_id_str, None)
+    }
+
+    /// Phase 2.5 (M4 recovery): resume an interrupted run from the last
+    /// committed conversation checkpoint. Attempt 2 continues the same
+    /// model-visible conversation with an interruption note; effects
+    /// between the checkpoint and the kill surface to the model for
+    /// verification.
+    pub fn resume_task(&self, task_id_str: &str) -> Result<(), String> {
+        let Ok(task_id) = TaskId::parse(task_id_str) else {
+            return Err(format!("malformed task id {task_id_str:?}"));
+        };
+        // A missing checkpoint still resumes — as a fresh attempt that
+        // carries the interruption note (unknown-outcome guidance).
+        let checkpoint = load_latest_checkpoint(&self.store, &task_id).unwrap_or_default();
+        self.run_task_inner(task_id_str, Some(checkpoint))
+    }
+
+    fn run_task_inner(
+        &self,
+        task_id_str: &str,
+        resume: Option<Vec<modbit_providers::gateway::ChatMessage>>,
+    ) -> Result<(), String> {
         let Ok(task_id) = TaskId::parse(task_id_str) else {
             return Err(format!("malformed task id {task_id_str:?}"));
         };
@@ -321,7 +360,7 @@ impl Scheduler {
 
         // Idempotency: a task that already has a run is never re-run
         // (resume is the M4 recovery spine's job, not a fresh run).
-        if task_has_run(&self.store, &task_id)? {
+        if resume.is_none() && task_has_run(&self.store, &task_id)? {
             return Ok(());
         }
         // Claim: exactly one in-flight run per task (poller vs direct call).
@@ -355,8 +394,15 @@ impl Scheduler {
             &source.repo_root().ok_or("worktree source has no repository root")?,
         )
         .map_err(|e| format!("open repo: {e}"))?;
-        repo.worktree_add(&worktree_path, &layout.branch)
-            .map_err(|e| format!("allocate worktree: {e}"))?;
+        if worktree_path.exists() {
+            // Phase 2.5 resume (or a crashed prior attempt): the worktree
+            // already exists — reuse it; its state IS the possibly-partial
+            // effect surface the resumed run must verify.
+            GitRepo::open(&worktree_path).map_err(|e| format!("open existing worktree: {e}"))?;
+        } else {
+            repo.worktree_add(&worktree_path, &layout.branch)
+                .map_err(|e| format!("allocate worktree: {e}"))?;
+        }
 
         // 2. Context pack through the canonical file service on the worktree.
         let ws = Arc::new(
@@ -402,6 +448,7 @@ impl Scheduler {
             max_turns: self.config.max_turns,
             observer: Some(&observer),
             control: Some(&*signal),
+            resume_conversation: resume,
         };
         let task = AgentTask {
             task_id: task_id.to_string(),
@@ -1151,6 +1198,47 @@ fn worktree_grants() -> Vec<CapabilityGrant> {
     ]
 }
 
+/// Loads the latest conversation checkpoint for a task's runs (Phase
+/// 2.5): the newest `conversation_checkpointed` event on any run of the
+/// task, deserialized back into the gateway message projection.
+fn load_latest_checkpoint(
+    store: &Arc<EventStore>,
+    task_id: &TaskId,
+) -> Option<Vec<modbit_providers::gateway::ChatMessage>> {
+    // The task's runs come from run_started payloads (the `runs`
+    // projection table is not populated in this store generation).
+    let json: Option<String> = store.with_conn(|conn| {
+        conn.query_row(
+            "SELECT json_extract(payload_inline, '$.conversation_json')
+             FROM events
+             WHERE event_type = 'conversation_checkpointed'
+               AND aggregate_id IN (
+                 SELECT aggregate_id FROM events
+                 WHERE event_type = 'run_started'
+                   AND json_extract(payload_inline, '$.task_id') = ?1
+               )
+             ORDER BY sequence DESC LIMIT 1",
+            [task_id.to_string()],
+            |row| row.get(0),
+        )
+        .ok()
+    });
+    json.and_then(|json| serde_json::from_str(&json).ok())
+}
+
+/// Tasks stuck in `running` at daemon boot (Phase 2.5): their run died
+/// with the process. The scheduler resumes each from its last checkpoint.
+fn interrupted_tasks(store: &Arc<EventStore>) -> Vec<String> {
+    store.with_conn(|conn| {
+        let Ok(mut stmt) = conn.prepare("SELECT task_id FROM tasks WHERE state = 'running'") else {
+            return Vec::new();
+        };
+        stmt.query_map([], |row| row.get::<_, String>(0))
+            .map(|rows| rows.flatten().collect())
+            .unwrap_or_default()
+    })
+}
+
 /// Releases the in-flight claim when the run ends (success or failure).
 struct ClaimGuard<'a> {
     scheduler_in_flight: &'a std::sync::Mutex<std::collections::HashSet<String>>,
@@ -1421,6 +1509,22 @@ impl RunObserver for EventStoreObserver {
 
     fn turn_completed(&self, turn_id: &str) {
         self.append(AggregateType::Turn, turn_id, DomainEvent::TurnCompleted);
+    }
+
+    fn conversation_checkpointed(
+        &self,
+        run_id: &str,
+        turn_ordinal: u32,
+        conversation_json: &str,
+    ) {
+        self.append(
+            AggregateType::Run,
+            run_id,
+            DomainEvent::ConversationCheckpointed {
+                turn_ordinal,
+                conversation_json: conversation_json.to_string(),
+            },
+        );
     }
 
     fn compaction_applied(

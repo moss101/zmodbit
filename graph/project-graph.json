@@ -1499,7 +1499,11 @@
     "run:2026-09-05T23:10Z/steer_task_note_rides_the_next_request",
     "log:docs/evidence/phase2-4-rules-files-2026-09-06.log",
     "receipt:c4d8ba4ea2ac38230ab40fb27bde63f3a38a864f559fb2ea4082c7d819590bc9",
-    "run:2026-09-05T23:45Z/rules_files_ride_the_compiled_prompt_with_provenance"
+    "run:2026-09-05T23:45Z/rules_files_ride_the_compiled_prompt_with_provenance",
+    "log:docs/evidence/phase2-5-run-resume-2026-09-06.log",
+    "receipt:aba88a5b66765c374de548c132be8732e3675fb4992cdb882623523d8485a806",
+    "run:2026-09-06T00:10Z/core_kill_mid_run_resumes_from_checkpoint",
+    "run:2026-09-06T00:10Z/core_kill_first_tool_resumes_with_note"
    ],
    "notes": [
     {
@@ -1645,10 +1649,28 @@
      "from": "REAL_TESTING",
      "to": "E2E_PROVEN",
      "note": "Phase 2.4 (Future-tasks §2.3) closed: rules files (root + .cursor/rules + subdirectory AGENTS/CLAUDE, provenance-hashed, bounded) ride the compiled prompt through the real daemon; asserted on the fixture-captured first request body. Mutation (reading disconnected) detected."
+    },
+    {
+     "at": "2026-09-05T22:54:33Z",
+     "from": "E2E_PROVEN",
+     "to": "AUDITING",
+     "note": "Phase 2 item 5 (M4 recovery): audit. NOT-FOUND — no conversation checkpointing: a Core kill mid-run loses the model-visible conversation and the task stays stuck running forever (no boot scan); protocol-state and checkpoint crates unwired; RuntimeStore (runtime tables incl. tool_calls.unknown_outcome_reason) has zero callers. First missing link: nothing persists the conversation at turn boundaries."
+    },
+    {
+     "at": "2026-09-05T23:09:53Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Phase 2.5 slice (M4 recovery spine): ConversationCheckpointed run event persisted at every turn boundary (bounded 256KiB; the compaction path owns larger runs); scheduler boot scan resumes tasks stuck running after a Core kill — checkpoint restored into the runtime as the model-visible conversation (typed roles + call-id linkage intact) with an interruption note surfacing possibly-partial effects; worktree reused (its state IS the effect surface to verify); resume bypasses the fresh-run idempotency skip. Checkpoint events live in the store (the RuntimeStore runtime tables have zero callers — deviation noted for handoff)."
+    },
+    {
+     "at": "2026-09-05T23:10:32Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Phase 2.5 (M4 recovery spine) closed: REAL SIGKILL mid-run on two docs/54 kill points; restart resumes from the durable checkpoint (typed roles + call-id linkage + checkpointed result content asserted on the post-restart wire request); checkpoint-less kills resume as fresh attempts carrying the interruption note; checkpoints durable in SQLite. Mutation (loader pinned to None) detected. E2E-004's approval half remains for Phase 5 (approval loop unbuilt); M4 milestone itself stays open for its remaining tasks (protocol-state/checkpoint crate linkage where behavior requires them)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T22:53:04Z"
+   "status_changed_on": "2026-09-05T23:10:32Z"
   },
   {
    "id": "M2.8",

@@ -79,6 +79,15 @@ pub trait RunObserver: Sync + Send {
         _manifest_digest: &str,
     ) {
     }
+    /// Conversation checkpoint at a turn boundary (Phase 2.5, docs/19 §
+    /// Checkpoint epochs): recovery data for resuming after a Core kill.
+    fn conversation_checkpointed(
+        &self,
+        _run_id: &str,
+        _turn_ordinal: u32,
+        _conversation_json: &str,
+    ) {
+    }
 }
 
 /// Default input-token budget before the loop compacts the conversation.
@@ -204,6 +213,11 @@ pub struct OneAgentRuntime<'a> {
     pub observer: Option<&'a dyn RunObserver>,
     /// Live stop/pause/steer control (Phase 2.3); None in unit tests.
     pub control: Option<&'a dyn RunControl>,
+    /// Resume payload (Phase 2.5): a conversation checkpoint restored
+    /// from the store after a Core kill. When set, the run continues
+    /// from this conversation (plus an interruption note) instead of
+    /// compiling a fresh prompt.
+    pub resume_conversation: Option<Vec<ChatMessage>>,
 }
 
 impl<'a> OneAgentRuntime<'a> {
@@ -234,7 +248,23 @@ impl<'a> OneAgentRuntime<'a> {
         // § Provider contract): the compiled prompt as the user turn, then
         // each model turn as an assistant message (with the tool calls it
         // issued) answered by tool-result messages keyed by call id.
-        let mut conversation: Vec<ChatMessage> = vec![ChatMessage::user(compiled.compiled.clone())];
+        // Phase 2.5: a resumed run continues from the checkpointed
+        // conversation (the compiled prompt is already message 0) with an
+        // explicit interruption note — effects between the checkpoint and
+        // the kill may have partially applied, so the model must verify.
+        let mut conversation: Vec<ChatMessage> = match self.resume_conversation.clone() {
+            Some(restored) if !restored.is_empty() => restored,
+            _ => vec![ChatMessage::user(compiled.compiled.clone())],
+        };
+        if self.resume_conversation.is_some() {
+            // Every resume attempt — from a checkpoint or fresh — carries
+            // the interruption note: effects between the last committed
+            // point and the kill may have partially applied, so the model
+            // must verify worktree state before continuing.
+            conversation.push(ChatMessage::user(
+                "[system] the previous run attempt was interrupted after this point; effects between here and the interruption may have partially applied; verify worktree state before continuing.",
+            ));
+        }
         // Compaction epoch lineage (docs/19 § compaction epochs): the root epoch
         // covers the initial projection; every compaction extends it.
         let mut epochs = modbit_compaction::EpochRegistry::new();
@@ -611,6 +641,19 @@ impl<'a> OneAgentRuntime<'a> {
                 ));
                 tool_outcomes.push(outcome);
             }
+            // Phase 2.5: checkpoint the turn boundary — the durable
+            // recovery point for a Core kill mid-run. Bounded: giant
+            // conversations rely on compaction (Phase 2.2) instead.
+            {
+                const MAX_CHECKPOINT_BYTES: usize = 256 * 1024;
+                if let Ok(json) = serde_json::to_string(&conversation) {
+                    if json.len() <= MAX_CHECKPOINT_BYTES {
+                        if let Some(o) = self.observer {
+                            o.conversation_checkpointed(&run_id, turns_used, &json);
+                        }
+                    }
+                }
+            }
             // Repair loop: back to streaming with the tool evidence.
             transition(&mut state, TurnState::Streaming)?;
         }
@@ -670,6 +713,7 @@ mod tests {
             max_turns: 4,
             observer: None,
             control: None,
+            resume_conversation: None,
         }
     }
 
@@ -1073,6 +1117,7 @@ mod tests {
             max_turns: 3,
             observer: None,
             control: None,
+            resume_conversation: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1155,6 +1200,7 @@ mod tests {
             max_turns: 4,
             observer: Some(&observer),
             control: None,
+            resume_conversation: None,
         };
         let result = rt.run(&small_budget).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -1211,6 +1257,7 @@ mod tests {
             max_turns: 4,
             observer: None,
             control: None,
+            resume_conversation: None,
         };
         rt.run(&task()).unwrap();
         let seen = transport.seen.lock().unwrap();
@@ -1313,6 +1360,7 @@ mod tests {
             max_turns: 8,
             observer: None,
             control: Some(&control),
+            resume_conversation: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1359,12 +1407,63 @@ mod tests {
             max_turns: 8,
             observer: None,
             control: Some(&control),
+            resume_conversation: None,
         };
 
         let result = rt.run(&task()).unwrap();
         assert!(result.paused);
         assert!(!result.cancelled);
         assert_eq!(result.stop_reason.as_deref(), Some("paused"));
+    }
+
+    /// Phase 2.5: a resumed run continues from the checkpointed
+    /// conversation with the interruption note appended.
+    #[test]
+    fn resumed_run_continues_from_checkpoint_with_note() {
+        use modbit_providers::gateway::{Role, ToolCallData};
+        let transport = StubTransport::new(vec![vec![
+            StreamEvent::Delta("continued".into()),
+            StreamEvent::Completed {
+                stop_reason: Some("stop".into()),
+            },
+        ]]);
+        let registry = ToolRegistry::new();
+        let kernel = PolicyKernel::new(vec![]);
+        let checkpoint = vec![
+            ChatMessage::user("original prompt"),
+            ChatMessage::assistant_with_tool_calls(
+                "",
+                vec![ToolCallData {
+                    call_id: "c1".into(),
+                    name: "fs.read".into(),
+                    arguments: r#"{"path":"x"}"#.into(),
+                }],
+            ),
+            ChatMessage::tool_result("c1", r#"{"content":"file"}"#, false),
+        ];
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &[],
+            max_turns: 4,
+            observer: None,
+            control: None,
+            resume_conversation: Some(checkpoint),
+        };
+
+        let result = rt.run(&task()).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        let seen = transport.seen.lock().unwrap();
+        let messages = &seen[0].messages;
+        assert_eq!(messages.len(), 4, "checkpoint + interruption note");
+        assert_eq!(messages[0].role, Role::User);
+        assert_eq!(messages[1].role, Role::Assistant);
+        assert_eq!(messages[2].role, Role::Tool);
+        assert_eq!(messages[2].tool_call_id.as_deref(), Some("c1"));
+        let note = &messages[3];
+        assert_eq!(note.role, Role::User);
+        assert!(note.content.contains("previous run attempt was interrupted"));
     }
 
     /// Phase 2.3: SteerTask notes ride as user messages before the next
@@ -1415,6 +1514,7 @@ mod tests {
             max_turns: 8,
             observer: None,
             control: Some(&*control),
+            resume_conversation: None,
         };
 
         let result = rt.run(&task()).unwrap();

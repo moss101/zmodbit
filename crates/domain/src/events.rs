@@ -145,6 +145,16 @@ pub enum DomainEvent {
         /// sha256 digest of the CompactionManifest (modbit-compaction).
         manifest_digest: String,
     },
+    /// Conversation checkpoint at a turn boundary (docs/19 § Checkpoint
+    /// epochs; Future-tasks Phase 2 item 5): recovery data for resuming a
+    /// run after a Core kill — the model-visible conversation serialized
+    /// as JSON. Bounded by the emitter; the canonical history is the
+    /// event log itself.
+    ConversationCheckpointed {
+        turn_ordinal: u32,
+        /// JSON array of the gateway ChatMessage projection.
+        conversation_json: String,
+    },
     /// Session fork (REQ-EV-0122): a new branch carries the selected
     /// decisions/evidence capsule and NEVER pending approvals.
     SessionForked {
@@ -280,6 +290,7 @@ impl EventEnvelope {
             DomainEvent::RunStepCompleted => "run_step_completed",
             DomainEvent::RunStepFailed { .. } => "run_step_failed",
             DomainEvent::CompactionApplied { .. } => "compaction_applied",
+            DomainEvent::ConversationCheckpointed { .. } => "conversation_checkpointed",
             DomainEvent::SessionForked { .. } => "session_forked",
             DomainEvent::SessionRewound { .. } => "session_rewound",
             DomainEvent::GoalSet { .. } => "goal_set",

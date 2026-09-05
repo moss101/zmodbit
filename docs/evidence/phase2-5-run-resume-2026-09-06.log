@@ -1,0 +1,75 @@
+Phase 2 item 5 — M4 recovery: Core kill mid-run resumes from checkpoint
+========================================================================
+Node: M2.7 (loop) — M4 recovery spine slice
+Item: Future-tasks.md Phase 2 item 5 (audit 2026-09-06)
+Revision: commit "Phase 2.5: M4 recovery — Core kill mid-run resumes from
+the last checkpoint" (amended to carry this file) on phase2/loop-hardening
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: NOT-FOUND)
+--------------------------------------------
+No conversation checkpointing existed: a Core kill mid-run lost the
+model-visible conversation; on restart the task stayed `running` forever
+(boot scan did not exist); protocol-state/checkpoint crates remain
+unwired (RuntimeStore's runtime tables — incl. tool_calls.
+unknown_outcome_reason — have zero callers; deviation noted in handoff).
+
+- domain: ConversationCheckpointed run event (turn_ordinal + the
+  conversation serialized as the gateway ChatMessage projection)
+- one_agent: checkpoint emitted at EVERY turn boundary after tool results
+  commit (bounded to 256 KiB — larger conversations rely on the Phase 2.2
+  compaction path); resume_conversation input restores a checkpoint;
+  every resume attempt — checkpointed or fresh — appends the interruption
+  note ("effects between here and the interruption may have partially
+  applied; verify worktree state"), surfacing unknown outcomes to the
+  model
+- scheduler: boot scan (poller thread start) resumes every task still
+  `running`; checkpoint selected as the newest conversation_checkpointed
+  on the task's runs (runs located via run_started payloads — the runs
+  projection table is EMPTY in this store generation; the original
+  loader joined through it and resume silently no-op'd — found by the
+  E2E, fixed before commit); missing checkpoint resumes as a fresh
+  attempt; the worktree is REUSED (its state is the possibly-partial
+  effect surface the resumed run must verify)
+- E2E-004 (docs/51) is approval-scoped; its approval half is Phase 5
+  work (approval loop not built). This item delivers the run-resume
+  spine that scenario builds on. Recorded as a remaining gap.
+
+PROOFS (all always-on)
+----------------------
+Unit (2026-09-06T00:0xZ): one_agent 13 passed — resumed_run_continues_
+from_checkpoint_with_note: restored request = [user prompt, assistant
+with tool_calls, tool result keyed c1, interruption note].
+
+Daemon E2E daemon_resume_e2e (2026-09-06T00:1xZ) — REAL SIGKILL of the
+modbit-core daemon, restart on the SAME SQLite store, 2 passed in ~3s:
+  core_kill_mid_run_resumes_from_checkpoint (kill during turn 2's real
+  `sleep 10` broker tool, checkpoint committed after turn 1):
+    - the first post-restart request carries the RESTORED conversation:
+      assistant + tool roles, tool_call_id "c1", the checkpointed RESULT
+      content ("resume fixture content") — not a re-read
+    - the interruption note rides as a user message
+    - durable conversation_checkpointed rows exist in the daemon's real
+      SQLite store (read-only query)
+    - the task reaches ReadyForReview after the restart
+  core_kill_first_tool_resumes_with_note (kill during turn 1's tool, no
+  checkpoint): the post-restart request is a fresh prompt that carries
+  the interruption note; the task completes
+
+MUTATION CHECK (docs/55), 2026-09-06T00:2xZ
+--------------------------------------------
+M-K: load_latest_checkpoint pinned to None (bin rebuilt before run):
+  core_kill_mid_run FAILED at the checkpointed-tool-result assertion
+  (exit 101). Restored; clean run green (2 passed).
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (459 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (no TS/protocol change in this item)
+
+RESULT: M2.7 E2E_PROVEN with typed evidence (graph close follows);
+Phase 2 items 1-5 closed. Remaining: item 6 (shell correctness) and the
+phase exit (5 green nightly runs).
