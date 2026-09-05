@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 639868,
-      "sha256": "77f2449267c3e525275d68d0468cd5de43dbc3f79df7bc201bbb8161068eacaa"
+      "bytes": 640573,
+      "sha256": "6b0c9224e97acfb47c8da4a2edc18cdd711d862e52955358f5ac9a21606d1d7a"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
