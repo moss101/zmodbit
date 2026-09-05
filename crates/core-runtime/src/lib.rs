@@ -7,6 +7,7 @@
 //!
 //! Canonical owner subsystem: core-runtime (docs/81). Layout: docs/12.
 
+pub mod agent_fleet;
 pub mod config;
 pub mod daemon;
 pub mod delegation;
