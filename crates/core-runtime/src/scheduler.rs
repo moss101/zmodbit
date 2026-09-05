@@ -87,7 +87,10 @@ impl SchedulerConfig {
             // stream one response for several minutes; 180s killed healthy
             // streams (observed live: first invoke never completed).
             request_timeout: Duration::from_secs(600),
-            max_turns: 8,
+            max_turns: std::env::var("MODBIT_MAX_TURNS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(8),
             execd_addr: std::env::var("MODBIT_EXECD_ADDR").ok().filter(|s| !s.is_empty()),
         }
     }

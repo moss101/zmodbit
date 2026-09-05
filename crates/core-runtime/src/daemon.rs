@@ -189,11 +189,15 @@ fn sse_stream(mut stream: TcpStream, store: Arc<EventStore>, mut since: u64) {
         match store.events_since_global(since, EVENTS_BATCH) {
             Ok((events, new_offset)) => {
                 for e in &events {
+                    // `offset` is the GLOBAL cursor clients resume from
+                    // (`sequence` is per-aggregate and cannot resume a
+                    // stream); REQ-EV-0010 offset-keyed resume.
                     let payload = serde_json::json!({
                         "event_id": e.event_id,
                         "aggregate_id": e.aggregate_id,
                         "sequence": e.sequence,
                         "event_type": e.event_type,
+                        "offset": since + events.iter().position(|x| x.event_id == e.event_id).map(|i| i as u64 + 1).unwrap_or(0),
                     });
                     let line = format!(
                         "data: {}\n\n",

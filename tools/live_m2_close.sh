@@ -42,6 +42,10 @@ if [[ -z "${OPENAI_API_KEY:-}" ]]; then
   exit 0
 fi
 [[ -n "${MODBIT_LIVE_E2E:-}" ]] || export MODBIT_LIVE_E2E=1
+# Live reasoning models spend turns exploring; 8 (the local default) runs
+# out mid-repair (observed: agent fixed code + tests and hit the cap while
+# diagnosing the runner itself).
+[[ -n "${MODBIT_MAX_TURNS:-}" ]] || export MODBIT_MAX_TURNS=24
 
 echo "== M2.11 stage 2: live-model daemon E2E (E2E-001/002/003) =="
 cargo test -p modbit-core-runtime --test daemon_live_e2e -- --test-threads=1 --nocapture \

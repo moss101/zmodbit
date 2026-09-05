@@ -420,7 +420,7 @@ fn e2e_003_stream_reconnect_replays_losslessly() {
     let first = stream_events_until(&core, |e| e.len() >= 3, Duration::from_secs(30));
     let cursor = first
         .iter()
-        .filter_map(|e| e.get("sequence").and_then(|s| s.as_u64()))
+        .filter_map(|e| e.get("offset").and_then(|s| s.as_u64()))
         .max()
         .unwrap_or(0);
     std::thread::sleep(Duration::from_millis(300)); // events land while offline
