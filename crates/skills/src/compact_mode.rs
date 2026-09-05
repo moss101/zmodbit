@@ -3,7 +3,6 @@
 //! lazy-load. The token benchmark compares the EAGER package (everything
 //! inlined) against the COMPILED projection.
 
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// A skill package section.

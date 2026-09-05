@@ -5,6 +5,11 @@
 
 use modbit_policy::{EffectClass, PolicyDecision};
 use modbit_tools::{ToolExecution, ToolRegistry};
+use std::sync::Arc;
+
+/// The plugin effector type.
+pub type Effector =
+    Arc<dyn Fn(&serde_json::Value) -> Result<serde_json::Value, String> + Send + Sync>;
 
 /// Registers a plugin tool into the registry with full validation:
 /// duplicate names refused, effect class declared, and the invocation
@@ -15,9 +20,7 @@ pub fn register_and_validate(
     version: &str,
     effect_class: EffectClass,
     arguments: &serde_json::Value,
-    effector: std::sync::Arc<
-        dyn Fn(&serde_json::Value) -> Result<serde_json::Value, String> + Send + Sync,
-    >,
+    effector: Effector,
     decision: &PolicyDecision,
 ) -> Result<ToolExecution, String> {
     // Register (duplicate detection is the registry's own validation).
@@ -47,9 +50,7 @@ pub fn remove_and_reload(
     name: &str,
     version: &str,
     effect_class: EffectClass,
-    effector: std::sync::Arc<
-        dyn Fn(&serde_json::Value) -> Result<serde_json::Value, String> + Send + Sync,
-    >,
+    effector: Effector,
 ) -> Result<bool, String> {
     registry
         .remove(name)
@@ -74,7 +75,7 @@ mod tests {
         let registry = ToolRegistry::new();
         let calls = std::sync::Arc::new(Mutex::new(0usize));
         let sink = calls.clone();
-        let effector = std::sync::Arc::new(move |args: &serde_json::Value| {
+        let effector: Effector = std::sync::Arc::new(move |args: &serde_json::Value| {
             *sink.lock().unwrap() += 1;
             Ok(serde_json::json!({"echo": args["text"]}))
         });
@@ -110,7 +111,8 @@ mod tests {
             .is_ok());
 
         // Duplicate registration is refused.
-        let dup = std::sync::Arc::new(|_args: &serde_json::Value| Ok(serde_json::json!({})));
+        let dup: Effector =
+            std::sync::Arc::new(|_args: &serde_json::Value| Ok(serde_json::json!({})));
         assert!(register_and_validate(
             &registry,
             "plugin.echo",
