@@ -33,7 +33,9 @@ static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
     // Short prefix: unix socket paths must fit sun_path (104 bytes).
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().take(8).collect();
+    // UUIDv7 leads with its TIMESTAMP: take the random tail instead, or
+    // dirs created in the same millisecond window collide across runs.
+    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
     let dir = std::env::temp_dir().join(format!("mse{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -46,6 +48,9 @@ fn ts_webapp_fixture(tag: &str) -> PathBuf {
     let repo = GitRepo::init(&root).expect("init");
     repo.set_config("user.email", "e2e@modbit.test").unwrap();
     repo.set_config("user.name", "Modbit E2E").unwrap();
+    // Byte-exact worktrees: the runner's global autocrlf must not rewrite
+    // fixture files on checkout (edit-gate old_text is LF-exact).
+    repo.set_config("core.autocrlf", "false").unwrap();
     std::fs::write(root.join("quantity.js"), BROKEN).unwrap();
     std::fs::write(
         root.join("quantity.test.js"),

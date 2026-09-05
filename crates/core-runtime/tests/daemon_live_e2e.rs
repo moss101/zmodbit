@@ -30,7 +30,9 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 
 fn tempdir(tag: &str) -> PathBuf {
     // Short prefix: unix socket paths must fit sun_path (104 bytes).
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().take(8).collect();
+    // UUIDv7 leads with its TIMESTAMP: take the random tail instead, or
+    // dirs created in the same millisecond window collide across runs.
+    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
     let dir = std::env::temp_dir().join(format!("mle{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -44,6 +46,9 @@ fn ts_webapp_fixture(tag: &str, seed_failure: bool) -> PathBuf {
     let repo = GitRepo::init(&root).expect("init fixture");
     repo.set_config("user.email", "e2e@modbit.test").unwrap();
     repo.set_config("user.name", "Modbit E2E").unwrap();
+    // Byte-exact worktrees: the runner's global autocrlf must not rewrite
+    // fixture files on checkout (edit-gate old_text is LF-exact).
+    repo.set_config("core.autocrlf", "false").unwrap();
 
     let quantity = if seed_failure {
         // Broken on purpose: the initial test run fails, the agent must
