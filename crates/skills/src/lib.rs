@@ -14,8 +14,11 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::Path;
 
+pub mod eval_harness;
 pub mod evolution;
+pub mod impact_log;
 pub mod layering;
+pub mod wiki_index;
 
 pub fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
