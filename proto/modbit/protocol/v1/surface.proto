@@ -20,6 +20,11 @@ message SurfaceRequest {
     CompleteTaskCommand complete_task = 7;
     GetTaskEventsRequest get_task_events = 8;
     GetCodeViewRequest get_code_view = 9;
+    SteerTaskCommand steer_task = 10;
+    PauseTaskCommand pause_task = 11;
+    StopTaskCommand stop_task = 12;
+    GetRunDetailRequest get_run_detail = 13;
+    GetDiffRequest get_diff = 14;
   }
 }
 
@@ -90,4 +95,74 @@ message SurfaceResponse {
   string session_id = 5;
   TaskEvents task_events = 6;
   CodeViewModel code_view = 7;
+  RunDetailView run_detail = 8;
+  DiffView diff = 9;
+}
+
+// Steering: durable control event applied at safe boundaries (docs/14 §
+// Steering). The note becomes part of the task's input queue.
+message SteerTaskCommand {
+  string task_id = 1;
+  string note = 2;
+}
+
+// Pause parks a running task in Waiting(UserInput); the scheduler stops
+// starting new turns for it until resumed.
+message PauseTaskCommand {
+  string task_id = 1;
+}
+
+// Stop cancels the task: in-flight effects reconcile before completion
+// (docs/14); no new turns start.
+message StopTaskCommand {
+  string task_id = 1;
+  string reason = 2;
+}
+
+message GetRunDetailRequest {
+  string task_id = 1;
+}
+
+// One RunStep in the run detail (docs/13 § RunStep): typed atomic step with
+// its terminal state.
+message RunStepView {
+  string step_id = 1;
+  string turn_id = 2;
+  string step_type = 3;
+  string state = 4; // prepared | completed | failed
+  string failure_code = 5;
+}
+
+message TurnView {
+  string turn_id = 1;
+  string state = 2; // prepared | streaming | executing | verifying | completed | failed | interrupted
+  repeated RunStepView steps = 3;
+}
+
+// Run detail assembled from the task's durable run-plane aggregates
+// (Run/Turn/RunStep); committed facts only.
+message RunDetailView {
+  string task_id = 1;
+  repeated TurnView turns = 2;
+  string run_state = 3; // running | completed | failed
+  string failure_code = 4;
+}
+
+message GetDiffRequest {
+  string task_id = 1;
+}
+
+// Revision-bound diff of the task's worktree against its base revision
+// (E2E-001 review surface substrate).
+message DiffFileView {
+  string path = 1;
+  uint64 additions = 2;
+  uint64 deletions = 3;
+}
+
+message DiffView {
+  string task_id = 1;
+  string branch = 2;
+  string base_revision = 3;
+  repeated DiffFileView files = 4;
 }

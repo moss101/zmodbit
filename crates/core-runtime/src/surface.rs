@@ -22,6 +22,12 @@ pub struct CoreServices {
     workspace: Option<std::sync::Arc<modbit_workspace::WorkspaceFileService>>,
 }
 
+#[derive(Default, Clone)]
+struct RunSummary {
+    state: String,
+    failure_code: String,
+}
+
 fn actor() -> Actor {
     Actor {
         actor_type: ActorType::User,
@@ -81,6 +87,7 @@ impl CoreServices {
                             events,
                         }),
                         code_view: Default::default(),
+                        ..Default::default()
                     },
                     Err(e) => pb::SurfaceResponse {
                         ok: false,
@@ -99,6 +106,7 @@ impl CoreServices {
                         session_id: String::new(),
                         task_events: Default::default(),
                         code_view: Some(view),
+                        ..Default::default()
                     },
                     Err(e) => pb::SurfaceResponse {
                         ok: false,
@@ -232,6 +240,55 @@ impl CoreServices {
                     },
                 }
             }
+            Some(pb::surface_request::Request::SteerTask(steer)) => self.lifecycle_response(
+                &steer.task_id,
+                CommandPayload::SteerTask {
+                    task_id: parse_task_id(&steer.task_id),
+                    steer_note: steer.note,
+                },
+            ),
+            Some(pb::surface_request::Request::PauseTask(pause)) => self.lifecycle_response(
+                &pause.task_id,
+                CommandPayload::TaskWaiting {
+                    task_id: parse_task_id(&pause.task_id),
+                    reason: modbit_domain::events::WaitingReason::UserInput,
+                },
+            ),
+            Some(pb::surface_request::Request::StopTask(stop)) => self.lifecycle_response(
+                &stop.task_id,
+                CommandPayload::CancelTask {
+                    task_id: parse_task_id(&stop.task_id),
+                    reason: if stop.reason.is_empty() {
+                        "stopped by user".into()
+                    } else {
+                        stop.reason
+                    },
+                },
+            ),
+            Some(pb::surface_request::Request::GetRunDetail(get)) => match self.run_detail(&get.task_id) {
+                Ok(run_detail) => pb::SurfaceResponse {
+                    ok: true,
+                    run_detail: Some(run_detail),
+                    ..Default::default()
+                },
+                Err(e) => pb::SurfaceResponse {
+                    ok: false,
+                    error: e,
+                    ..Default::default()
+                },
+            },
+            Some(pb::surface_request::Request::GetDiff(get)) => match self.diff(&get.task_id) {
+                Ok(diff) => pb::SurfaceResponse {
+                    ok: true,
+                    diff: Some(diff),
+                    ..Default::default()
+                },
+                Err(e) => pb::SurfaceResponse {
+                    ok: false,
+                    error: e,
+                    ..Default::default()
+                },
+            },
             None => pb::SurfaceResponse {
                 ok: false,
                 error: "empty SurfaceRequest".into(),
@@ -442,6 +499,181 @@ impl CoreServices {
         Ok(pb::Fleet {
             tasks,
             default_session_id: default_session,
+        })
+    }
+
+    /// Run detail (docs/13 Run/Turn/RunStep) assembled from the durable
+    /// run-plane aggregates of the task's runs; committed facts only.
+    fn run_detail(&self, task_id: &str) -> Result<pb::RunDetailView, String> {
+        let run_ids: Vec<String> = self
+            .store
+            .with_conn(|conn| -> Result<Vec<String>, String> {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT aggregate_id FROM events WHERE aggregate_type='run' \
+                     AND event_type='run_started' ORDER BY rowid",
+                )
+                .map_err(|e| e.to_string())?;
+            let rows: Vec<String> = stmt
+                .query_map([], |r| r.get::<_, String>(0))
+                .map_err(|e| e.to_string())?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| e.to_string())?;
+            Ok(rows)
+        })
+        .map_err(|e: String| e)?;
+        let mut runs: Vec<(String, RunSummary)> = Vec::new();
+        for id in run_ids {
+            let events = self.store.load(&id).map_err(|e| e.to_string())?;
+            let Some(first) = events.first() else { continue };
+            let modbit_domain::DomainEvent::RunStarted { task_id: rid, .. } = &first.payload
+            else {
+                continue;
+            };
+            if rid.to_string() != task_id {
+                continue;
+            }
+            let mut summary = RunSummary::default();
+            for e in &events {
+                match &e.payload {
+                    modbit_domain::DomainEvent::RunCompleted => summary.state = "completed".into(),
+                    modbit_domain::DomainEvent::RunFailed { failure_code } => {
+                        summary.state = "failed".into();
+                        summary.failure_code = failure_code.clone();
+                    }
+                    _ => {}
+                }
+            }
+            if summary.state.is_empty() {
+                summary.state = "running".into();
+            }
+            runs.push((id, summary));
+        }
+        if runs.is_empty() {
+            return Err(format!("task {task_id} has no runs"));
+        }
+        // Latest run only for the detail view.
+        let (run_id, summary) = runs.last().cloned().unwrap();
+        let turns = self.turns_and_steps(&run_id)?;
+        Ok(pb::RunDetailView {
+            task_id: task_id.to_string(),
+            turns,
+            run_state: summary.state,
+            failure_code: summary.failure_code,
+        })
+    }
+
+    /// Loads the turns of this run (TurnPrepared references it) with their
+    /// steps; each aggregate contributes its derived terminal state.
+    fn turns_and_steps(&self, run_id: &str) -> Result<Vec<pb::TurnView>, String> {
+        let aggregate_ids = |aggregate_type: &str| -> Result<Vec<(i64, String)>, String> {
+            self.store.with_conn(|conn| {
+                let mut stmt = conn
+                    .prepare(
+                        "SELECT MIN(rowid), aggregate_id FROM events WHERE aggregate_type = ?1 \
+                         GROUP BY aggregate_id ORDER BY MIN(rowid)",
+                    )
+                    .map_err(|e| e.to_string())?;
+                let rows = stmt
+                    .query_map([aggregate_type], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)))
+                    .map_err(|e| e.to_string())?
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|e| e.to_string())?;
+                Ok(rows)
+            })
+        };
+
+        // Turns of this run, in preparation order.
+        let mut turns: Vec<(i64, String, u32)> = Vec::new();
+        for (rowid, tid) in aggregate_ids("turn")? {
+            let events = self.store.load(&tid).map_err(|e| e.to_string())?;
+            if let Some(modbit_domain::DomainEvent::TurnPrepared { run_id: r, ordinal }) =
+                events.first().map(|e| &e.payload)
+            {
+                if r.to_string() == run_id {
+                    turns.push((rowid, tid, *ordinal));
+                }
+            }
+        }
+
+        // Steps grouped under their turn, in aggregate creation order.
+        let mut steps_by_turn: std::collections::HashMap<String, Vec<pb::RunStepView>> =
+            std::collections::HashMap::new();
+        for (_rowid, sid) in aggregate_ids("run_step")? {
+            let events = self.store.load(&sid).map_err(|e| e.to_string())?;
+            let Some(modbit_domain::DomainEvent::RunStepPrepared { turn_id, step_type, .. }) =
+                events.first().map(|e| &e.payload)
+            else {
+                continue;
+            };
+            let mut state = "prepared".to_string();
+            let mut failure_code = String::new();
+            for e in &events {
+                match &e.payload {
+                    modbit_domain::DomainEvent::RunStepCompleted => state = "completed".into(),
+                    modbit_domain::DomainEvent::RunStepFailed { failure_code: f } => {
+                        state = "failed".into();
+                        failure_code = f.clone();
+                    }
+                    _ => {}
+                }
+            }
+            steps_by_turn.entry(turn_id.to_string()).or_default().push(pb::RunStepView {
+                step_id: sid,
+                turn_id: turn_id.to_string(),
+                step_type: step_type.as_str().to_string(),
+                state,
+                failure_code,
+            });
+        }
+
+        let mut views = Vec::new();
+        for (_rowid, tid, _ordinal) in turns {
+            // Turn terminal state from its own aggregate events.
+            let events = self.store.load(&tid).map_err(|e| e.to_string())?;
+            let mut state = "streaming".to_string();
+            for e in &events {
+                match &e.payload {
+                    modbit_domain::DomainEvent::TurnCompleted => state = "completed".into(),
+                    modbit_domain::DomainEvent::TurnFailed { .. } => state = "failed".into(),
+                    _ => {}
+                }
+            }
+            views.push(pb::TurnView {
+                turn_id: tid.clone(),
+                state,
+                steps: steps_by_turn.remove(&tid).unwrap_or_default(),
+            });
+        }
+        Ok(views)
+    }
+
+    /// Revision-bound diff of the task's worktree against its base revision
+    /// (E2E-001 review substrate). The worktree location follows the
+    /// scheduler's deterministic allocation.
+    fn diff(&self, task_id: &str) -> Result<pb::DiffView, String> {
+        let config = crate::scheduler::worktree_layout(task_id).ok_or_else(|| {
+            "no repository configured for task worktrees (set MODBIT_REPO_ROOT)".to_string()
+        })?;
+        if !config.worktree.exists() {
+            return Err(format!("task {task_id} has no allocated worktree"));
+        }
+        let repo = modbit_git::GitRepo::open(&config.worktree).map_err(|e| e.to_string())?;
+        let files = repo
+            .diff_workdir_numstat(&config.base_revision)
+            .map_err(|e| e.to_string())?;
+        Ok(pb::DiffView {
+            task_id: task_id.to_string(),
+            branch: config.branch,
+            base_revision: config.base_revision,
+            files: files
+                .into_iter()
+                .map(|f| pb::DiffFileView {
+                    path: f.path,
+                    additions: f.additions,
+                    deletions: f.deletions,
+                })
+                .collect(),
         })
     }
 

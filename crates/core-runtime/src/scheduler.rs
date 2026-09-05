@@ -186,7 +186,8 @@ impl Scheduler {
             .clone()
             .unwrap_or_else(|| default_worktree_root(&repo_root));
         let worktree_path = worktree_root.join(task_id.to_string());
-        // worktree_add creates the task branch (-b) at the current HEAD.
+        // worktree_add creates the task branch (-b) at the current HEAD;
+        // the layout is shared with the GetDiff surface.
         let branch = format!("modbit/{}", &task_id.to_string()[..12.min(task_id.to_string().len())]);
         repo.worktree_add(&worktree_path, &branch)
             .map_err(|e| format!("allocate worktree: {e}"))?;
@@ -301,6 +302,39 @@ fn execute(
 /// Tail of a string for failure messages, bounded.
 fn tail(s: &str, max: usize) -> String {
     s.chars().rev().take(max).collect::<Vec<_>>().into_iter().rev().collect()
+}
+
+/// The deterministic task-worktree layout shared by the scheduler and the
+/// GetDiff surface: path, branch and base revision for a task id.
+pub struct WorktreeLayout {
+    pub worktree: PathBuf,
+    pub branch: String,
+    pub base_revision: String,
+}
+
+/// Resolves the worktree layout from the same environment the scheduler
+/// uses (MODBIT_REPO_ROOT / MODBIT_WORKTREE_ROOT). None when no repository
+/// is configured.
+pub fn worktree_layout(task_id: &str) -> Option<WorktreeLayout> {
+    let repo_root = std::env::var("MODBIT_REPO_ROOT")
+        .ok()
+        .map(PathBuf::from)
+        .or_else(|| {
+            let cwd = std::env::current_dir().ok()?;
+            (cwd.join(".git").exists()).then_some(cwd)
+        })?;
+    let repo = GitRepo::open(&repo_root).ok()?;
+    let base_revision = repo.head().ok()?;
+    let worktree_root = std::env::var("MODBIT_WORKTREE_ROOT")
+        .ok()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| default_worktree_root(&repo_root));
+    let branch = format!("modbit/{}", &task_id[..12.min(task_id.len())]);
+    Some(WorktreeLayout {
+        worktree: worktree_root.join(task_id),
+        branch,
+        base_revision,
+    })
 }
 
 fn default_worktree_root(repo_root: &std::path::Path) -> PathBuf {
@@ -502,6 +536,7 @@ pub fn build_worktree_registry(
                     };
                     Ok(serde_json::json!({
                         "exit_code": exit_code,
+                        "state": format!("{:?}", status.state),
                         "output": tail(&String::from_utf8_lossy(&output), 8_000),
                         "broker_run_id": run_id,
                     }))

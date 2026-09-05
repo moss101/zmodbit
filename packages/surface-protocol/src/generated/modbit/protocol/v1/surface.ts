@@ -27,6 +27,11 @@ export interface SurfaceRequest {
   completeTask?: CompleteTaskCommand | undefined;
   getTaskEvents?: GetTaskEventsRequest | undefined;
   getCodeView?: GetCodeViewRequest | undefined;
+  steerTask?: SteerTaskCommand | undefined;
+  pauseTask?: PauseTaskCommand | undefined;
+  stopTask?: StopTaskCommand | undefined;
+  getRunDetail?: GetRunDetailRequest | undefined;
+  getDiff?: GetDiffRequest | undefined;
 }
 
 export interface GetFleetRequest {
@@ -106,6 +111,91 @@ export interface SurfaceResponse {
   sessionId: string;
   taskEvents: TaskEvents | undefined;
   codeView: CodeViewModel | undefined;
+  runDetail: RunDetailView | undefined;
+  diff: DiffView | undefined;
+}
+
+/**
+ * Steering: durable control event applied at safe boundaries (docs/14 §
+ * Steering). The note becomes part of the task's input queue.
+ */
+export interface SteerTaskCommand {
+  taskId: string;
+  note: string;
+}
+
+/**
+ * Pause parks a running task in Waiting(UserInput); the scheduler stops
+ * starting new turns for it until resumed.
+ */
+export interface PauseTaskCommand {
+  taskId: string;
+}
+
+/**
+ * Stop cancels the task: in-flight effects reconcile before completion
+ * (docs/14); no new turns start.
+ */
+export interface StopTaskCommand {
+  taskId: string;
+  reason: string;
+}
+
+export interface GetRunDetailRequest {
+  taskId: string;
+}
+
+/**
+ * One RunStep in the run detail (docs/13 § RunStep): typed atomic step with
+ * its terminal state.
+ */
+export interface RunStepView {
+  stepId: string;
+  turnId: string;
+  stepType: string;
+  /** prepared | completed | failed */
+  state: string;
+  failureCode: string;
+}
+
+export interface TurnView {
+  turnId: string;
+  /** prepared | streaming | executing | verifying | completed | failed | interrupted */
+  state: string;
+  steps: RunStepView[];
+}
+
+/**
+ * Run detail assembled from the task's durable run-plane aggregates
+ * (Run/Turn/RunStep); committed facts only.
+ */
+export interface RunDetailView {
+  taskId: string;
+  turns: TurnView[];
+  /** running | completed | failed */
+  runState: string;
+  failureCode: string;
+}
+
+export interface GetDiffRequest {
+  taskId: string;
+}
+
+/**
+ * Revision-bound diff of the task's worktree against its base revision
+ * (E2E-001 review surface substrate).
+ */
+export interface DiffFileView {
+  path: string;
+  additions: string;
+  deletions: string;
+}
+
+export interface DiffView {
+  taskId: string;
+  branch: string;
+  baseRevision: string;
+  files: DiffFileView[];
 }
 
 function createBaseSurfaceRequest(): SurfaceRequest {
@@ -119,6 +209,11 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     completeTask: undefined,
     getTaskEvents: undefined,
     getCodeView: undefined,
+    steerTask: undefined,
+    pauseTask: undefined,
+    stopTask: undefined,
+    getRunDetail: undefined,
+    getDiff: undefined,
   };
 }
 
@@ -150,6 +245,21 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getCodeView !== undefined) {
       GetCodeViewRequest.encode(message.getCodeView, writer.uint32(74).fork()).join();
+    }
+    if (message.steerTask !== undefined) {
+      SteerTaskCommand.encode(message.steerTask, writer.uint32(82).fork()).join();
+    }
+    if (message.pauseTask !== undefined) {
+      PauseTaskCommand.encode(message.pauseTask, writer.uint32(90).fork()).join();
+    }
+    if (message.stopTask !== undefined) {
+      StopTaskCommand.encode(message.stopTask, writer.uint32(98).fork()).join();
+    }
+    if (message.getRunDetail !== undefined) {
+      GetRunDetailRequest.encode(message.getRunDetail, writer.uint32(106).fork()).join();
+    }
+    if (message.getDiff !== undefined) {
+      GetDiffRequest.encode(message.getDiff, writer.uint32(114).fork()).join();
     }
     return writer;
   },
@@ -233,6 +343,46 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.getCodeView = GetCodeViewRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.steerTask = SteerTaskCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.pauseTask = PauseTaskCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.stopTask = StopTaskCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.getRunDetail = GetRunDetailRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.getDiff = GetDiffRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -255,6 +405,11 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       completeTask: isSet(object.completeTask) ? CompleteTaskCommand.fromJSON(object.completeTask) : undefined,
       getTaskEvents: isSet(object.getTaskEvents) ? GetTaskEventsRequest.fromJSON(object.getTaskEvents) : undefined,
       getCodeView: isSet(object.getCodeView) ? GetCodeViewRequest.fromJSON(object.getCodeView) : undefined,
+      steerTask: isSet(object.steerTask) ? SteerTaskCommand.fromJSON(object.steerTask) : undefined,
+      pauseTask: isSet(object.pauseTask) ? PauseTaskCommand.fromJSON(object.pauseTask) : undefined,
+      stopTask: isSet(object.stopTask) ? StopTaskCommand.fromJSON(object.stopTask) : undefined,
+      getRunDetail: isSet(object.getRunDetail) ? GetRunDetailRequest.fromJSON(object.getRunDetail) : undefined,
+      getDiff: isSet(object.getDiff) ? GetDiffRequest.fromJSON(object.getDiff) : undefined,
     };
   },
 
@@ -286,6 +441,21 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getCodeView !== undefined) {
       obj.getCodeView = GetCodeViewRequest.toJSON(message.getCodeView);
+    }
+    if (message.steerTask !== undefined) {
+      obj.steerTask = SteerTaskCommand.toJSON(message.steerTask);
+    }
+    if (message.pauseTask !== undefined) {
+      obj.pauseTask = PauseTaskCommand.toJSON(message.pauseTask);
+    }
+    if (message.stopTask !== undefined) {
+      obj.stopTask = StopTaskCommand.toJSON(message.stopTask);
+    }
+    if (message.getRunDetail !== undefined) {
+      obj.getRunDetail = GetRunDetailRequest.toJSON(message.getRunDetail);
+    }
+    if (message.getDiff !== undefined) {
+      obj.getDiff = GetDiffRequest.toJSON(message.getDiff);
     }
     return obj;
   },
@@ -321,6 +491,21 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.getCodeView = (object.getCodeView !== undefined && object.getCodeView !== null)
       ? GetCodeViewRequest.fromPartial(object.getCodeView)
+      : undefined;
+    message.steerTask = (object.steerTask !== undefined && object.steerTask !== null)
+      ? SteerTaskCommand.fromPartial(object.steerTask)
+      : undefined;
+    message.pauseTask = (object.pauseTask !== undefined && object.pauseTask !== null)
+      ? PauseTaskCommand.fromPartial(object.pauseTask)
+      : undefined;
+    message.stopTask = (object.stopTask !== undefined && object.stopTask !== null)
+      ? StopTaskCommand.fromPartial(object.stopTask)
+      : undefined;
+    message.getRunDetail = (object.getRunDetail !== undefined && object.getRunDetail !== null)
+      ? GetRunDetailRequest.fromPartial(object.getRunDetail)
+      : undefined;
+    message.getDiff = (object.getDiff !== undefined && object.getDiff !== null)
+      ? GetDiffRequest.fromPartial(object.getDiff)
       : undefined;
     return message;
   },
@@ -1160,6 +1345,8 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     sessionId: "",
     taskEvents: undefined,
     codeView: undefined,
+    runDetail: undefined,
+    diff: undefined,
   };
 }
 
@@ -1185,6 +1372,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.codeView !== undefined) {
       CodeViewModel.encode(message.codeView, writer.uint32(58).fork()).join();
+    }
+    if (message.runDetail !== undefined) {
+      RunDetailView.encode(message.runDetail, writer.uint32(66).fork()).join();
+    }
+    if (message.diff !== undefined) {
+      DiffView.encode(message.diff, writer.uint32(74).fork()).join();
     }
     return writer;
   },
@@ -1252,6 +1445,22 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.codeView = CodeViewModel.decode(reader, reader.uint32());
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.runDetail = RunDetailView.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.diff = DiffView.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1270,6 +1479,8 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
       taskEvents: isSet(object.taskEvents) ? TaskEvents.fromJSON(object.taskEvents) : undefined,
       codeView: isSet(object.codeView) ? CodeViewModel.fromJSON(object.codeView) : undefined,
+      runDetail: isSet(object.runDetail) ? RunDetailView.fromJSON(object.runDetail) : undefined,
+      diff: isSet(object.diff) ? DiffView.fromJSON(object.diff) : undefined,
     };
   },
 
@@ -1296,6 +1507,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.codeView !== undefined) {
       obj.codeView = CodeViewModel.toJSON(message.codeView);
     }
+    if (message.runDetail !== undefined) {
+      obj.runDetail = RunDetailView.toJSON(message.runDetail);
+    }
+    if (message.diff !== undefined) {
+      obj.diff = DiffView.toJSON(message.diff);
+    }
     return obj;
   },
 
@@ -1315,6 +1532,860 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     message.codeView = (object.codeView !== undefined && object.codeView !== null)
       ? CodeViewModel.fromPartial(object.codeView)
       : undefined;
+    message.runDetail = (object.runDetail !== undefined && object.runDetail !== null)
+      ? RunDetailView.fromPartial(object.runDetail)
+      : undefined;
+    message.diff = (object.diff !== undefined && object.diff !== null) ? DiffView.fromPartial(object.diff) : undefined;
+    return message;
+  },
+};
+
+function createBaseSteerTaskCommand(): SteerTaskCommand {
+  return { taskId: "", note: "" };
+}
+
+export const SteerTaskCommand: MessageFns<SteerTaskCommand> = {
+  encode(message: SteerTaskCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.note !== "") {
+      writer.uint32(18).string(message.note);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SteerTaskCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSteerTaskCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.note = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SteerTaskCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      note: isSet(object.note) ? globalThis.String(object.note) : "",
+    };
+  },
+
+  toJSON(message: SteerTaskCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.note !== "") {
+      obj.note = message.note;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SteerTaskCommand>, I>>(base?: I): SteerTaskCommand {
+    return SteerTaskCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SteerTaskCommand>, I>>(object: I): SteerTaskCommand {
+    const message = createBaseSteerTaskCommand();
+    message.taskId = object.taskId ?? "";
+    message.note = object.note ?? "";
+    return message;
+  },
+};
+
+function createBasePauseTaskCommand(): PauseTaskCommand {
+  return { taskId: "" };
+}
+
+export const PauseTaskCommand: MessageFns<PauseTaskCommand> = {
+  encode(message: PauseTaskCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PauseTaskCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePauseTaskCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PauseTaskCommand {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: PauseTaskCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PauseTaskCommand>, I>>(base?: I): PauseTaskCommand {
+    return PauseTaskCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PauseTaskCommand>, I>>(object: I): PauseTaskCommand {
+    const message = createBasePauseTaskCommand();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseStopTaskCommand(): StopTaskCommand {
+  return { taskId: "", reason: "" };
+}
+
+export const StopTaskCommand: MessageFns<StopTaskCommand> = {
+  encode(message: StopTaskCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.reason !== "") {
+      writer.uint32(18).string(message.reason);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StopTaskCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStopTaskCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.reason = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StopTaskCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
+    };
+  },
+
+  toJSON(message: StopTaskCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.reason !== "") {
+      obj.reason = message.reason;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StopTaskCommand>, I>>(base?: I): StopTaskCommand {
+    return StopTaskCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StopTaskCommand>, I>>(object: I): StopTaskCommand {
+    const message = createBaseStopTaskCommand();
+    message.taskId = object.taskId ?? "";
+    message.reason = object.reason ?? "";
+    return message;
+  },
+};
+
+function createBaseGetRunDetailRequest(): GetRunDetailRequest {
+  return { taskId: "" };
+}
+
+export const GetRunDetailRequest: MessageFns<GetRunDetailRequest> = {
+  encode(message: GetRunDetailRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRunDetailRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRunDetailRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRunDetailRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: GetRunDetailRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetRunDetailRequest>, I>>(base?: I): GetRunDetailRequest {
+    return GetRunDetailRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetRunDetailRequest>, I>>(object: I): GetRunDetailRequest {
+    const message = createBaseGetRunDetailRequest();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseRunStepView(): RunStepView {
+  return { stepId: "", turnId: "", stepType: "", state: "", failureCode: "" };
+}
+
+export const RunStepView: MessageFns<RunStepView> = {
+  encode(message: RunStepView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.stepId !== "") {
+      writer.uint32(10).string(message.stepId);
+    }
+    if (message.turnId !== "") {
+      writer.uint32(18).string(message.turnId);
+    }
+    if (message.stepType !== "") {
+      writer.uint32(26).string(message.stepType);
+    }
+    if (message.state !== "") {
+      writer.uint32(34).string(message.state);
+    }
+    if (message.failureCode !== "") {
+      writer.uint32(42).string(message.failureCode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RunStepView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRunStepView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.stepId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.turnId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.stepType = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.state = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.failureCode = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RunStepView {
+    return {
+      stepId: isSet(object.stepId) ? globalThis.String(object.stepId) : "",
+      turnId: isSet(object.turnId) ? globalThis.String(object.turnId) : "",
+      stepType: isSet(object.stepType) ? globalThis.String(object.stepType) : "",
+      state: isSet(object.state) ? globalThis.String(object.state) : "",
+      failureCode: isSet(object.failureCode) ? globalThis.String(object.failureCode) : "",
+    };
+  },
+
+  toJSON(message: RunStepView): unknown {
+    const obj: any = {};
+    if (message.stepId !== "") {
+      obj.stepId = message.stepId;
+    }
+    if (message.turnId !== "") {
+      obj.turnId = message.turnId;
+    }
+    if (message.stepType !== "") {
+      obj.stepType = message.stepType;
+    }
+    if (message.state !== "") {
+      obj.state = message.state;
+    }
+    if (message.failureCode !== "") {
+      obj.failureCode = message.failureCode;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RunStepView>, I>>(base?: I): RunStepView {
+    return RunStepView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RunStepView>, I>>(object: I): RunStepView {
+    const message = createBaseRunStepView();
+    message.stepId = object.stepId ?? "";
+    message.turnId = object.turnId ?? "";
+    message.stepType = object.stepType ?? "";
+    message.state = object.state ?? "";
+    message.failureCode = object.failureCode ?? "";
+    return message;
+  },
+};
+
+function createBaseTurnView(): TurnView {
+  return { turnId: "", state: "", steps: [] };
+}
+
+export const TurnView: MessageFns<TurnView> = {
+  encode(message: TurnView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.turnId !== "") {
+      writer.uint32(10).string(message.turnId);
+    }
+    if (message.state !== "") {
+      writer.uint32(18).string(message.state);
+    }
+    for (const v of message.steps) {
+      RunStepView.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TurnView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTurnView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.turnId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.state = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.steps.push(RunStepView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TurnView {
+    return {
+      turnId: isSet(object.turnId) ? globalThis.String(object.turnId) : "",
+      state: isSet(object.state) ? globalThis.String(object.state) : "",
+      steps: globalThis.Array.isArray(object?.steps) ? object.steps.map((e: any) => RunStepView.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: TurnView): unknown {
+    const obj: any = {};
+    if (message.turnId !== "") {
+      obj.turnId = message.turnId;
+    }
+    if (message.state !== "") {
+      obj.state = message.state;
+    }
+    if (message.steps?.length) {
+      obj.steps = message.steps.map((e) => RunStepView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TurnView>, I>>(base?: I): TurnView {
+    return TurnView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TurnView>, I>>(object: I): TurnView {
+    const message = createBaseTurnView();
+    message.turnId = object.turnId ?? "";
+    message.state = object.state ?? "";
+    message.steps = object.steps?.map((e) => RunStepView.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseRunDetailView(): RunDetailView {
+  return { taskId: "", turns: [], runState: "", failureCode: "" };
+}
+
+export const RunDetailView: MessageFns<RunDetailView> = {
+  encode(message: RunDetailView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    for (const v of message.turns) {
+      TurnView.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.runState !== "") {
+      writer.uint32(26).string(message.runState);
+    }
+    if (message.failureCode !== "") {
+      writer.uint32(34).string(message.failureCode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RunDetailView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRunDetailView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.turns.push(TurnView.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.runState = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.failureCode = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RunDetailView {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      turns: globalThis.Array.isArray(object?.turns) ? object.turns.map((e: any) => TurnView.fromJSON(e)) : [],
+      runState: isSet(object.runState) ? globalThis.String(object.runState) : "",
+      failureCode: isSet(object.failureCode) ? globalThis.String(object.failureCode) : "",
+    };
+  },
+
+  toJSON(message: RunDetailView): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.turns?.length) {
+      obj.turns = message.turns.map((e) => TurnView.toJSON(e));
+    }
+    if (message.runState !== "") {
+      obj.runState = message.runState;
+    }
+    if (message.failureCode !== "") {
+      obj.failureCode = message.failureCode;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RunDetailView>, I>>(base?: I): RunDetailView {
+    return RunDetailView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RunDetailView>, I>>(object: I): RunDetailView {
+    const message = createBaseRunDetailView();
+    message.taskId = object.taskId ?? "";
+    message.turns = object.turns?.map((e) => TurnView.fromPartial(e)) || [];
+    message.runState = object.runState ?? "";
+    message.failureCode = object.failureCode ?? "";
+    return message;
+  },
+};
+
+function createBaseGetDiffRequest(): GetDiffRequest {
+  return { taskId: "" };
+}
+
+export const GetDiffRequest: MessageFns<GetDiffRequest> = {
+  encode(message: GetDiffRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetDiffRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDiffRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDiffRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: GetDiffRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetDiffRequest>, I>>(base?: I): GetDiffRequest {
+    return GetDiffRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetDiffRequest>, I>>(object: I): GetDiffRequest {
+    const message = createBaseGetDiffRequest();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseDiffFileView(): DiffFileView {
+  return { path: "", additions: "0", deletions: "0" };
+}
+
+export const DiffFileView: MessageFns<DiffFileView> = {
+  encode(message: DiffFileView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.path !== "") {
+      writer.uint32(10).string(message.path);
+    }
+    if (message.additions !== "0") {
+      writer.uint32(16).uint64(message.additions);
+    }
+    if (message.deletions !== "0") {
+      writer.uint32(24).uint64(message.deletions);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DiffFileView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDiffFileView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.additions = reader.uint64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.deletions = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DiffFileView {
+    return {
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      additions: isSet(object.additions) ? globalThis.String(object.additions) : "0",
+      deletions: isSet(object.deletions) ? globalThis.String(object.deletions) : "0",
+    };
+  },
+
+  toJSON(message: DiffFileView): unknown {
+    const obj: any = {};
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.additions !== "0") {
+      obj.additions = message.additions;
+    }
+    if (message.deletions !== "0") {
+      obj.deletions = message.deletions;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DiffFileView>, I>>(base?: I): DiffFileView {
+    return DiffFileView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DiffFileView>, I>>(object: I): DiffFileView {
+    const message = createBaseDiffFileView();
+    message.path = object.path ?? "";
+    message.additions = object.additions ?? "0";
+    message.deletions = object.deletions ?? "0";
+    return message;
+  },
+};
+
+function createBaseDiffView(): DiffView {
+  return { taskId: "", branch: "", baseRevision: "", files: [] };
+}
+
+export const DiffView: MessageFns<DiffView> = {
+  encode(message: DiffView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.branch !== "") {
+      writer.uint32(18).string(message.branch);
+    }
+    if (message.baseRevision !== "") {
+      writer.uint32(26).string(message.baseRevision);
+    }
+    for (const v of message.files) {
+      DiffFileView.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DiffView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDiffView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.branch = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.baseRevision = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.files.push(DiffFileView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DiffView {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      branch: isSet(object.branch) ? globalThis.String(object.branch) : "",
+      baseRevision: isSet(object.baseRevision) ? globalThis.String(object.baseRevision) : "",
+      files: globalThis.Array.isArray(object?.files) ? object.files.map((e: any) => DiffFileView.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: DiffView): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.branch !== "") {
+      obj.branch = message.branch;
+    }
+    if (message.baseRevision !== "") {
+      obj.baseRevision = message.baseRevision;
+    }
+    if (message.files?.length) {
+      obj.files = message.files.map((e) => DiffFileView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DiffView>, I>>(base?: I): DiffView {
+    return DiffView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DiffView>, I>>(object: I): DiffView {
+    const message = createBaseDiffView();
+    message.taskId = object.taskId ?? "";
+    message.branch = object.branch ?? "";
+    message.baseRevision = object.baseRevision ?? "";
+    message.files = object.files?.map((e) => DiffFileView.fromPartial(e)) || [];
     return message;
   },
 };
