@@ -86,4 +86,21 @@ describe("conversationFromEvents", () => {
     expect(items.map((i) => i.kind)).toEqual(["user", "user", "user", "system"]);
     expect(items[0]?.text).toBe("fix the bug");
   });
+
+  it("surfaces tool/test steps and failures from the run plane", () => {
+    const items = conversationFromEvents([
+      {
+        eventId: "s1",
+        eventType: "run_step_prepared",
+        payload: JSON.stringify({ stepType: "tool_call", ordinal: 2 }),
+      },
+      {
+        eventId: "s2",
+        eventType: "run_step_failed",
+        payload: JSON.stringify({ failureCode: "tool_refused_or_failed" }),
+      },
+    ]);
+    expect(items[0]?.text).toBe("step: tool_call");
+    expect(items[1]?.kind).toBe("failure");
+  });
 });

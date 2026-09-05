@@ -77,13 +77,29 @@ export function conversationFromEvents(
     } else if (e.eventType === "task_input_queued") {
       items.push({ id: e.eventId, kind: "user", text: textOf(e.payload) });
     } else if (e.eventType === "task_steered") {
-      items.push({ id: e.eventId, kind: "user", text: `steer: ${textOf(e.payload)}` });
+      items.push({ id: e.eventId, kind: "user", text: `steer: ${steerNoteOf(e.payload)}` });
     } else if (e.eventType === "task_failed") {
       items.push({ id: e.eventId, kind: "failure", text: messageOf(e.payload) });
     } else if (e.eventType === "task_waiting") {
       items.push({ id: e.eventId, kind: "system", text: "waiting for user input" });
     } else if (e.eventType === "task_ready_for_review") {
       items.push({ id: e.eventId, kind: "system", text: "ready for review" });
+    } else if (e.eventType === "run_step_prepared") {
+      const step = stepTypeOf(e.payload);
+      // Tool/test steps carry the work the model did (incl. test.run).
+      if (step === "tool_call" || step === "verification") {
+        items.push({ id: e.eventId, kind: "system", text: `step: ${step}` });
+      }
+    } else if (e.eventType === "run_step_failed") {
+      items.push({
+        id: e.eventId,
+        kind: "failure",
+        text: `step failed: ${messageOf(e.payload)}`,
+      });
+    } else if (e.eventType === "run_failed") {
+      items.push({ id: e.eventId, kind: "failure", text: `run failed: ${messageOf(e.payload)}` });
+    } else if (e.eventType === "run_completed") {
+      items.push({ id: e.eventId, kind: "system", text: "run completed" });
     }
   }
   return items;
@@ -105,6 +121,16 @@ function promptOf(raw: string): string {
 function textOf(raw: string): string {
   const p = parsePayload(raw);
   return typeof p.text === "string" ? p.text : "";
+}
+
+function steerNoteOf(raw: string): string {
+  const p = parsePayload(raw);
+  return typeof p.steerNote === "string" ? p.steerNote : textOf(raw);
+}
+
+function stepTypeOf(raw: string): string {
+  const p = parsePayload(raw);
+  return typeof p.stepType === "string" ? p.stepType : "";
 }
 
 function messageOf(raw: string): string {
