@@ -269,14 +269,19 @@ impl Scheduler {
             // A transport/provider failure is an outage, not a task defect:
             // the task parks in Waiting(Provider) for retry, never silently
             // retried here (docs/15 failover runs before effects only).
-            Err(err) => execute(
-                &processor,
-                task_id,
-                CommandPayload::TaskWaiting {
+            Err(err) => {
+                // Surface the transport failure: a parked task with no
+                // diagnostics is undebuggable from the outside.
+                eprintln!("modbit scheduler: task {task_id} run errored: {err}");
+                execute(
+                    &processor,
                     task_id,
-                    reason: modbit_domain::events::WaitingReason::Provider,
-                },
-            )
+                    CommandPayload::TaskWaiting {
+                        task_id,
+                        reason: modbit_domain::events::WaitingReason::Provider,
+                    },
+                )
+            }
             .map_err(|e| format!("park task after transport error ({err}): {e}")),
         }
     }
@@ -886,13 +891,18 @@ impl<'a> LiveGatewayTransport<'a> {
     }
 
     fn endpoint(&self) -> String {
+        // Pin via config, else the provider's own env-resolved endpoint
+        // (OPENAI_BASE_URL / ANTHROPIC_BASE_URL). Falling back to a
+        // hard-coded vendor URL sent a z.ai key to api.openai.com → 401.
         let base = self
             .config
             .base_url
             .clone()
             .unwrap_or_else(|| match self.config.provider {
-                Provider::OpenAi => "https://api.openai.com/v1".into(),
-                Provider::Anthropic => "https://api.anthropic.com".into(),
+                Provider::OpenAi => std::env::var("OPENAI_BASE_URL")
+                    .unwrap_or_else(|_| "https://api.openai.com/v1".into()),
+                Provider::Anthropic => std::env::var("ANTHROPIC_BASE_URL")
+                    .unwrap_or_else(|_| "https://api.anthropic.com".into()),
             });
         match self.config.provider {
             Provider::OpenAi => format!("{base}/chat/completions"),
