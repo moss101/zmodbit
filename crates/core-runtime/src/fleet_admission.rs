@@ -151,7 +151,7 @@ pub fn admit_subagent(
     }
 
     // Step 2: worktree reservation.
-    let worktree = format!("{worktree}");
+    let worktree = worktree.to_string();
     if inject_failure_at == Some("after_worktree") {
         governor.release(&ticket.ticket_id).unwrap();
         return Err(AdmissionError::InjectedFailure("after_worktree"));
