@@ -218,6 +218,11 @@ impl ReceiptChain {
     pub fn len(&self) -> usize {
         self.receipts.len()
     }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.receipts.is_empty()
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -407,26 +412,19 @@ mod tests {
         // TAMPER: modify a bound digest in the middle receipt.
         let mut tampered = vec![r1.clone(), r2.clone(), r3.clone()];
         tampered[1].result_digest = "tampered".into();
-        let mut c = ReceiptChain::default();
-        c.receipts = tampered;
+        let c = ReceiptChain { receipts: tampered };
         assert!(c.verify().is_err());
 
         // DELETE: drop the middle receipt — link breaks.
-        let mut deleted = vec![r1.clone(), r2.clone()];
-        let mut c = ReceiptChain::default();
-        c.receipts = deleted.clone();
-        deleted.push(r3.clone());
-        let mut c2 = ReceiptChain::default();
-        c2.receipts = vec![r1.clone(), r3.clone()];
-        assert!(c2.verify().is_err());
-        let _ = c;
-        let _ = deleted;
+        let c = ReceiptChain {
+            receipts: vec![r1.clone(), r3.clone()],
+        };
+        assert!(c.verify().is_err());
 
         // REORDER: swap two receipts — link breaks.
-        let mut reordered = vec![r2.clone(), r1.clone(), r3.clone()];
-        reordered = vec![r1.clone(), r3.clone(), r2.clone()];
-        let mut c = ReceiptChain::default();
-        c.receipts = reordered;
+        let c = ReceiptChain {
+            receipts: vec![r1.clone(), r3.clone(), r2.clone()],
+        };
         assert!(c.verify().is_err());
     }
 
