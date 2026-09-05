@@ -156,6 +156,12 @@ impl ExecBroker {
         Ok(())
     }
 
+    /// Whether this broker holds an in-memory child handle for the run
+    /// (diagnostics for the detached/reattach paths).
+    pub fn has_child(&self, run_id: &str) -> bool {
+        self.children.lock().expect("poisoned").contains_key(run_id)
+    }
+
     pub fn status(&self, run_id: &str) -> Result<RunMeta, TerminalError> {
         if !self.run_dir(run_id).exists() {
             return Err(TerminalError::UnknownRun(run_id.to_string()));

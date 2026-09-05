@@ -105,8 +105,12 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
         }
         "status" => {
             let id = get_str("id").unwrap_or_default();
+            let has_child = broker.has_child(&id);
             let meta = broker.status(&id);
-            eprintln!("modbit-execd: status id={id:?} -> {:?}", meta.as_ref().map(|m| (&m.state, m.pid)));
+            eprintln!(
+                "modbit-execd: status id={id:?} has_child_before={has_child} -> {:?}",
+                meta.as_ref().map(|m| (&m.state, m.pid))
+            );
             match meta {
                 Ok(meta) => {
                     let state = match meta.state {
