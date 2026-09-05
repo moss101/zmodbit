@@ -6,8 +6,8 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 66,
-    "docs_bytes": 508136
+    "root_and_tooling": 68,
+    "docs_bytes": 508235
   },
   "sections": [
     {
@@ -679,15 +679,15 @@
       "section": "live-state",
       "section_title": "Live state",
       "title": "Build Manifest",
-      "bytes": 2283,
-      "sha256": "b4b61d304e597eefabcd84e054aba0d6dd8439401b9412870a184efb3424c7ca"
+      "bytes": 2382,
+      "sha256": "8fe201705b7bc42cac62f87ca3785530ec5ec47508e4220d7e17e09e6890a87b"
     }
   ],
   "root_and_tooling": [
     {
       "path": "README.md",
-      "bytes": 4960,
-      "sha256": "c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03"
+      "bytes": 6333,
+      "sha256": "98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f"
     },
     {
       "path": "AGENTS.md",
@@ -701,23 +701,23 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 667604,
-      "sha256": "9ff2c484e3578cdcfee092356d31bf3afff79b7edd835bec913af5e983a93765"
+      "bytes": 791132,
+      "sha256": "eb69f5e7309a90b07db0c60ab8234c0de093f3c6b128229690390adb5dc2ece2"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22203,
-      "sha256": "e209c5d501db73b4a00a9902a414ac944b6303a927cab1321ade27ce2a09f41b"
+      "bytes": 22382,
+      "sha256": "a899208ff67fdb61fd20e1cdc34c4f4ffc1ea7f4b0c03768d7e913412ba9788e"
     },
     {
       "path": "tools/build_manifest.py",
-      "bytes": 14670,
-      "sha256": "3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a"
+      "bytes": 17343,
+      "sha256": "86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a"
     },
     {
       "path": "tools/build_graph.py",
-      "bytes": 27166,
-      "sha256": "1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a"
+      "bytes": 28361,
+      "sha256": "4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e"
     },
     {
       "path": "tools/graph.py",
@@ -726,8 +726,8 @@
     },
     {
       "path": "tools/check_dossier.py",
-      "bytes": 8995,
-      "sha256": "0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46"
+      "bytes": 10310,
+      "sha256": "a65618968ad3d57d0c22dbdfa74f2481e2849063c6bf4152a3fef300a05c5023"
     },
     {
       "path": "tools/decision-guard.py",
@@ -1001,13 +1001,23 @@
     },
     {
       "path": "tools/architecture-lint/lint.py",
-      "bytes": 10866,
-      "sha256": "59dc7f68e5725574d5dcc82ca5b618de8d6d0ace244d3b627b221222e2a1d481"
+      "bytes": 22843,
+      "sha256": "7d6420abc07ab8aa6a7c11c72f7fcabf41ac711815da568851970821a529431b"
+    },
+    {
+      "path": "tools/architecture-lint/placement_allowlist.json",
+      "bytes": 14711,
+      "sha256": "76d255e7149eb8ac0815094e19a29c4a7e587c251c94f3e083ac72d495ea8f67"
     },
     {
       "path": "tools/coverage-guard.py",
-      "bytes": 11760,
-      "sha256": "72cd433655fd4afa141d6c663216838a1c6dbf45f004c42129230afbb2f85247"
+      "bytes": 13187,
+      "sha256": "05bf43a96ca03c9f537ebb6045497443e499a4aa4f3b52aaf85eb967ee00d68f"
+    },
+    {
+      "path": "tools/evidence.py",
+      "bytes": 4366,
+      "sha256": "58d7bb6c1c679208e9abb4cdb9c1346b321b108ae4aa175fc752f73f118e7c47"
     },
     {
       "path": "tools/examples_runner.py",

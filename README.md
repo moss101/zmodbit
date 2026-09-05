@@ -79,4 +79,18 @@ Names do not satisfy behavior. A feature is complete only when its domain contra
 ## Status
 
 Specification: frozen at 291 requirement rows (V3.1, 2026-09-03).  
-Implementation: `NOT_STARTED` on every milestone. See `docs/98_BUILD_MANIFEST.md`.
+Milestone status is **derived from the project graph** by `tools/build_manifest.py`; hand edits fail `tools/check_dossier.py` (G5).
+
+| Milestone | Scope | Status | Required proof |
+|---|---|---|---|
+| M0 | repository/CI/protocol generation | COMPLETE | clean clone build + architecture lint (CI runs 3-OS matrix + architecture/decision/coverage guards; runs 33820576307, 33821105668) |
+| M1 | durable local shell/Core | COMPLETE | create task, kill/restart app+Core, exact recovery (SIGKILL crash/restart test green; 5/5 milestone tasks + 26/26 IMP tasks COMPLETE; CI 33841864831) |
+| M2 | real local coding loop | IN_PROGRESS | live provider + real repo edit/test/review |
+| M3 | context intelligence | IN_PROGRESS | fixed-revision retrieval benchmarks + freshness proof |
+| M4 | durable recovery spine | IN_PROGRESS | kill-point suite, compaction/checkpoint fencing |
+| M5 | procedural runtime/skills | IN_PROGRESS | real tools through isolated composition + skill provenance |
+| M6 | subagents/fleet | IN_PROGRESS | durable isolated child execution/conflict proof |
+| M7 | live browser/computer use | IN_PROGRESS | actual Chromium, same-session takeover, hostile-page test |
+| M8 | isolated cloud execution | IN_PROGRESS | real guest, tenant isolation, loss/recovery |
+| M9 | memory/effects/security | IN_PROGRESS | promotion policy + receipt chain + attack suite |
+| M10 | release hardening | IN_PROGRESS | full Release Zero proof + package evidence |

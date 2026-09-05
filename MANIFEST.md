@@ -20,8 +20,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
-| Live state | 98–99 | 1 | 2283 |
-| **Total docs** | | **70** | **508136** |
+| Live state | 98–99 | 1 | 2382 |
+| **Total docs** | | **70** | **508235** |
 
 ## Specification files (`docs/`)
 
@@ -96,21 +96,21 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 91 | `docs/91_FEATURE_COMPLETION_AUDIT.md` | Feature Completion Audit | governance | 1074 | `810c4488a24258cff4ed87cd0ba6cea6b21cda5834b44bc02bf4c9e0a4eda3f5` |
 | 92 | `docs/92_BUILD_EVIDENCE_AND_DEPENDENCY_MANIFEST.md` | Build Evidence and Dependency Manifest | governance | 829 | `6cbd341583a935351b02637e0d295802a56073070054b5736f58fc9d5790ff86` |
 | 93 | `docs/93_STATUS_VOCABULARY_AND_LIFECYCLE.md` | Status Vocabulary and Lifecycle Reconciliation | governance | 3926 | `7693851eabf968fb946a5a84eb70b2af058d2cb5c0846767f51c07307aa70a29` |
-| 98 | `docs/98_BUILD_MANIFEST.md` | Build Manifest | live-state | 2283 | `b4b61d304e597eefabcd84e054aba0d6dd8439401b9412870a184efb3424c7ca` |
+| 98 | `docs/98_BUILD_MANIFEST.md` | Build Manifest | live-state | 2382 | `8fe201705b7bc42cac62f87ca3785530ec5ec47508e4220d7e17e09e6890a87b` |
 
 ## Root governing files and tooling
 
 | File | Role | Bytes | SHA-256 |
 |---|---|---:|---|
-| `README.md` | human orientation | 4960 | `c420d46be36216c21d8892ca9db10f9f549262c11ce5a68ae13bc1cda313fa03` |
+| `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 6595 | `4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25` |
 | `SKILLS.md` | governed procedures for agents | 13482 | `e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf` |
-| `graph/project-graph.json` | project driver graph with live status | 667604 | `9ff2c484e3578cdcfee092356d31bf3afff79b7edd835bec913af5e983a93765` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22203 | `e209c5d501db73b4a00a9902a414ac944b6303a927cab1321ade27ce2a09f41b` |
-| `tools/build_manifest.py` | regenerates this manifest | 14670 | `3e38e5b32c03532493b7926305400079a6526f0e33bbdd2cb9ab1651e9b5844a` |
-| `tools/build_graph.py` | regenerates graph structure from docs | 27166 | `1af561157fe5fc612584dea142ee9ca63ae0e62209792f17e5584c26cf82753a` |
+| `graph/project-graph.json` | project driver graph with live status | 791132 | `eb69f5e7309a90b07db0c60ab8234c0de093f3c6b128229690390adb5dc2ece2` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22382 | `a899208ff67fdb61fd20e1cdc34c4f4ffc1ea7f4b0c03768d7e913412ba9788e` |
+| `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
+| `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
-| `tools/check_dossier.py` | integrity gate | 8995 | `0200b96f063e7f65abe3a912e2d5748ca333c07a4ca8fda488282d07699a1f46` |
+| `tools/check_dossier.py` | integrity gate | 10310 | `a65618968ad3d57d0c22dbdfa74f2481e2849063c6bf4152a3fef300a05c5023` |
 | `tools/decision-guard.py` |  | 7908 | `cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc` |
 | `.github/workflows/ci.yml` |  | 2984 | `21a25c6b6729e5457261ee403ba7251045c3111b90fce01ec385b33d6bca0f3e` |
 | `Cargo.toml` |  | 484 | `0e74629caa64c7d248556e7c48acb53e70da550c36c99c20948504b8fd6995a7` |
@@ -165,8 +165,10 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/ui/package.json` |  | 223 | `0690dc195afbe986050db57fe4dbc696df44362c4264502aa4768ed43d6d6bfd` |
 | `packages/ui/src/index.ts` |  | 194 | `a526d54c14940b3a22dbaae3cf68391b692ee26b4b3f0a67a5a612d91db21b66` |
 | `packages/ui/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
-| `tools/architecture-lint/lint.py` |  | 10866 | `59dc7f68e5725574d5dcc82ca5b618de8d6d0ace244d3b627b221222e2a1d481` |
-| `tools/coverage-guard.py` |  | 11760 | `72cd433655fd4afa141d6c663216838a1c6dbf45f004c42129230afbb2f85247` |
+| `tools/architecture-lint/lint.py` |  | 22843 | `7d6420abc07ab8aa6a7c11c72f7fcabf41ac711815da568851970821a529431b` |
+| `tools/architecture-lint/placement_allowlist.json` |  | 14711 | `76d255e7149eb8ac0815094e19a29c4a7e587c251c94f3e083ac72d495ea8f67` |
+| `tools/coverage-guard.py` |  | 13187 | `05bf43a96ca03c9f537ebb6045497443e499a4aa4f3b52aaf85eb967ee00d68f` |
+| `tools/evidence.py` |  | 4366 | `58d7bb6c1c679208e9abb4cdb9c1346b321b108ae4aa175fc752f73f118e7c47` |
 | `tools/examples_runner.py` |  | 3505 | `3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4` |
 
 ## Rename map (V3 flat numbering → V3.1 `docs/`)

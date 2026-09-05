@@ -5,8 +5,11 @@ Parses the evidence-derived ledgers and the project graph and fails CI when:
 
   R1  an ADOPT/ADAPT requirement row in docs/40 lacks a canonical owner,
       an IMP-EV-* task link, or a QUAL-EV-* test link (docs/46 gate 2);
-  R2  a task node marked COMPLETE in graph/project-graph.json has no
-      evidence reference;
+  R2  a task node marked COMPLETE (or E2E_PROVEN) in graph/project-graph.json
+      has no TYPED evidence reference (tools/evidence.py: log:docs/evidence/,
+      scenario:E2E-nnn, receipt:<sha256>, or run:<id>/<test name>; bare
+      run:/commit: refs are history and never close a node — Future-tasks.md
+      section 4 item 1);
   R3  an architectural owner has two active production implementations for
       the same requirement without an ACCEPTED ADR covering both task IDs
       (docs/45: duplicate active owner);
@@ -31,6 +34,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 REQ_LEDGER = REPO_ROOT / "docs" / "40_EVIDENCE_DERIVED_REQUIREMENT_LEDGER.md"
 GRAPH = REPO_ROOT / "graph" / "project-graph.json"
 DECISIONS = REPO_ROOT / "docs" / "decisions"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import evidence as evidencetool  # noqa: E402
 
 ACTIVE_STATUSES = {"AUDITING", "IMPLEMENTING", "WIRED", "REAL_TESTING", "E2E_PROVEN"}
 EXEMPT_DISPOSITIONS = {"ALREADY COVERED", "EXPERIMENT", "DEFERRED", "REJECT", "REJECTED"}
@@ -106,13 +111,16 @@ def check(rows, nodes, implemented_by, owned_by_req, owned_by, expect_req_rows=N
         if missing_in_docs:
             violations.append("REQ ids in graph missing from docs/40: %s" % missing_in_docs[:5])
 
-    # R2: COMPLETE tasks (imp + milestone tasks) need evidence
+    # R2: COMPLETE / E2E_PROVEN tasks (imp + milestone tasks) need TYPED evidence
     for node in nodes.values():
-        if node.get("status") == "COMPLETE" and not node.get("evidence"):
-            violations.append(
-                "task %s is COMPLETE without evidence (docs/45; forbidden completion "
-                "shortcut in AGENTS.md)" % node["id"]
-            )
+        if node.get("status") in ("COMPLETE", "E2E_PROVEN"):
+            if not evidencetool.typed_refs(node.get("evidence"), root=str(REPO_ROOT)):
+                violations.append(
+                    "task %s is %s without typed evidence (need log:docs/evidence/<file>, "
+                    "scenario:E2E-nnn, receipt:<sha256>, or run:<id>/<integration|live test name>; "
+                    "docs/45; Future-tasks.md section 4; forbidden completion shortcut in AGENTS.md)"
+                    % (node["id"], node["status"])
+                )
 
     adr_text = accepted_adr_text()
     for req_id, row in sorted(rows.items()):
@@ -210,6 +218,17 @@ def self_test():
     nodes_r2 = dict(nodes)
     nodes_r2["IMP-EV-9001"] = {"id": "IMP-EV-9001", "status": "COMPLETE", "evidence": []}
     scenarios.append(("R2 COMPLETE without evidence", rows_ok, nodes_r2, {}, {}, True))
+    # R2: COMPLETE whose only refs are untyped run:/commit: history
+    nodes_r2b = dict(nodes)
+    nodes_r2b["IMP-EV-9001"] = {"id": "IMP-EV-9001", "status": "COMPLETE",
+                                "evidence": ["run:https://github.com/x/actions/runs/1", "commit:abc123"]}
+    scenarios.append(("R2 COMPLETE with untyped refs only", rows_ok, nodes_r2b, {}, {}, True))
+    # R2: COMPLETE with one typed ref closes the node
+    nodes_r2c = dict(nodes)
+    nodes_r2c["IMP-EV-9001"] = {"id": "IMP-EV-9001", "status": "COMPLETE",
+                                "evidence": ["run:https://github.com/x/actions/runs/1",
+                                             "receipt:" + "a" * 64]}
+    scenarios.append(("R2 COMPLETE with typed ref passes", rows_ok, nodes_r2c, {}, {}, False))
     # R3: duplicate active implementations, no ADR
     ib = {"REQ-EV-9001": ["IMP-EV-9001", "IMP-EV-9002"]}
     nodes_r3 = dict(nodes)
