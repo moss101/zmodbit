@@ -14,6 +14,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 pub mod computer_safety;
+pub mod session_control;
 
 pub fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
