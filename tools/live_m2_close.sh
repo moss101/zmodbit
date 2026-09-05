@@ -23,7 +23,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EVIDENCE_DIR="$ROOT/docs/evidence"
 mkdir -p "$EVIDENCE_DIR"
-STAMP="$(date -u +%Y-%m-%dT%H:%MZ)"
+STAMP="$(date -u +%Y-%m-%dT%H-%MZ)"  # colon-free: windows-safe path
 
 fail() { echo "live-m2-close: BLOCKED — $*" >&2; exit 1; }
 

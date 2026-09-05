@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -49,7 +49,7 @@ jobs:
             exit 0
           fi
           cargo test -p modbit-core-runtime --test daemon_live_e2e -- --test-threads=1 --nocapture \
-            | tee "docs/evidence/m2-11-live-e2e-$(date -u +%Y-%m-%dT%H%MZ).log"
+            | tee "docs/evidence/m2-11-live-e2e-$(date -u +%Y-%m-%dT%H-%MZ).log"
           ls docs/evidence/m2-11-live-e2e-*.log | head -1 | xargs grep -q "test result: ok"
 
       - name: Secret scan evidence
