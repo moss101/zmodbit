@@ -339,9 +339,8 @@ mod tests {
     #[test]
     fn background_child_survives_core_restart() {
         // The journal lines the dying process left behind.
-        let journal = format!(
-            "{{\"agent_id\":\"bg-1\",\"task\":\"research\"}}\n{{\"agent_id\":\"bg-2\",\"task\":\"verify\"}}\n"
-        );
+        let journal = "{\"agent_id\":\"bg-1\",\"task\":\"research\"}\n{\"agent_id\":\"bg-2\",\"task\":\"verify\"}\n"
+            .to_string();
         let restored = kill_and_restart(journal.as_bytes()).unwrap();
         assert_eq!(
             restored.len(),
