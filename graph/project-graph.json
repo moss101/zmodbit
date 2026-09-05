@@ -1473,7 +1473,7 @@
    "milestone": "M2",
    "order": 6,
    "source": "docs/43",
-   "status": "AUDITING",
+   "status": "IMPLEMENTING",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
     "commit:063cede",
@@ -1673,10 +1673,16 @@
      "from": "E2E_PROVEN",
      "to": "AUDITING",
      "note": "Phase 2 item 6 (Future-tasks §2.4): audit shell.run. BROKEN-DRIFTED — argv accepts only a string split on whitespace (no quoting, no JSON array form despite the schema docs); output is fully captured then tailed 8KB (no paginated OutputRef, no streamed chunks); the Core never spawns modbit-execd — every host must export MODBIT_EXECD_ADDR by hand (the desktop path has no shell otherwise)."
+    },
+    {
+     "at": "2026-09-05T23:13:59Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Phase 2 item 6 PARTIAL (commit dfc923a): argv JSON-array form + shell-words string parsing DONE (unit + always-on daemon coverage through e2e_002 array form); Core-spawned modbit-execd when MODBIT_EXECD_ADDR unset DONE (daemon test core_spawns_its_own_execd_when_none_is_configured). REMAINING before item close: stream output chunks as run events during execution and raise the 8KB captured tail to a paginated OutputRef (needs a streaming sink through the tool-handler boundary)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T23:10:56Z"
+   "status_changed_on": "2026-09-05T23:13:59Z"
   },
   {
    "id": "M2.8",
