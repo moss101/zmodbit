@@ -11,11 +11,13 @@ pub mod agent_fleet;
 pub mod agent_profiles_plans;
 pub mod agent_runtime_batch2;
 pub mod agent_runtime_batch3;
+pub mod agent_runtime_final;
 pub mod config;
 pub mod daemon;
 pub mod delegation;
 pub mod fleet_admission;
 pub mod one_agent;
+pub mod reminder_engine;
 pub mod surface;
 
 pub use config::{resolve, Authority, ConfigLayer, ResolvedConfig};
