@@ -30,10 +30,9 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 // ---- fixture ---------------------------------------------------------------
 
 fn tempdir(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "modbit-e2e-{tag}-{}",
-        uuid::Uuid::now_v7().simple()
-    ));
+    // Short prefix: unix socket paths must fit sun_path (104 bytes).
+    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().take(8).collect();
+    let dir = std::env::temp_dir().join(format!("mle{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -130,6 +129,10 @@ fn spawn_core(repo_root: &Path, worktree_root: &Path) -> CoreProc {
     let mut line = String::new();
     reader.read_line(&mut line).expect("boot line");
     assert!(line.contains("socket"), "boot line: {line}");
+    // Keep draining stdout so the pipe never breaks the core's writes.
+    std::thread::spawn(move || {
+        for _ in reader.lines() {}
+    });
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -153,7 +156,9 @@ fn spawn_core(repo_root: &Path, worktree_root: &Path) -> CoreProc {
     }
     // Keep draining stderr on a background thread so core never blocks.
     std::thread::spawn(move || {
-        for _ in err_reader.lines() {}
+        for line in err_reader.lines().map_while(Result::ok) {
+            eprintln!("[core] {line}");
+        }
     });
 
     CoreProc {
