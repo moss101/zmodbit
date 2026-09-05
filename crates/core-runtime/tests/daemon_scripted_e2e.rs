@@ -27,6 +27,10 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 
 // ---- shared harness (mirrors daemon_live_e2e) --------------------------------
 
+/// These tests mutate process env (MODBIT_EXECD_ADDR) and leak execd
+/// brokers by design; run them serialized within the binary.
+static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 fn tempdir(tag: &str) -> PathBuf {
     // Short prefix: unix socket paths must fit sun_path (104 bytes).
     let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().take(8).collect();
@@ -217,15 +221,16 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while Instant::now() < deadline {
+    // Blocking reads: the daemon line is core's first stderr output; EOF
+    // means the core died (diagnostics follow below).
+    while daemon.is_none() {
         let mut l = String::new();
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
+                eprintln!("[core] {}", l.trim_end());
                 if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
                     daemon = Some(addr.to_string());
-                    break;
                 }
             }
             Err(_) => break,
@@ -306,6 +311,7 @@ fn start_task(daemon: &str, prompt: &str) -> String {
 
 #[test]
 fn e2e_001_full_loop_read_fix_test_review() {
+    let _guard = E2E_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let repo = ts_webapp_fixture("a");
     let worktrees = tempdir("wa");
     let model = spawn_model_fixture(vec![
@@ -354,6 +360,7 @@ fn e2e_001_full_loop_read_fix_test_review() {
 
 #[test]
 fn e2e_002_first_command_failure_repairs_without_task_failure() {
+    let _guard = E2E_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let repo = ts_webapp_fixture("b");
     let worktrees = tempdir("wb");
     // Script: run tests FIRST (fails on the broken fixture — a real
