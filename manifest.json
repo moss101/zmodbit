@@ -7,7 +7,7 @@
   "counts": {
     "docs": 70,
     "root_and_tooling": 84,
-    "docs_bytes": 508472
+    "docs_bytes": 510671
   },
   "sections": [
     {
@@ -139,8 +139,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Agent Runtime and Orchestration",
-      "bytes": 4795,
-      "sha256": "6658315a4a4096569c936448a0b7c566d1b4bd926dda05ce1dc01a6180c6f78a"
+      "bytes": 5590,
+      "sha256": "22d02ca36ab15534a173e89456c185cd27b1eb45539ec1af3a396e6cc6e11557"
     },
     {
       "path": "docs/15_MODEL_ROUTER_AND_PROVIDER_GATEWAY.md",
@@ -148,8 +148,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Model Router and Provider Gateway",
-      "bytes": 3591,
-      "sha256": "9491115d519a3a9dbce3f95cf7704f152ce9dd763a3e168bce3d24c319bbeeba"
+      "bytes": 4323,
+      "sha256": "1f7898cfc239d06601e4fee55f2a30fde9918a9845b09cf105971f7e1038e892"
     },
     {
       "path": "docs/16_TOOL_CAPABILITY_AND_PROCEDURAL_RUNTIME.md",
@@ -184,8 +184,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Durable State, Memory, Compaction, and Checkpoints",
-      "bytes": 4019,
-      "sha256": "718634cd402ece3c57c77db48593ca8e59e4720f326fe847546172ac70f71a62"
+      "bytes": 4691,
+      "sha256": "cd6aadf4fe77a36b099a02bbe2dbd4570fd25467b08649e33cd7bacd22511b77"
     },
     {
       "path": "docs/20_WORKSPACE_GIT_AND_TRUSTED_CODE_SURFACE.md",
@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 804624,
-      "sha256": "d77bf2f6fab86ae6861827423571be7c9c673a8e0a66a2a4acc458ae3b822147"
+      "bytes": 807443,
+      "sha256": "6b604510dc539426d11824ec03a8c9078a6ab2942d1b0dcf9214355f1bafdd7b"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22622,
-      "sha256": "c2a28ed67d8da6d62ba0360050378f69da4f95afae75d4c6ad9f9b69117d1927"
+      "bytes": 22624,
+      "sha256": "e48b1a9b438be77532f7bcb3d3af4a9bf0341c9bd3e454285f69ba28f7449e86"
     },
     {
       "path": "tools/build_manifest.py",

@@ -251,6 +251,8 @@ async fn scheduler_runs_task_end_to_end_into_worktree_and_store() {
             request_timeout: Duration::from_secs(5),
             execd_addr: None,
             max_turns: 4,
+            model_settings: modbit_providers::profiles::ModelSettings::BASE,
+            max_input_tokens: modbit_core_runtime::one_agent::DEFAULT_MAX_INPUT_TOKENS,
         },
     );
     // The poller picks up task_started and runs the task (production path).
@@ -351,6 +353,8 @@ async fn provider_outage_parks_task_in_waiting() {
             request_timeout: Duration::from_secs(5),
             execd_addr: None,
             max_turns: 2,
+            model_settings: modbit_providers::profiles::ModelSettings::BASE,
+            max_input_tokens: modbit_core_runtime::one_agent::DEFAULT_MAX_INPUT_TOKENS,
         },
     );
     // The poller runs the task; the transport cannot connect, so the task

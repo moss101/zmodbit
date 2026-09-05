@@ -48,10 +48,24 @@ pub trait RunObserver: Sync + Send {
     fn turn_failed(&self, _turn_id: &str, _failure_code: &str) {}
     fn run_completed(&self, _run_id: &str) {}
     fn run_failed(&self, _run_id: &str, _failure_code: &str) {}
+    /// Context compaction applied before an invoke (Phase 2.2, docs/19):
+    /// the model-visible projection shrank; canonical history is intact.
+    fn compaction_applied(
+        &self,
+        _turn_id: &str,
+        _epoch_id: &str,
+        _affected_messages: u32,
+        _reclaimed_tokens: u64,
+        _manifest_digest: &str,
+    ) {
+    }
 }
 
+/// Default input-token budget before the loop compacts the conversation.
+pub const DEFAULT_MAX_INPUT_TOKENS: u64 = 32_768;
+
 /// The task the agent is asked to run.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct AgentTask {
     pub task_id: String,
     pub objective: String,
@@ -60,6 +74,31 @@ pub struct AgentTask {
     pub system_policy: String,
     pub workspace_rules: String,
     pub context_pack: String,
+    /// Per-model request settings (Phase 2.2): output budget, sampling
+    /// temperature, optional reasoning/thinking effort. Defaults resolve
+    /// from `modbit_providers::profiles`; env overrides land here via the
+    /// scheduler config.
+    pub model_settings: modbit_providers::profiles::ModelSettings,
+    /// Input-token budget for the model-visible conversation (Phase 2.2).
+    /// When the estimate exceeds it, the loop compacts BEFORE the invoke
+    /// (oldest tool results first, then epoch summaries).
+    pub max_input_tokens: u64,
+}
+
+impl Default for AgentTask {
+    fn default() -> Self {
+        AgentTask {
+            task_id: String::new(),
+            objective: String::new(),
+            model: String::new(),
+            provider: String::new(),
+            system_policy: String::new(),
+            workspace_rules: String::new(),
+            context_pack: String::new(),
+            model_settings: modbit_providers::profiles::ModelSettings::BASE,
+            max_input_tokens: DEFAULT_MAX_INPUT_TOKENS,
+        }
+    }
 }
 
 /// A tool request that was rejected or denied — kept as evidence.
@@ -168,6 +207,10 @@ impl<'a> OneAgentRuntime<'a> {
         // each model turn as an assistant message (with the tool calls it
         // issued) answered by tool-result messages keyed by call id.
         let mut conversation: Vec<ChatMessage> = vec![ChatMessage::user(compiled.compiled.clone())];
+        // Compaction epoch lineage (docs/19 § compaction epochs): the root epoch
+        // covers the initial projection; every compaction extends it.
+        let mut epochs = modbit_compaction::EpochRegistry::new();
+        let mut current_epoch = epochs.create(0, compiled.compiled.as_bytes());
 
         loop {
             if turns_used >= self.max_turns {
@@ -192,6 +235,78 @@ impl<'a> OneAgentRuntime<'a> {
                 o.turn_prepared(&turn_id, turns_used);
             }
 
+            // Token budget (Phase 2.2, docs/19 § compaction): when the
+            // conversation estimate exceeds the input budget, compact the
+            // MODEL-VISIBLE projection BEFORE the invoke — oldest tool
+            // results truncated first, then whole blocks summarized into
+            // an epoch line. The canonical history is untouched.
+            {
+                use modbit_compaction::hot_path::{
+                    plan_compaction, CompactionAction, ConversationItem, ItemKind,
+                };
+                let view: Vec<ConversationItem> = conversation
+                    .iter()
+                    .map(|m| ConversationItem {
+                        kind: match m.role {
+                            modbit_providers::gateway::Role::User => ItemKind::UserTurn,
+                            modbit_providers::gateway::Role::Assistant => {
+                                if m.tool_calls.is_empty() {
+                                    ItemKind::AssistantText
+                                } else {
+                                    ItemKind::AssistantToolCalls
+                                }
+                            }
+                            modbit_providers::gateway::Role::Tool => ItemKind::ToolResult,
+                        },
+                        text: m.content.clone(),
+                    })
+                    .collect();
+                if let Some(plan) = plan_compaction(&view, task.max_input_tokens) {
+                    let before: u64 = view.iter().map(|i| modbit_compaction::hot_path::estimate_tokens(&i.text)).sum();
+                    // Apply actions in reverse order so earlier indices
+                    // stay valid while ranges are replaced.
+                    let mut affected: u32 = 0;
+                    for action in plan.actions.iter().rev() {
+                        match action {
+                            CompactionAction::TruncateToolResult { index, replacement } => {
+                                if let Some(message) = conversation.get_mut(*index) {
+                                    if message.role == modbit_providers::gateway::Role::Tool {
+                                        affected += 1;
+                                        message.content = replacement.clone();
+                                    }
+                                }
+                            }
+                            CompactionAction::SummarizeBlock { start, end, replacement } => {
+                                if *start < *end && *end <= conversation.len() {
+                                    affected += (end - start) as u32;
+                                    conversation.splice(
+                                        *start..*end,
+                                        std::iter::once(ChatMessage::user(replacement.clone())),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    let projection =
+                        serde_json::to_vec(&plan.manifest).unwrap_or_default();
+                    if let Ok(epoch) =
+                        epochs.compact(&current_epoch.epoch_id, turns_used as u64, &projection)
+                    {
+                        current_epoch = epoch;
+                    }
+                    let reclaimed = before.saturating_sub(plan.projected_tokens);
+                    if let Some(o) = self.observer {
+                        o.compaction_applied(
+                            &turn_id,
+                            &current_epoch.epoch_id,
+                            affected,
+                            reclaimed,
+                            &modbit_compaction::sha256_hex(&projection),
+                        );
+                    }
+                }
+            }
+
             // Step 4: invoke the model through the normalized gateway shape.
             // Tool projection (docs/15): the registry's typed schemas
             // travel to the provider so the model can call real tools.
@@ -210,8 +325,9 @@ impl<'a> OneAgentRuntime<'a> {
                 model: task.model.clone(),
                 system: task.system_policy.clone(),
                 messages: conversation.clone(),
-                max_output_tokens: 4096,
-                temperature: 0.2,
+                max_output_tokens: task.model_settings.max_output_tokens,
+                temperature: task.model_settings.temperature,
+                reasoning_effort: task.model_settings.reasoning_effort,
                 tools,
             };
             let model_step = modbit_domain::RunStepId::generate().to_string();
@@ -487,6 +603,8 @@ mod tests {
             system_policy: "be terse".into(),
             workspace_rules: String::new(),
             context_pack: String::new(),
+            model_settings: modbit_providers::profiles::ModelSettings::BASE,
+            max_input_tokens: DEFAULT_MAX_INPUT_TOKENS,
         }
     }
 
@@ -839,8 +957,7 @@ mod tests {
 
     /// A runaway tool loop is bounded by max_turns and fails closed.
     #[test]
-    fn runaway_tool_loop_is_bounded() {
-        let endless = || {
+    fn runaway_tool_loop_is_bounded() {        let endless = || {
             vec![StreamEvent::ToolRequest {
                 call_id: format!("call-{}", rand_suffix()),
                 name: "modbit.file.read".into(),
@@ -882,5 +999,144 @@ mod tests {
         assert_eq!(result.final_state, TurnState::Failed);
         assert_eq!(result.turns_used, 3);
         assert_eq!(result.stop_reason.as_deref(), Some("max_turns_exceeded"));
+    }
+
+    /// Records compaction notifications for Phase 2.2 assertions.
+    struct RecordingCompactions {
+        events: std::sync::Mutex<Vec<(String, u32, u64)>>,
+    }
+
+    impl RunObserver for RecordingCompactions {
+        fn compaction_applied(
+            &self,
+            _turn_id: &str,
+            epoch_id: &str,
+            affected: u32,
+            reclaimed: u64,
+            _digest: &str,
+        ) {
+            self.events
+                .lock()
+                .unwrap()
+                .push((epoch_id.to_string(), affected, reclaimed));
+        }
+    }
+
+    /// Phase 2.2: an over-budget conversation compacts BEFORE the next
+    /// invoke — the tool-result payload travels truncated, call-id
+    /// linkage survives, and the observer sees the compaction with a
+    /// positive reclaim. Default budget sends everything verbatim.
+    #[test]
+    fn over_budget_conversation_compacts_before_invoke() {
+        use modbit_providers::gateway::Role;
+        let big_result = "x".repeat(8_000); // ~2000 estimated tokens
+
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-big".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"big.txt"}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("done".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(move |_args| {
+                    Ok(serde_json::json!({ "content": big_result }))
+                }),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+
+        let observer = RecordingCompactions {
+            events: std::sync::Mutex::new(Vec::new()),
+        };
+        let mut small_budget = task();
+        small_budget.max_input_tokens = 700; // prompt + marker fits; result does not
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 4,
+            observer: Some(&observer),
+        };
+        let result = rt.run(&small_budget).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+
+        // The repair-turn request carried a TRUNCATED tool result with
+        // the compaction marker, linkage intact.
+        let seen = transport.seen.lock().unwrap();
+        let messages = &seen[1].messages;
+        let tool = messages
+            .iter()
+            .find(|m| m.role == Role::Tool)
+            .expect("tool result still travels");
+        assert_eq!(tool.tool_call_id.as_deref(), Some("call-big"));
+        assert!(
+            tool.content.contains("[compacted:"),
+            "result truncated in flight: {} bytes",
+            tool.content.len()
+        );
+        assert!(tool.content.len() < 1_000, "payload actually shrank");
+        // The observer recorded the compaction with a positive reclaim.
+        let events = observer.events.lock().unwrap();
+        assert!(!events.is_empty(), "compaction observed");
+        assert!(events[0].2 > 0, "reclaimed tokens positive");
+        assert!(events[0].0.starts_with("epoch-"), "epoch lineage: {}", events[0].0);
+
+        // Default budget: the SAME run shape sends the result verbatim.
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-big".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"big.txt"}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("done".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(|_args| Ok(serde_json::json!({ "content": "x".repeat(8_000) }))),
+            )
+            .unwrap();
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 4,
+            observer: None,
+        };
+        rt.run(&task()).unwrap();
+        let seen = transport.seen.lock().unwrap();
+        let tool = seen[1]
+            .messages
+            .iter()
+            .find(|m| m.role == Role::Tool)
+            .unwrap();
+        assert!(tool.content.len() > 8_000, "verbatim under default budget");
     }
 }

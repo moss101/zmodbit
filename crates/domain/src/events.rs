@@ -130,6 +130,21 @@ pub enum DomainEvent {
     RunStepFailed {
         failure_code: String,
     },
+    /// Context compaction applied to the model-visible conversation
+    /// (docs/19 § compaction): the canonical event history is untouched —
+    /// only the projection the model sees changed. Emitted by the
+    /// one-agent loop when the conversation exceeds the input-token
+    /// budget (Future-tasks Phase 2 item 2).
+    CompactionApplied {
+        turn_id: TurnId,
+        epoch_id: String,
+        /// Conversation messages replaced or truncated.
+        affected_messages: u32,
+        /// Estimated input tokens removed from the projection.
+        reclaimed_tokens: u64,
+        /// sha256 digest of the CompactionManifest (modbit-compaction).
+        manifest_digest: String,
+    },
     /// Session fork (REQ-EV-0122): a new branch carries the selected
     /// decisions/evidence capsule and NEVER pending approvals.
     SessionForked {
@@ -264,6 +279,7 @@ impl EventEnvelope {
             DomainEvent::RunStepPrepared { .. } => "run_step_prepared",
             DomainEvent::RunStepCompleted => "run_step_completed",
             DomainEvent::RunStepFailed { .. } => "run_step_failed",
+            DomainEvent::CompactionApplied { .. } => "compaction_applied",
             DomainEvent::SessionForked { .. } => "session_forked",
             DomainEvent::SessionRewound { .. } => "session_rewound",
             DomainEvent::GoalSet { .. } => "goal_set",

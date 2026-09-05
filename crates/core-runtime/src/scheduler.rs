@@ -64,6 +64,13 @@ pub struct SchedulerConfig {
     /// Task-worktree layout source (repo + worktree roots). Defaults to
     /// the env-backed source when unset.
     pub worktrees: Option<Arc<dyn WorktreeSource>>,
+    /// Per-model request settings (Phase 2.2): resolved from the model
+    /// profile, env overrides applied (MODBIT_MAX_OUTPUT_TOKENS,
+    /// MODBIT_TEMPERATURE, MODBIT_REASONING_EFFORT).
+    pub model_settings: modbit_providers::profiles::ModelSettings,
+    /// Input-token budget before the loop compacts the conversation
+    /// (Phase 2.2; MODBIT_MAX_INPUT_TOKENS).
+    pub max_input_tokens: u64,
 }
 
 impl SchedulerConfig {
@@ -72,13 +79,31 @@ impl SchedulerConfig {
             Ok("anthropic") => Provider::Anthropic,
             _ => Provider::OpenAi,
         };
+        let model = std::env::var("MODBIT_MODEL")
+            .or_else(|_| std::env::var("MODBIT_LIVE_MODEL"))
+            .unwrap_or_else(|_| "gpt-4o-mini".into());
+        // Per-model profile, env overrides win (Phase 2.2).
+        let mut model_settings = modbit_providers::profiles::resolve_model_settings(&model);
+        if let Ok(v) = std::env::var("MODBIT_MAX_OUTPUT_TOKENS") {
+            if let Ok(tokens) = v.parse::<u32>() {
+                model_settings.max_output_tokens = tokens;
+            }
+        }
+        if let Ok(v) = std::env::var("MODBIT_TEMPERATURE") {
+            if let Ok(t) = v.parse::<f32>() {
+                model_settings.temperature = t;
+            }
+        }
+        if let Ok(v) = std::env::var("MODBIT_REASONING_EFFORT") {
+            if let Some(effort) = modbit_providers::profiles::parse_reasoning_effort(&v) {
+                model_settings.reasoning_effort = Some(effort);
+            }
+        }
         SchedulerConfig {
             provider,
             // MODBIT_LIVE_MODEL is the documented live-proof override (the
             // qualification script exports it); MODBIT_MODEL takes precedence.
-            model: std::env::var("MODBIT_MODEL")
-                .or_else(|_| std::env::var("MODBIT_LIVE_MODEL"))
-                .unwrap_or_else(|_| "gpt-4o-mini".into()),
+            model,
             base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
             broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
             worktrees: EnvWorktreeSource::from_env()
@@ -92,6 +117,11 @@ impl SchedulerConfig {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(8),
             execd_addr: std::env::var("MODBIT_EXECD_ADDR").ok().filter(|s| !s.is_empty()),
+            model_settings,
+            max_input_tokens: std::env::var("MODBIT_MAX_INPUT_TOKENS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(crate::one_agent::DEFAULT_MAX_INPUT_TOKENS),
         }
     }
 }
@@ -244,6 +274,8 @@ impl Scheduler {
             system_policy: system_policy(&worktree_path, &base_revision),
             workspace_rules: String::new(),
             context_pack,
+            model_settings: self.config.model_settings,
+            max_input_tokens: self.config.max_input_tokens,
         };
         let processor = CommandProcessor::new(self.store.clone());
         let result = runtime.run(&task);
@@ -1105,6 +1137,29 @@ impl RunObserver for EventStoreObserver {
 
     fn turn_completed(&self, turn_id: &str) {
         self.append(AggregateType::Turn, turn_id, DomainEvent::TurnCompleted);
+    }
+
+    fn compaction_applied(
+        &self,
+        turn_id: &str,
+        epoch_id: &str,
+        affected_messages: u32,
+        reclaimed_tokens: u64,
+        manifest_digest: &str,
+    ) {
+        let Ok(parsed_turn) = TurnId::parse(turn_id) else { return };
+        let run_id = self.run_of().unwrap_or_else(RunId::generate);
+        self.append(
+            AggregateType::Run,
+            &run_id.to_string(),
+            DomainEvent::CompactionApplied {
+                turn_id: parsed_turn,
+                epoch_id: epoch_id.to_string(),
+                affected_messages,
+                reclaimed_tokens,
+                manifest_digest: manifest_digest.to_string(),
+            },
+        );
     }
 
     fn turn_failed(&self, turn_id: &str, failure_code: &str) {

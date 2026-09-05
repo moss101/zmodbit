@@ -15,6 +15,7 @@ modbit-providers = { path = "../providers" }
 modbit-prompt-compiler = { path = "../prompt-compiler" }
 modbit-git = { path = "../git" }
 modbit-verification = { path = "../verification" }
+modbit-compaction = { path = "../compaction" }
 tokio = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
@@ -30,6 +31,7 @@ path = "src/bin/modbit-core.rs"
 
 [dev-dependencies]
 reqwest = { workspace = true, features = ["blocking"] }
+rusqlite = { workspace = true }
 uuid = { workspace = true }
 modbit-workspace = { path = "../workspace" }
 tokio = { workspace = true }

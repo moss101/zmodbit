@@ -143,6 +143,7 @@ mod tests {
             messages: vec![ChatMessage::user(content)],
             max_output_tokens: 256,
             temperature: 0.2,
+        reasoning_effort: None,
             tools: Vec::new(),
         }
     }

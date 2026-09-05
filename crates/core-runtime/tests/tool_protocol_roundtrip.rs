@@ -158,6 +158,7 @@ async fn tool_projection_streams_calls_and_feeds_results_back() {
         messages: vec![ChatMessage::user("read src/lib.rs")],
         max_output_tokens: 256,
         temperature: 0.0,
+        reasoning_effort: None,
         tools: registry
             .tool_definitions()
             .into_iter()
@@ -292,6 +293,7 @@ fn anthropic_tool_result_turn_serializes_without_tool_role() {
         ],
         max_output_tokens: 64,
         temperature: 0.0,
+        reasoning_effort: None,
         tools: Vec::new(),
     };
     let body = anthropic_request_body(&request);

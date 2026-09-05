@@ -1488,7 +1488,10 @@
     "log:docs/evidence/phase2-1-message-roles-2026-09-06.log",
     "receipt:56b1d297ede12a0e44fd4854532c3012e39f165669acad3e28dd134b0662e00f",
     "run:2026-09-05T22:14Z/openai_wire_body_carries_typed_roles",
-    "run:2026-09-05T22:14Z/anthropic_wire_body_carries_typed_roles"
+    "run:2026-09-05T22:14Z/anthropic_wire_body_carries_typed_roles",
+    "log:docs/evidence/phase2-2-compaction-2026-09-06.log",
+    "receipt:2cdc3408fe8399a0d6c272dce6a167b4e6a48d62c2dcfeb0a20cb7cf1dab55da",
+    "run:2026-09-05T22:30Z/over_budget_daemon_compacts_and_records_the_event"
    ],
    "notes": [
     {
@@ -1568,10 +1571,40 @@
      "from": "REAL_TESTING",
      "to": "E2E_PROVEN",
      "note": "Phase 2.1 (Future-tasks §2.1) closed: proper message roles E2E-proven through the real daemon on BOTH providers — exact wire bodies asserted (system/user/assistant/tool with tool_calls+tool_call_id; top-level system + tool_use/tool_result blocks keyed by tool_use_id). Mutation checks: linkage break and role flattening both detected by the E2E. Live-provider re-proof rides the nightly job (E2E-001..003 consume the same loop)."
+    },
+    {
+     "at": "2026-09-05T22:18:06Z",
+     "from": "E2E_PROVEN",
+     "to": "AUDITING",
+     "note": "Phase 2 item 2 (Future-tasks §2.2): audit token budget + compaction. crates/compaction LOGIC-ONLY (epochs/manifest/stale-guard unit-proven, no production caller, not in modbit-core closure — first missing link: no dep edge core-runtime→compaction). Token accounting NOT-FOUND (usage frames parsed but never fed back). CompactionApplied run event NOT-FOUND (no DomainEvent variant). max_output_tokens=4096/temperature=0.2 hard-coded in the request build; ReasoningEffort + ModelCapability exist in providers but unused by the hot path."
+    },
+    {
+     "at": "2026-09-05T22:18:10Z",
+     "from": "AUDITING",
+     "to": "IMPLEMENTING",
+     "note": "Phase 2.2 slice: (1) domain CompactionApplied event; (2) compaction crate gains hot-path planning API (token estimator, oldest-tool-result truncation stage, epoch summarization stage, epoch lineage via EpochRegistry); (3) ModelRequest gains reasoning_effort, body builders serialize OpenAI reasoning_effort / Anthropic thinking budget; per-model ModelSettings profile + env overrides; (4) one_agent compacts before each invoke above MODBIT_MAX_INPUT_TOKENS, emits compaction_applied through RunObserver; scheduler persists it as a durable Run event; proofs: unit + always-on daemon E2E with body capture + direct SQLite assertion of compaction_applied."
+    },
+    {
+     "at": "2026-09-05T22:35:37Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "Phase 2.2: production routing already reaches the new code (scheduler -> OneAgentRuntime with model_settings + max_input_tokens from SchedulerConfig::from_env)."
+    },
+    {
+     "at": "2026-09-05T22:35:37Z",
+     "from": "WIRED",
+     "to": "REAL_TESTING",
+     "note": "Phase 2.2 proofs green: compaction planner 8 unit tests, providers 30 (reasoning serialization + clamp), one_agent 9 (over-budget truncation with linkage + observer + verbatim default), daemon_compaction_e2e 1 (wire + durable SQLite assertions)."
+    },
+    {
+     "at": "2026-09-05T22:35:37Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Phase 2.2 (Future-tasks §2.2) closed: hot-path compaction proven through the real daemon (MODBIT_MAX_INPUT_TOKENS=700): wire body shows truncated tool result with intact call-id linkage; durable store carries compaction_applied with manifest digest. Per-model settings ride the body (max_tokens 4096 BASE; reasoning_effort absent unless opted in). Mutations A (budget neutralized) and B (linkage broken) both detected by the E2E."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T22:15:48Z"
+   "status_changed_on": "2026-09-05T22:35:37Z"
   },
   {
    "id": "M2.8",

@@ -119,6 +119,8 @@ fn task() -> AgentTask {
         provider: "live".into(),
         system_policy: "Answer in at most two sentences.".into(),
         workspace_rules: String::new(),
+        model_settings: modbit_providers::profiles::ModelSettings::BASE,
+        max_input_tokens: modbit_core_runtime::one_agent::DEFAULT_MAX_INPUT_TOKENS,
         context_pack: String::new(),
     }
 }

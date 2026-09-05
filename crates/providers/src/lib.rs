@@ -4,6 +4,7 @@
 pub mod envelope;
 pub mod gateway;
 pub mod media_split;
+pub mod profiles;
 pub mod routing;
 pub mod transport;
 pub mod usage;

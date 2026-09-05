@@ -39,6 +39,8 @@ ModelEvent
 
 Adapters translate OpenAI-compatible and Anthropic-style APIs first. Additional providers implement the same conformance suite before exposure.
 
+`reasoning_effort` is optional and opt-in: when unset (the default) neither adapter sends any reasoning parameter, so non-reasoning models never see one. When set, the OpenAI-compatible body carries `reasoning_effort` verbatim; the Anthropic body carries `thinking: {type: "enabled", budget_tokens}` with the budget mapped from the effort (minimal/low 1024, medium 4096, high 8192) and clamped below `max_tokens` — a budget that cannot fit is dropped rather than sending a request the provider would reject. Per-model defaults (output budget, temperature, effort) resolve through `modbit_providers::profiles::resolve_model_settings`, overridable via `MODBIT_MAX_OUTPUT_TOKENS` / `MODBIT_TEMPERATURE` / `MODBIT_REASONING_EFFORT`.
+
 ## Routing
 
 Route on a `TaskFingerprint`:

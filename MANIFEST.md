@@ -14,14 +14,14 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | Section | Range | Files | Bytes |
 |---|---|---:|---:|
 | Authority and orientation | 00–09 | 5 | 26678 |
-| Architecture and subsystems | 10–29 | 17 | 76622 |
+| Architecture and subsystems | 10–29 | 17 | 78821 |
 | Implementation specifications | 30–39 | 8 | 30178 |
 | Requirements, tasks and traceability | 40–49 | 9 | 292645 |
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
 | Live state | 98–99 | 1 | 2382 |
-| **Total docs** | | **70** | **508472** |
+| **Total docs** | | **70** | **510671** |
 
 ## Specification files (`docs/`)
 
@@ -36,12 +36,12 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 11 | `docs/11_SYSTEM_ARCHITECTURE.md` | End-to-End System Architecture | architecture | 8744 | `986c4912fa8e6ebc77560342d92d87b837095cc39628851df0d483493ffb9674` |
 | 12 | `docs/12_REPOSITORY_AND_MODULE_LAYOUT.md` | Clean Repository and Module Layout | architecture | 4967 | `cdeafe379b26d5f8f85eef0b4ed02d0a0969b84c06d4688aa6f94b02dac6ca97` |
 | 13 | `docs/13_DOMAIN_MODEL_AND_STATE_MACHINES.md` | Canonical Domain Model and State Machines | architecture | 4296 | `4e0f5a5f9984679bd8dfb4f129d7f8864f5135ec8203d7dd4985a6df79d33aee` |
-| 14 | `docs/14_AGENT_RUNTIME_AND_ORCHESTRATION.md` | Agent Runtime and Orchestration | architecture | 4795 | `6658315a4a4096569c936448a0b7c566d1b4bd926dda05ce1dc01a6180c6f78a` |
-| 15 | `docs/15_MODEL_ROUTER_AND_PROVIDER_GATEWAY.md` | Model Router and Provider Gateway | architecture | 3591 | `9491115d519a3a9dbce3f95cf7704f152ce9dd763a3e168bce3d24c319bbeeba` |
+| 14 | `docs/14_AGENT_RUNTIME_AND_ORCHESTRATION.md` | Agent Runtime and Orchestration | architecture | 5590 | `22d02ca36ab15534a173e89456c185cd27b1eb45539ec1af3a396e6cc6e11557` |
+| 15 | `docs/15_MODEL_ROUTER_AND_PROVIDER_GATEWAY.md` | Model Router and Provider Gateway | architecture | 4323 | `1f7898cfc239d06601e4fee55f2a30fde9918a9845b09cf105971f7e1038e892` |
 | 16 | `docs/16_TOOL_CAPABILITY_AND_PROCEDURAL_RUNTIME.md` | Tool System, Capability Kernel, Procedural Runtime, and MCP | architecture | 4550 | `5e8b803190bdd39f246f99bd614bdd3f767b58aafd730a5ca9ed11fdf65499e2` |
 | 17 | `docs/17_CANONICAL_TOOL_AND_CAPABILITY_INVENTORY.md` | Canonical Tool and Capability Inventory | architecture | 4372 | `dec6fbc6f5bee1cb3313bef50ffb10199c1f64bdcfef49ba0b7bac06447ca4ac` |
 | 18 | `docs/18_CONTEXT_RETRIEVAL_AND_ENGINEERING_KNOWLEDGE.md` | Context, Retrieval, and Engineering Knowledge Engine | architecture | 4771 | `1899b5869afba2502a22576bceb56edf5fc728d5a36bb192b75798e1c2c97b2a` |
-| 19 | `docs/19_DURABLE_STATE_MEMORY_COMPACTION_CHECKPOINTS.md` | Durable State, Memory, Compaction, and Checkpoints | architecture | 4019 | `718634cd402ece3c57c77db48593ca8e59e4720f326fe847546172ac70f71a62` |
+| 19 | `docs/19_DURABLE_STATE_MEMORY_COMPACTION_CHECKPOINTS.md` | Durable State, Memory, Compaction, and Checkpoints | architecture | 4691 | `cd6aadf4fe77a36b099a02bbe2dbd4570fd25467b08649e33cd7bacd22511b77` |
 | 20 | `docs/20_WORKSPACE_GIT_AND_TRUSTED_CODE_SURFACE.md` | Workspace, Git, Worktrees, Diagnostics, and Trusted Code Surface | architecture | 2883 | `0f1d42c9d0915595c582ca2b73f16040caed17bf2e20638c0464f64f3df3d469` |
 | 21 | `docs/21_TERMINAL_EXECUTION_AND_SANDBOX.md` | Terminal, Execution Router, and Sandbox Architecture | architecture | 3332 | `b36b4bb9b3e8d837e2c62e048147acf9b236b74cc006e8fbfc2fc8d751f102ff` |
 | 22 | `docs/22_BROWSER_AND_COMPUTER_USE.md` | Browser and Computer-Use Architecture | architecture | 3961 | `a7e441d9bc60785aea7dcc62fe8cef5946f3aa2551665368a360d4ec3519220b` |
@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
-| `graph/project-graph.json` | project driver graph with live status | 804624 | `d77bf2f6fab86ae6861827423571be7c9c673a8e0a66a2a4acc458ae3b822147` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22622 | `c2a28ed67d8da6d62ba0360050378f69da4f95afae75d4c6ad9f9b69117d1927` |
+| `graph/project-graph.json` | project driver graph with live status | 807443 | `6b604510dc539426d11824ec03a8c9078a6ab2942d1b0dcf9214355f1bafdd7b` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22624 | `e48b1a9b438be77532f7bcb3d3af4a9bf0341c9bd3e454285f69ba28f7449e86` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |
