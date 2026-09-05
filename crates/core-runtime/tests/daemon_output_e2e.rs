@@ -35,6 +35,14 @@ fn notes_fixture(tag: &str) -> PathBuf {
     repo.set_config("user.name", "Modbit E2E").unwrap();
     repo.set_config("core.autocrlf", "false").unwrap();
     std::fs::write(root.join("notes.txt"), "streaming fixture\n").unwrap();
+    // A script file (not `sh -c "..."`): multi-word -c arguments do not
+    // survive every broker argv encoding (observed on windows CI); the
+    // script keeps argv exact on every platform.
+    std::fs::write(
+        root.join("stream.sh"),
+        "#!/bin/sh\necho first-burst\nsleep 1\necho second-burst\n",
+    )
+    .unwrap();
     repo.commit_all("fixture baseline").expect("baseline");
     root
 }
@@ -260,11 +268,7 @@ fn shell_output_streams_and_pages_through_output_refs() {
     // Two bursts separated by a sleep: the 25ms drain loop emits a chunk
     // per burst (>= 2 chunk events) instead of one lump at completion.
     let (model, bodies) = spawn_model_fixture(vec![
-        tool_call_turn(
-            "c1",
-            "shell.run",
-            r#"{"argv":["sh","-c","echo first-burst && sleep 1 && echo second-burst"]}"#,
-        ),
+        tool_call_turn("c1", "shell.run", r#"{"argv":["sh","stream.sh"]}"#),
         text_turn("done"),
     ]);
     let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
