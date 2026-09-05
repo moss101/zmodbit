@@ -20,6 +20,9 @@ pub struct CoreServices {
     store: Arc<EventStore>,
     processor: CommandProcessor,
     workspace: Option<std::sync::Arc<modbit_workspace::WorkspaceFileService>>,
+    /// Task-worktree layout for GetDiff (explicit; no process-env reads
+    /// inside dispatch). Set by the host binary at construction.
+    task_worktrees: Option<std::sync::Arc<dyn crate::scheduler::WorktreeSource>>,
 }
 
 #[derive(Default, Clone)]
@@ -41,7 +44,18 @@ impl CoreServices {
             processor: CommandProcessor::new(store.clone()),
             store,
             workspace: None,
+            task_worktrees: None,
         }
+    }
+
+    /// Attaches the task-worktree layout source (GetDiff): the shared
+    /// repo/worktree roots the scheduler allocates from.
+    pub fn with_task_worktrees(
+        mut self,
+        source: std::sync::Arc<dyn crate::scheduler::WorktreeSource>,
+    ) -> Self {
+        self.task_worktrees = Some(source);
+        self
     }
 
     /// Attaches the canonical workspace for the Trusted Code Surface.
@@ -652,8 +666,11 @@ impl CoreServices {
     /// (E2E-001 review substrate). The worktree location follows the
     /// scheduler's deterministic allocation.
     fn diff(&self, task_id: &str) -> Result<pb::DiffView, String> {
-        let config = crate::scheduler::worktree_layout(task_id).ok_or_else(|| {
-            "no repository configured for task worktrees (set MODBIT_REPO_ROOT)".to_string()
+        let source = self.task_worktrees.as_ref().ok_or_else(|| {
+            "task worktrees not configured on this core (host must attach the layout)".to_string()
+        })?;
+        let config = source.layout(task_id).ok_or_else(|| {
+            "no repository configured for task worktrees".to_string()
         })?;
         if !config.worktree.exists() {
             return Err(format!("task {task_id} has no allocated worktree"));

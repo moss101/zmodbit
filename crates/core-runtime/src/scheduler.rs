@@ -56,16 +56,14 @@ pub struct SchedulerConfig {
     /// Pins the provider base URL (tests point this at a local fixture).
     pub base_url: Option<String>,
     pub broker: Arc<dyn SecretBroker>,
-    /// Repository whose worktrees isolate task runs (E2E-001).
-    pub repo_root: Option<PathBuf>,
-    /// Where task worktrees are allocated (defaults to
-    /// `<repo_root>/../.modbit/worktrees`).
-    pub worktree_root: Option<PathBuf>,
     pub request_timeout: Duration,
     pub max_turns: u32,
     /// modbit-execd broker address (docs/21). shell.run routes through it;
     /// unset means shell execution is unavailable and fails closed.
     pub execd_addr: Option<String>,
+    /// Task-worktree layout source (repo + worktree roots). Defaults to
+    /// the env-backed source when unset.
+    pub worktrees: Option<Arc<dyn WorktreeSource>>,
 }
 
 impl SchedulerConfig {
@@ -74,20 +72,13 @@ impl SchedulerConfig {
             Ok("anthropic") => Provider::Anthropic,
             _ => Provider::OpenAi,
         };
-        let repo_root = std::env::var("MODBIT_REPO_ROOT")
-            .ok()
-            .map(PathBuf::from)
-            .or_else(|| {
-                let cwd = std::env::current_dir().ok()?;
-                (cwd.join(".git").exists()).then_some(cwd)
-            });
         SchedulerConfig {
             provider,
             model: std::env::var("MODBIT_MODEL").unwrap_or_else(|_| "gpt-4o-mini".into()),
             base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
             broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
-            repo_root,
-            worktree_root: None,
+            worktrees: EnvWorktreeSource::from_env()
+                .map(|s| Arc::new(s) as Arc<dyn WorktreeSource>),
             request_timeout: Duration::from_secs(180),
             max_turns: 8,
             execd_addr: std::env::var("MODBIT_EXECD_ADDR").ok().filter(|s| !s.is_empty()),
@@ -174,22 +165,23 @@ impl Scheduler {
             task: task_id.to_string(),
         };
 
-        // 1. Worktree + revision allocation (E2E-001).
-        let repo_root = self.config.repo_root.clone().ok_or_else(|| {
+        // 1. Worktree + revision allocation (E2E-001), through the shared
+        // layout source (the GetDiff surface reads the same truth).
+        let source: Arc<dyn WorktreeSource> = self.config.worktrees.clone().unwrap_or_else(|| {
+            Arc::new(EnvWorktreeSource::from_env().unwrap_or_else(|| {
+                panic!("no repository configured for runs (set MODBIT_REPO_ROOT)")
+            }))
+        });
+        let layout = source.layout(&task_id.to_string()).ok_or_else(|| {
             "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string()
         })?;
-        let repo = GitRepo::open(&repo_root).map_err(|e| format!("open repo: {e}"))?;
-        let base_revision = repo.head().map_err(|e| format!("read HEAD: {e}"))?;
-        let worktree_root = self
-            .config
-            .worktree_root
-            .clone()
-            .unwrap_or_else(|| default_worktree_root(&repo_root));
-        let worktree_path = worktree_root.join(task_id.to_string());
-        // worktree_add creates the task branch (-b) at the current HEAD;
-        // the layout is shared with the GetDiff surface.
-        let branch = format!("modbit/{}", &task_id.to_string()[..12.min(task_id.to_string().len())]);
-        repo.worktree_add(&worktree_path, &branch)
+        let worktree_path = layout.worktree.clone();
+        let base_revision = layout.base_revision.clone();
+        let repo = GitRepo::open(
+            &source.repo_root().ok_or("worktree source has no repository root")?,
+        )
+        .map_err(|e| format!("open repo: {e}"))?;
+        repo.worktree_add(&worktree_path, &layout.branch)
             .map_err(|e| format!("allocate worktree: {e}"))?;
 
         // 2. Context pack through the canonical file service on the worktree.
@@ -312,29 +304,69 @@ pub struct WorktreeLayout {
     pub base_revision: String,
 }
 
-/// Resolves the worktree layout from the same environment the scheduler
-/// uses (MODBIT_REPO_ROOT / MODBIT_WORKTREE_ROOT). None when no repository
-/// is configured.
-pub fn worktree_layout(task_id: &str) -> Option<WorktreeLayout> {
-    let repo_root = std::env::var("MODBIT_REPO_ROOT")
-        .ok()
-        .map(PathBuf::from)
-        .or_else(|| {
-            let cwd = std::env::current_dir().ok()?;
-            (cwd.join(".git").exists()).then_some(cwd)
-        })?;
-    let repo = GitRepo::open(&repo_root).ok()?;
-    let base_revision = repo.head().ok()?;
-    let worktree_root = std::env::var("MODBIT_WORKTREE_ROOT")
-        .ok()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| default_worktree_root(&repo_root));
-    let branch = format!("modbit/{}", &task_id[..12.min(task_id.len())]);
-    Some(WorktreeLayout {
-        worktree: worktree_root.join(task_id),
-        branch,
-        base_revision,
-    })
+/// Source of task-worktree layouts, shared by the scheduler and the GetDiff
+/// surface. Explicit configuration beats ambient env inside dispatch.
+pub trait WorktreeSource: Send + Sync + 'static {
+    /// The deterministic layout (path, branch, base revision) for a task.
+    fn layout(&self, task_id: &str) -> Option<WorktreeLayout>;
+    /// The backing repository root, when the source knows it.
+    fn repo_root(&self) -> Option<std::path::PathBuf> {
+        None
+    }
+}
+
+/// Env-backed source for host wiring (MODBIT_REPO_ROOT / cwd git repo,
+/// MODBIT_WORKTREE_ROOT override). The bin constructs it once at boot.
+pub struct EnvWorktreeSource {
+    repo_root: PathBuf,
+    worktree_root: PathBuf,
+    base_revision: String,
+}
+
+impl EnvWorktreeSource {
+    pub fn from_env() -> Option<Self> {
+        let repo_root = std::env::var("MODBIT_REPO_ROOT")
+            .ok()
+            .map(PathBuf::from)
+            .or_else(|| {
+                let cwd = std::env::current_dir().ok()?;
+                (cwd.join(".git").exists()).then_some(cwd)
+            })?;
+        let repo = GitRepo::open(&repo_root).ok()?;
+        let base_revision = repo.head().ok()?;
+        let worktree_root = std::env::var("MODBIT_WORKTREE_ROOT")
+            .ok()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| default_worktree_root(&repo_root));
+        Some(EnvWorktreeSource {
+            repo_root,
+            worktree_root,
+            base_revision,
+        })
+    }
+
+    pub fn repo_root(&self) -> &std::path::Path {
+        &self.repo_root
+    }
+
+    pub fn worktree_root(&self) -> &std::path::Path {
+        &self.worktree_root
+    }
+}
+
+impl WorktreeSource for EnvWorktreeSource {
+    fn layout(&self, task_id: &str) -> Option<WorktreeLayout> {
+        let branch = format!("modbit/{}", &task_id[..12.min(task_id.len())]);
+        Some(WorktreeLayout {
+            worktree: self.worktree_root.join(task_id),
+            branch,
+            base_revision: self.base_revision.clone(),
+        })
+    }
+
+    fn repo_root(&self) -> Option<std::path::PathBuf> {
+        Some(self.repo_root.clone())
+    }
 }
 
 fn default_worktree_root(repo_root: &std::path::Path) -> PathBuf {

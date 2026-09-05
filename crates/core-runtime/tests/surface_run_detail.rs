@@ -21,14 +21,35 @@ fn tempdir(tag: &str) -> PathBuf {
     dir
 }
 
-fn setup(tag: &str) -> (PathBuf, Arc<EventStore>, CoreServices, String) {
+/// Explicit worktree source per test — no process-env mutation (tests run
+/// in parallel inside one binary).
+struct TestSource {
+    repo_root: PathBuf,
+    worktree_root: PathBuf,
+    base_revision: String,
+}
+
+impl modbit_core_runtime::scheduler::WorktreeSource for TestSource {
+    fn layout(&self, task_id: &str) -> Option<modbit_core_runtime::scheduler::WorktreeLayout> {
+        Some(modbit_core_runtime::scheduler::WorktreeLayout {
+            worktree: self.worktree_root.join(task_id),
+            branch: format!("modbit/{}", &task_id[..12]),
+            base_revision: self.base_revision.clone(),
+        })
+    }
+
+    fn repo_root(&self) -> Option<PathBuf> {
+        Some(self.repo_root.clone())
+    }
+}
+
+fn setup(tag: &str) -> (PathBuf, PathBuf, Arc<EventStore>, CoreServices, String) {
     let repo_root = tempdir(tag);
     let repo = GitRepo::init(&repo_root).unwrap();
     repo.set_config("user.email", "t@modbit.test").unwrap();
     repo.set_config("user.name", "T").unwrap();
     std::fs::write(repo_root.join("f.txt"), "one\n").unwrap();
     repo.commit_all("base").unwrap();
-    let base_revision = repo.head().unwrap();
 
     let db = tempdir(&format!("{tag}-db"));
     let store = Arc::new(EventStore::open(&db.join("core.db")).unwrap());
@@ -90,12 +111,14 @@ fn setup(tag: &str) -> (PathBuf, Arc<EventStore>, CoreServices, String) {
     let worktree_root = tempdir(&format!("{tag}-wt"));
     let branch = format!("modbit/{}", &tid[..12]);
     repo.worktree_add(&worktree_root.join(&tid), &branch).unwrap();
+    let base_revision = repo.head().unwrap();
 
-    // Point the diff surface at this layout via the documented env.
-    std::env::set_var("MODBIT_REPO_ROOT", &repo_root);
-    std::env::set_var("MODBIT_WORKTREE_ROOT", &worktree_root);
-    let _ = base_revision;
-    (repo_root, store, services, tid)
+    let services = services.with_task_worktrees(Arc::new(TestSource {
+        repo_root: repo_root.clone(),
+        worktree_root: worktree_root.clone(),
+        base_revision,
+    }));
+    (repo_root, worktree_root, store, services, tid)
 }
 
 fn roundtrip(
@@ -109,7 +132,7 @@ fn roundtrip(
 
 #[test]
 fn steer_pause_stop_transition_the_task_through_the_surface() {
-    let (_repo, _store, services, tid) = setup("steer");
+    let (_repo, _wt, _store, services, tid) = setup("steer");
 
     let resp = roundtrip(
         &services,
@@ -154,7 +177,7 @@ fn steer_pause_stop_transition_the_task_through_the_surface() {
 
 #[test]
 fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
-    let (_repo, store, services, tid) = setup("detail");
+    let (_repo, worktree_root, store, services, tid) = setup("detail");
 
     // Append a real run plane through the store, exactly as the scheduler
     // observer writes it.
@@ -216,12 +239,7 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
     assert_eq!(detail.turns[0].steps[0].step_type, "model_invoke");
 
     // Diff: change a file in the worktree; GetDiff must show it.
-    let worktree = std::env::var("MODBIT_WORKTREE_ROOT").unwrap();
-    std::fs::write(
-        PathBuf::from(worktree).join(&tid).join("f.txt"),
-        "one\ntwo\n",
-    )
-    .unwrap();
+    std::fs::write(worktree_root.join(&tid).join("f.txt"), "one\ntwo\n").unwrap();
     let resp = roundtrip(
         &services,
         pb::surface_request::Request::GetDiff(pb::GetDiffRequest { task_id: tid.clone() }),
