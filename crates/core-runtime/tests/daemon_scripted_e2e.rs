@@ -193,9 +193,14 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
 
     let db_dir = tempdir("db");
     let exe = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-core");
-    let mut child = Command::new(exe)
-        .env("MODBIT_CORE_DB", db_dir.join("core.db"))
-        .env("MODBIT_SOCKET", db_dir.join("s.sock"))
+    let mut command = Command::new(exe);
+    let mut command = command.env("MODBIT_CORE_DB", db_dir.join("core.db"));
+    if !cfg!(windows) {
+        // Unix socket path must fit sun_path; Windows uses named pipes and
+        // MODBIT_SOCKET must stay unset there (ephemeral endpoint).
+        command = command.env("MODBIT_SOCKET", db_dir.join("s.sock"));
+    }
+    let mut child = command
         .env("MODBIT_HTTP_ADDR", "127.0.0.1:0")
         .env("MODBIT_REPO_ROOT", repo_root)
         .env("MODBIT_WORKTREE_ROOT", worktree_root)

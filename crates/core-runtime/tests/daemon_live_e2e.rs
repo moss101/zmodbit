@@ -111,9 +111,14 @@ fn spawn_core(repo_root: &Path, worktree_root: &Path) -> CoreProc {
     let execd = spawn_execd();
     let db_dir = tempdir("e2e-db");
     let exe = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-core");
-    let mut child = Command::new(exe)
-        .env("MODBIT_CORE_DB", db_dir.join("core.db"))
-        .env("MODBIT_SOCKET", db_dir.join("e2e.sock"))
+    let mut command = Command::new(exe);
+    let mut command = command.env("MODBIT_CORE_DB", db_dir.join("core.db"));
+    if !cfg!(windows) {
+        // Unix socket path must fit sun_path; Windows uses named pipes and
+        // MODBIT_SOCKET must stay unset there (ephemeral endpoint).
+        command = command.env("MODBIT_SOCKET", db_dir.join("e2e.sock"));
+    }
+    let mut child = command
         .env("MODBIT_HTTP_ADDR", "127.0.0.1:0")
         .env("MODBIT_REPO_ROOT", repo_root)
         .env("MODBIT_WORKTREE_ROOT", worktree_root)
