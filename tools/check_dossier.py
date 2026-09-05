@@ -12,9 +12,13 @@ Checks
   D5  no de-branding artifacts or placeholder tokens
   G1  graph exists and every doc is a node; every doc node exists on disk
   G2  every REQ/IMP/QUAL in docs is in the graph and vice versa
-  G3  statuses are from the vocabulary; E2E_PROVEN/COMPLETE carry evidence
+  G3  statuses are from the vocabulary; E2E_PROVEN/COMPLETE carry TYPED
+      evidence (log:docs/evidence/<file>, scenario:E2E-nnn, receipt:<sha256>,
+      or run:<id>/<integration|live test name> — tools/evidence.py); bare
+      run:/commit: refs are history and never close a node
   G4  COMPLETE tasks have COMPLETE prerequisites; edges resolve
-  G5  docs/98 milestone table is not ahead of the graph roll-up
+  G5  docs/98 and README milestone tables are derived from the graph roll-up
+      and must match it exactly (regenerate with tools/build_manifest.py)
   M1  (--manifest) every manifest.json hash matches the file on disk
 """
 import hashlib
@@ -28,6 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import graph as graphtool  # noqa: E402
+import evidence as evidencetool  # noqa: E402
 
 EXPECTED = {"REQ": 291, "IMP": 265, "QUAL": 291}
 ARTIFACTS = ["selected MicroVM", "validated multimodal mechanisms", "validated CLI-agent", "validated agent mechanisms",
@@ -145,6 +150,13 @@ def main(argv):
                     find("G3", "%s has invalid status %r" % (n["id"], st))
                 if st in graphtool.EVIDENCE_REQUIRED and not n.get("evidence"):
                     find("G3", "%s is %s without evidence" % (n["id"], st))
+                if st in ("E2E_PROVEN", "COMPLETE"):
+                    e2e_ids = {s["id"] for s in ix.by_type("scenario") if s.get("kind") == "e2e"}
+                    if not evidencetool.typed_refs(n.get("evidence"), ROOT, e2e_ids):
+                        find("G3", "%s is %s without TYPED evidence: need log:docs/evidence/<file>, "
+                                   "scenario:E2E-nnn, receipt:<sha256>, or run:<id>/<integration|live test "
+                                   "name> (tools/evidence.py; docs/82; Future-tasks.md section 4)"
+                             % (n["id"], st))
                 if st == "COMPLETE":
                     for d in ix.outs(n["id"], "after"):
                         if ix.nodes[d].get("status") != "COMPLETE":
@@ -152,17 +164,23 @@ def main(argv):
         for e in g["edges"]:
             if e["from"] not in ix.nodes or e["to"] not in ix.nodes:
                 find("G4", "dangling edge %s" % e)
-        # G5: docs/98 table vs roll-up
+        # G5: docs/98 AND README milestone tables must equal the graph roll-up
+        # exactly (they are derived by tools/build_manifest.py; hand edits drift).
         bm = [f for f in docs if "BUILD_MANIFEST" in f][0]
         roll = {r["id"]: r["state"] for r in graphtool.rollup(ix)}
-        for l in text[bm].splitlines():
-            m = re.match(r"^\| (M\d+) \| .+? \| ([A-Z_]+) \|", l)
-            if m:
-                mid, st = m.groups()
-                if st == "COMPLETE" and roll.get(mid) != "COMPLETE":
-                    find("G5", "docs/98 says %s COMPLETE but graph roll-up is %s" % (mid, roll.get(mid)))
-                if st not in graphtool.STATES and st != "IN_PROGRESS":
-                    find("G5", "docs/98 row %s uses non-vocabulary status %s" % (mid, st))
+        for src_name, src_text in (("docs/98", text[bm]), ("README", read(os.path.join(ROOT, "README.md")))):
+            seen = set()
+            for l in src_text.splitlines():
+                m = re.match(r"^\| (M\d+) \| .+? \| ([A-Z_]+) \|", l)
+                if m:
+                    mid, st = m.groups()
+                    seen.add(mid)
+                    if st != roll.get(mid):
+                        find("G5", "%s says %s %s but graph roll-up is %s (run tools/build_manifest.py)"
+                             % (src_name, mid, st, roll.get(mid)))
+            for mid in sorted(roll):
+                if mid not in seen:
+                    find("G5", "%s milestone table is missing row %s (run tools/build_manifest.py)" % (src_name, mid))
 
     # M1
     if "--manifest" in argv:

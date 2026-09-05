@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Regenerate MANIFEST.md and manifest.json for the Modbit dossier.
 
+Also derives the milestone status tables in `docs/98_BUILD_MANIFEST.md` and
+`README.md` from the project graph (Future-tasks.md section 4 item 5): the
+status cell of every milestone row is the graph roll-up state, so hand edits
+drift and `tools/check_dossier.py` (G5) fails on mismatch.
+
 Usage: python3 tools/build_manifest.py
 Runs from any cwd. Standard library only (Python 3.9+).
 """
@@ -13,8 +18,58 @@ from datetime import date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import graph as graphtool  # noqa: E402
 EDITION = "V3.1"
 AUTHORITY_DATE = "2026-09-03"
+
+ROW_RE = re.compile(r"^\| (M\d+) \| (.+?) \| [A-Z_]+ \| (.+?) \|$")
+README_STATUS_RE = re.compile(r"## Status\n.*\Z", re.S)
+
+
+def derive_milestone_tables():
+    """Rewrite the docs/98 and README milestone tables from the graph roll-up.
+
+    Scope/proof columns are preserved from the existing docs/98 rows; only the
+    status cell is derived. Fails loudly if any milestone row goes missing.
+    """
+    ix = graphtool.Index(graphtool.load())
+    roll = {r["id"]: r for r in graphtool.rollup(ix)}
+
+    bm_path = os.path.join(DOCS, "98_BUILD_MANIFEST.md")
+    with open(bm_path, encoding="utf-8") as fh:
+        lines = fh.read().splitlines(keepends=True)
+    scopes, out = {}, []
+    for line in lines:
+        m = ROW_RE.match(line.rstrip("\n"))
+        if m:
+            mid, scope, proof = m.groups()
+            scopes[mid] = (scope, proof)
+            out.append("| %s | %s | %s | %s |\n" % (mid, scope, roll[mid]["state"], proof))
+        else:
+            out.append(line)
+    missing = sorted(set(roll) - set(scopes))
+    if missing:
+        sys.exit("docs/98 milestone table is missing rows %s; fix the table first" % missing)
+    with open(bm_path, "w", encoding="utf-8") as fh:
+        fh.write("".join(out))
+
+    table = ["| Milestone | Scope | Status | Required proof |", "|---|---|---|---|"]
+    for mid in sorted(roll, key=lambda m: int(m[1:])):
+        scope, proof = scopes[mid]
+        table.append("| %s | %s | %s | %s |" % (mid, scope, roll[mid]["state"], proof))
+    section = ("## Status\n\n"
+               "Specification: frozen at 291 requirement rows (V3.1, 2026-09-03).  \n"
+               "Milestone status is **derived from the project graph** by `tools/build_manifest.py`; "
+               "hand edits fail `tools/check_dossier.py` (G5).\n\n" + "\n".join(table) + "\n")
+    readme_path = os.path.join(ROOT, "README.md")
+    with open(readme_path, encoding="utf-8") as fh:
+        text = fh.read()
+    if not README_STATUS_RE.search(text):
+        sys.exit("README.md has no '## Status' section to derive")
+    with open(readme_path, "w", encoding="utf-8") as fh:
+        fh.write(README_STATUS_RE.sub(section, text))
+    print("derived milestone tables: docs/98_BUILD_MANIFEST.md, README.md (%d milestones)" % len(roll))
 
 SECTIONS = [
     (0, 9, "authority", "Authority and orientation"),
@@ -152,6 +207,7 @@ def title_of(path):
 
 
 def main():
+    derive_milestone_tables()
     docs = sorted(f for f in os.listdir(DOCS) if f.endswith(".md"))
     entries = []
     for f in docs:

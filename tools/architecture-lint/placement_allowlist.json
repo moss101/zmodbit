@@ -1,0 +1,623 @@
+{
+  "_comment": "Known REQ-EV placement violations (Future-tasks.md section 4 item 3). Each entry is code whose REQ-EV tag lives in a crate owned by a different subsystem than the requirement (docs/81). Reported by tools/architecture-lint but not failing CI until the M9/M3 code moves to its owner crate; remove entries as the code is relocated.",
+  "known_violations": [
+    {
+      "path": "crates/checkpoint/src/hook_bus.rs",
+      "req": "REQ-EV-0042",
+      "req_owner": "extensions-hooks",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/hook_bus.rs",
+      "req": "REQ-EV-0066",
+      "req_owner": "effects-security",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/importers_plugins.rs",
+      "req": "REQ-EV-0137",
+      "req_owner": "extensions-hooks",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/importers_plugins.rs",
+      "req": "REQ-EV-0138",
+      "req_owner": "extensions-hooks",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/importers_plugins.rs",
+      "req": "REQ-EV-0183",
+      "req_owner": "extensions-hooks",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/importers_plugins.rs",
+      "req": "REQ-EV-0193",
+      "req_owner": "external-tools",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/mcp_memory.rs",
+      "req": "REQ-EV-0104",
+      "req_owner": "external-tools",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/mcp_memory.rs",
+      "req": "REQ-EV-0128",
+      "req_owner": "external-tools",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/mcp_memory.rs",
+      "req": "REQ-EV-0162",
+      "req_owner": "memory",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/security_hardening.rs",
+      "req": "REQ-EV-0215",
+      "req_owner": "effects-security",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/security_hardening.rs",
+      "req": "REQ-EV-0224",
+      "req_owner": "external-tools",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/security_hardening.rs",
+      "req": "REQ-EV-0225",
+      "req_owner": "extensions-hooks",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/security_hardening.rs",
+      "req": "REQ-EV-0270",
+      "req_owner": "effects-security",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/checkpoint/src/security_hardening.rs",
+      "req": "REQ-EV-0288",
+      "req_owner": "effects-security",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/compaction/src/lib.rs",
+      "req": "REQ-EV-0056",
+      "req_owner": "context-engine",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/compaction/src/lib.rs",
+      "req": "REQ-EV-0057",
+      "req_owner": "context-engine",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/compaction/src/lib.rs",
+      "req": "REQ-EV-0058",
+      "req_owner": "context-engine",
+      "crate_owners": [
+        "durability"
+      ]
+    },
+    {
+      "path": "crates/context/src/bench_harness.rs",
+      "req": "REQ-EV-0250",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "context-engine"
+      ]
+    },
+    {
+      "path": "crates/context/src/bench_harness.rs",
+      "req": "REQ-EV-0251",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "context-engine"
+      ]
+    },
+    {
+      "path": "crates/context/src/bench_harness.rs",
+      "req": "REQ-EV-0252",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "context-engine"
+      ]
+    },
+    {
+      "path": "crates/context/src/bench_harness.rs",
+      "req": "REQ-EV-0253",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "context-engine"
+      ]
+    },
+    {
+      "path": "crates/context/src/profile_experiment.rs",
+      "req": "REQ-EV-0254",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "context-engine"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/agent_profiles_plans.rs",
+      "req": "REQ-EV-0118",
+      "req_owner": "desktop",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/agent_runtime_final.rs",
+      "req": "REQ-EV-0275",
+      "req_owner": "desktop",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/config.rs",
+      "req": "REQ-EV-0039",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/daemon.rs",
+      "req": "REQ-EV-0108",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/daemon.rs",
+      "req": "REQ-EV-0192",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/fleet_admission.rs",
+      "req": "REQ-EV-0150",
+      "req_owner": "workspace-git",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/fleet_admission.rs",
+      "req": "REQ-EV-0151",
+      "req_owner": "desktop",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/src/reminder_engine.rs",
+      "req": "REQ-EV-0275",
+      "req_owner": "desktop",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/core-runtime/tests/daemon_sse.rs",
+      "req": "REQ-EV-0192",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "core-runtime"
+      ]
+    },
+    {
+      "path": "crates/domain/src/commands.rs",
+      "req": "REQ-EV-0119",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/commands.rs",
+      "req": "REQ-EV-0191",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/commands.rs",
+      "req": "REQ-EV-0261",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/events.rs",
+      "req": "REQ-EV-0119",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/events.rs",
+      "req": "REQ-EV-0191",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/events.rs",
+      "req": "REQ-EV-0261",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/input_queue.rs",
+      "req": "REQ-EV-0191",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/media.rs",
+      "req": "REQ-EV-0190",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/domain/src/task.rs",
+      "req": "REQ-EV-0191",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/src/commands.rs",
+      "req": "REQ-EV-0119",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/src/commands.rs",
+      "req": "REQ-EV-0191",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/src/commands.rs",
+      "req": "REQ-EV-0261",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/src/migrations.rs",
+      "req": "REQ-EV-0191",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/src/runtime.rs",
+      "req": "REQ-EV-0221",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/tests/dispatch_cluster.rs",
+      "req": "REQ-EV-0191",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/tests/dispatch_cluster.rs",
+      "req": "REQ-EV-0261",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/tests/dispatch_cluster.rs",
+      "req": "REQ-EV-0262",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/tests/goal_mode.rs",
+      "req": "REQ-EV-0119",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/event-store/tests/runtime_batch.rs",
+      "req": "REQ-EV-0221",
+      "req_owner": "core-runtime",
+      "crate_owners": [
+        "domain-events"
+      ]
+    },
+    {
+      "path": "crates/policy/src/ceremony.rs",
+      "req": "REQ-EV-0265",
+      "req_owner": "desktop",
+      "crate_owners": [
+        "effects-security",
+        "tool-runtime"
+      ]
+    },
+    {
+      "path": "crates/procedural-runtime/src/composition.rs",
+      "req": "REQ-EV-0230",
+      "req_owner": "skills",
+      "crate_owners": [
+        "procedural-runtime"
+      ]
+    },
+    {
+      "path": "crates/providers/src/routing.rs",
+      "req": "REQ-EV-0031",
+      "req_owner": "effects-security",
+      "crate_owners": [
+        "model-gateway"
+      ]
+    },
+    {
+      "path": "crates/sandbox/src/lib.rs",
+      "req": "REQ-EV-0288",
+      "req_owner": "effects-security",
+      "crate_owners": [
+        "sandbox-cloud"
+      ]
+    },
+    {
+      "path": "crates/skills/src/eval_harness.rs",
+      "req": "REQ-EV-0205",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "extensions-hooks",
+        "skills"
+      ]
+    },
+    {
+      "path": "crates/skills/src/eval_harness.rs",
+      "req": "REQ-EV-0206",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "extensions-hooks",
+        "skills"
+      ]
+    },
+    {
+      "path": "crates/skills/src/eval_harness.rs",
+      "req": "REQ-EV-0207",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "extensions-hooks",
+        "skills"
+      ]
+    },
+    {
+      "path": "crates/skills/src/media_budgets.rs",
+      "req": "REQ-EV-0223",
+      "req_owner": "media",
+      "crate_owners": [
+        "extensions-hooks",
+        "skills"
+      ]
+    },
+    {
+      "path": "crates/skills/src/profile_evolution.rs",
+      "req": "REQ-EV-0247",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "extensions-hooks",
+        "skills"
+      ]
+    },
+    {
+      "path": "crates/skills/src/profile_evolution.rs",
+      "req": "REQ-EV-0248",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "extensions-hooks",
+        "skills"
+      ]
+    },
+    {
+      "path": "crates/terminal/src/broker_ext.rs",
+      "req": "REQ-EV-0021",
+      "req_owner": "workspace-git",
+      "crate_owners": [
+        "terminal"
+      ]
+    },
+    {
+      "path": "crates/tools/src/output_pagination.rs",
+      "req": "REQ-EV-0269",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "extensions-hooks",
+        "external-tools",
+        "media",
+        "tool-runtime"
+      ]
+    },
+    {
+      "path": "crates/verification/src/browser_evidence.rs",
+      "req": "REQ-EV-0147",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/evidence_index.rs",
+      "req": "REQ-EV-0132",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/release_hardening.rs",
+      "req": "REQ-EV-0017",
+      "req_owner": "observability",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/release_hardening.rs",
+      "req": "REQ-EV-0023",
+      "req_owner": "observability",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/release_hardening.rs",
+      "req": "REQ-EV-0032",
+      "req_owner": "observability",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/release_hardening.rs",
+      "req": "REQ-EV-0126",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/release_hardening.rs",
+      "req": "REQ-EV-0142",
+      "req_owner": "observability",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/release_hardening.rs",
+      "req": "REQ-EV-0244",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/verification/src/release_hardening.rs",
+      "req": "REQ-EV-0246",
+      "req_owner": "eval-bench",
+      "crate_owners": [
+        "verification"
+      ]
+    },
+    {
+      "path": "crates/workspace/src/bridge.rs",
+      "req": "REQ-EV-0141",
+      "req_owner": "context-engine",
+      "crate_owners": [
+        "workspace-git"
+      ]
+    },
+    {
+      "path": "crates/workspace/src/bridge.rs",
+      "req": "REQ-EV-0160",
+      "req_owner": "context-engine",
+      "crate_owners": [
+        "workspace-git"
+      ]
+    },
+    {
+      "path": "crates/workspace/src/edit_gate.rs",
+      "req": "REQ-EV-0168",
+      "req_owner": "context-engine",
+      "crate_owners": [
+        "workspace-git"
+      ]
+    },
+    {
+      "path": "crates/workspace/src/review.rs",
+      "req": "REQ-EV-0036",
+      "req_owner": "desktop",
+      "crate_owners": [
+        "workspace-git"
+      ]
+    },
+    {
+      "path": "crates/workspace/tests/change_engine.rs",
+      "req": "REQ-EV-0011",
+      "req_owner": "domain-events",
+      "crate_owners": [
+        "workspace-git"
+      ]
+    }
+  ]
+}

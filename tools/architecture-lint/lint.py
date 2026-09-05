@@ -21,17 +21,47 @@ direction") and AGENTS.md ("Architecture ownership"):
   - IMP-EV-0242 (REQ/QUAL-EV-0242): durable state remains in stores; hook-layer
     members are ephemeral control — severed from durable stores both ways.
 
+Reachability rule (Future-tasks.md section 4 item 2): the tool computes the
+cargo dependency closure of the product binary `modbit-core` (package
+`modbit-core-runtime`) and fails any COMPLETE IMP-EV-* node whose owning
+subsystem has no crate inside that closure. Shipped non-cargo surfaces
+(`apps/desktop`, `services/*`, `tools/*`) count as product-reachable because
+they ship and run with the binary and are exercised by CI. The cloud binary
+(`cloud-worker`) becomes a second closure seed once it has real content.
+
+Placement rule (Future-tasks.md section 4 item 3): every `REQ-EV-nnnn` tag in
+a Rust source file must belong to the subsystem that owns the crate the file
+lives in (docs/81 single-owner map). Known violations are allowlisted in
+`placement_allowlist.json` (crates/checkpoint M9 modules pending relocation to
+their owner crates) and reported but do not fail CI; any NEW violation fails.
+
 `--self-test` proves the checker catches violations: it runs the same rule
 engine over a synthetic graph containing a forbidden edge (must FAIL) and a
-clean synthetic graph (must PASS), without touching real code.
+clean synthetic graph (must PASS), plus synthetic reachability/placement
+cases, without touching real code.
+
+`--placement-report` prints every placement violation (allowlisted or not)
+without failing, for planning the M9 code moves.
 """
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+GRAPH_PATH = REPO_ROOT / "graph" / "project-graph.json"
+ALLOWLIST_PATH = Path(__file__).resolve().parent / "placement_allowlist.json"
+
+# Package that contains the `modbit-core` binary. The closure of this package
+# is the product's Rust dependency closure (Future-tasks.md section 4 item 2).
+PRODUCT_PACKAGES = ["modbit-core-runtime"]
+
+# Directory prefixes that ship with the product even though they are not cargo
+# dependencies of modbit-core: the Electron desktop shell, spawned service
+# binaries, and the agent governance tooling CI executes on every run.
+SHIPPED_NON_CARGO_PREFIXES = ("apps/desktop", "services/", "tools/")
 
 # (from, to) pairs that must never appear in the workspace dependency graph.
 # `from`/`to` are workspace member names as declared in Cargo.toml
@@ -94,7 +124,13 @@ NO_DEPS_MEMBERS = ["modbit-domain"]
 
 
 def workspace_graph(root):
-    """Return {member_name: set(direct workspace-member deps)} via cargo metadata."""
+    """Return ({member_name: set(direct workspace-member deps)}, {crate_dir: package name}).
+
+    With `--no-deps` every listed package IS a workspace member, so member
+    identity is the package name; dependency entries reference that name.
+    The second map resolves doc-side crate paths (`crates/tools`) and shipped
+    binaries (`services/modbit-execd`) to real package names via manifest paths.
+    """
     meta = json.loads(
         subprocess.run(
             ["cargo", "metadata", "--format-version", "1", "--no-deps"],
@@ -104,17 +140,122 @@ def workspace_graph(root):
             check=True,
         ).stdout
     )
-    # With --no-deps every listed package IS a workspace member, so member
-    # identity is the package name; dependency entries reference that name.
     members = {pkg["name"] for pkg in meta["packages"]}
     graph = {}
+    dir_to_pkg = {}
     for pkg in meta["packages"]:
         graph[pkg["name"]] = {
             dep["name"]
             for dep in pkg.get("dependencies", [])
             if dep.get("kind") in (None, "build") and dep["name"] in members
         }
-    return graph
+        manifest = Path(pkg["manifest_path"]).resolve()
+        for base in ("crates", "services", "apps"):
+            try:
+                rel = manifest.relative_to(Path(root) / base)
+            except ValueError:
+                continue
+            dir_to_pkg["%s/%s" % (base, rel.parts[0])] = pkg["name"]
+            break
+    return graph, dir_to_pkg
+
+
+def dependency_closure(graph, seed):
+    """Transitive workspace-member closure of `seed` (inclusive)."""
+    seen = {seed}
+    stack = [seed]
+    while stack:
+        for dep in graph.get(stack.pop(), ()):
+            if dep not in seen:
+                seen.add(dep)
+                stack.append(dep)
+    return seen
+
+
+def crate_entry_reachable(entry, closure_set, dir_to_pkg):
+    """True if a docs-side crate entry (`crates/tools (media)`) is product-reachable."""
+    token = entry.split()[0]
+    pkg = dir_to_pkg.get(token)
+    if pkg and pkg in closure_set:
+        return True
+    return token.startswith(SHIPPED_NON_CARGO_PREFIXES)
+
+
+def check_reachability(work_nodes, subsystems, closure_set, dir_to_pkg):
+    """COMPLETE imp_task nodes must live in the product binary's closure.
+
+    work_nodes: graph work-item nodes (need id, type, status, subsystem).
+    subsystems: {subsystem_id: [crate entry, ...]} from tools/build_graph.py.
+    """
+    violations = []
+    for n in sorted(work_nodes, key=lambda x: x.get("id", "")):
+        if n.get("type") != "imp_task" or n.get("status") != "COMPLETE":
+            continue
+        crates = subsystems.get(n.get("subsystem"), [])
+        if any(crate_entry_reachable(c, closure_set, dir_to_pkg) for c in crates):
+            continue
+        violations.append(
+            "COMPLETE task not reachable from product binary: %s (subsystem %r owns %s; "
+            "none of them is in the %s dependency closure — Future-tasks.md section 4 item 2)"
+            % (n["id"], n.get("subsystem"), ", ".join(crates) or "no crates", "/".join(PRODUCT_PACKAGES))
+        )
+    return violations
+
+
+# ---- placement rule (Future-tasks.md section 4 item 3) ----------------------
+
+REQ_TAG_RE = re.compile(r"\bREQ-EV-\d{4}\b")
+
+
+def crate_dir_of(source_path):
+    """`crates/checkpoint/src/x.rs` -> `crates/checkpoint`; None outside crates/services/apps."""
+    parts = Path(source_path).parts
+    for base in ("crates", "services", "apps"):
+        if base in parts:
+            i = parts.index(base)
+            if i + 1 < len(parts):
+                return "%s/%s" % (base, parts[i + 1])
+    return None
+
+
+def scan_req_tags(root):
+    """Return {source_path: set(REQ-EV ids)} for every .rs file under crates/services/apps."""
+    tags = {}
+    for base in ("crates", "services", "apps"):
+        base_dir = Path(root) / base
+        if not base_dir.is_dir():
+            continue
+        for path in sorted(base_dir.rglob("*.rs")):
+            found = set(REQ_TAG_RE.findall(path.read_text(encoding="utf-8", errors="replace")))
+            if found:
+                tags[str(path.relative_to(root))] = found
+    return tags
+
+
+def check_placement(tags_by_file, dir_owners, req_owner):
+    """Return [(path, req_id, req_owner, crate_owners)] where a REQ tag is misplaced.
+
+    tags_by_file: {path: {REQ-EV ids}}; dir_owners: {crate dir: {subsystem ids}};
+    req_owner: {REQ-EV id: owning subsystem id} from the graph.
+    """
+    violations = []
+    for path in sorted(tags_by_file):
+        crate_dir = crate_dir_of(path)
+        owners = dir_owners.get(crate_dir) if crate_dir else None
+        if not owners:
+            continue  # location not claimed by any subsystem in docs/81
+        for tag in sorted(tags_by_file[path]):
+            owner = req_owner.get(tag)
+            if owner and owner not in owners:
+                violations.append((path, tag, owner, sorted(owners)))
+    return violations
+
+
+def load_allowlist():
+    if not ALLOWLIST_PATH.exists():
+        return set()
+    data = json.loads(ALLOWLIST_PATH.read_text(encoding="utf-8"))
+    return {(e["path"], e["req"]) for e in data.get("known_violations", [])}
 
 
 def check(graph):
@@ -168,6 +309,69 @@ def check(graph):
                 "multiple %r-layer members: %s (at most one allowed)" % (pattern, sorted(matches))
             )
     return violations
+
+
+def self_test_reachability():
+    """Synthetic closures prove COMPLETE tasks outside the product fail (§4.2)."""
+    graph = {
+        "modbit-core-runtime": {"modbit-domain", "modbit-providers"},
+        "modbit-providers": {"modbit-domain"},
+        "modbit-domain": set(),
+        "modbit-sandbox": {"modbit-domain"},
+    }
+    closure_set = dependency_closure(graph, "modbit-core-runtime")
+    dir_to_pkg = {
+        "crates/providers": "modbit-providers",
+        "crates/sandbox": "modbit-sandbox",
+        "crates/core-runtime": "modbit-core-runtime",
+    }
+    subsystems = {
+        "model-gateway": ["crates/providers"],
+        "sandbox-cloud": ["crates/sandbox", "apps/cloud-api"],
+        "desktop": ["apps/desktop", "packages/ui"],
+        "eval-bench": ["benchmarks/retrieval"],
+    }
+    work = [
+        {"id": "IMP-EV-0001", "type": "imp_task", "status": "COMPLETE", "subsystem": "model-gateway"},
+        {"id": "IMP-EV-0002", "type": "imp_task", "status": "COMPLETE", "subsystem": "desktop"},
+        {"id": "IMP-EV-0003", "type": "imp_task", "status": "WIRED", "subsystem": "sandbox-cloud"},
+        {"id": "IMP-EV-0004", "type": "imp_task", "status": "COMPLETE", "subsystem": "sandbox-cloud"},
+        {"id": "IMP-EV-0005", "type": "imp_task", "status": "COMPLETE", "subsystem": "eval-bench"},
+    ]
+    found = check_reachability(work, subsystems, closure_set, dir_to_pkg)
+    ok = (len(found) == 2 and
+          any("IMP-EV-0004" in v for v in found) and
+          any("IMP-EV-0005" in v for v in found))
+    print("  %-52s %s" % ("reachability: out-of-closure COMPLETE rejected",
+                          "OK" if ok else "SELF-TEST FAIL: %r" % found))
+    # a second closure seed widens reachability (future cloud-worker): the
+    # sandbox task becomes reachable, the benchmark task stays unreachable.
+    closure2 = closure_set | dependency_closure(graph, "modbit-sandbox")
+    found2 = check_reachability(work, subsystems, closure2, dict(dir_to_pkg, **{"apps/cloud-api": "modbit-cloud-api"}))
+    ok2 = len(found2) == 1 and "IMP-EV-0005" in found2[0]
+    print("  %-52s %s" % ("reachability: added seed unblocks (cloud-worker path)",
+                          "OK" if ok2 else "SELF-TEST FAIL: %r" % found2))
+    return ok and ok2
+
+
+def self_test_placement():
+    """Synthetic REQ tags prove misplaced requirements are detected (§4.3)."""
+    dir_owners = {"crates/checkpoint": {"durability"}, "crates/policy": {"tool-runtime", "effects-security"}}
+    req_owner = {"REQ-EV-0270": "effects-security", "REQ-EV-0012": "durability"}
+    tags = {
+        "crates/checkpoint/src/security_hardening.rs": {"REQ-EV-0270"},
+        "crates/checkpoint/src/lib.rs": {"REQ-EV-0012"},
+        "crates/policy/src/approvals.rs": {"REQ-EV-0270"},
+    }
+    found = check_placement(tags, dir_owners, req_owner)
+    ok = found == [("crates/checkpoint/src/security_hardening.rs", "REQ-EV-0270", "effects-security", ["durability"])]
+    print("  %-52s %s" % ("placement: cross-subsystem REQ tag rejected",
+                          "OK" if ok else "SELF-TEST FAIL: %r" % (found,)))
+    ok2 = crate_dir_of("crates/checkpoint/src/a.rs") == "crates/checkpoint" and \
+        crate_dir_of("services/modbit-execd/src/main.rs") == "services/modbit-execd" and \
+        crate_dir_of("README.md") is None
+    print("  %-52s %s" % ("placement: crate dir extraction", "OK" if ok2 else "SELF-TEST FAIL"))
+    return ok and ok2
 
 
 def self_test():
@@ -232,24 +436,75 @@ def self_test():
         "SELF-TEST OK: forbidden-edge detection works "
         "(6/6 injections caught, clean graph passes)"
     )
-    return True
+    r1 = self_test_reachability()
+    r2 = self_test_placement()
+    return r1 and r2
 
 
 def main(argv):
     if "--self-test" in argv:
         return 0 if self_test() else 1
     try:
-        graph = workspace_graph(REPO_ROOT)
+        graph, dir_to_pkg = workspace_graph(REPO_ROOT)
     except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError) as exc:
         print("architecture-lint: could not read cargo metadata: %s" % exc, file=sys.stderr)
         return 2
-    violations = check(graph)
-    if violations:
-        print("architecture-lint: %d forbidden dependency violation(s):" % len(violations))
+
+    violations = list(check(graph))
+
+    if not GRAPH_PATH.exists():
+        print("architecture-lint: graph missing: %s (run tools/build_graph.py)" % GRAPH_PATH, file=sys.stderr)
+        return 2
+    g = json.loads(GRAPH_PATH.read_text(encoding="utf-8"))
+    nodes = g["nodes"]
+    subsystems = {n["id"]: n.get("crates", []) for n in nodes if n["type"] == "subsystem"}
+    req_owner = {n["id"]: n.get("subsystem") for n in nodes if n["type"] == "requirement"}
+
+    closure_set = set()
+    for seed in PRODUCT_PACKAGES:
+        if seed in graph:
+            closure_set |= dependency_closure(graph, seed)
+        else:
+            print("architecture-lint: WARNING product package %r not in workspace" % seed, file=sys.stderr)
+    violations.extend(
+        check_reachability([n for n in nodes if n["type"] == "imp_task"], subsystems, closure_set, dir_to_pkg)
+    )
+
+    dir_owners = {}
+    for n in nodes:
+        if n["type"] != "subsystem":
+            continue
+        for entry in n.get("crates", []):
+            dir_owners.setdefault(entry.split()[0], set()).add(n["id"])
+    placement_all = check_placement(scan_req_tags(REPO_ROOT), dir_owners, req_owner)
+    allowlist = load_allowlist()
+    placement_new = [v for v in placement_all if (v[0], v[1]) not in allowlist]
+    stale = sorted(allowlist - {(p, t) for p, t, _, _ in placement_all})
+
+    if "--placement-report" in argv:
+        print("placement report: %d misplaced REQ tag(s), %d allowlisted" %
+              (len(placement_all), len(placement_all) - len(placement_new)))
+        for path, tag, owner, owners in placement_all:
+            print("  %s tags %s (owner %r; crate %s owned by %s)"
+                  % (path, tag, owner, crate_dir_of(path), ", ".join(owners)))
+
+    for entry in stale:
+        violations.append("stale placement allowlist entry: %s (violation no longer occurs; remove it)" % (entry,))
+
+    if violations or placement_new:
+        n_total = len(violations) + len(placement_new)
+        print("architecture-lint: %d violation(s):" % n_total)
         for v in violations:
             print("  - %s" % v)
+        for path, tag, owner, owners in placement_new:
+            print("  - misplaced REQ tag: %s tags %s (owner %r) but %s is owned by %s (docs/81)"
+                  % (path, tag, owner, crate_dir_of(path), ", ".join(owners)))
+        if placement_all and not placement_new:
+            print("  (%d known placement violation(s) allowlisted in placement_allowlist.json; "
+                  "run with --placement-report)" % len(placement_all))
         return 1
-    print("architecture-lint: OK (%d members checked, 0 violations)" % len(graph))
+    print("architecture-lint: OK (%d members checked, 0 forbidden edges, %d COMPLETE tasks reachable, "
+          "%d misplaced REQ tag(s) allowlisted)" % (len(graph), sum(1 for n in nodes if n.get("type") == "imp_task" and n.get("status") == "COMPLETE"), len(placement_all)))
     return 0
 
 

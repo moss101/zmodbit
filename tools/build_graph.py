@@ -49,6 +49,10 @@ ADDED_TASKS = [
     ("M2", "M2.10", "MediaEnvelope + Media Pipeline (before any multimodal provider/tool feature)",
      "real PNG/JPEG/text-PDF read through fs.read with provenance, budgets and artifact digests",
      "docs/25_MULTIMODAL_MEDIA_AND_NOTEBOOK_RUNTIME.md; docs/43 V2 sequencing delta"),
+    ("M2", "M2.11", "Daemon-driven live E2E proof (E2E-001/002/003) with a live provider",
+     "E2E-001..003 pass against the real modbit-core daemon over the surface protocol with a live model; "
+     "typed evidence (log/scenario/receipt) committed under docs/evidence/ and a nightly CI job",
+     "docs/51_E2E_ACCEPTANCE_TEST_CATALOG.md; Future-tasks.md section 5 Phase 1 item 7"),
     ("M5", "M5.7", "Skill Evolution Lab as shadow/EXPERIMENT behind Skill Registry + Eval Harness",
      "WSK-E2E-001..010; candidate cannot self-promote; production recovery independent of lab data",
      "docs/26_SKILL_REGISTRY_AND_EVOLUTION.md; docs/57_SKILL_EVOLUTION_REAL_TESTS.md"),
@@ -59,6 +63,13 @@ ADDED_TASKS = [
      "every production tool family passes its real-substrate conformance suite; no canned success",
      "docs/56_TOOL_CAPABILITY_CONFORMANCE.md; docs/43 V2 sequencing delta"),
 ]
+
+# Future-tasks.md section 4 item 6: row-by-row closure beat vertical slices, so
+# every M3-M10 work item additionally depends on the M2 daemon-driven E2E proof
+# task. `graph.py ready` hides gated NOT_STARTED items and `graph.py set ...
+# COMPLETE` refuses while M2.11 is not COMPLETE.
+E2E_GATE_TASK = "M2.11"
+GATED_MILESTONES = ["M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10"]
 
 # ---------------------------------------------------------------------------
 # Canonical subsystems (single-owner boundaries) with crates, spec docs, primary milestone
@@ -381,6 +392,7 @@ def main():
         n = dict(t)
         n.update({"requirement": rid, "disposition": r["disposition"], "subsystem": sub, "milestone": ms,
                   "qual": r["qual"], "source": "docs/41"})
+        imps[iid]["milestone"] = ms
         add(n)
         link(iid, sub, "owned_by")
         if ms:
@@ -388,6 +400,15 @@ def main():
         link(iid, r["qual"], "proven_by")
     for qid in sorted(quals):
         add(dict(quals[qid], source="docs/42"))
+
+    # E2E gate: M3-M10 work items may not start or COMPLETE before the M2
+    # daemon-driven E2E proof (Future-tasks.md section 4 item 6).
+    for t in mtasks:
+        if t["milestone"] in GATED_MILESTONES:
+            link(t["id"], E2E_GATE_TASK, "after")
+    for iid in sorted(imps):
+        if imps[iid].get("milestone") in GATED_MILESTONES:
+            link(iid, E2E_GATE_TASK, "after")
 
     # scenarios ---------------------------------------------------------------
     for line in read(doc_by_number("51")).splitlines():
