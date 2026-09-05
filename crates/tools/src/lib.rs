@@ -28,6 +28,22 @@ pub struct RegisteredTool {
     pub version: String,
     pub effect_class: EffectClass,
     pub handler: ToolHandler,
+    /// Typed schema: argument normalization AND the model-facing projection.
+    /// Tools without a schema are never offered to the model (fail-closed
+    /// projection: only schemas the registry can normalize are exposed).
+    pub schema: Option<schema::ToolSchema>,
+    pub description: String,
+}
+
+/// The model-facing projection of one registered tool: name + description +
+/// JSON Schema parameters (docs/15 tool projection). The scheduler maps this
+/// onto the provider gateway's `ToolDefinition`.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct ToolProjection {
+    pub name: String,
+    pub description: String,
+    /// JSON Schema object built from the typed schema.
+    pub parameters: Value,
 }
 
 #[derive(Debug)]
@@ -86,6 +102,21 @@ impl ToolRegistry {
         effect_class: EffectClass,
         handler: ToolHandler,
     ) -> Result<(), ToolError> {
+        self.register_with_schema(name, version, effect_class, "", None, handler)
+    }
+
+    /// Registers a tool with its typed schema and model-facing description.
+    /// The schema drives argument normalization and the `tools` projection
+    /// sent to providers (Future-tasks.md Phase 1 item 2).
+    pub fn register_with_schema(
+        &self,
+        name: &str,
+        version: &str,
+        effect_class: EffectClass,
+        description: &str,
+        schema: Option<schema::ToolSchema>,
+        handler: ToolHandler,
+    ) -> Result<(), ToolError> {
         let mut tools = self.tools.lock().expect("registry mutex poisoned");
         let key = name.to_string();
         if tools.contains_key(&key) {
@@ -98,9 +129,28 @@ impl ToolRegistry {
                 version: version.to_string(),
                 effect_class,
                 handler,
+                schema,
+                description: description.to_string(),
             },
         );
         Ok(())
+    }
+
+    /// The model-facing tool projection: every registered tool that carries
+    /// a typed schema, with its JSON Schema parameters.
+    pub fn tool_definitions(&self) -> Vec<ToolProjection> {
+        self.tools
+            .lock()
+            .expect("registry mutex poisoned")
+            .values()
+            .filter_map(|t| {
+                t.schema.as_ref().map(|schema| ToolProjection {
+                    name: t.name.clone(),
+                    description: t.description.clone(),
+                    parameters: schema.json_schema(),
+                })
+            })
+            .collect()
     }
 
     /// Removes a tool from the registry (reload workflows).

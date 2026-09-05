@@ -12,7 +12,7 @@ Most architecture is dependency-neutral. Exact names appear here only where impl
 - Procedural isolation: **PROVISIONAL** QuickJS-class isolate with no ambient authority.
 - Browser: Chromium/CDP-compatible runtime exposed through Modbit-owned browser abstractions.
 - Cloud isolation: the currently selected implementation dependency is **CubeSandbox**, but its name and API are confined to the SandboxBackend adapter. No domain/tool/event schema may depend on it.
-- Model gateway: at least two real provider adapters are required for Release Zero; exact providers remain configuration, not domain architecture. OpenAI-compatible and Anthropic-compatible transports are acceptable initial bindings.
+- Model gateway: at least two real provider adapters are required for Release Zero; exact providers remain configuration, not domain architecture. OpenAI-compatible and Anthropic-compatible transports are acceptable initial bindings. The HTTP transport binding is `reqwest` + `rustls` over the `tokio` runtime (ADR-0002), confined to `modbit-providers`' `ModelTransport` adapter; replaceability is proven by transport conformance tests against a real local HTTP fixture.
 
 ## Binding rule
 

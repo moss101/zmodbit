@@ -28,6 +28,8 @@ path = "src/bin/modbit-core.rs"
 [dev-dependencies]
 uuid = { workspace = true }
 modbit-workspace = { path = "../workspace" }
+tokio = { workspace = true }
+futures = { workspace = true }
 
 [lints]
 workspace = true

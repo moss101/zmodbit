@@ -31,3 +31,4 @@ Changes to these paths require a linked, accepted ADR in the same changeset:
 | ID | Title | Status | Date | Affects |
 |---|---|---|---|---|
 | ADR-0001 | Adopt the docs/02 decision register as baseline authority and add decisions workflow | ACCEPTED | 2026-09-04 | docs/02_AUTHORITY_AND_DECISIONS.md |
+| ADR-0002 | tokio + reqwest + rustls as the async runtime and model HTTP transport (sync ureq rejected) | ACCEPTED | 2026-09-05 | crates/providers/Cargo.toml, crates/core-runtime/Cargo.toml, Cargo.toml |

@@ -132,7 +132,7 @@ pub fn openai_strict_validate(body: &serde_json::Value) -> Result<(), MediaSplit
 mod tests {
     use super::*;
     use crate::gateway::openai_request_body;
-    use crate::gateway::{ChatMessage, ModelRequest, Role};
+    use crate::gateway::{ChatMessage, ModelRequest};
     use std::collections::BTreeMap;
 
     fn request_with_tool_result(content: &str) -> ModelRequest {
@@ -140,12 +140,10 @@ mod tests {
             request_id: "req-media".into(),
             model: "gpt-5".into(),
             system: String::new(),
-            messages: vec![ChatMessage {
-                role: Role::User,
-                content: content.to_string(),
-            }],
+            messages: vec![ChatMessage::user(content)],
             max_output_tokens: 256,
             temperature: 0.2,
+            tools: Vec::new(),
         }
     }
 

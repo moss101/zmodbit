@@ -144,6 +144,38 @@ impl ToolSchema {
         Ok(serde_json::Value::Object(out))
     }
 
+    /// Projects the typed schema as a JSON Schema object for the model
+    /// providers' `tools` field (docs/15 tool projection; Future-tasks.md
+    /// Phase 1 item 2). Aliases stay server-side: the model sees only the
+    /// canonical parameter names.
+    pub fn json_schema(&self) -> serde_json::Value {
+        let mut properties = serde_json::Map::new();
+        let mut required = Vec::new();
+        for (name, spec) in &self.parameters {
+            let param_type = match spec.param_type {
+                ParamType::Str => "string",
+                ParamType::Int => "integer",
+                ParamType::Bool => "boolean",
+            };
+            properties.insert(
+                name.clone(),
+                serde_json::json!({
+                    "type": param_type,
+                    "description": spec.description,
+                }),
+            );
+            if spec.required {
+                required.push(serde_json::json!(name));
+            }
+        }
+        serde_json::json!({
+            "type": "object",
+            "properties": properties,
+            "required": required,
+            "additionalProperties": false,
+        })
+    }
+
     /// The token-counted schema text (what a model would actually see).
     pub fn schema_text(name: &str, schema: &ToolSchema) -> String {
         let mut text = format!("tool {name}(");
