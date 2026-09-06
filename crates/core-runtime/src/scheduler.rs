@@ -882,6 +882,14 @@ pub fn build_worktree_registry(
 ) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
+    // M2.10: the media pipeline for binary reads — content-addressed
+    // objects live under the worktree's .modbit dir (untracked; the
+    // revision-bound diff never sees them), budgets enforced on ingest.
+    let media: Option<Arc<modbit_tools::media::MediaPipeline>> =
+        modbit_tools::media::MediaPipeline::new(&worktree.join(".modbit/objects"), 8 * 1024 * 1024)
+            .ok()
+            .map(Arc::new);
+
     // ---- fs.read / fs.list: canonical safe-path file service ----------
     let mut read_params = std::collections::BTreeMap::new();
     read_params.insert("path".into(), param(ParamType::Str, true, "File path inside the worktree"));
@@ -894,12 +902,45 @@ pub fn build_worktree_registry(
             Some(ToolSchema { aliases: Default::default(), parameters: read_params }),
             {
                 let ws = ws.clone();
+                let media = media.clone();
                 Arc::new(move |args| {
                     let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
                     // Files checked out by git are adopted on first touch so
                     // reads carry revisions (canonical change-engine guard).
                     let _ = ws.adopt(path);
                     let (bytes, rev) = ws.read(path).map_err(|e| e.to_string())?;
+                    // M2.10: binary media (PNG/JPEG/PDF) reads through the
+                    // media pipeline — typed envelope with provenance
+                    // digest and content-addressed artifact, bounded
+                    // preview instead of lossy binary in the conversation.
+                    if let Some(pipeline) = media.as_ref() {
+                        let detected = modbit_tools::media::detect_type(&bytes)
+                            .map(|(t, _)| t)
+                            .unwrap_or(modbit_tools::media::MediaType::Text);
+                        if !matches!(
+                            detected,
+                            modbit_tools::media::MediaType::Text
+                                | modbit_tools::media::MediaType::Binary
+                        ) {
+                            let envelope = pipeline
+                                .ingest(path, path, &bytes)
+                                .map_err(|e| format!("media ingest: {e}"))?;
+                            return Ok(serde_json::json!({
+                                "content": format!(
+                                    "[media: {} {} bytes, sha256 {}]",
+                                    envelope.mime, envelope.byte_length, envelope.sha256
+                                ),
+                                "file_revision": rev,
+                                "media": {
+                                    "kind": format!("{:?}", envelope.media_type).to_lowercase(),
+                                    "mime": envelope.mime,
+                                    "byte_length": envelope.byte_length,
+                                    "sha256": envelope.sha256,
+                                    "object_ref": envelope.object_rel_path,
+                                },
+                            }));
+                        }
+                    }
                     Ok(serde_json::json!({
                         "content": String::from_utf8_lossy(&bytes),
                         "file_revision": rev,

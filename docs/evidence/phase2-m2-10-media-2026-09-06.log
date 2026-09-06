@@ -1,0 +1,55 @@
+M2.10 — media pipeline wired into production fs.read
+=====================================================
+Node: M2.10 (MediaEnvelope + Media Pipeline)
+Phase context: Future-tasks Phase 2 exit work (M2 roll-up completion)
+Revision: commit "M2.10: media pipeline wired into production fs.read —
+typed envelopes for binary reads" on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: WIRED — the pipeline existed in the
+tools crate with real file I/O tests, but the production fs.read tool
+bypassed it entirely: binary files returned as lossy UTF-8 strings)
+---------------------------------------------------------------------
+- build_worktree_registry constructs the MediaPipeline (content-
+  addressed objects under the worktree's untracked .modbit/objects;
+  8 MiB ingest budget; the revision-bound diff never sees the objects).
+- fs.read: PNG/JPEG/PDF reads (real magic-byte detection) ingest
+  through the pipeline and return a typed media envelope {kind, mime,
+  byte_length, sha256, object_ref} plus a bounded [media: ...]
+  descriptor as the conversation content — never lossy binary; text
+  reads stay plain.
+
+PROOFS (always-on)
+------------------
+Daemon E2E daemon_media_e2e (2026-09-06T02:2xZ) — a REAL minimal PNG
+(the crate's own generator, committed into a real git worktree) read
+through the REAL daemon + scheduler + workspace file service:
+  png_read_returns_media_envelope_with_provenance ... ok
+  - the fixture-captured tool result carries the envelope; kind=png,
+    mime=image/png, byte_length exact
+  - sha256 provenance equals the REAL digest of the file bytes
+    (recomputed independently in the test)
+  - the content-addressed artifact in the worktree object store is
+    byte-identical to the source file
+  - the conversation content is the bounded descriptor, not binary
+  - a text read in the same run carries NO envelope (plain content)
+The crate's own media tests (magic bytes, budgets, store round-trip)
+stay green in the 471-test workspace suite.
+
+MUTATION CHECK (docs/55), 2026-09-06T02:2xZ — against the committed
+implementation, bin rebuilt before the run:
+  media pipeline never constructed (bypassed):
+    E2E FAILED at the media-envelope expectation (exit 101).
+  Restored; clean run green.
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (471 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (no TS/protocol change)
+
+RESULT: M2.10 E2E_PROVEN with typed evidence (graph close follows).
+M2 roll-up: all eleven milestone tasks now E2E_PROVEN (M2.10 was the
+last non-proven one).

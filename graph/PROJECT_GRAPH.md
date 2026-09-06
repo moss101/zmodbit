@@ -230,7 +230,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M2.7` | E2E_PROVEN | Basic Prompt Compiler and one-agent runtime |  |
 | `M2.8` | E2E_PROVEN | Verification engine build/test checks |  |
 | `M2.9` | E2E_PROVEN | Trusted Code Review Surface |  |
-| `M2.10` | WIRED | MediaEnvelope + Media Pipeline (before any multimodal provider/tool feature) | real PNG/JPEG/text-PDF read through fs.read with provenance, budgets and artifact digests |
+| `M2.10` | E2E_PROVEN | MediaEnvelope + Media Pipeline (before any multimodal provider/tool feature) | real PNG/JPEG/text-PDF read through fs.read with provenance, budgets and artifact digests |
 | `M2.11` | E2E_PROVEN | Daemon-driven live E2E proof (E2E-001/002/003) with a live provider | E2E-001..003 pass against the real modbit-core daemon over the surface protocol with a live model; typed evidence (log/scenario/receipt) committed under docs/evidence/ and a nightly CI job |
 
 ### M3 — Context intelligence

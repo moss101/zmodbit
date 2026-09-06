@@ -3400,10 +3400,13 @@
    "order": 9,
    "source": "docs/25_MULTIMODAL_MEDIA_AND_NOTEBOOK_RUNTIME.md; docs/43 V2 sequencing delta",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33908316890",
-    "commit:063cede"
+    "commit:063cede",
+    "log:docs/evidence/phase2-m2-10-media-2026-09-06.log",
+    "receipt:c0753d5fac903e1b8b7828b31ac063a967310ffe63f4daa222415ba0bb765054",
+    "run:2026-09-06T02:20Z/png_read_returns_media_envelope_with_provenance"
    ],
    "notes": [
     {
@@ -3423,10 +3426,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T02:09:03Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Media pipeline wired into production fs.read: a REAL PNG read through the daemon returns the typed MediaEnvelope (sha256 provenance independently recomputed in the test, byte_length exact, content-addressed artifact byte-identical in the worktree store, bounded descriptor in the conversation); text reads stay plain. Mutation (pipeline bypassed) detected. M2 roll-up: all eleven milestone tasks E2E_PROVEN."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-06T02:09:03Z"
   },
   {
    "id": "M2.11",
