@@ -2250,10 +2250,13 @@
    "milestone": "M4",
    "order": 4,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33925189162",
-    "commit:9d0a4fd"
+    "commit:9d0a4fd",
+    "log:docs/evidence/phase2-m4-5-cursor-metadata-2026-09-06.log",
+    "receipt:6eff8b10736202eb18bbc71be663ca079f1a8bca64e3bf2e088d5a067413243d",
+    "run:2026-09-06T03:05Z/shell_run_records_terminal_cursor_metadata"
    ],
    "notes": [
     {
@@ -2267,9 +2270,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T02:00:19Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Cursor metadata interfaces wired through the unified CursorMeta contract: the terminal surface (the one that exists today) captures reattachment cursors durably in epoch-fenced worktree checkpoints on every real shell.run (handle = broker run id, position = output bytes; resume via offset-addressed broker reads). Browser/Sandbox are typed SurfaceKinds on the same contract awaiting their M7/M8 producers — interface and durable capture path proven once, no placeholder producers. Mutation (recording removed) detected."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-06T02:00:19Z"
   },
   {
    "id": "M4.6",
@@ -7874,10 +7883,13 @@
    "milestone": "M4",
    "qual": "QUAL-EV-0012",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
-    "commit:c4303ed"
+    "commit:c4303ed",
+    "log:docs/evidence/phase2-m4-3-worktree-journal-2026-09-06.log",
+    "run:2026-09-06T02:45Z/change_applies_persist_epoch_fenced_worktree_checkpoints",
+    "run:2026-09-06T02:40Z/stale_epoch_cannot_overwrite_newer_state"
    ],
    "notes": [
     {
@@ -7885,9 +7897,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T02:02:39Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "Epoch-fenced CheckpointStore wired into production routing (M4.3): every change.apply and surface-cursor capture writes through the fenced store; strictly increasing epochs, stale writes rejected and audited."
+    },
+    {
+     "at": "2026-09-06T02:02:39Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "QUAL (stale epoch cannot overwrite newer state, strictly monotonic, rejection audit) green in the workspace suite; production proof: epochs 1,2 asserted on the daemon-driven checkpoint events; mutation (journaling removed) detected."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T02:02:39Z"
   },
   {
    "id": "IMP-EV-0013",
@@ -7900,10 +7924,12 @@
    "milestone": "M4",
    "qual": "QUAL-EV-0013",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
-    "commit:c4303ed"
+    "commit:c4303ed",
+    "log:docs/evidence/phase2-m4-3-worktree-journal-2026-09-06.log",
+    "run:2026-09-06T02:45Z/change_applies_persist_epoch_fenced_worktree_checkpoints"
    ],
    "notes": [
     {
@@ -7911,9 +7937,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T02:02:39Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "DeltaJournal wired into production (M4.3): baseline = pre-edit bytes, deltas = post-edit content, restore() pure replay."
+    },
+    {
+     "at": "2026-09-06T02:02:39Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Production proof: the daemon E2E deserializes the durable journal and restore() reconstructs the edited state byte-exactly (asserted against the real worktree file); crate delta tests green in the suite."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T02:02:39Z"
   },
   {
    "id": "IMP-EV-0014",
@@ -9018,10 +9056,13 @@
    "milestone": "M4",
    "qual": "QUAL-EV-0055",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
-    "commit:c4303ed"
+    "commit:c4303ed",
+    "log:docs/evidence/phase2-m4-1-protocol-state-2026-09-06.log",
+    "run:2026-09-06T02:05Z/sse_cursor_journal_resumes_exactly_across_restart",
+    "run:2026-09-06T02:00Z/crash_while_awaiting_approval_restarts_exact_pending_state"
    ],
    "notes": [
     {
@@ -9029,9 +9070,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T02:02:39Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Protocol-state persistence in production: the durable JSONL journal (append+flush, torn-tail tolerant) drives exact SSE cursor resume across a real Core SIGKILL/restart; QUAL pending-state reconstruction green in the suite."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T02:02:39Z"
   },
   {
    "id": "IMP-EV-0056",
@@ -9524,10 +9571,13 @@
    "milestone": "M4",
    "qual": "QUAL-EV-0073",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
-    "commit:c4303ed"
+    "commit:c4303ed",
+    "log:docs/evidence/phase2-m4-5-cursor-metadata-2026-09-06.log",
+    "log:docs/evidence/phase2-m4-4-lease-fencing-2026-09-06.log",
+    "run:2026-09-06T02:40Z/injected_faults_never_yield_generic_success"
    ],
    "notes": [
     {
@@ -9535,9 +9585,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T02:02:57Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "Typed failure/recovery surface in production routing: the checkpoint crate (failure taxonomy + fault corpus) entered the binary closure with M4.3; typed failures flow through the real paths (StaleEpoch fenced writes, StaleLease takeover, Cancelled broker kills, Timeout bounds)."
+    },
+    {
+     "at": "2026-09-06T02:02:57Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "QUAL (fault injection never yields generic success on timeout/corrupt state) green in the workspace suite; production fault injections: real SIGKILL kill points (M4.6), lease-takeover fencing (M4.4), mutation-detected controls across all of tonight's E2Es."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T02:02:57Z"
   },
   {
    "id": "IMP-EV-0075",
@@ -13727,10 +13789,12 @@
    "milestone": "M4",
    "qual": "QUAL-EV-0245",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33924508090",
-    "commit:c4303ed"
+    "commit:c4303ed",
+    "log:docs/evidence/phase2-m4-5-cursor-metadata-2026-09-06.log",
+    "run:2026-09-06T02:40Z/fault_corpus_features_are_stable"
    ],
    "notes": [
     {
@@ -13738,9 +13802,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T02:02:57Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "Structured failure diagnostics: the fault corpus (InjectedFault x FailureDiagnostic with stable features) is in the binary closure (checkpoint crate, M4.3 wiring)."
+    },
+    {
+     "at": "2026-09-06T02:02:58Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "QUAL (fault corpus produces stable diagnostic features) green in the workspace suite; the diagnostics ride the same durable run plane as tonight's checkpoint/fencing proofs."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-06T02:02:58Z"
   },
   {
    "id": "IMP-EV-0246",

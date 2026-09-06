@@ -1,0 +1,55 @@
+M4.5 — cursor metadata interfaces wired (terminal surface; unified contract)
+==============================================================================
+Node: M4.5 (terminal/browser/sandbox cursor metadata interfaces)
+Phase context: Future-tasks Phase 2 exit work (between-nights M4 program)
+Revision: commit "M4.5: terminal cursor metadata wired through the unified
+CursorMeta contract" on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: LOGIC-ONLY — cursor_meta.rs defined the
+unified contract with a FakeTerminal unit test and zero production
+callers)
+---------------------------------------------------------------------
+- DeltaJournal carries the per-surface cursor registry
+  (serde-defaulted `surfaces`: pre-M4.5 journals deserialize unchanged).
+- shell.run records a TERMINAL CursorMeta through the exact unified
+  contract (surface=Terminal, handle=broker run id, position=output
+  byte length, live=false after exit) and persists it in an
+  epoch-fenced WorktreeCheckpointed event. Reattachment resumes output
+  from the captured position via the broker's offset-addressed reads
+  (Phase 2.6 machinery).
+- Browser/Sandbox ride the SAME contract as typed SurfaceKinds; their
+  producers arrive with M7/M8. The interface and the durable capture
+  path are proven once, on the terminal surface, today — no placeholder
+  browser/sandbox producers were invented.
+
+PROOFS (always-on)
+------------------
+Daemon E2E daemon_checkpoint_journal_e2e (2026-09-06T03:0xZ):
+  shell_run_records_terminal_cursor_metadata ... ok — a REAL shell.run
+  through the daemon persists a journal whose surfaces carry the
+  Terminal CursorMeta: handle asserted as the broker run id
+  (task-<uuid>), position exact on unix ("cursor-ok\n" = 10 bytes),
+  non-zero on windows (ping output is timing-dependent), live=false.
+  (The file-edit test from M4.3 stays green: journals serialize with
+  the new field both ways.)
+
+MUTATION CHECK (docs/55), 2026-09-06T03:0xZ — against the committed
+implementation, bin rebuilt before the run:
+  surface cursor recording removed from shell.run:
+    E2E FAILED at the Terminal-CursorMeta expectation (exit 101).
+  Restored; clean run green (2/2 in the file).
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (470 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (no TS/protocol change)
+
+RESULT: M4.5 E2E_PROVEN with typed evidence (graph close follows).
+M4 ROLL-UP COMPLETE: all six milestone tasks (M4.1 protocol-state,
+M4.2 async compaction, M4.3 worktree journal, M4.4 lease fencing,
+M4.5 cursor interfaces, M4.6 kill-point suite) are E2E_PROVEN with
+typed evidence and mutation-verified always-on proofs.
