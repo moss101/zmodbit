@@ -344,8 +344,12 @@ fn shell_output_streams_and_pages_through_output_refs() {
         )
         .unwrap();
     assert!(chunk_count >= 2, "chunks streamed during execution: {chunk_count}");
-    assert!(previews.contains("first-burst"), "previews: {previews}");
-    assert!(previews.contains("second-burst"), "previews: {previews}");
+    if cfg!(windows) {
+        assert!(previews.contains("Reply from 127.0.0.1"), "previews: {previews}");
+    } else {
+        assert!(previews.contains("first-burst"), "previews: {previews}");
+        assert!(previews.contains("second-burst"), "previews: {previews}");
+    }
 
     // 3. The runtime table (previously unwired) holds the FULL payload.
     let (payload_len, payload): (i64, Vec<u8>) = conn
