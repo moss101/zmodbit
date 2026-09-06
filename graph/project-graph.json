@@ -8017,13 +8017,15 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0015",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:pending-local",
     "run:PENDING-CI",
     "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
     "run:https://github.com/moss101/zmodbit/actions/runs/33860508030",
-    "commit:2df101f"
+    "commit:2df101f",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "run:2026-09-06T03:20Z/ambiguous_edit_fails_and_leaves_worktree_unchanged"
    ],
    "notes": [
     {
@@ -8049,10 +8051,16 @@
      "from": "WIRED",
      "to": "WIRED",
      "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: the daemon's change.apply uses exact-unique matching only; the fallback match ladder is a workspace-crate internal with no production caller. Missing link: route the ladder (or surface it behind change.apply) through the scheduler."
+    },
+    {
+     "at": "2026-09-06T08:17:04Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "M2 evidence audit upgrade: the production edit gate satisfies QUAL-EV-0015 — an ambiguous old_text (x2) is rejected with the occurrence count, the agent's follow-up fs.read sees the original bytes, the worktree file is byte-unchanged, and no worktree checkpoint is journaled for a rejected edit."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-06T04:35:43Z"
+   "status_changed_on": "2026-09-06T08:17:04Z"
   },
   {
    "id": "IMP-EV-0016",
@@ -8174,11 +8182,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0019",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33862287543",
     "commit:0035212",
-    "commit:3cc4a03"
+    "commit:3cc4a03",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "run:2026-09-06T03:10Z/multimegabyte_output_bounded_view_with_retrievable_artifact"
    ],
    "notes": [
     {
@@ -8198,10 +8208,16 @@
      "from": "WIRED",
      "to": "WIRED",
      "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: scrollback-as-artifact lacks a daemon surface; the broker holds output.log but nothing exports it as an artifact ref. Missing link: surface terminal scrollback through OutputRef."
+    },
+    {
+     "at": "2026-09-06T08:17:04Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "M2 evidence audit upgrade: Phase 2.6's streaming+OutputRef machinery satisfies QUAL-EV-0019 in production — a REAL 1,572,000-byte command output leaves the model view bounded (<2.1KB), the full artifact retrievable page-by-page (first/middle/final pages byte-verified), streamed chunk events durable. Also caught+fixed a real truncation bug: the final drain now consumes to EOF (previously output between the last poll and exit was lost past one 256KiB block)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-06T04:35:43Z"
+   "status_changed_on": "2026-09-06T08:17:04Z"
   },
   {
    "id": "IMP-EV-0020",
@@ -13841,10 +13857,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0229",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
-    "commit:09fc533"
+    "commit:09fc533",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "run:2026-09-06T03:30Z/partial_toolset_enablement_cannot_expose_denied_tools"
    ],
    "notes": [
     {
@@ -13858,9 +13876,15 @@
      "from": "WIRED",
      "to": "WIRED",
      "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: toolsets/capability grouping is not consumed by the scheduler registry. Missing link: register toolsets, not individual tools."
+    },
+    {
+     "at": "2026-09-06T08:17:05Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "M2 evidence audit upgrade: over the PRODUCTION registry + kernel, granting only the read-only family leaves write/external tools refused — enablement (the grant slice, exactly as the scheduler passes it) is additive and can never expose a denied tool; the denied tool remains registered but uneffectable."
     }
    ],
-   "status_changed_on": "2026-09-06T04:35:45Z"
+   "status_changed_on": "2026-09-06T08:17:05Z"
   },
   {
    "id": "IMP-EV-0230",
