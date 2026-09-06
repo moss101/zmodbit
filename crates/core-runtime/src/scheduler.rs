@@ -954,6 +954,7 @@ pub fn build_worktree_registry(
                 let worktree = worktree.to_path_buf();
                 let cancel = cancel.clone();
                 let sink = output_sink.clone();
+                let journal = worktree_journal.clone();
                 Arc::new(move |args| {
                     let execd = execd.as_ref().ok_or(
                         "shell execution unavailable: no modbit-execd broker configured (set MODBIT_EXECD_ADDR)",
@@ -1012,6 +1013,19 @@ pub fn build_worktree_registry(
                             })
                         })
                     });
+                    // M4.5: the terminal surface's reattachment cursor —
+                    // the unified CursorMeta contract, captured durably
+                    // (read_output resumes from `position`; live=false
+                    // after exit but the broker replay window holds).
+                    if let Some(journal) = journal.as_ref() {
+                        journal.record_surface(
+                            modbit_checkpoint::cursor_meta::SurfaceKind::Terminal,
+                            &run_id,
+                            output.len() as u64,
+                            0,
+                            false,
+                        );
+                    }
                     let mut result = serde_json::json!({
                         "exit_code": exit_code,
                         "state": format!("{:?}", status.state),
@@ -1491,6 +1505,61 @@ impl WorktreeJournalWriter {
             checkpoints: std::sync::Mutex::new(modbit_checkpoint::CheckpointStore::new()),
             next_epoch: std::sync::atomic::AtomicU64::new(1),
         }
+    }
+
+    /// Records one SURFACE cursor (M4.5: terminal/browser/sandbox
+    /// reattachment metadata through the unified CursorMeta contract)
+    /// and writes a durable epoch-fenced checkpoint carrying it.
+    pub fn record_surface(
+        &self,
+        surface: modbit_checkpoint::cursor_meta::SurfaceKind,
+        handle: &str,
+        position: u64,
+        revision: u64,
+        live: bool,
+    ) {
+        const MAX_JOURNAL_BYTES: usize = 256 * 1024;
+        let run_id = match *self.shared.run.lock().expect("run cell") {
+            Some(id) => id,
+            None => return,
+        };
+        let epoch = self
+            .next_epoch
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let Ok(mut journal) = self.inner.lock() else { return };
+        let meta = modbit_checkpoint::cursor_meta::CursorMeta {
+            surface,
+            handle: handle.to_string(),
+            position,
+            revision,
+            live,
+        };
+        // Latest cursor per (surface, handle) wins in the persisted view.
+        journal
+            .surfaces
+            .retain(|m| !(m.surface == surface && m.handle == meta.handle));
+        journal.surfaces.push(meta);
+        let Ok(journal_json) = serde_json::to_string(&*journal) else {
+            return;
+        };
+        if journal_json.len() > MAX_JOURNAL_BYTES {
+            return;
+        }
+        if let Err(e) = self
+            .checkpoints
+            .lock()
+            .expect("checkpoint store")
+            .write(epoch, &journal_json)
+        {
+            eprintln!("modbit scheduler: worktree checkpoint fenced: {e}");
+            return;
+        }
+        self.shared.append_run_event(
+            &self.store,
+            self.session_id,
+            run_id,
+            DomainEvent::WorktreeCheckpointed { epoch, journal_json },
+        );
     }
 
     /// Records one edit and writes the durable epoch-fenced checkpoint.

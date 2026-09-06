@@ -329,3 +329,92 @@ fn change_applies_persist_epoch_fenced_worktree_checkpoints() {
     core.kill().ok();
     core.wait().ok();
 }
+
+/// M4.5: the terminal surface's cursor rides the checkpoint journal
+/// through the unified CursorMeta contract — a REAL shell.run through
+/// the daemon persists a Terminal CursorMeta (handle = broker run id,
+/// position = output byte length) in a durable worktree_checkpointed
+/// event.
+#[test]
+fn shell_run_records_terminal_cursor_metadata() {
+    let _guard = E2E_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+    let repo = code_fixture("sc");
+    let worktrees = tempdir("scw");
+    // Platform-native command (sh quoting varies through brokers; a
+    // plain ping is stable on windows — its byte length is timing
+    // dependent, so the position assertion splits per platform).
+    let model = spawn_model_fixture(vec![
+        tool_call_turn(
+            "c1",
+            "shell.run",
+            if cfg!(windows) {
+                r#"{"argv":["ping","-n","2","127.0.0.1"]}"#
+            } else {
+                r#"{"argv":["sh","-c","echo cursor-ok"]}"#
+            },
+        ),
+        text_turn("done"),
+    ]);
+    let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
+
+    let created = request(
+        &daemon,
+        pb::surface_request::Request::CreateTask(pb::CreateTaskCommand {
+            session_id: String::new(),
+            title: "run a command".into(),
+            prompt: "Run it.".into(),
+        }),
+    );
+    assert!(created.ok, "{}", created.error);
+    let task_id = created.task.unwrap().task_id;
+    for payload in [
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+    ] {
+        let r = request(&daemon, payload);
+        assert!(r.ok, "{}", r.error);
+    }
+    wait_ready_for_review(&daemon, &task_id);
+
+    let conn = rusqlite::Connection::open_with_flags(
+        &db_path,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )
+    .expect("open core db");
+    let mut stmt = conn
+        .prepare(
+            "SELECT json_extract(payload_inline, '$.journal_json')
+             FROM events WHERE event_type = 'worktree_checkpointed'
+             ORDER BY sequence",
+        )
+        .unwrap();
+    let journals: Vec<String> = stmt
+        .query_map([], |row| row.get(0))
+        .unwrap()
+        .flatten()
+        .collect();
+    assert!(!journals.is_empty(), "the shell.run persisted a checkpoint");
+    let journal: DeltaJournal =
+        serde_json::from_str(&journals[journals.len() - 1]).expect("journal deserializes");
+    let cursor = journal
+        .surfaces
+        .iter()
+        .find(|m| {
+            modbit_checkpoint::cursor_meta::SurfaceKind::Terminal == m.surface
+        })
+        .expect("a Terminal CursorMeta rides the journal");
+    assert!(
+        cursor.handle.starts_with("task-"),
+        "handle is the broker run id: {}",
+        cursor.handle
+    );
+    if cfg!(windows) {
+        assert!(cursor.position > 0, "ping produced output bytes");
+    } else {
+        assert_eq!(cursor.position, "cursor-ok\n".len() as u64);
+    }
+    assert!(!cursor.live, "the process exited");
+
+    core.kill().ok();
+    core.wait().ok();
+}

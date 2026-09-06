@@ -24,12 +24,18 @@ pub struct Cursors {
     pub evidence_seq: u64,
 }
 
-/// The durable checkpoint journal: baseline + ordered deltas + cursors.
+/// The durable checkpoint journal: baseline + ordered deltas + cursors,
+/// plus the per-surface cursor registry (M4.5: terminal/browser/sandbox
+/// reattachment metadata captured through the one unified contract).
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DeltaJournal {
     pub baseline: BTreeMap<String, Vec<u8>>,
     pub deltas: Vec<WorktreeDelta>,
     pub cursors: Cursors,
+    /// Surface cursor metadata (crate::cursor_meta::CursorMeta) captured
+    /// at checkpoint time. Absent in pre-M4.5 journals (serde default).
+    #[serde(default)]
+    pub surfaces: Vec<crate::cursor_meta::CursorMeta>,
 }
 
 #[derive(Debug)]
@@ -63,6 +69,7 @@ impl DeltaJournal {
             baseline: files.clone(),
             deltas: Vec::new(),
             cursors,
+            surfaces: Vec::new(),
         }
     }
 
