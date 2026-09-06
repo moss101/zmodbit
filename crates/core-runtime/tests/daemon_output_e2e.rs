@@ -307,9 +307,16 @@ fn shell_output_streams_and_pages_through_output_refs() {
     let ref_id = output_ref["output_ref_id"].as_str().expect("ref id").to_string();
     assert!(ref_id.starts_with("outref-"), "content-addressed id: {ref_id}");
     let total = output_ref["byte_length"].as_u64().expect("byte length");
-    // "first-burst\nsecond-burst\n" == 25 bytes on every platform (sh echo).
+    // Per-platform line endings: the native shell decides (sh: LF,
+    // cmd: CRLF); the exact bytes come from the same two bursts.
+    let expected: Vec<u8> = if cfg!(windows) {
+        b"first-burst\r\nsecond-burst\r\n".to_vec()
+    } else {
+        b"first-burst\nsecond-burst\n".to_vec()
+    };
     assert_eq!(
-        total, 25,
+        total,
+        expected.len() as u64,
         "exact full-output length; tool result was: {content}"
     );
     drop(bodies);
@@ -341,7 +348,8 @@ fn shell_output_streams_and_pages_through_output_refs() {
             |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .expect("output_refs row exists");
-    assert_eq!(payload_len, 25);
+    assert_eq!(payload_len as u64, expected.len() as u64);
+    assert_eq!(payload, expected);
     assert_eq!(payload, b"first-burst\nsecond-burst\n");
     drop(conn);
 
@@ -358,8 +366,8 @@ fn shell_output_streams_and_pages_through_output_refs() {
     assert!(page1.ok, "{}", page1.error);
     let page1 = page1.output_chunk.expect("chunk view");
     assert_eq!(page1.offset, 0);
-    assert_eq!(page1.total_length, 25);
-    assert_eq!(page1.data, b"first-burst".to_vec());
+    assert_eq!(page1.total_length as usize, expected.len());
+    assert_eq!(page1.data, expected[..11].to_vec());
     let page2 = request(
         &daemon,
         pb::surface_request::Request::ReadOutputRef(pb::ReadOutputRefRequest {
@@ -370,7 +378,7 @@ fn shell_output_streams_and_pages_through_output_refs() {
     );
     assert!(page2.ok, "{}", page2.error);
     let page2 = page2.output_chunk.expect("chunk view");
-    assert_eq!(page2.data, b"\nsecond-burst\n".to_vec(), "range resumes at the offset");
+    assert_eq!(page2.data, expected[11..].to_vec(), "range resumes at the offset");
 
     core.kill().ok();
     core.wait().ok();
