@@ -10,7 +10,11 @@ name: nightly-live
 
 on:
   schedule:
-    - cron: "0 3 * * *" # 03:00 UTC daily
+    # 17 past the hour: GitHub's documented guidance — top-of-hour
+    # schedules are delayed or dropped under Actions queue load (the
+    # 03:00Z slot never fired on 2026-09-06; both prior runs were
+    # manual dispatches).
+    - cron: "17 3 * * *" # 03:17 UTC daily
   workflow_dispatch: {}
 
 jobs:
