@@ -1338,7 +1338,7 @@ fn walk_files(dir: &std::path::Path, f: &mut dyn FnMut(&std::path::Path)) {
 /// Host-issued capability grants for the worktree toolset. Grants are
 /// least-privilege per effect class (docs/16); approvals can revoke any of
 /// these without touching the others.
-fn worktree_grants() -> Vec<CapabilityGrant> {
+pub fn worktree_grants() -> Vec<CapabilityGrant> {
     vec![
         CapabilityGrant { grant_id: "g-fs-read".into(), tool: "fs.read".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-fs-list".into(), tool: "fs.list".into(), effect_class: EffectClass::ReadOnly },
@@ -1766,14 +1766,20 @@ fn run_streaming_capture(
         }
         let status = execd.status(run_id)?;
         if status.state != modbit_terminal::RunState::Running {
-            // Final drain after exit (bytes written between last poll and
-            // termination).
-            let (bytes, _final_offset) = execd.read_output(run_id, offset, DRAIN_MAX)?;
-            if !bytes.is_empty() {
+            // Final drain after exit: consume to EOF (one bounded read is
+            // not enough — bytes written between the last poll and
+            // termination can exceed one chunk; losing them would
+            // truncate the artifact).
+            loop {
+                let (bytes, new_offset) = execd.read_output(run_id, offset, DRAIN_MAX)?;
+                if bytes.is_empty() {
+                    break;
+                }
                 if let Some(sink) = sink {
                     sink.chunk(run_id, offset, &bytes);
                 }
                 collected.extend_from_slice(&bytes);
+                offset = new_offset;
             }
             return Ok((status, collected));
         }

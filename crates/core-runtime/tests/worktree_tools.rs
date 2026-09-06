@@ -216,3 +216,84 @@ fn shell_run_routes_through_real_execd_and_test_run_runs_a_gate() {
     execd_child.kill().ok();
     let _ = execd_child.wait();
 }
+
+/// M2 IMP-EV-0229 (QUAL-EV-0229): toolset/enablement can never expose a
+/// denied tool. Over the PRODUCTION registry + kernel: granting a subset
+/// (a partial toolset) leaves every ungranted tool refused by the
+/// fail-closed kernel — enablement is additive, never a bypass.
+#[test]
+fn partial_toolset_enablement_cannot_expose_denied_tools() {
+    let wt = worktree_fixture("deny");
+    let mut execd_child = Command::new(env!("CARGO_MANIFEST_DIR").to_string() + "/../../target/debug/modbit-execd")
+        .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("execd");
+    let addr = {
+        use std::io::BufRead;
+        let mut line = String::new();
+        let mut stdout = execd_child.stdout.take().unwrap();
+        std::io::BufReader::new(&mut stdout)
+            .read_line(&mut line)
+            .unwrap();
+        serde_json::from_str::<serde_json::Value>(&line)
+            .unwrap()["addr"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let execd = ExecdClient::connect(&addr).unwrap();
+    let registry = registry_for(&wt, Some(&execd));
+
+    // Enablement = a PARTIAL grant set (read-only family only). Every
+    // worktree tool is REGISTERED, but only the granted subset may run.
+    let kernel = PolicyKernel::new(vec![]);
+    // Enablement = the caller's grant slice (exactly how the scheduler
+    // passes it): the read-only family only.
+    let enabled: Vec<CapabilityGrant> = modbit_core_runtime::scheduler::worktree_grants()
+        .into_iter()
+        .filter(|g| g.effect_class == EffectClass::ReadOnly)
+        .collect();
+    let decision_of = |tool: &str, class: EffectClass| {
+        kernel.check(
+            &modbit_policy::ToolCallRequest {
+                tool: tool.into(),
+                effect_class: class,
+                arguments: serde_json::json!({}),
+            },
+            &enabled,
+        )
+    };
+
+    // Granted (read-only family): allowed.
+    for (tool, class) in [
+        ("fs.read", EffectClass::ReadOnly),
+        ("search.grep", EffectClass::ReadOnly),
+    ] {
+        assert!(
+            matches!(decision_of(tool, class), PolicyDecision::Allow),
+            "{tool} must be allowed by its grant"
+        );
+    }
+    // Ungranted despite being REGISTERED (write/external families):
+    // refused — enablement of one family never exposes another.
+    for (tool, class) in [
+        ("change.apply", EffectClass::Write),
+        ("shell.run", EffectClass::External),
+        ("test.run", EffectClass::External),
+    ] {
+        match decision_of(tool, class) {
+            PolicyDecision::Deny { .. } => {}
+            other => panic!("{tool} must be denied, got {other:?}"),
+        }
+    }
+    // The denied tool is also REGISTERED (it exists, it is just not
+    // enabled) — the invariant is about enablement, not visibility.
+    assert!(
+        registry.list().iter().any(|(n, _, _)| *n == "shell.run"),
+        "shell.run is registered"
+    );
+
+    execd_child.kill().ok();
+    let _ = execd_child.wait();
+}
