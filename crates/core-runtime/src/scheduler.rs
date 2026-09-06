@@ -427,6 +427,31 @@ impl Scheduler {
         // observer (sequences + current run) so streamed chunk events and
         // lifecycle events interleave on one consistent aggregate.
         let shared = Arc::new(RunPlaneShared::default());
+        // M4.4: acquire this run's session lease — a boot of another core
+        // that starts a run for the same session bumps the generation and
+        // fences THIS writer out (typed StaleLease on its next append).
+        {
+            let lease_id = format!("lease-{}", uuid::Uuid::now_v7().simple());
+            let leased = self.store.with_conn(|conn| {
+                modbit_event_store::leases::acquire(
+                    conn,
+                    &session_id.to_string(),
+                    &lease_id,
+                    "modbit-scheduler",
+                )
+            });
+            match leased {
+                Ok(_lease) => {
+                    *shared.lease.lock().expect("lease cell") =
+                        Some((session_id, lease_id));
+                }
+                Err(e) => {
+                    eprintln!(
+                        "modbit scheduler: session lease acquire failed for {task_id}: {e}"
+                    );
+                }
+            }
+        }
         let output_sink: Arc<dyn ToolOutputSink> = Arc::new(RunPlaneOutputSink {
             store: self.store.clone(),
             session_id,
@@ -447,6 +472,9 @@ impl Scheduler {
 
         // 4-5. Run the one-agent runtime over the production transport,
         // writing every Run/Turn/RunStep transition into the store.
+        // The fence flips the run's cancellation token (transport abort,
+        // broker kill, boundary abort) through one shared hook.
+        *shared.cancel_hook.lock().expect("cancel hook") = Some(signal.cancel_token());
         let observer = EventStoreObserver {
             store: self.store.clone(),
             session_id,
@@ -1309,11 +1337,53 @@ pub trait ToolOutputSink: Send + Sync {
 
 /// State shared by the observer and the output sink for one run: the
 /// current run id and per-aggregate sequence accounting (both append to
-/// the same run aggregate, so sequences MUST be reserved under one lock).
+/// the same run aggregate, so sequences MUST be reserved under one lock),
+/// plus the session lease this run writes under (M4.4 fencing).
 #[derive(Default)]
 struct RunPlaneShared {
     run: std::sync::Mutex<Option<RunId>>,
     sequences: std::sync::Mutex<std::collections::HashMap<String, u64>>,
+    /// Session lease for lease-fenced appends; None = unfenced (tests).
+    lease: std::sync::Mutex<Option<(SessionId, String)>>,
+    /// Set when a fenced append is rejected (another core owns the
+    /// session): the run must abort — never write, never continue.
+    fenced: std::sync::atomic::AtomicBool,
+    /// The run's cancellation token; flipped on fencing so the transport,
+    /// tools and turn boundary all abort through one path.
+    cancel_hook: std::sync::Mutex<Option<Arc<std::sync::atomic::AtomicBool>>>,
+}
+
+impl RunPlaneShared {
+    /// Appends under the session lease when one is held. A stale lease is
+    /// FATAL for this run: the fence flag flips, the cancel hook fires,
+    /// and the typed error returns (M4.4: a fenced-out writer must not
+    /// write or continue).
+    fn append_fenced(&self, store: &EventStore, envelope: &mut EventEnvelope) -> Result<(), String> {
+        let lease = self.lease.lock().expect("lease cell").clone();
+        let outcome = match lease {
+            Some((session_id, lease_id)) => store
+                .append_with_lease(&session_id.to_string(), &lease_id, &mut [envelope.clone()])
+                .map_err(|e| e.to_string()),
+            None => store.append(&mut [envelope.clone()]).map_err(|e| e.to_string()),
+        };
+        if let Err(err) = &outcome {
+            if err.contains("stale lease") {
+                self.fenced.store(true, std::sync::atomic::Ordering::SeqCst);
+                if let Some(hook) = self
+                    .cancel_hook
+                    .lock()
+                    .expect("cancel hook")
+                    .as_ref()
+                {
+                    hook.store(true, std::sync::atomic::Ordering::SeqCst);
+                }
+                eprintln!(
+                    "modbit scheduler: run fenced out (session lease lost): {err}"
+                );
+            }
+        }
+        outcome
+    }
 }
 
 /// Production sink: chunk events on the Run aggregate (run id arrives
@@ -1358,7 +1428,8 @@ impl RunPlaneOutputSink {
         envelope.seal();
         sequences.insert(aggregate_id, next + 1);
         drop(sequences);
-        if let Err(e) = self.store.append(&mut [envelope]) {
+        // M4.4: streamed chunks ride the same lease-fenced run plane.
+        if let Err(e) = self.shared.append_fenced(&self.store, &mut envelope) {
             eprintln!("modbit scheduler: append output chunk failed: {e}");
         }
     }
@@ -1686,7 +1757,9 @@ impl EventStoreObserver {
         envelope.seal();
         sequences.insert(aggregate_id.to_string(), next + 1);
         drop(sequences);
-        if let Err(e) = self.store.append(&mut [envelope]) {
+        // M4.4: the run plane writes under the session lease — a fenced-out
+        // core gets a typed StaleLease, flips the fence and cancels its run.
+        if let Err(e) = self.shared.append_fenced(&self.store, &mut envelope) {
             eprintln!("modbit scheduler: append run event failed: {e}");
         }
     }

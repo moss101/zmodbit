@@ -2160,10 +2160,13 @@
    "milestone": "M4",
    "order": 3,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33925189162",
-    "commit:9d0a4fd"
+    "commit:9d0a4fd",
+    "log:docs/evidence/phase2-m4-4-lease-fencing-2026-09-06.log",
+    "receipt:23e9794e8a9be92a7d8784bd217b53985db5b1e05c3faec2b7d52ae6b2a1aa35",
+    "run:2026-09-06T01:05Z/second_core_fences_the_first_mid_run"
    ],
    "notes": [
     {
@@ -2177,9 +2180,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T00:56:24Z",
+     "from": "IMPLEMENTING",
+     "to": "IMPLEMENTING",
+     "note": "M4.4 slice: the scheduler's run plane (observer + output sink) now appends under a per-session lease acquired at run start (leases::acquire bumps the generation — any other core starting a run for the same session fences the previous writer out); a StaleLease rejection flips the run's cancellation token so the transport aborts, the broker run dies and the boundary aborts — a fenced-out writer writes nothing and never continues. Command plane stays unfenced (multi-client surface, separate concern)."
+    },
+    {
+     "at": "2026-09-06T00:57:31Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Lease fencing wired into production routing: the run plane appends under a per-session lease; a second core's takeover bumps the generation and the fenced writer aborts through the cancellation path (stream abort, broker kill, boundary abort) without writing anything further. Split-brain E2E on two real daemons and one SQLite store proves single-writer semantics past the loser's tool window; mutation (fencing neutralized) detected."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-06T00:57:31Z"
   },
   {
    "id": "M4.5",

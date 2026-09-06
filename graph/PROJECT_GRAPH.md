@@ -254,7 +254,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M4.1` | WIRED | Protocol State store |  |
 | `M4.2` | IMPLEMENTING | Compaction epochs + async worker + stale rejection + sync fallback |  |
 | `M4.3` | IMPLEMENTING | Workspace checkpoint baseline/delta objects + epoch fencing |  |
-| `M4.4` | IMPLEMENTING | kernel lease/session fencing |  |
+| `M4.4` | E2E_PROVEN | kernel lease/session fencing |  |
 | `M4.5` | IMPLEMENTING | terminal/browser/sandbox cursor metadata interfaces |  |
 | `M4.6` | E2E_PROVEN | kill-point recovery suite |  |
 

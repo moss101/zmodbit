@@ -1,0 +1,59 @@
+M4.4 — kernel lease/session fencing wired into the run plane
+=============================================================
+Node: M4.4 (kernel lease/session fencing)
+Phase context: Future-tasks Phase 2 exit work (between-nights M4 program)
+Revision: commit "M4.4: lease-fenced run plane — a second core on the
+store fences the first mid-run" on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: SCAFFOLDED-in-production — the store's
+lease-fenced append (append_with_lease, typed StaleLease, unit-proven in
+lease_resume.rs since M1) had ZERO production callers; the scheduler's
+run plane wrote unfenced)
+---------------------------------------------------------------------
+- run_task_inner acquires the session lease at run start
+  (leases::acquire bumps the generation — any writer that starts later
+  for the same session immediately stales this one).
+- EventStoreObserver appends and the Phase 2.6 output sink's chunk
+  appends route through RunPlaneShared::append_fenced.
+- A StaleLease rejection flips the fence flag AND the run's cancellation
+  token: the provider stream aborts (transport select), the broker run
+  is killed (no orphan process), and the turn boundary aborts — the
+  fenced writer writes NOTHING further and never continues; its run
+  dangles while the takeover writer owns the session.
+- The command plane (surface CommandProcessor) stays unfenced by design:
+  multi-client command intake is a separate concern from the single
+  mutation owner of the run plane.
+
+PROOFS (always-on)
+------------------
+Daemon E2E daemon_fence_e2e (2026-09-06T01:0xZ) — TWO real modbit-core
+daemons open ONE SQLite store; core A starts a task whose turn 1 runs a
+REAL 8-second broker tool; core B boots 1.5s in, its boot-scan resume
+acquires the session lease:
+  second_core_fences_the_first_mid_run ... ok (11.8s)
+  - B completes the task (ReadyForReview) via its resume turn
+  - the test OUTLIVES A's 8s tool and proves single-writer semantics in
+    the shared store: exactly ONE task_ready_for_review, ONE
+    run_completed, lease generation >= 2, and the fenced A never invokes
+    the model again (fixture saw exactly 2 requests)
+
+MUTATION CHECK (docs/55), 2026-09-06T01:1xZ — against the committed
+implementation, bin rebuilt before the run:
+  fencing neutralized (append_fenced -> plain append):
+    E2E FAILED — A invoked the model a THIRD time and completed its own
+    turn after the takeover (bodies.len() == 3, exit 101)
+  Restored; clean run green.
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (464 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (no TS/protocol change in this item)
+
+RESULT: M4.4 E2E_PROVEN with typed evidence (graph close follows).
+Nightly-live context: validated green on merged main at 2026-09-06T00:46Z
+(workflow_dispatch run 34002162962); the five-night scheduled sequence
+starts at 03:00Z tonight.
