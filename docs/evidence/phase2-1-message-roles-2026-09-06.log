@@ -1,0 +1,95 @@
+Phase 2 item 1 — proper conversation roles in the one-agent loop
+=================================================================
+Node: M2.7 (Basic Prompt Compiler and one-agent runtime)
+Defect: Future-tasks.md section 2 item 1 (audit 2026-09-06)
+Revision: commit 0f2e5e4 (branch phase2/message-roles)
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC timestamps
+
+WHAT CHANGED
+------------
+one_agent.rs kept `conversation: Vec<String>` and sent every entry as a
+ChatMessage::user — including the model's own prior text and tool results
+flattened to "tool <name> → {json}" strings. The gateway's typed role
+contract existed (M2.6) but was never used by the loop.
+
+Now: conversation is Vec<ChatMessage>. The compiled prompt is the user
+turn; each model turn is recorded as an assistant message carrying its
+text and the tool calls EXACTLY as issued; every issued call is answered
+by a tool-result message keyed by call id (result JSON on success; the
+refusal text marked is_error for policy-denied, tool-errored and
+invalid-payload calls). Invalid payloads are still rejected BEFORE side
+effects. Both provider body builders serialize the typed roles
+(OpenAI: assistant.tool_calls + role:"tool" keyed by tool_call_id;
+Anthropic: tool_use blocks + user tool_result blocks keyed by tool_use_id).
+
+PROOFS (all always-on; no live credentials required)
+----------------------------------------------------
+Unit (cargo test -p modbit-core-runtime --lib one_agent), 2026-09-05T22:13Z:
+  repair_turn_carries_typed_roles_and_call_id_linkage ... ok
+  invalid_payload_call_is_answered_with_error_tool_result ... ok
+  denied_call_feeds_back_as_error_tool_result ... ok
+  (plus the 5 pre-existing runtime tests)
+  test result: ok. 8 passed; 0 failed
+
+Daemon E2E (cargo test -p modbit-core-runtime --test daemon_roles_e2e),
+2026-09-05T22:14Z — real modbit-core daemon (socket + HTTP), real
+scheduler, real git worktree, real execd broker, real fs.read effector;
+model endpoint is a scripted local fixture that CAPTURES request bodies:
+  openai_wire_body_carries_typed_roles ... ok
+    asserted exact repair-turn wire shape:
+      roles == ["system","user","assistant","tool"]
+      assistant.tool_calls[0] == {id:"c1",type:"function",
+                                  function:{name:"fs.read",
+                                  arguments:{"path":"notes.txt"}}}
+      tool.tool_call_id == "c1"; tool.content == fs.read result JSON
+        (contains the real file bytes read from the real worktree)
+      no message content starts with "tool " (old format gone)
+  anthropic_wire_body_carries_typed_roles ... ok
+    asserted exact repair-turn wire shape:
+      body["system"] non-empty top-level string
+      messages: user(prompt) + assistant([tool_use id:"toolu-1"
+        name:"fs.read" input:{"path":"notes.txt"}]) + user([tool_result
+        tool_use_id:"toolu-1" content:<real file JSON>, no is_error])
+      no "tool" role anywhere on the Anthropic wire
+  test result: ok. 2 passed; 0 failed; finished in 1.44s
+
+FAULT INJECTION / MUTATION CHECKS (docs/55), 2026-09-05T22:05-22:15Z
+---------------------------------------------------------------------
+M1 (call-id linkage broken: tool_result answers "mutated-wrong-id"):
+  openai_wire_body_carries_typed_roles FAILED at the linkage assertion:
+    left: String("mutated-wrong-id")  right: "c1"
+  test result: FAILED. 0 passed; 1 failed  (exit 101)
+M2 (role flattening: assistant turn pushed as a user message):
+  openai_wire_body_carries_typed_roles FAILED at the roles assertion:
+    left: ["system","user","user","tool"]  right: ["system","user","assistant","tool"]
+  test result: FAILED. 0 passed; 1 failed  (exit 101)
+Both mutations reverted; post-restore unit suite green (8 passed).
+
+Negative/failure paths exercised as always-on tests (not mutations):
+  - invalid tool payload -> rejected before effects AND answered by an
+    is_error tool_result (provider well-formedness preserved)
+  - policy denial -> refusal as is_error tool_result, no side effect
+  - max_turns bound unchanged (runaway loop fails closed)
+
+GATES (run 2026-09-05T22:09-22:14Z, all green)
+-----------------------------------------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo build --workspace --all-targets                   exit 0
+  cargo test --workspace                                  exit 0
+    test result lines: 435 passed, 0 failed (summed)
+  pnpm install --frozen-lockfile                          exit 0
+  pnpm -r generate && git diff --exit-code
+    -- packages/surface-protocol/src/generated            CLEAN
+  pnpm -r typecheck                                       exit 0
+  pnpm -r test                                            exit 0
+    (surface-protocol 6, ui 7, desktop 36 = 49 passed)
+  python3 tools/architecture-lint/lint.py                 OK
+    (31 members, 0 forbidden edges)
+  python3 tools/decision-guard.py                         OK
+  python3 tools/coverage-guard.py                         OK
+  python3 tools/build_manifest.py && build_graph.py &&
+    check_dossier.py                                      OK
+    (70 docs, 291 REQ, 265 IMP, 291 QUAL)
+
+RESULT: M2.7 E2E_PROVEN with typed evidence; defect Future-tasks §2.1
+cleared. No requirements, dispositions or owners changed.

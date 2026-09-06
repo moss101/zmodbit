@@ -33,6 +33,8 @@ Each compaction request captures:
 
 Async compaction result is accepted only if the source branch/generation is still current. Fork/revert/cancel invalidates incompatible pending compactions. If context reaches hard pressure before async result arrives, Core executes bounded synchronous compaction. The compacted text is context material, **not semantic memory**.
 
+The synchronous hot-path compaction (`crates/compaction::hot_path`) applies stages in order and stops as soon as the projection fits the budget: (1) truncate the oldest tool-result payloads in place — the message and its call-id linkage always survive; (2) summarize whole assistant+tool-result blocks after the initial prompt into single epoch lines; (3) as a last resort, truncate even the most recent block's results, because the repair turn still needs its linkage. Every application extends the epoch lineage and emits a durable `compaction_applied` run event carrying the epoch id, affected message count, reclaimed-token estimate and the sha256 manifest digest.
+
 ## Checkpoint epochs
 
 Checkpoint metadata includes monotonic epoch, base revision, delta object refs, Git HEAD/worktree state, index generation, terminal/browser/sandbox reattachment metadata and integrity hash. A stale epoch can never overwrite newer checkpoint state.

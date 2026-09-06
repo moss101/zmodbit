@@ -1,0 +1,85 @@
+Phase 2 item 3 — Stop/Pause/Steer reach the in-flight run
+==========================================================
+Node: M2.7 (Basic Prompt Compiler and one-agent runtime)
+Defect: Future-tasks.md section 2 item 5 (audit 2026-09-06)
+Revision: commit (amended on phase2/loop-hardening; implementation commit
+includes this file) — base commit before amend: "Phase 2.3: Stop/Pause/
+Steer reach the in-flight run"
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC timestamps
+
+WHAT CHANGED (audit class before: BROKEN-DRIFTED — events only)
+----------------------------------------------------------------
+StopTask/PauseTask/SteerTask wrote durable events; nothing reached the
+in-flight model stream or the execd broker run (Stop during a 30s tool
+waited it out); steer notes were stored and never injected.
+
+- one_agent: RunControl trait — steer notes drain into the conversation
+  as user messages BEFORE the next invoke; StopTask aborts and PauseTask
+  parks at the turn boundary (cancelled/paused result flags, run-level
+  failure codes "cancelled"/"paused").
+- scheduler: RunControls registry of live RunSignals; run_task registers
+  around the run; surface dispatch signals stop/pause FIRST, then writes
+  the durable lifecycle event; steer rides a race-free per-task outbox
+  (a note queued before the run registers still lands on the next
+  boundary — found by the E2E timing race, fixed before commit).
+- LiveGatewayTransport: tokio::select! races the provider stream against
+  the run's cancel flag (100ms cadence).
+- terminal: run_capture_cancellable — the wait polls the flag, kills the
+  broker run (no orphan process) and returns typed Cancelled.
+- Post-run: cancelled/paused runs never overwrite the durable task state
+  with a run outcome or a provider park (the TaskWaiting park is skipped
+  when the cancel flag fired).
+- proto lifecycle RPC comments updated to the real semantics; TS bindings
+  regenerated in the same commit.
+
+PROOFS (all always-on)
+----------------------
+Unit (2026-09-05T23:0xZ): one_agent 12 passed — stop_aborts_the_run_at_
+the_turn_boundary (exactly one invoke after the stop boundary), pause_
+parks_the_run_at_the_turn_boundary, steer_notes_are_injected_as_user_
+messages (note queued mid-turn from inside the tool handler rides as the
+LAST user message of the next request).
+
+Daemon E2E daemon_cancellation_e2e (real daemon + scheduler + git
+worktree + real execd broker + body-capturing scripted fixture),
+2026-09-05T23:1xZ — 3 passed in ~8s:
+  stop_task_aborts_long_running_tool_and_cancels:
+    - StopTask 1.5s into a REAL `sleep 30` broker run
+    - task Cancelled in ~2s (not 30s)
+    - durable run plane carries run_failed("cancelled") within 10s
+      (read-only SQLite query of the daemon's store) — the assertion an
+      events-only implementation cannot satisfy
+    - exactly 1 model invoke (no repair turn after stop)
+  pause_task_parks_the_run_at_the_boundary:
+    - PauseTask mid-tool; task reaches Waiting; after the 3s tool ends
+      the parked run makes NO further invokes (fixture saw 1 request)
+  steer_task_note_rides_the_next_request:
+    - SteerTask during turn 1; the fixture-captured turn-2 request
+      carries "user steer: keep the summary under three lines" as a user
+      message
+
+MUTATION CHECK (docs/55), 2026-09-05T23:2xZ
+--------------------------------------------
+M-C: StopTask surface signal disconnected (controls.cancel removed from
+dispatch), bin rebuilt before the run:
+  stop_task FAILED at the run-plane assertion — run_failed("cancelled")
+  never appeared within 10s while the 30s sleep ran (exit 101, 12.5s).
+  NOTE: an earlier draft of the stop test escaped this mutation because
+  it only asserted the task state (which the events-only defect also
+  satisfies) — the test was strengthened to assert the durable run-plane
+  evidence before the implementation was accepted. The first mutated run
+  also exposed that the E2E spawns the pre-built binary: mutations must
+  `cargo build --bin modbit-core` before running (recorded in the
+  session memory for future items).
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (453 passed)
+  pnpm -r generate + regenerated bindings committed; typecheck/test exit 0
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+
+RESULT: M2.7 E2E_PROVEN with typed evidence; Future-tasks §2.5 cleared.
+Remaining for the Phase 2 exit: items 4 (rules files), 5 (M4 recovery,
+E2E-004), 6 (shell correctness) + 5 green nightly runs.

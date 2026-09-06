@@ -160,6 +160,30 @@ impl RuntimeStore {
         })
     }
 
+    /// Reads a bounded range of the output behind a reference (Phase 2.6
+    /// pagination): bytes [offset, offset+max), clamped to the payload.
+    pub fn read_output_range(
+        &self,
+        output_ref_id: &str,
+        offset: u64,
+        max: u64,
+    ) -> Result<(Vec<u8>, u64), RuntimeError> {
+        let conn = self.conn.lock().expect("runtime store mutex poisoned");
+        let row = conn
+            .query_row(
+                "SELECT payload, byte_length FROM output_refs WHERE output_ref_id = ?1",
+                [output_ref_id],
+                |r| Ok((r.get::<_, Vec<u8>>(0)?, r.get::<_, i64>(1)?)),
+            )
+            .optional()
+            .map_err(RuntimeError::Sqlite)?
+            .ok_or_else(|| RuntimeError::NotFound(output_ref_id.to_string()))?;
+        let (payload, total) = (row.0, row.1.max(0) as u64);
+        let start = (offset as usize).min(payload.len());
+        let end = (offset.saturating_add(max) as usize).min(payload.len());
+        Ok((payload[start..end].to_vec(), total))
+    }
+
     /// Reads the full output behind a reference.
     pub fn read_output(&self, output_ref_id: &str) -> Result<Vec<u8>, RuntimeError> {
         let conn = self.conn.lock().expect("runtime store mutex poisoned");
@@ -282,5 +306,36 @@ impl RuntimeStore {
             .collect::<Result<Vec<_>, _>>()
             .map_err(RuntimeError::Sqlite)?;
         Ok(rows)
+    }
+}
+
+#[cfg(test)]
+mod range_tests {
+    use super::*;
+
+    /// Phase 2.6 pagination: ranges clamp to the payload; offsets beyond
+    /// the end return empty with the true total.
+    #[test]
+    fn output_ranges_clamp_and_report_total() {
+        let dir = std::env::temp_dir().join(format!(
+            "modbit-outrange-{}",
+            uuid::Uuid::now_v7().simple()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let store = RuntimeStore::open(&dir.join("runtime.db")).unwrap();
+        store
+            .write_output_ref("ref-1", "text/plain", b"hello paginated world")
+            .unwrap();
+
+        let (head, total) = store.read_output_range("ref-1", 0, 5).unwrap();
+        assert_eq!((head.as_slice(), total), (b"hello".as_slice(), 21));
+
+        let (tail, total) = store.read_output_range("ref-1", 6, 1000).unwrap();
+        assert_eq!((tail.as_slice(), total), (b"paginated world".as_slice(), 21));
+
+        let (beyond, total) = store.read_output_range("ref-1", 50, 10).unwrap();
+        assert_eq!((beyond.as_slice(), total), (b"".as_slice(), 21));
+
+        assert!(store.read_output_range("missing", 0, 1).is_err());
     }
 }

@@ -376,7 +376,8 @@ fn e2e_002_first_command_failure_repairs_without_task_failure() {
     // Script: run tests FIRST (fails on the broken fixture — a real
     // non-zero exit through execd), then fix, then re-run (passes).
     let model = spawn_model_fixture(vec![
-        tool_call_turn("c1", "shell.run", r#"{"argv":"sh run_tests.sh"}"#),
+        // Phase 2.6: the JSON-array argv form (exact argv, no splitting).
+        tool_call_turn("c1", "shell.run", r#"{"argv":["sh","run_tests.sh"]}"#),
         tool_call_turn("c2", "change.apply", &fix_args()),
         tool_call_turn("c3", "shell.run", r#"{"argv":"sh run_tests.sh"}"#),
         text_turn("repaired"),

@@ -23,6 +23,11 @@ pub struct ModelRequest {
     pub messages: Vec<ChatMessage>,
     pub max_output_tokens: u32,
     pub temperature: f32,
+    /// Reasoning/thinking effort for reasoning-tier models (docs/15 §
+    /// envelope): None means the parameter is not sent at all — models
+    /// that do not support it must not see it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_effort: Option<crate::envelope::ReasoningEffort>,
     /// Tool projection sent with the request (docs/15 § Provider contract).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tools: Vec<ToolDefinition>,
@@ -175,6 +180,7 @@ pub fn test_request() -> ModelRequest {
         messages: vec![ChatMessage::user("ping")],
         max_output_tokens: 4096,
         temperature: 0.0,
+        reasoning_effort: None,
         tools: Vec::new(),
     }
 }
@@ -235,6 +241,11 @@ pub fn openai_request_body(request: &ModelRequest) -> Value {
                 },
             }))
             .collect::<Vec<_>>());
+    }
+    // Reasoning effort (chat-completions parameter): only sent when the
+    // caller resolved a reasoning-tier model; absent for everyone else.
+    if let Some(effort) = request.reasoning_effort {
+        body["reasoning_effort"] = serde_json::json!(effort.to_string());
     }
     body
 }
@@ -298,6 +309,24 @@ pub fn anthropic_request_body(request: &ModelRequest) -> Value {
                 "input_schema": t.parameters,
             }))
             .collect::<Vec<_>>());
+    }
+    // Extended thinking: effort maps to a budget_tokens that must stay
+    // below max_tokens (Anthropic hard requirement) and at least 1024.
+    // If the output budget cannot fit it, thinking is dropped rather
+    // than sending a request the provider would reject.
+    if let Some(effort) = request.reasoning_effort {
+        let mapped: u64 = match effort {
+            crate::envelope::ReasoningEffort::Minimal | crate::envelope::ReasoningEffort::Low => 1024,
+            crate::envelope::ReasoningEffort::Medium => 4096,
+            crate::envelope::ReasoningEffort::High => 8192,
+        };
+        let budget = mapped.min((request.max_output_tokens as u64) / 2);
+        if budget >= 1024 {
+            body["thinking"] = serde_json::json!({
+                "type": "enabled",
+                "budget_tokens": budget,
+            });
+        }
     }
     body
 }
@@ -654,6 +683,7 @@ mod tests {
             messages: vec![ChatMessage::user("hello")],
             max_output_tokens: 256,
             temperature: 0.2,
+            reasoning_effort: None,
             tools: Vec::new(),
         }
     }
@@ -740,6 +770,44 @@ mod tests {
         assert_eq!(messages[2]["content"][0]["type"], "tool_result");
         assert_eq!(messages[2]["content"][0]["tool_use_id"], "toolu-1");
         assert_eq!(messages[2]["content"][0]["is_error"], true);
+    }
+
+    /// Phase 2.2: reasoning effort serializes per provider — OpenAI sends
+    /// `reasoning_effort`, Anthropic sends a `thinking` budget that stays
+    /// under max_tokens; None sends nothing on either wire.
+    #[test]
+    fn reasoning_effort_serializes_per_provider() {
+        use crate::envelope::ReasoningEffort;
+        let mut request = test_request();
+        request.reasoning_effort = Some(ReasoningEffort::High);
+
+        let openai = openai_request_body(&request);
+        assert_eq!(openai["reasoning_effort"], "high");
+
+        let anthropic = anthropic_request_body(&request);
+        assert_eq!(anthropic["thinking"]["type"], "enabled");
+        assert_eq!(anthropic["thinking"]["budget_tokens"], 2048,
+            "budget clamped under max_tokens (high=8192 → 4096/2)");
+
+        // Absent effort sends no reasoning parameters at all.
+        request.reasoning_effort = None;
+        let openai = openai_request_body(&request);
+        assert!(openai.get("reasoning_effort").is_none());
+        let anthropic = anthropic_request_body(&request);
+        assert!(anthropic.get("thinking").is_none());
+    }
+
+    /// Phase 2.2: a thinking budget that cannot fit the output budget is
+    /// dropped rather than sending a request Anthropic would reject.
+    #[test]
+    fn thinking_dropped_when_output_budget_cannot_fit_it() {
+        use crate::envelope::ReasoningEffort;
+        let mut request = test_request();
+        request.max_output_tokens = 1024;
+        request.reasoning_effort = Some(ReasoningEffort::High);
+        let anthropic = anthropic_request_body(&request);
+        assert!(anthropic.get("thinking").is_none(),
+            "1024/2 = 512 < 1024 minimum budget");
     }
 
     #[test]

@@ -21,7 +21,7 @@ All are projections coordinated by `core-runtime`; no second orchestration servi
 1. Load latest valid task projection under session kernel lease.
 2. Evaluate ready WorkGraph nodes deterministically.
 3. For reasoning node, compile context + task-scoped skill/tool projection.
-4. Invoke selected model through normalized Provider Gateway.
+4. Invoke selected model through normalized Provider Gateway. Before every invoke, the loop enforces the input-token budget (`MODBIT_MAX_INPUT_TOKENS`, default 32k estimated): an over-budget conversation is compacted first — oldest tool results truncated, then whole assistant+tool-result blocks summarized into an epoch line (`crates/compaction::hot_path`), the recent block protected until nothing else can be reclaimed. Compaction changes the model-visible projection only and emits a durable `compaction_applied` run event (docs/19).
 5. Parse typed model events; reject invalid tool payloads before side effects.
 6. Execute tools/procedures under capability leases.
 7. Append results/effects/evidence.
@@ -30,6 +30,8 @@ All are projections coordinated by `core-runtime`; no second orchestration servi
 10. Decide continue, ask user, spawn subagent, wait, review or fail.
 
 The loop is event-driven; there is no fixed hidden “planner → coder → reviewer” sequence. A task may use one agent or many.
+
+Request knobs (output budget, temperature, reasoning/thinking effort) resolve per model through `modbit_providers::profiles` with environment overrides (`MODBIT_MAX_OUTPUT_TOKENS`, `MODBIT_TEMPERATURE`, `MODBIT_REASONING_EFFORT`); reasoning parameters are never sent to models that did not resolve a reasoning tier.
 
 ## Decomposition
 

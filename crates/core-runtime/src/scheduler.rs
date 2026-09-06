@@ -22,7 +22,7 @@
 
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use modbit_domain::events::{Actor, ActorType, AggregateType, DomainEvent, EventEnvelope, StepType};
 use modbit_domain::ids::{RunId, RunStepId, SessionId, TaskId, TurnId};
@@ -43,7 +43,7 @@ use modbit_tools::schema::{ParamSpec, ParamType, ToolSchema};
 use modbit_tools::ToolRegistry;
 use modbit_workspace::WorkspaceFileService;
 
-use crate::one_agent::{AgentTask, OneAgentRuntime, RunObserver};
+use crate::one_agent::{AgentTask, OneAgentRuntime, RunControl, RunObserver};
 
 /// Poll cadence for the store tail.
 const POLL_INTERVAL: Duration = Duration::from_millis(150);
@@ -64,6 +64,13 @@ pub struct SchedulerConfig {
     /// Task-worktree layout source (repo + worktree roots). Defaults to
     /// the env-backed source when unset.
     pub worktrees: Option<Arc<dyn WorktreeSource>>,
+    /// Per-model request settings (Phase 2.2): resolved from the model
+    /// profile, env overrides applied (MODBIT_MAX_OUTPUT_TOKENS,
+    /// MODBIT_TEMPERATURE, MODBIT_REASONING_EFFORT).
+    pub model_settings: modbit_providers::profiles::ModelSettings,
+    /// Input-token budget before the loop compacts the conversation
+    /// (Phase 2.2; MODBIT_MAX_INPUT_TOKENS).
+    pub max_input_tokens: u64,
 }
 
 impl SchedulerConfig {
@@ -72,13 +79,31 @@ impl SchedulerConfig {
             Ok("anthropic") => Provider::Anthropic,
             _ => Provider::OpenAi,
         };
+        let model = std::env::var("MODBIT_MODEL")
+            .or_else(|_| std::env::var("MODBIT_LIVE_MODEL"))
+            .unwrap_or_else(|_| "gpt-4o-mini".into());
+        // Per-model profile, env overrides win (Phase 2.2).
+        let mut model_settings = modbit_providers::profiles::resolve_model_settings(&model);
+        if let Ok(v) = std::env::var("MODBIT_MAX_OUTPUT_TOKENS") {
+            if let Ok(tokens) = v.parse::<u32>() {
+                model_settings.max_output_tokens = tokens;
+            }
+        }
+        if let Ok(v) = std::env::var("MODBIT_TEMPERATURE") {
+            if let Ok(t) = v.parse::<f32>() {
+                model_settings.temperature = t;
+            }
+        }
+        if let Ok(v) = std::env::var("MODBIT_REASONING_EFFORT") {
+            if let Some(effort) = modbit_providers::profiles::parse_reasoning_effort(&v) {
+                model_settings.reasoning_effort = Some(effort);
+            }
+        }
         SchedulerConfig {
             provider,
             // MODBIT_LIVE_MODEL is the documented live-proof override (the
             // qualification script exports it); MODBIT_MODEL takes precedence.
-            model: std::env::var("MODBIT_MODEL")
-                .or_else(|_| std::env::var("MODBIT_LIVE_MODEL"))
-                .unwrap_or_else(|_| "gpt-4o-mini".into()),
+            model,
             base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
             broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
             worktrees: EnvWorktreeSource::from_env()
@@ -92,6 +117,11 @@ impl SchedulerConfig {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(8),
             execd_addr: std::env::var("MODBIT_EXECD_ADDR").ok().filter(|s| !s.is_empty()),
+            model_settings,
+            max_input_tokens: std::env::var("MODBIT_MAX_INPUT_TOKENS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(crate::one_agent::DEFAULT_MAX_INPUT_TOKENS),
         }
     }
 }
@@ -104,20 +134,167 @@ pub struct Scheduler {
     /// Tasks with an in-flight run; guards the poller against a concurrent
     /// direct `run_task` claim racing the worktree allocation.
     in_flight: std::sync::Mutex<std::collections::HashSet<String>>,
+    /// Live stop/pause/steer signals for in-flight runs (Phase 2.3),
+    /// shared with the surface handlers through `controls()`.
+    controls: Arc<RunControls>,
+}
+
+/// Per-run control signal (Phase 2.3). Cheap atomics; steer notes drain
+/// from the shared per-task outbox (race-free: a note queued before the
+/// run registered still rides the run's next turn).
+pub struct RunSignal {
+    task_id: String,
+    cancelled: Arc<std::sync::atomic::AtomicBool>,
+    paused: std::sync::atomic::AtomicBool,
+    notes: Arc<NoteOutbox>,
+}
+
+impl RunSignal {
+    fn new(task_id: String, notes: Arc<NoteOutbox>) -> Self {
+        RunSignal {
+            task_id,
+            cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            paused: std::sync::atomic::AtomicBool::new(false),
+            notes,
+        }
+    }
+
+    /// The cancellation flag shared with the transport and execd tools.
+    pub fn cancel_token(&self) -> Arc<std::sync::atomic::AtomicBool> {
+        self.cancelled.clone()
+    }
+}
+
+impl crate::one_agent::RunControl for RunSignal {
+    fn is_cancelled(&self) -> bool {
+        self.cancelled.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    fn is_paused(&self) -> bool {
+        self.paused.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    fn take_steer_notes(&self) -> Vec<String> {
+        self.notes
+            .0
+            .lock()
+            .expect("steer outbox")
+            .get_mut(&self.task_id)
+            .map(|queue| queue.drain(..).collect())
+            .unwrap_or_default()
+    }
+}
+
+/// Per-task steer-note outbox shared by every RunSignal of a task.
+#[derive(Default)]
+struct NoteOutbox(
+    std::sync::Mutex<std::collections::HashMap<String, std::collections::VecDeque<String>>>,
+);
+
+/// Shared registry of live run signals: the surface (Stop/Pause/Steer
+/// RPCs) signals in-flight runs; the scheduler registers and finishes
+/// them around each run.
+#[derive(Default)]
+pub struct RunControls {
+    runs: std::sync::Mutex<std::collections::HashMap<String, Arc<RunSignal>>>,
+    notes: Arc<NoteOutbox>,
+}
+
+impl RunControls {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    fn register(&self, task_id: &str) -> Arc<RunSignal> {
+        let signal = Arc::new(RunSignal::new(task_id.to_string(), self.notes.clone()));
+        self.runs
+            .lock()
+            .expect("run controls")
+            .insert(task_id.to_string(), signal.clone());
+        signal
+    }
+
+    fn finish(&self, task_id: &str) {
+        self.runs.lock().expect("run controls").remove(task_id);
+        // Notes stay in the outbox: a steer that raced ahead of the next
+        // run still rides that run's first turn boundary.
+    }
+
+    /// StopTask: abort the in-flight run (stream + broker tool) at or
+    /// before the next turn boundary. Returns false when no run is live
+    /// (the durable CancelTask command still applies).
+    pub fn cancel(&self, task_id: &str) -> bool {
+        match self.runs.lock().expect("run controls").get(task_id) {
+            Some(signal) => {
+                signal
+                    .cancelled
+                    .store(true, std::sync::atomic::Ordering::SeqCst);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// PauseTask: park the in-flight run at the next turn boundary.
+    pub fn pause(&self, task_id: &str) -> bool {
+        match self.runs.lock().expect("run controls").get(task_id) {
+            Some(signal) => {
+                signal.paused.store(true, std::sync::atomic::Ordering::SeqCst);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// SteerTask: queue a note the run injects as a user message on the
+    /// next turn. The outbox is race-free — the note rides the next turn
+    /// boundary even if it arrives before the run registers.
+    pub fn steer(&self, task_id: &str, note: String) {
+        self.notes
+            .0
+            .lock()
+            .expect("steer outbox")
+            .entry(task_id.to_string())
+            .or_default()
+            .push_back(note);
+    }
 }
 
 impl Scheduler {
+    /// Live run-control surface (Phase 2.3): the wire handlers signal
+    /// in-flight runs through this shared handle.
+    pub fn controls(&self) -> Arc<RunControls> {
+        self.controls.clone()
+    }
+
     /// Starts the poller thread that tails the store for `task_started`.
     pub fn spawn(store: Arc<EventStore>, config: SchedulerConfig) -> Arc<Self> {
         let scheduler = Arc::new(Self {
             store,
             config,
             in_flight: std::sync::Mutex::new(std::collections::HashSet::new()),
+            controls: Arc::new(RunControls::new()),
         });
         let weak = Arc::downgrade(&scheduler);
         std::thread::Builder::new()
             .name("modbit-scheduler".into())
             .spawn(move || {
+                // Phase 2.5 boot scan: tasks still `running` when the
+                // daemon died are interrupted runs — resume each from its
+                // last committed conversation checkpoint (docs/19 §
+                // Checkpoint epochs). Sequential, before tailing.
+                if let Some(s) = weak.upgrade() {
+                    for task_id in interrupted_tasks(&s.store) {
+                        eprintln!(
+                            "modbit scheduler: resuming interrupted task {task_id}"
+                        );
+                        if let Err(err) = s.resume_task(&task_id) {
+                            eprintln!(
+                                "modbit scheduler: task {task_id} resume failed: {err}"
+                            );
+                        }
+                    }
+                }
                 let mut offset: u64 = 0;
                 loop {
                     let Some(s) = weak.upgrade() else { return };
@@ -153,6 +330,29 @@ impl Scheduler {
     /// poller calls this for each `task_started`; tests drive it directly.
     /// This is the ONLY entry that starts a run.
     pub fn run_task(&self, task_id_str: &str) -> Result<(), String> {
+        self.run_task_inner(task_id_str, None)
+    }
+
+    /// Phase 2.5 (M4 recovery): resume an interrupted run from the last
+    /// committed conversation checkpoint. Attempt 2 continues the same
+    /// model-visible conversation with an interruption note; effects
+    /// between the checkpoint and the kill surface to the model for
+    /// verification.
+    pub fn resume_task(&self, task_id_str: &str) -> Result<(), String> {
+        let Ok(task_id) = TaskId::parse(task_id_str) else {
+            return Err(format!("malformed task id {task_id_str:?}"));
+        };
+        // A missing checkpoint still resumes — as a fresh attempt that
+        // carries the interruption note (unknown-outcome guidance).
+        let checkpoint = load_latest_checkpoint(&self.store, &task_id).unwrap_or_default();
+        self.run_task_inner(task_id_str, Some(checkpoint))
+    }
+
+    fn run_task_inner(
+        &self,
+        task_id_str: &str,
+        resume: Option<Vec<modbit_providers::gateway::ChatMessage>>,
+    ) -> Result<(), String> {
         let Ok(task_id) = TaskId::parse(task_id_str) else {
             return Err(format!("malformed task id {task_id_str:?}"));
         };
@@ -160,7 +360,7 @@ impl Scheduler {
 
         // Idempotency: a task that already has a run is never re-run
         // (resume is the M4 recovery spine's job, not a fresh run).
-        if task_has_run(&self.store, &task_id)? {
+        if resume.is_none() && task_has_run(&self.store, &task_id)? {
             return Ok(());
         }
         // Claim: exactly one in-flight run per task (poller vs direct call).
@@ -194,8 +394,15 @@ impl Scheduler {
             &source.repo_root().ok_or("worktree source has no repository root")?,
         )
         .map_err(|e| format!("open repo: {e}"))?;
-        repo.worktree_add(&worktree_path, &layout.branch)
-            .map_err(|e| format!("allocate worktree: {e}"))?;
+        if worktree_path.exists() {
+            // Phase 2.5 resume (or a crashed prior attempt): the worktree
+            // already exists — reuse it; its state IS the possibly-partial
+            // effect surface the resumed run must verify.
+            GitRepo::open(&worktree_path).map_err(|e| format!("open existing worktree: {e}"))?;
+        } else {
+            repo.worktree_add(&worktree_path, &layout.branch)
+                .map_err(|e| format!("allocate worktree: {e}"))?;
+        }
 
         // 2. Context pack through the canonical file service on the worktree.
         let ws = Arc::new(
@@ -211,7 +418,27 @@ impl Scheduler {
             .execd_addr
             .as_deref()
             .and_then(|addr| ExecdClient::connect(addr).ok());
-        let registry = build_worktree_registry(&ws, &worktree_path, execd.as_ref());
+        // Phase 2.3: this run's cancellation signal — StopTask flips
+        // `cancelled` (transport aborts the stream, execd kills the broker
+        // run), PauseTask flips `paused` (park at the next turn boundary),
+        // SteerTask queues notes for the next turn.
+        let signal = self.controls.register(&task_id.to_string());
+        // Phase 2.6: the output sink shares run-plane state with the
+        // observer (sequences + current run) so streamed chunk events and
+        // lifecycle events interleave on one consistent aggregate.
+        let shared = Arc::new(RunPlaneShared::default());
+        let output_sink: Arc<dyn ToolOutputSink> = Arc::new(RunPlaneOutputSink {
+            store: self.store.clone(),
+            session_id,
+            shared: shared.clone(),
+        });
+        let registry = build_worktree_registry(
+            &ws,
+            &worktree_path,
+            execd.as_ref(),
+            signal.cancel_token(),
+            Some(output_sink),
+        );
         let kernel = PolicyKernel::new(vec![]);
         for grant in worktree_grants() {
             kernel.grant(grant);
@@ -224,10 +451,9 @@ impl Scheduler {
             store: self.store.clone(),
             session_id,
             task_id,
-            sequences: std::sync::Mutex::new(std::collections::HashMap::new()),
-            current_run: std::sync::Mutex::new(None),
+            shared,
         };
-        let transport = LiveGatewayTransport::new(&self.config);
+        let transport = LiveGatewayTransport::new(&self.config, signal.cancel_token());
         let runtime = OneAgentRuntime {
             transport: &transport,
             registry: &registry,
@@ -235,6 +461,8 @@ impl Scheduler {
             grants: &grants,
             max_turns: self.config.max_turns,
             observer: Some(&observer),
+            control: Some(&*signal),
+            resume_conversation: resume,
         };
         let task = AgentTask {
             task_id: task_id.to_string(),
@@ -242,15 +470,33 @@ impl Scheduler {
             model: self.config.model.clone(),
             provider: format!("{:?}", self.config.provider).to_lowercase(),
             system_policy: system_policy(&worktree_path, &base_revision),
-            workspace_rules: String::new(),
+            workspace_rules: read_workspace_rules(&worktree_path),
             context_pack,
+            model_settings: self.config.model_settings,
+            max_input_tokens: self.config.max_input_tokens,
         };
         let processor = CommandProcessor::new(self.store.clone());
         let result = runtime.run(&task);
+        // Phase 2.3: the run signal leaves the control registry when the
+        // run ends — a later Stop/Steer for this task must not hit a dead
+        // run (it lands on the durable state instead).
+        self.controls.finish(&task_id.to_string());
 
         // 6. Transition the task from REAL outcomes (REQ-EV-0119: the host
         // decides; a model claim is never sufficient).
         match result {
+            // Phase 2.3: Stop/Pause already transitioned the durable task
+            // state from the surface; the run aborted at the boundary (or
+            // mid-stream). Never overwrite Cancelled/Waiting with a run
+            // outcome.
+            Ok(run) if run.cancelled || run.paused => {
+                eprintln!(
+                    "modbit scheduler: task {task_id} run {} (stop_reason {:?})",
+                    if run.cancelled { "cancelled" } else { "paused" },
+                    run.stop_reason
+                );
+                Ok(())
+            }
             Ok(run) => match run.final_state {
                 modbit_domain::turn::TurnState::Completed => {
                     execute(
@@ -273,6 +519,15 @@ impl Scheduler {
             // the task parks in Waiting(Provider) for retry, never silently
             // retried here (docs/15 failover runs before effects only).
             Err(err) => {
+                // Phase 2.3: a stream aborted by StopTask returns here with
+                // the signal already flipped — the task is Cancelled on the
+                // store side; parking it in Waiting would resurrect it.
+                if signal.is_cancelled() {
+                    eprintln!(
+                        "modbit scheduler: task {task_id} stream aborted by stop ({err})"
+                    );
+                    return Ok(());
+                }
                 // Surface the transport failure: a parked task with no
                 // diagnostics is undebuggable from the outside.
                 eprintln!("modbit scheduler: task {task_id} run errored: {err}");
@@ -453,6 +708,107 @@ fn build_context_pack(ws: &WorkspaceFileService, title: &str, prompt: &str) -> S
     )
 }
 
+/// Workspace rules files (Future-tasks Phase 2 item 4, docs/14 step 3):
+/// read the repo's instruction files into the `workspace_rules` prompt
+/// segment with per-file sha256 provenance. Sources, in order: root
+/// AGENTS.md, root CLAUDE.md, `.modbit/rules.md`, then every
+/// `.cursor/rules/*.mdc` (sorted), then AGENTS.md/CLAUDE.md found in
+/// subdirectories (bounded walk, root-first so deeper files appear
+/// later). Content is repo data: it rides as context, never as system
+/// authority (docs/52 — external content is not instruction).
+fn read_workspace_rules(worktree: &std::path::Path) -> String {
+    let mut sections: Vec<String> = Vec::new();
+
+    fn add_file(sections: &mut Vec<String>, path: &std::path::Path, display: &str) {
+        const MAX: usize = 64 * 1024;
+        let Ok(bytes) = std::fs::read(path) else { return };
+        let digest = {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(&bytes);
+            format!("{:x}", hasher.finalize())
+        };
+        let truncated = bytes.len() > MAX;
+        let mut text =
+            String::from_utf8_lossy(&bytes[..bytes.len().min(MAX)]).to_string();
+        if truncated {
+            text.push_str("\n…[rules file truncated at 64 KiB]\n");
+        }
+        sections.push(format!(
+            "## {display} (sha256:{digest}{extra})\n{text}",
+            extra = if truncated { ", truncated" } else { "" }
+        ));
+    }
+
+    // Root-level canonical sources.
+    for name in ["AGENTS.md", "CLAUDE.md", ".modbit/rules.md"] {
+        let path = worktree.join(name);
+        if path.is_file() {
+            add_file(&mut sections, &path, name);
+        }
+    }
+    // Cursor-style rule packs.
+    if let Ok(entries) = std::fs::read_dir(worktree.join(".cursor/rules")) {
+        let mut mdc: Vec<_> = entries
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|e| e == "mdc"))
+            .collect();
+        mdc.sort();
+        for path in mdc {
+            // Display paths are canonicalized to forward slashes so the
+            // provenance (and the model-visible segment) is OS-uniform.
+            let display = path
+                .strip_prefix(worktree)
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| path.display().to_string())
+                .replace('\\', "/");
+            add_file(&mut sections, &path, &display);
+        }
+    }
+    // Directory-scoped AGENTS.md/CLAUDE.md down the tree (root-first
+    // order; deeper entries appear later and override by proximity).
+    fn walk(dir: &std::path::Path, worktree: &std::path::Path, depth: usize, sections: &mut Vec<String>) {
+        const MAX_WALK_DEPTH: usize = 4;
+        if depth > MAX_WALK_DEPTH {
+            return;
+        }
+        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        let mut children: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+        children.sort();
+        for child in children {
+            if child.is_dir() {
+                let name = child.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if name == ".git" || name.starts_with('.') || name == "node_modules" || name == "target" {
+                    continue;
+                }
+                for rule in ["AGENTS.md", "CLAUDE.md"] {
+                    let path = child.join(rule);
+                    if path.is_file() {
+                        let display = path
+                            .strip_prefix(worktree)
+                            .map(|p| p.display().to_string())
+                            .unwrap_or_else(|_| path.display().to_string())
+                            .replace('\\', "/");
+                        add_file(sections, &path, &display);
+                    }
+                }
+                walk(&child, worktree, depth + 1, sections);
+            }
+        }
+    }
+    walk(worktree, worktree, 1, &mut sections);
+
+    if sections.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "# Workspace rules (repo-provided, provenance-hashed)\n\n{}\n",
+            sections.join("\n\n")
+        )
+    }
+}
+
 fn system_policy(worktree: &std::path::Path, base_revision: &str) -> String {
     format!(
         "You are the Modbit engineering agent working in an isolated git worktree.\n\
@@ -483,6 +839,8 @@ pub fn build_worktree_registry(
     ws: &Arc<WorkspaceFileService>,
     worktree: &std::path::Path,
     execd: Option<&ExecdClient>,
+    cancel: Arc<std::sync::atomic::AtomicBool>,
+    output_sink: Option<Arc<dyn ToolOutputSink>>,
 ) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
@@ -543,7 +901,7 @@ pub fn build_worktree_registry(
             param_type: ParamType::Str,
             required: true,
             default: None,
-            description: "Whitespace-separated command argv (structured argv only, no shell)".into(),
+            description: "Command argv: a JSON array of strings (preferred, exact argv semantics) or a single string parsed with shell word splitting (quotes honored, no shell expansion)".into(),
         },
     );
     registry
@@ -556,40 +914,76 @@ pub fn build_worktree_registry(
             {
                 let execd = execd.cloned();
                 let worktree = worktree.to_path_buf();
+                let cancel = cancel.clone();
+                let sink = output_sink.clone();
                 Arc::new(move |args| {
                     let execd = execd.as_ref().ok_or(
                         "shell execution unavailable: no modbit-execd broker configured (set MODBIT_EXECD_ADDR)",
                     )?;
-                    let argv = args
-                        .get("argv")
-                        .and_then(|v| v.as_str())
-                        .ok_or("missing argv")?
-                        .split_whitespace()
-                        .map(String::from)
-                        .collect::<Vec<_>>();
+                    // Phase 2.6: argv accepts a JSON array (exact argv) or a
+                    // string split on shell words (quotes honored).
+                    let argv = match args.get("argv") {
+                        Some(serde_json::Value::Array(items)) => {
+                            let mut argv = Vec::with_capacity(items.len());
+                            for item in items {
+                                let part = item
+                                    .as_str()
+                                    .ok_or("argv array entries must be strings")?;
+                                if part.is_empty() {
+                                    return Err("argv array entries must be non-empty".into());
+                                }
+                                argv.push(part.to_string());
+                            }
+                            argv
+                        }
+                        Some(serde_json::Value::String(command)) => split_shell_words(command)?,
+                        _ => return Err("missing argv (JSON array of strings, or a command string)".into()),
+                    };
                     if argv.is_empty() {
                         return Err("empty argv".into());
                     }
                     let run_id = format!("task-{}", uuid::Uuid::now_v7().simple());
-                    let (status, output) = execd
-                        .run_capture(
-                            &run_id,
-                            &argv,
-                            Some(&worktree),
-                            Duration::from_secs(600),
-                            256 * 1024,
-                        )
-                        .map_err(|e| format!("execd: {e}"))?;
+                    // Phase 2.6: stream output DURING execution — every
+                    // drain emits a bounded chunk event through the sink
+                    // (progress in the durable run plane) — and keep the
+                    // full bytes for a paginated OutputRef at completion.
+                    // Phase 2.3 semantics unchanged: the cancellation flag
+                    // races the wait; StopTask kills the broker run (no
+                    // orphan process).
+                    let (status, output) = run_streaming_capture(
+                        execd,
+                        &run_id,
+                        &argv,
+                        &worktree,
+                        &cancel,
+                        sink.as_deref(),
+                    )
+                    .map_err(|e| format!("execd: {e}"))?;
                     let exit_code = match status.state {
                         modbit_terminal::RunState::Exited(code) => code,
                         _ => -1,
                     };
-                    Ok(serde_json::json!({
+                    // Full output -> paginated OutputRef (runtime table);
+                    // the inline tail stays short.
+                    let output_ref = sink.as_deref().and_then(|sink| {
+                        sink.store_full(&run_id, &output).map(|stored| {
+                            serde_json::json!({
+                                "output_ref_id": stored.output_ref_id,
+                                "byte_length": stored.byte_length,
+                                "preview": stored.preview,
+                            })
+                        })
+                    });
+                    let mut result = serde_json::json!({
                         "exit_code": exit_code,
                         "state": format!("{:?}", status.state),
-                        "output": tail(&String::from_utf8_lossy(&output), 8_000),
+                        "output": tail(&String::from_utf8_lossy(&output), 2_000),
                         "broker_run_id": run_id,
-                    }))
+                    });
+                    if let Some(output_ref) = output_ref {
+                        result["output_ref"] = output_ref;
+                    }
+                    Ok(result)
                 })
             },
         )
@@ -854,6 +1248,257 @@ fn worktree_grants() -> Vec<CapabilityGrant> {
     ]
 }
 
+/// Loads the latest conversation checkpoint for a task's runs (Phase
+/// 2.5): the newest `conversation_checkpointed` event on any run of the
+/// task, deserialized back into the gateway message projection.
+fn load_latest_checkpoint(
+    store: &Arc<EventStore>,
+    task_id: &TaskId,
+) -> Option<Vec<modbit_providers::gateway::ChatMessage>> {
+    // The task's runs come from run_started payloads (the `runs`
+    // projection table is not populated in this store generation).
+    let json: Option<String> = store.with_conn(|conn| {
+        conn.query_row(
+            "SELECT json_extract(payload_inline, '$.conversation_json')
+             FROM events
+             WHERE event_type = 'conversation_checkpointed'
+               AND aggregate_id IN (
+                 SELECT aggregate_id FROM events
+                 WHERE event_type = 'run_started'
+                   AND json_extract(payload_inline, '$.task_id') = ?1
+               )
+             ORDER BY sequence DESC LIMIT 1",
+            [task_id.to_string()],
+            |row| row.get(0),
+        )
+        .ok()
+    });
+    json.and_then(|json| serde_json::from_str(&json).ok())
+}
+
+/// Tasks stuck in `running` at daemon boot (Phase 2.5): their run died
+/// with the process. The scheduler resumes each from its last checkpoint.
+fn interrupted_tasks(store: &Arc<EventStore>) -> Vec<String> {
+    store.with_conn(|conn| {
+        let Ok(mut stmt) = conn.prepare("SELECT task_id FROM tasks WHERE state = 'running'") else {
+            return Vec::new();
+        };
+        stmt.query_map([], |row| row.get::<_, String>(0))
+            .map(|rows| rows.flatten().collect())
+            .unwrap_or_default()
+    })
+}
+
+/// Stored full output handle (Phase 2.6): the paginated OutputRef.
+pub struct StoredOutput {
+    pub output_ref_id: String,
+    pub byte_length: u64,
+    pub preview: String,
+}
+
+/// Streaming sink for tool output (Future-tasks Phase 2 item 6): tools
+/// that produce incremental output emit bounded chunk events DURING
+/// execution and store the full bytes behind a paginated OutputRef in
+/// the runtime store (docs/31 § Core tables).
+pub trait ToolOutputSink: Send + Sync {
+    /// One streamed chunk: bounded preview rides a durable run event.
+    fn chunk(&self, broker_run_id: &str, offset: u64, bytes: &[u8]);
+    /// Stores the full output; returns the paginated reference.
+    fn store_full(&self, broker_run_id: &str, bytes: &[u8]) -> Option<StoredOutput>;
+}
+
+/// State shared by the observer and the output sink for one run: the
+/// current run id and per-aggregate sequence accounting (both append to
+/// the same run aggregate, so sequences MUST be reserved under one lock).
+#[derive(Default)]
+struct RunPlaneShared {
+    run: std::sync::Mutex<Option<RunId>>,
+    sequences: std::sync::Mutex<std::collections::HashMap<String, u64>>,
+}
+
+/// Production sink: chunk events on the Run aggregate (run id arrives
+/// with run_started through the shared cell); full output into the
+/// runtime store's output_refs table.
+struct RunPlaneOutputSink {
+    store: Arc<EventStore>,
+    session_id: SessionId,
+    shared: Arc<RunPlaneShared>,
+}
+
+impl RunPlaneOutputSink {
+    /// Mirrors EventStoreObserver::append's envelope + sequence rules.
+    fn append_chunk(&self, run_id: &RunId, payload: DomainEvent) {
+        let aggregate_id = run_id.to_string();
+        let mut envelope = EventEnvelope {
+            event_id: uuid::Uuid::now_v7().to_string(),
+            session_id: self.session_id,
+            task_id: None,
+            run_id: Some(*run_id),
+            turn_id: None,
+            step_id: None,
+            aggregate_type: AggregateType::Run,
+            aggregate_id: aggregate_id.clone(),
+            sequence: 0,
+            event_type: EventEnvelope::event_type_of(&payload).to_string(),
+            schema_version: modbit_domain::SCHEMA_VERSION,
+            occurred_at: now_rfc3339(),
+            actor: Actor {
+                actor_type: ActorType::System,
+                actor_id: "scheduler".into(),
+            },
+            causation_id: None,
+            correlation_id: None,
+            payload,
+            payload_object_hash: None,
+            integrity_hash: String::new(),
+        };
+        let mut sequences = self.shared.sequences.lock().expect("observer mutex");
+        let next = sequences.get(&aggregate_id).copied().unwrap_or(1);
+        envelope.sequence = next;
+        envelope.seal();
+        sequences.insert(aggregate_id, next + 1);
+        drop(sequences);
+        if let Err(e) = self.store.append(&mut [envelope]) {
+            eprintln!("modbit scheduler: append output chunk failed: {e}");
+        }
+    }
+}
+
+/// Bounded preview length for streamed chunk events (matches the runtime
+/// store's bounded-preview philosophy, docs/31).
+const CHUNK_PREVIEW_CHARS: usize = 256;
+
+impl ToolOutputSink for RunPlaneOutputSink {
+    fn chunk(&self, broker_run_id: &str, offset: u64, bytes: &[u8]) {
+        let run_id = match *self.shared.run.lock().expect("run cell") {
+            Some(id) => id,
+            None => return,
+        };
+        let preview: String = String::from_utf8_lossy(bytes)
+            .chars()
+            .take(CHUNK_PREVIEW_CHARS)
+            .collect();
+        self.append_chunk(
+            &run_id,
+            DomainEvent::ToolOutputChunk {
+                broker_run_id: broker_run_id.to_string(),
+                offset,
+                byte_length: bytes.len() as u64,
+                preview,
+            },
+        );
+    }
+
+    fn store_full(&self, broker_run_id: &str, bytes: &[u8]) -> Option<StoredOutput> {
+        let output_ref_id = format!("outref-{broker_run_id}");
+        let stored = self
+            .store
+            .runtime()
+            .write_output_ref(&output_ref_id, "text/plain", bytes)
+            .ok()?;
+        Some(StoredOutput {
+            output_ref_id: stored.output_ref_id,
+            byte_length: stored.byte_length,
+            preview: stored.preview_text,
+        })
+    }
+}
+
+/// Streams a broker run to completion (Phase 2.6): drains output while
+/// the process runs — each drain emits a chunk event through the sink —
+/// then a final drain collects the tail. Cancellation and timeout
+/// semantics match run_capture_cancellable (kill, no orphan process).
+fn run_streaming_capture(
+    execd: &ExecdClient,
+    run_id: &str,
+    argv: &[String],
+    cwd: &std::path::Path,
+    cancel: &std::sync::atomic::AtomicBool,
+    sink: Option<&dyn ToolOutputSink>,
+) -> Result<(modbit_terminal::client::SpawnStatus, Vec<u8>), modbit_terminal::TerminalError> {
+    use std::sync::atomic::Ordering;
+    const TIMEOUT: Duration = Duration::from_secs(600);
+    const DRAIN_MAX: usize = 256 * 1024;
+    execd.spawn(run_id, argv, Some(cwd))?;
+    let mut offset: u64 = 0;
+    let mut collected: Vec<u8> = Vec::new();
+    let deadline = Instant::now() + TIMEOUT;
+    loop {
+        if cancel.load(Ordering::SeqCst) {
+            execd.stop(run_id)?;
+            return Err(modbit_terminal::TerminalError::Cancelled(run_id.to_string()));
+        }
+        let (bytes, new_offset) = execd.read_output(run_id, offset, DRAIN_MAX)?;
+        if !bytes.is_empty() {
+            if let Some(sink) = sink {
+                sink.chunk(run_id, offset, &bytes);
+            }
+            collected.extend_from_slice(&bytes);
+            offset = new_offset;
+        }
+        let status = execd.status(run_id)?;
+        if status.state != modbit_terminal::RunState::Running {
+            // Final drain after exit (bytes written between last poll and
+            // termination).
+            let (bytes, _final_offset) = execd.read_output(run_id, offset, DRAIN_MAX)?;
+            if !bytes.is_empty() {
+                if let Some(sink) = sink {
+                    sink.chunk(run_id, offset, &bytes);
+                }
+                collected.extend_from_slice(&bytes);
+            }
+            return Ok((status, collected));
+        }
+        if Instant::now() >= deadline {
+            execd.stop(run_id)?;
+            return Err(modbit_terminal::TerminalError::Timeout(run_id.to_string()));
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
+/// Shell word splitting for the string form of `shell.run` argv (Phase
+/// 2.6): whitespace-separated words with single/double-quoted segments
+/// honored (a quote makes whitespace literal until the matching close).
+/// No expansions, no escapes beyond the quotes themselves — the argv is
+/// still passed to exec WITHOUT a shell.
+fn split_shell_words(command: &str) -> Result<Vec<String>, String> {
+    let mut words = Vec::new();
+    let mut current = String::new();
+    let mut in_single = false;
+    let mut in_double = false;
+    let mut started = false;
+    for ch in command.chars() {
+        match ch {
+            '\'' if !in_double => {
+                in_single = !in_single;
+                started = true;
+            }
+            '"' if !in_single => {
+                in_double = !in_double;
+                started = true;
+            }
+            c if c.is_whitespace() && !in_single && !in_double => {
+                if started {
+                    words.push(std::mem::take(&mut current));
+                    started = false;
+                }
+            }
+            c => {
+                current.push(c);
+                started = true;
+            }
+        }
+    }
+    if in_single || in_double {
+        return Err("unterminated quote in argv string".into());
+    }
+    if started {
+        words.push(current);
+    }
+    Ok(words)
+}
+
 /// Releases the in-flight claim when the run ends (success or failure).
 struct ClaimGuard<'a> {
     scheduler_in_flight: &'a std::sync::Mutex<std::collections::HashSet<String>>,
@@ -873,14 +1518,20 @@ impl Drop for ClaimGuard<'_> {
 /// builds the provider body, streams over `HttpStreamTransport` on a
 /// dedicated tokio runtime, parses per provider and returns the normalized
 /// event vector (fragment merging happens inside the runtime loop).
+/// Phase 2.3: the run's cancellation flag races the stream — StopTask
+/// aborts an in-flight model stream instead of waiting it out.
 struct LiveGatewayTransport<'a> {
     config: &'a SchedulerConfig,
     runtime: tokio::runtime::Runtime,
     transport: HttpStreamTransport,
+    cancel: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl<'a> LiveGatewayTransport<'a> {
-    fn new(config: &'a SchedulerConfig) -> Self {
+    fn new(
+        config: &'a SchedulerConfig,
+        cancel: Arc<std::sync::atomic::AtomicBool>,
+    ) -> Self {
         let transport = HttpStreamTransport::new(config.broker.clone())
             .expect("build provider transport");
         LiveGatewayTransport {
@@ -890,6 +1541,7 @@ impl<'a> LiveGatewayTransport<'a> {
                 .build()
                 .expect("scheduler tokio runtime"),
             transport,
+            cancel,
         }
     }
 
@@ -933,7 +1585,19 @@ impl<'a> crate::one_agent::ModelTransport for LiveGatewayTransport<'a> {
                 .map_err(|e| e.to_string())?;
             let mut events = Vec::new();
             loop {
-                match stream.recv().await {
+                // Phase 2.3: race the stream against the cancellation flag
+                // (100ms cadence) so StopTask aborts a stalled provider
+                // stream instead of blocking the run for the full timeout.
+                let event = tokio::select! {
+                    event = stream.recv() => event,
+                    _ = tokio::time::sleep(Duration::from_millis(100)) => {
+                        if self.cancel.load(std::sync::atomic::Ordering::SeqCst) {
+                            return Err("run cancelled during model stream".into());
+                        }
+                        continue;
+                    }
+                };
+                match event {
                     Some(Ok(TransportEvent::SseData(payload))) => {
                         let parsed = match self.config.provider {
                             Provider::OpenAi => parse_openai_sse_payload(&payload),
@@ -963,8 +1627,9 @@ struct EventStoreObserver {
     store: Arc<EventStore>,
     session_id: SessionId,
     task_id: TaskId,
-    sequences: std::sync::Mutex<std::collections::HashMap<String, u64>>,
-    current_run: std::sync::Mutex<Option<RunId>>,
+    /// Sequence accounting + current run, SHARED with the output sink
+    /// (both append to the same run aggregate).
+    shared: Arc<RunPlaneShared>,
 }
 
 impl EventStoreObserver {
@@ -1015,7 +1680,7 @@ impl EventStoreObserver {
             payload_object_hash: None,
             integrity_hash: String::new(),
         };
-        let mut sequences = self.sequences.lock().expect("observer mutex");
+        let mut sequences = self.shared.sequences.lock().expect("observer mutex");
         let next = sequences.get(aggregate_id).copied().unwrap_or(1);
         envelope.sequence = next;
         envelope.seal();
@@ -1029,14 +1694,14 @@ impl EventStoreObserver {
 
 impl EventStoreObserver {
     fn run_of(&self) -> Option<RunId> {
-        *self.current_run.lock().expect("observer mutex")
+        *self.shared.run.lock().expect("observer mutex")
     }
 }
 
 impl RunObserver for EventStoreObserver {
     fn run_started(&self, run_id: &str, attempt: u32) {
         let Ok(parsed) = RunId::parse(run_id) else { return };
-        *self.current_run.lock().expect("observer mutex") = Some(parsed);
+        *self.shared.run.lock().expect("observer mutex") = Some(parsed);
         self.append(
             AggregateType::Run,
             run_id,
@@ -1107,6 +1772,45 @@ impl RunObserver for EventStoreObserver {
         self.append(AggregateType::Turn, turn_id, DomainEvent::TurnCompleted);
     }
 
+    fn conversation_checkpointed(
+        &self,
+        run_id: &str,
+        turn_ordinal: u32,
+        conversation_json: &str,
+    ) {
+        self.append(
+            AggregateType::Run,
+            run_id,
+            DomainEvent::ConversationCheckpointed {
+                turn_ordinal,
+                conversation_json: conversation_json.to_string(),
+            },
+        );
+    }
+
+    fn compaction_applied(
+        &self,
+        turn_id: &str,
+        epoch_id: &str,
+        affected_messages: u32,
+        reclaimed_tokens: u64,
+        manifest_digest: &str,
+    ) {
+        let Ok(parsed_turn) = TurnId::parse(turn_id) else { return };
+        let run_id = self.run_of().unwrap_or_else(RunId::generate);
+        self.append(
+            AggregateType::Run,
+            &run_id.to_string(),
+            DomainEvent::CompactionApplied {
+                turn_id: parsed_turn,
+                epoch_id: epoch_id.to_string(),
+                affected_messages,
+                reclaimed_tokens,
+                manifest_digest: manifest_digest.to_string(),
+            },
+        );
+    }
+
     fn turn_failed(&self, turn_id: &str, failure_code: &str) {
         self.append(
             AggregateType::Turn,
@@ -1164,4 +1868,86 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
+#[cfg(test)]
+mod shell_words_tests {
+    use super::split_shell_words;
+
+    /// Phase 2.6: the string form honors quotes; the array form is exact.
+    #[test]
+    fn shell_words_splitting_honors_quotes() {
+        assert_eq!(
+            split_shell_words("sh run_tests.sh").unwrap(),
+            vec!["sh".to_string(), "run_tests.sh".to_string()]
+        );
+        assert_eq!(
+            split_shell_words("echo \"hello world\" tail").unwrap(),
+            vec!["echo".to_string(), "hello world".to_string(), "tail".to_string()]
+        );
+        assert_eq!(
+            split_shell_words("echo 'a  b' \"c d\"").unwrap(),
+            vec!["echo".to_string(), "a  b".to_string(), "c d".to_string()]
+        );
+        assert_eq!(split_shell_words("  ").unwrap(), Vec::<String>::new());
+        assert!(split_shell_words("echo \"unterminated").is_err());
+        assert!(split_shell_words("echo 'unterminated").is_err());
+    }
+}
+
+#[cfg(test)]
+mod rules_tests {
+    use super::read_workspace_rules;
+
+    fn tempdir(tag: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("modbit-rules-{tag}-{}", uuid::Uuid::now_v7().simple()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    /// Phase 2.4: the four canonical sources are read with per-file
+    /// sha256 provenance; subdirectory AGENTS.md appears after the root;
+    /// empty repos yield an empty segment.
+    #[test]
+    fn rules_sources_read_with_provenance() {
+        let root = tempdir("full");
+        std::fs::write(root.join("AGENTS.md"), "root: always run clippy").unwrap();
+        std::fs::write(root.join("CLAUDE.md"), "claude: be terse").unwrap();
+        std::fs::create_dir_all(root.join(".modbit")).unwrap();
+        std::fs::write(root.join(".modbit/rules.md"), "modbit: prefer tools").unwrap();
+        std::fs::create_dir_all(root.join(".cursor/rules")).unwrap();
+        std::fs::write(root.join(".cursor/rules/testing.mdc"), "cursor: test first").unwrap();
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::write(root.join("src/AGENTS.md"), "src: no unsafe").unwrap();
+
+        let rules = read_workspace_rules(&root);
+        assert!(rules.contains("# Workspace rules (repo-provided, provenance-hashed)"));
+        assert!(rules.contains("## AGENTS.md (sha256:"));
+        assert!(rules.contains("root: always run clippy"));
+        assert!(rules.contains("## .cursor/rules/testing.mdc (sha256:"));
+        assert!(rules.contains("test first"));
+        // Provenance hashes are the real sha256 of the file bytes.
+        let digest = {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(b"root: always run clippy");
+            format!("{:x}", hasher.finalize())
+        };
+        assert!(rules.contains(&digest), "provenance hash must match file bytes");
+        // Ordering: root AGENTS.md before the subdirectory's.
+        let root_pos = rules.find("root: always run clippy").unwrap();
+        let src_pos = rules.find("src: no unsafe").unwrap();
+        assert!(root_pos < src_pos, "root rules precede subdirectory rules");
+        // .git-like directories are skipped.
+        std::fs::create_dir_all(root.join(".git")).unwrap();
+        std::fs::write(root.join(".git/AGENTS.md"), "poison").unwrap();
+        let rules = read_workspace_rules(&root);
+        assert!(!rules.contains("poison"), "hidden directories are skipped");
+    }
+
+    #[test]
+    fn no_rules_files_yield_empty_segment() {
+        let root = tempdir("empty");
+        assert_eq!(read_workspace_rules(&root), "");
+    }
 }

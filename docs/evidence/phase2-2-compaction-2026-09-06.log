@@ -1,0 +1,86 @@
+Phase 2 item 2 — token budget + hot-path compaction + per-model settings
+==========================================================================
+Node: M2.7 (Basic Prompt Compiler and one-agent runtime)
+Defect: Future-tasks.md section 2 item 2 (audit 2026-09-06)
+Revision: commit 5856de3 (branch phase2/loop-hardening)
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC timestamps
+
+WHAT CHANGED
+------------
+The conversation grew unbounded (crates/compaction never linked);
+max_output_tokens was hard-coded 4096, temperature 0.2, no reasoning or
+thinking controls. Now:
+
+- crates/compaction/src/hot_path.rs — bounded synchronous compaction
+  planner (docs/19 "hard pressure" path): stage 1 truncates the OLDEST
+  tool-result payloads in place (call-id linkage always survives);
+  stage 2 summarizes whole assistant+tool-result blocks (never index 0,
+  never the recent block) into epoch lines via CompactionManifest;
+  stage 3 last resort truncates the recent block's results. Per-item
+  residual token accounting prevents double-counted savings (found by
+  the extreme-budget unit test before shipping).
+- Domain: CompactionApplied run event (epoch id, affected_messages,
+  reclaimed_tokens, sha256 manifest_digest).
+- one_agent.rs: budget check before EVERY invoke over the conversation
+  estimate (MODBIT_MAX_INPUT_TOKENS, default 32768); the model-visible
+  projection is compacted, canonical history untouched; EpochRegistry
+  lineage extended per compaction; RunObserver.compaction_applied.
+- providers: ModelRequest.reasoning_effort (envelope::ReasoningEffort);
+  OpenAI body sends reasoning_effort; Anthropic body sends
+  thinking.budget_tokens mapped from effort and clamped under
+  max_tokens (dropped when it cannot fit — never sends a request the
+  provider would reject). None sends nothing.
+- providers/profiles.rs: per-model settings (reasoning-tier models get
+  8192 output budget) + env overrides MODBIT_MAX_OUTPUT_TOKENS /
+  MODBIT_TEMPERATURE / MODBIT_REASONING_EFFORT; scheduler wires them
+  into AgentTask; EventStoreObserver persists CompactionApplied.
+
+PROOFS (all always-on)
+----------------------
+Unit, 2026-09-05T22:30Z:
+  modbit-compaction: 8 passed (stages, oldest-first, prompt/recent
+    protection, last-resort, estimator bounds)
+  modbit-providers: 30 passed (incl. reasoning_effort_serializes_per_provider,
+    thinking_dropped_when_output_budget_cannot_fit_it, profile tests)
+  modbit-core-runtime one_agent: 9 passed (incl.
+    over_budget_conversation_compacts_before_invoke: truncated payload
+    travels with '[compacted:' marker AND intact tool_call_id; observer
+    records epoch-prefixed lineage with positive reclaim; DEFAULT budget
+    sends the same result verbatim)
+Daemon E2E daemon_compaction_e2e, 2026-09-05T22:30Z — real modbit-core
+daemon + scheduler + git worktree + execd + fs.read of an ~8 KB file,
+MODBIT_MAX_INPUT_TOKENS=700:
+  over_budget_daemon_compacts_and_records_the_event ... ok
+  - wire: roles [system,user,assistant,tool] preserved, tool_call_id
+    "c1" intact, content contains "[compacted:" and < 1500 bytes,
+    body max_tokens 4096 (per-model BASE profile), no reasoning_effort
+  - durable: direct read-only SQLite query of the daemon's store:
+    compaction_applied count >= 1, affected >= 1, reclaimed > 0,
+    manifest_digest is 64 hex chars
+  test result: ok. 1 passed; 0 failed
+
+MUTATION CHECKS (docs/55), 2026-09-05T22:33-22:35Z — both against the
+committed implementation, restored via git checkout after each:
+  A. budget trigger neutralized (plan_compaction(view, u64::MAX)):
+     E2E FAILED at the '[compacted:' content assertion (exit 101)
+  B. truncation breaks linkage (tool_call_id set to None on truncate):
+     E2E FAILED at the tool_call_id assertion (exit 101)
+
+GATES (2026-09-05T22:20-22:35Z, all green)
+-------------------------------------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo build --workspace --all-targets                   exit 0
+  cargo test --workspace                                  exit 0 (447 passed)
+  pnpm install --frozen-lockfile / -r generate /
+    git diff --exit-code generated                        CLEAN
+  pnpm -r typecheck / -r test                             exit 0 (49 TS tests)
+  python3 tools/architecture-lint/lint.py                 OK
+    (placement lint caught 2 misplaced REQ tags during development —
+     removed before commit, matching the 2f377c3 precedent)
+  python3 tools/decision-guard.py                         OK
+  python3 tools/coverage-guard.py                         OK
+  python3 tools/check_dossier.py                          OK
+
+RESULT: M2.7 E2E_PROVEN with typed evidence; Future-tasks §2.2 cleared.
+Remaining for the Phase 2 exit: items 3-6 (cancellation, rules files,
+M4 recovery/E2E-004, shell correctness) and 5 green nightly runs.

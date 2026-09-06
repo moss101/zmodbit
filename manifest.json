@@ -7,7 +7,7 @@
   "counts": {
     "docs": 70,
     "root_and_tooling": 84,
-    "docs_bytes": 508472
+    "docs_bytes": 511243
   },
   "sections": [
     {
@@ -139,8 +139,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Agent Runtime and Orchestration",
-      "bytes": 4795,
-      "sha256": "6658315a4a4096569c936448a0b7c566d1b4bd926dda05ce1dc01a6180c6f78a"
+      "bytes": 5590,
+      "sha256": "22d02ca36ab15534a173e89456c185cd27b1eb45539ec1af3a396e6cc6e11557"
     },
     {
       "path": "docs/15_MODEL_ROUTER_AND_PROVIDER_GATEWAY.md",
@@ -148,8 +148,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Model Router and Provider Gateway",
-      "bytes": 3591,
-      "sha256": "9491115d519a3a9dbce3f95cf7704f152ce9dd763a3e168bce3d24c319bbeeba"
+      "bytes": 4323,
+      "sha256": "1f7898cfc239d06601e4fee55f2a30fde9918a9845b09cf105971f7e1038e892"
     },
     {
       "path": "docs/16_TOOL_CAPABILITY_AND_PROCEDURAL_RUNTIME.md",
@@ -184,8 +184,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Durable State, Memory, Compaction, and Checkpoints",
-      "bytes": 4019,
-      "sha256": "718634cd402ece3c57c77db48593ca8e59e4720f326fe847546172ac70f71a62"
+      "bytes": 4691,
+      "sha256": "cd6aadf4fe77a36b099a02bbe2dbd4570fd25467b08649e33cd7bacd22511b77"
     },
     {
       "path": "docs/20_WORKSPACE_GIT_AND_TRUSTED_CODE_SURFACE.md",
@@ -202,8 +202,8 @@
       "section": "architecture",
       "section_title": "Architecture and subsystems",
       "title": "Terminal, Execution Router, and Sandbox Architecture",
-      "bytes": 3332,
-      "sha256": "b36b4bb9b3e8d837e2c62e048147acf9b236b74cc006e8fbfc2fc8d751f102ff"
+      "bytes": 3904,
+      "sha256": "42a2f1260120d4bd2d05ebd4a43ecad6494df54357eb21d3dcaff513e6c4cb72"
     },
     {
       "path": "docs/22_BROWSER_AND_COMPUTER_USE.md",
@@ -691,23 +691,23 @@
     },
     {
       "path": "AGENTS.md",
-      "bytes": 6595,
-      "sha256": "4eddeb49773780df0b4091cd0eb64cb9c2d167340957fb86a9eae6fd7cccdc25"
+      "bytes": 7157,
+      "sha256": "ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4"
     },
     {
       "path": "SKILLS.md",
-      "bytes": 13482,
-      "sha256": "e8414f394cc48ad19bbafa2f23c530d6acdd5c302fa0adc68c57a1af19f0fcdf"
+      "bytes": 15088,
+      "sha256": "52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb"
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 801897,
-      "sha256": "fca080024155f50dafa6059ede61cecfc884fbb2522c73a4e28650d22d2a3d57"
+      "bytes": 815665,
+      "sha256": "93a4168764be986e57f304b5e40dea4e3f474038704efd202e68fdacd224771a"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22382,
-      "sha256": "a899208ff67fdb61fd20e1cdc34c4f4ffc1ea7f4b0c03768d7e913412ba9788e"
+      "bytes": 22624,
+      "sha256": "e48b1a9b438be77532f7bcb3d3af4a9bf0341c9bd3e454285f69ba28f7449e86"
     },
     {
       "path": "tools/build_manifest.py",
@@ -737,7 +737,7 @@
     {
       "path": ".github/workflows/ci.yml",
       "bytes": 2984,
-      "sha256": "6c800eed248636ec8850c0c6e5aaab8c478aaae5fd5ff30a074764865542c39f"
+      "sha256": "f5ffdddd6ca0f844640ad686e145db4a528a654ff31309f075c9cb21bd9b0072"
     },
     {
       "path": "Cargo.toml",
@@ -1001,8 +1001,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 73042,
-      "sha256": "1723dab3eae15242ee3c973e1cbb6d5fa475b73d31a2a4d6734dabea0c0a0fde"
+      "bytes": 82148,
+      "sha256": "e356458807e78cdd6fbf1483d2db3379644edc21c50f6f608e15d7d334233a0a"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",

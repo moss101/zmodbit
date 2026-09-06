@@ -23,6 +23,9 @@ pub struct CoreServices {
     /// Task-worktree layout for GetDiff (explicit; no process-env reads
     /// inside dispatch). Set by the host binary at construction.
     task_worktrees: Option<std::sync::Arc<dyn crate::scheduler::WorktreeSource>>,
+    /// Live run-control signals (Phase 2.3): Stop/Pause/Steer reach the
+    /// in-flight run through the scheduler's registry.
+    run_controls: Option<std::sync::Arc<crate::scheduler::RunControls>>,
 }
 
 #[derive(Default, Clone)]
@@ -45,7 +48,19 @@ impl CoreServices {
             store,
             workspace: None,
             task_worktrees: None,
+            run_controls: None,
         }
+    }
+
+    /// Attaches the scheduler's live run-control registry (Phase 2.3):
+    /// StopTask/PauseTask/SteerTask signal in-flight runs in addition to
+    /// writing the durable lifecycle events.
+    pub fn with_run_controls(
+        mut self,
+        controls: std::sync::Arc<crate::scheduler::RunControls>,
+    ) -> Self {
+        self.run_controls = Some(controls);
+        self
     }
 
     /// Attaches the task-worktree layout source (GetDiff): the shared
@@ -254,31 +269,54 @@ impl CoreServices {
                     },
                 }
             }
-            Some(pb::surface_request::Request::SteerTask(steer)) => self.lifecycle_response(
-                &steer.task_id,
-                CommandPayload::SteerTask {
-                    task_id: parse_task_id(&steer.task_id),
-                    steer_note: steer.note,
-                },
-            ),
-            Some(pb::surface_request::Request::PauseTask(pause)) => self.lifecycle_response(
-                &pause.task_id,
-                CommandPayload::TaskWaiting {
-                    task_id: parse_task_id(&pause.task_id),
-                    reason: modbit_domain::events::WaitingReason::UserInput,
-                },
-            ),
-            Some(pb::surface_request::Request::StopTask(stop)) => self.lifecycle_response(
-                &stop.task_id,
-                CommandPayload::CancelTask {
-                    task_id: parse_task_id(&stop.task_id),
-                    reason: if stop.reason.is_empty() {
-                        "stopped by user".into()
-                    } else {
-                        stop.reason
+            Some(pb::surface_request::Request::SteerTask(steer)) => {
+                // Phase 2.3: queue the note for the in-flight run (injected
+                // as a user message on the next turn), then record the
+                // durable steer event.
+                if let Some(controls) = &self.run_controls {
+                    controls.steer(&steer.task_id, steer.note.clone());
+                }
+                self.lifecycle_response(
+                    &steer.task_id,
+                    CommandPayload::SteerTask {
+                        task_id: parse_task_id(&steer.task_id),
+                        steer_note: steer.note,
                     },
-                },
-            ),
+                )
+            }
+            Some(pb::surface_request::Request::PauseTask(pause)) => {
+                // Phase 2.3: signal the in-flight run to park at the next
+                // turn boundary BEFORE parking the durable state.
+                if let Some(controls) = &self.run_controls {
+                    controls.pause(&pause.task_id);
+                }
+                self.lifecycle_response(
+                    &pause.task_id,
+                    CommandPayload::TaskWaiting {
+                        task_id: parse_task_id(&pause.task_id),
+                        reason: modbit_domain::events::WaitingReason::UserInput,
+                    },
+                )
+            }
+            Some(pb::surface_request::Request::StopTask(stop)) => {
+                // Phase 2.3: signal the in-flight run FIRST (abort the
+                // model stream, kill the broker tool), then record the
+                // durable cancellation.
+                if let Some(controls) = &self.run_controls {
+                    controls.cancel(&stop.task_id);
+                }
+                self.lifecycle_response(
+                    &stop.task_id,
+                    CommandPayload::CancelTask {
+                        task_id: parse_task_id(&stop.task_id),
+                        reason: if stop.reason.is_empty() {
+                            "stopped by user".into()
+                        } else {
+                            stop.reason
+                        },
+                    },
+                )
+            },
             Some(pb::surface_request::Request::GetRunDetail(get)) => match self.run_detail(&get.task_id) {
                 Ok(run_detail) => pb::SurfaceResponse {
                     ok: true,
@@ -303,6 +341,21 @@ impl CoreServices {
                     ..Default::default()
                 },
             },
+            // Phase 2.6: paginated read of a stored tool-output reference.
+            Some(pb::surface_request::Request::ReadOutputRef(read)) => {
+                match self.read_output_ref(&read.output_ref_id, read.offset, read.max_bytes) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        output_chunk: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             None => pb::SurfaceResponse {
                 ok: false,
                 error: "empty SurfaceRequest".into(),
@@ -665,6 +718,29 @@ impl CoreServices {
     /// Revision-bound diff of the task's worktree against its base revision
     /// (E2E-001 review substrate). The worktree location follows the
     /// scheduler's deterministic allocation.
+    /// Paginated OutputRef read (Phase 2.6): bounded ranges over the
+    /// runtime store's content-addressed output payloads. Ids are opaque
+    /// primary keys — no path surface, no traversal.
+    fn read_output_ref(
+        &self,
+        output_ref_id: &str,
+        offset: u64,
+        max_bytes: u64,
+    ) -> Result<pb::OutputRefChunkView, String> {
+        const MAX_PAGE: u64 = 512 * 1024;
+        let (data, total_length) = self
+            .store
+            .runtime()
+            .read_output_range(output_ref_id, offset, max_bytes.min(MAX_PAGE))
+            .map_err(|e| e.to_string())?;
+        Ok(pb::OutputRefChunkView {
+            output_ref_id: output_ref_id.to_string(),
+            offset,
+            data,
+            total_length,
+        })
+    }
+
     fn diff(&self, task_id: &str) -> Result<pb::DiffView, String> {
         let source = self.task_worktrees.as_ref().ok_or_else(|| {
             "task worktrees not configured on this core (host must attach the layout)".to_string()

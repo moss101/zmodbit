@@ -1,187 +1,165 @@
-# Future Tasks: Component-Level Audit and Completion Plan for Modbit
+# Future Tasks: Recommended Work Order for Modbit
 
-Audit date: 2026-09-05 (revised after a full code trace of every crate, app, package and test).
-Method: `cargo test --workspace` (400 passed), `pnpm -r test` (28 passed), `tools/check_dossier.py` (OK); then, for each of the 133 Rust modules, recorded what it claims, whether it touches a real boundary (filesystem, process, socket, SQLite), whether it has integration tests, and whether the product binary can reach it. Classification uses the vocabulary of `docs/84` and `docs/93`.
+Audit date: 2026-09-06 (revised after the Phase 1 closure of 2026-09-05).
+Method: full trace of every crate, app, package and workflow; `cargo tree` closure of `modbit-core`; `python3 tools/graph.py status`; parity check against Cursor (agent, cloud agents, 2.0 multi-agent) and OpenAI Codex (CLI, cloud, app) as of mid-2026.
+Previous version of this file: the 2026-09-05 component audit and its section 4 governance fixes and Phase 1 plan. Those are closed (see section 1) and this file replaces them.
 
-## 1. Executive summary
+## 1. What closed since the last audit
 
-The repository holds far more real, tested engineering than "scaffold", and far less product than "all 10 milestones complete". The accurate statement is:
-
-**Modbit today is a set of well-built components with one thin composition point.** The `modbit-core` binary composes 9 crates (domain, event-store, policy, prompt-compiler, protocol, providers, terminal, tools, workspace) into a durable task store with an authenticated protocol, a fleet screen, and a code view. The other 17 crates are not in the binary's dependency closure at all, and the agent runtime that does exist inside `core-runtime` has no production caller.
-
-| Fact | Evidence |
+| Item | Evidence |
 |---|---|
-| Crates reachable from the product binary | 9 of 26 (`crates/core-runtime/Cargo.toml`); `browser`, `checkpoint`, `compaction`, `context`, `diagnostics`, `git` (only transitively), `procedural-runtime`, `protocol-state`, `retrieval`, `sandbox`, `skills`, `verification` and the four empty crates are never linked into `modbit-core` |
-| Production callers of the agent runtime | 0 (`grep OneAgentRuntime` outside tests returns nothing) |
-| Modules that touch a real boundary | 24 of 133; all in event-store, protocol, terminal, workspace, git, tools/media, verification, skills discovery, protocol-state journal, agent-fleet journal, context/ports, daemon |
-| Integration test files | 26, concentrated in event-store (7), core-runtime (6), git (3), workspace (3), terminal (2), protocol (2) |
-| Real-effect evidence logs | 2 (`docs/evidence/`), both M2 live-provider runs |
-| Surface protocol requests | 9 (`proto/modbit/protocol/v1/surface.proto`) |
-| Desktop screens | 1 (fleet + new task) |
+| Section 4 governance: typed evidence, reachability lint, placement lint, derived status tables, M2 E2E gate, status reset | commit `b1c9fa1`; `tools/check_dossier.py`, `tools/evidence.py`, `tools/architecture-lint` |
+| Phase 1.1 `HttpStreamTransport` + `SecretBroker` (ADR-0002, tokio/reqwest/rustls) | `crates/providers/src/transport.rs` |
+| Phase 1.2 tool protocol: registry schemas to providers, fragmented tool-call assembly, tool_result turns | `crates/providers/src/gateway.rs` |
+| Phase 1.3 the single scheduler: daemon-driven runs, worktrees, durable run events, outcome-based transitions | `crates/core-runtime/src/scheduler.rs`, `bin/modbit-core.rs` |
+| Phase 1.4 worktree toolset: `shell.run` via `modbit-execd`, `change.propose/apply`, `search.grep`, `git.status/diff`, `test.run` | `scheduler.rs::build_worktree_registry` |
+| Phase 1.5 surface protocol: `GetRunDetail`, `GetDiff`, `SteerTask`, `PauseTask`, `StopTask`, explicit `WorktreeSource` | `proto/modbit/protocol/v1/surface.proto` (14 requests) |
+| Phase 1.6 desktop task workspace, SSE consumption, real tokens and UI components | `apps/desktop/src/task-workspace`, `packages/ui`, `packages/design-tokens` |
+| Phase 1.7 daemon-driven E2E automation, nightly live job, rewritten `live_m2_close.sh` | `.github/workflows/nightly-live.yml`, `crates/core-runtime/tests/daemon_*_e2e.rs` |
+| M2 → `E2E_PROVEN` against a live model (E2E-001/002/003) | `docs/evidence/m2-11-live-e2e-2026-09-05T20-25Z.log` |
 
-The graph is inconsistent with `README.md` and `docs/98_BUILD_MANIFEST.md` (both say M2 to M10 not started) and `check_dossier.py` does not detect that.
+Current facts:
 
-## 2. Milestone-by-milestone classification
+| Fact | Value |
+|---|---|
+| Crates in the `modbit-core` dependency closure | 12 of 26 (`browser`, `checkpoint`, `compaction`, `context`, `diagnostics`, `procedural-runtime`, `protocol-state`, `retrieval`, `sandbox`, `skills` + 4 empty crates unlinked) |
+| Empty canonical crates | `effects`, `secrets`, `memory`, `observability` |
+| Stub binaries (`fn main() {}`) | `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest` |
+| Rust / TS tests | 437 / 53 |
+| Desktop screens | 2 (fleet, task workspace) |
+| Milestones | M0, M1 COMPLETE; M2 E2E_PROVEN; M3–M10 IN_PROGRESS with 0 IMP tasks closed |
 
-Classes: **PRODUCTION-WORKING** (reachable from the binary, real effector, tested), **WIRED** (real effector and tests, but not reachable from the binary), **LOGIC-ONLY** (pure in-memory types and functions, well tested, no effector), **SCAFFOLDED** (empty or canned), **NOT-FOUND**.
+## 2. Open defects found in the live path (fix before anything else)
 
-### M0 Repository and authority: PRODUCTION-WORKING
-Graph tooling, architecture lint, decision guard, coverage guard, examples runner, three-OS CI with clippy `-D warnings`, generated-binding drift check. All real. Gaps: lint checks dependency direction only, evidence field is untyped, manifest/README not derived from graph (see section 4).
+These are inside code that is already "proven"; they cap the quality of every live run.
 
-### M1 Durable local shell and Core: PRODUCTION-WORKING
-- Event store on SQLite: append-only envelope, idempotent commands, transactional projections, migrations, leases and fencing, index store, runtime records (output refs, background tasks, tool-call pairs). 7 integration test files.
-- Local SurfaceProtocol: HMAC boot handshake, length-prefixed protobuf over `interprocess`, Rust and TS clients with wire-compat tests.
-- `modbit-core` daemon: boot channel, request dispatch, HTTP+SSE multi-client daemon with replay and 413 bounds, SIGKILL crash/restart test recovering the fleet exactly.
-- Electron main with IPC schema validation, sandboxed renderer, fleet screen, new-task form, real e2e test spawning the binary.
-- Gaps: renderer polls every 1.5 s instead of using the SSE path; no session UI; `packages/ui` and `packages/design-tokens` are one-line scaffolds.
+1. **Conversation roles are wrong.** `one_agent.rs` keeps `conversation: Vec<String>` and sends every entry as `ChatMessage::user`, including the model's own prior text and tool results serialized as `tool <name> → {json}` strings (`crates/core-runtime/src/one_agent.rs` ~L200 and ~L373). The gateway already supports `assistant_with_tool_calls` and tool-result messages; the loop never uses them, so the model loses call-id linkage.
+2. **No context-window management.** The conversation grows unbounded; `crates/compaction` is not linked; `max_output_tokens` is fixed at 4096, `temperature` at 0.2; no reasoning/thinking or prompt-cache controls.
+3. **Context pack is a directory listing.** `build_context_pack` emits title, prompt and the first 50 top-level entries. `workspace_rules` is always empty: AGENTS.md / CLAUDE.md / `.cursor/rules` in the target repo are never read.
+4. **`shell.run` splits argv on whitespace** (no quoting), no PTY, no streamed output, 600 s cap, 8 KB tail. Electron never spawns `modbit-execd`, so the desktop path has no working shell unless `MODBIT_EXECD_ADDR` is exported by hand.
+5. **Stop/Pause do not cancel.** They write events; no cancellation token reaches the in-flight model stream or tool. Steer notes are stored but not injected into the next turn.
+6. **All configuration is environment variables** (`MODBIT_REPO_ROOT`, `MODBIT_PROVIDER`, `MODBIT_MODEL`, `MODBIT_BASE_URL`, `*_API_KEY`, `MODBIT_MAX_TURNS`). No repo picker, no provider/model settings, `EnvSecretBroker` only.
+7. **README.md line 5** still says the repository contains no product code.
 
-### M2 Real local engineering loop: WIRED (component-complete, integration missing)
-Real and tested in isolation:
-- `git`: init, commit, branch, linked worktrees, numstat diff, typed merge with conflict evidence. 3 integration test files against real git.
-- `workspace`: file service with safe paths and revisions, change engine, merge transactions, session lineage, capsules, handoff bundles. 3 integration test files.
-- `terminal` + `modbit-execd`: durable process broker with offset-addressed output, detach/reattach test, structured command contract, environment hierarchy, replay window.
-- `tools`: registry with fail-closed policy decision, args hash evidence, `fs.list`, `fs.read`, `shell.run`, `git`, `web.fetch`; media pipeline with real file I/O; output pagination, schemas, families, toolsets, turn surface (logic).
-- `policy`: capability kernel, approvals, protected paths, mediation, device policy, question service, UI risk, patch gate, admin precedence. 11 unit tests in lib plus per-module tests.
-- `providers`: request bodies and SSE parsers for OpenAI-compatible and Anthropic, routing and health, envelope, media split; live streaming call recorded in `docs/evidence/m2-6-live-qualification.log`.
-- `prompt-compiler` and `one_agent.rs`: compile, stream, typed events, tool dispatch under policy, repair loop, verification stage; live run recorded in `docs/evidence/m2-7-live-one-agent.log`.
-- `verification`: deterministic gates that spawn real commands, verification plane, diagnostics regression comparison (integration test), evidence index, browser evidence normalisation (logic).
-- Code view served over the protocol (`code_surface.rs` test).
+## 3. Parity snapshot (Cursor / Codex / Modbit)
 
-Missing for M2's own proof (E2E-001 to E2E-003):
-- No production caller of the runtime; `StartTask` only emits `TaskStarted` (`crates/core-runtime/src/surface.rs:128`).
-- No HTTP client in the product; the transport is a `curl` subprocess inside two test files.
-- `tools` never sends tool definitions to the provider; `openai_request_body`/`anthropic_request_body` have no `tools` field.
-- `shell.run` calls `Command::new` directly (`crates/tools/src/lib.rs:204`) and bypasses `modbit-execd`, so E2E-003 output survival cannot hold.
-- `verification` is not a dependency of `core-runtime`; the runtime's verify step is stub-tested.
-- No `change.apply`, `search.grep`, `git.diff`, `test.run` tools registered.
-- No worktree allocation on task start.
-- No streamed events to the desktop; no task workspace or diff screen.
+Modbit is not an IDE; editor features (tab completion, inline edit) are out of scope. The comparison is against Cursor's agent and cloud-agent side and Codex CLI/cloud/app.
 
-### M3 Context intelligence: LOGIC-ONLY, not linked into the binary
-- `retrieval`: in-memory index with exact/regex/path search, BM25, Merkle tree, AST/symbol chunk representation, engineering and history context, hydration, rerank, index benchmark. Nothing walks a real filesystem; callers must feed bytes. No embeddings or vector index (`knowledge.rs:6` says "plug in later").
-- `context`: query planner, pack compiler with token budgets, provenance, recoverability, cache economy, savings, metrics, inspector, fast subagent, benchmark harness, ports. `ports.rs` reads the repository's own crate list from disk for a self-test; otherwise pure.
-- `compaction`: epoch-based history compaction, pure.
-- `diagnostics`: pull-based diagnostics types; no LSP process, no adapters.
-- `workspace/bridge.rs`, `edit_gate.rs`: editor context bridge and retrieve-before-edit gate, pure.
-- No benchmark has been run on a fixed revision; no latency gate enforced.
-
-### M4 Durable recovery spine: WIRED for journals, LOGIC-ONLY for checkpoints, not linked into the binary
-- `protocol-state`: file-backed protocol journal with torn-write recovery; `kill_points.rs` really kills between writes and recovers pending tool calls and approvals.
-- `checkpoint`: epoch fencing, delta journal, failure taxonomy, cursor metadata, kernel lease. In-memory structures; nothing persists checkpoints to the event store or disk except through `protocol-state`.
-- `core-runtime` depends on neither crate, so no in-flight run can be recovered because no run exists.
-- M1's crash/restart test covers task and session state only.
-
-### M5 Procedural runtime and skills: LOGIC-ONLY with real skill discovery, not linked into the binary
-- `skills/lib.rs` discovers `SKILL.md` files on disk with SHA-256 provenance and detects removal (real fs, tested). Layering, packaging, compact mode, eval harness, evolution lab, impact log, profile evolution, SDK validation, wiki index are pure logic.
-- `procedural-runtime`: a minimal code-mode interface (`exec`, `wait`, `request_user_input`, evidence) with policy callback, and composition over existing tools. No isolate (no QuickJS, no WASM); `exec` records intent rather than running scripts.
-- `tools/multimodal.rs`: multimodal read and PDF fallback, pure.
-
-### M6 Subagents and fleet: LOGIC-ONLY with a real journal, inside core-runtime but not composed into the surface
-- `agent_fleet.rs`: persisted AgentNodes with a file-backed journal (real fs, 8 tests). `fleet_admission.rs`: transactional admission with rollback, capacity tickets, task contracts, isolation bundles, write coordinator, attention aggregator. `agent_runtime_batch2/3/final.rs`, `agent_profiles_plans.rs`, `delegation.rs`, `reminder_engine.rs`: profiles, plan mode, plan versions, todo graph, stall watchdog, child prompt isolation, leaf profiles, background handles.
-- No child ever executes a runtime; no spawn path from a parent turn; not reachable through the surface protocol. The desktop has fleet grouping and supervision functions only.
-
-### M7 Live browser and computer use: LOGIC-ONLY
-- `browser`: session identity, control lease with watchdog, deterministic → accessibility → visual ladder, semantic elements with stable fingerprints and deltas, page/action/state graph, computer-use safety (preemption, cooldown, safe typing, clipboard guard), peer boundary, Chromium run record.
-- Zero process spawns, zero sockets, no CDP dependency, no Electron embedding. `record_chromium_run` stores a version string.
-
-### M8 Cloud isolated execution: SCAFFOLDED
-- `sandbox`: `ExecutionBackend` trait with a real `LocalBackend` (spawns processes) and a `CloudMicroVmBackend` returning `Ok((0, format!("microvm[..]")))`. Deny-by-default policy, control-plane never-grantable, typed guest RPC messages with version/capability rejection, tenant-bound gateway records, credential-handle injection, worker negotiation, conformance suite: all in-memory logic (10 tests).
-- `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest`: `fn main() {}`.
-- No identity (OIDC), sync, tenancy or offline behaviour from `docs/24`.
-
-### M9 Memory, effects, security hardening: LOGIC-ONLY, in the wrong crates
-- `checkpoint/security_hardening.rs`: tool schema secrets outside arguments, MCP install trust and credential gates, marketplace trust with quarantine, tamper-evident receipt hash chain, dynamic credential handles.
-- `checkpoint/mcp_memory.rs`: MCP list/call/cancel lifecycle with identities, scoped auth, organisational memory with supersession chains. `checkpoint/hook_bus.rs`, `importers_plugins.rs`: hook bus with timeouts, plugin registrations, importers with migration report.
-- `policy/approvals.rs`: effect ledger reversibility classes.
-- No MCP transport (no stdio, no JSON-RPC), no keychain, no receipt written by any real tool execution. `crates/effects`, `crates/secrets`, `crates/memory` are empty; `docs/81` ownership is violated and `architecture-lint` does not detect placement.
-
-### M10 Release hardening: LOGIC-ONLY except the headless daemon
-- `verification/release_hardening.rs`: dual error channels with redaction, SLO event ladder, per-run usage ledger with reconciliation, diagnostics export with credential masking, shadow harness generation, bounded repair with static fallback. Pure functions, 7 tests.
-- Headless mode (REQ-EV-0126) is genuinely served by the M1 HTTP+SSE daemon, which is real.
-- Multi-level qualification "incl. real API" refers to the env-gated live tests, never run in CI.
-- No packaging, signing, notarisation, update channel, SBOM, or Release Zero run. `docs/59` steps 2 to 15 cannot execute.
-
-## 3. Honest status table
-
-| Milestone | Graph | Honest | Remaining work in one line |
+| Capability | Cursor | Codex | Modbit today |
 |---|---|---|---|
-| M0 | COMPLETE | COMPLETE | tighten gates (section 4) |
-| M1 | COMPLETE | COMPLETE | switch renderer to SSE, session UI |
-| M2 | COMPLETE | WIRED | transport in product, scheduler in daemon, tools to provider, shell via execd, verification linked, 4 more tools, task screen, E2E-001..003 |
-| M3 | COMPLETE | LOGIC-ONLY | filesystem walker feeding the index, link into runtime context pack, run benchmark, embeddings decision |
-| M4 | COMPLETE | WIRED (journals) / LOGIC-ONLY (checkpoints) | persist checkpoints, link into scheduler, kill-point suite on a real run |
-| M5 | COMPLETE | LOGIC-ONLY | isolate decision and implementation, `skill.*` tools, link registry into runtime |
-| M6 | COMPLETE | LOGIC-ONLY | child execution through the scheduler, `agent.*` tools, surface requests, fleet UI |
-| M7 | COMPLETE | LOGIC-ONLY | CDP bridge, Chromium launch, `browser.*` tools, live view, takeover UI |
-| M8 | COMPLETE | SCAFFOLDED | everything except the contract types |
-| M9 | COMPLETE | LOGIC-ONLY | move to owner crates, MCP transport, keychain broker, receipts on the hot path |
-| M10 | COMPLETE | LOGIC-ONLY | packaging, signing, updates, Release Zero |
+| Agentic loop with proper tool messages | yes | yes | broken roles (§2.1) |
+| Context compaction / long sessions | yes | yes | no |
+| Semantic codebase index | embeddings + Merkle | repo map, grep | logic only, unlinked |
+| Repo rules files | `.cursor/rules`, AGENTS.md | AGENTS.md hierarchy | not read |
+| Multi-provider / local models | many + custom endpoints | OpenAI + OSS via Ollama | OpenAI-compat, Anthropic, env only |
+| Approval modes | ask / auto / YOLO | read-only / auto / full | static grants, no approve UI |
+| OS sandbox for commands | sandboxed terminals | Seatbelt / Landlock / seccomp | policy only, no OS sandbox |
+| PTY terminal, streamed output | yes | yes | no PTY, tail only |
+| Parallel agents in worktrees | yes | yes | one agent per task, no subagents |
+| Cloud / background agents | yes | yes | stubs |
+| Browser control | built-in browser | limited | logic only |
+| MCP client | yes | client + server | types only |
+| Skills / procedures | rules, commands | skills, plugins | discovery only |
+| Memory | memories | project memory | empty crate |
+| PR / code review | Bugbot, review | `/review`, GitHub reviews | numstat diff |
+| Session resume after crash | yes | yes | tasks yes, runs no |
+| Headless / CI | CLI | `codex exec`, SDK | HTTP daemon only |
+| Image / multimodal input | yes | yes | media pipeline, not exposed |
+| Packaging, updates, auth | yes | yes | none |
+| Receipted effects, revision-bound review, fleet supervision | partial | partial | designed, partly real |
 
-## 4. Root cause and governance fixes (Step 0, do first)
+Modbit's differentiators (receipts, exact recovery, one Core local and cloud, evidence-first review) are exactly the parts still unwired. The order below closes the loop-quality gap first, then builds the differentiators, then chases breadth.
 
-The docs and graph forbid what happened (`AGENTS.md` forbidden shortcuts; `docs/82`). The tooling let it through:
+## 4. Recommended work order
 
-1. **Evidence is untyped.** `check_dossier.py` accepts any non-empty evidence list; 709 of the entries are CI run URLs or commit hashes. Fix: a `COMPLETE` node needs `log:docs/evidence/<file>`, `scenario:E2E-0nn`, `receipt:<sha256>`, or `run:` plus an integration/live test name. Enforce in `check_dossier.py` and `coverage-guard.py`.
-2. **No reachability check.** Nothing verifies that a closed requirement's code is in the product binary's dependency closure. Fix: `architecture-lint` computes the closure of `modbit-core` (and later `cloud-worker`) and fails any `COMPLETE` IMP node whose module is outside it.
-3. **No placement check.** Fix: every `REQ-EV-*` tag in a source file must belong to the subsystem that owns that crate (`docs/81`); flag the `checkpoint` crate's M9 modules.
-4. **Empty canonical crates pass.** Fix: a crate whose milestone is `COMPLETE` must have `pub` items and tests.
-5. **Status sources drift.** Fix: `build_manifest.py` derives `docs/98` and the README status table from the graph; `check_dossier.py` fails on mismatch.
-6. **Row-by-row closure beat vertical slices.** Fix: add graph edges so M3 to M10 IMP nodes are not `ready` until M2 is `E2E_PROVEN` through the daemon.
-7. **Reset statuses** to section 3 with `tools/graph.py set`.
+Each phase ends with `python3 tools/check_dossier.py`, the nightly live job green, the named E2E scenarios, and regenerated README / `docs/98`. A node closes only through production routing with typed evidence and only if its module is in the binary closure.
 
-Done when: `check_dossier.py` fails on today's tree, passes after the reset, CI green.
+### Phase 2: fix the loop (M2 hardening, M4 link)
 
-## 5. Completion plan
+1. **Proper message roles.** Replace `Vec<String>` with `Vec<ChatMessage>`; assistant turns carry `tool_calls`, tool results go back as tool-result messages keyed by call id, on both providers. Update `daemon_scripted_e2e` fixtures.
+2. **Token budget and compaction on the hot path.** Link `crates/compaction`; count tokens per message (provider usage frames already parsed); compact oldest tool results first, then summarize epochs; emit a `CompactionApplied` run event; make `max_output_tokens` and reasoning/thinking effort per-model config.
+3. **Cancellation.** A `CancellationToken` per run threaded through `LiveGatewayTransport` and `execd.run_capture`; `StopTask` aborts the stream and kills the broker run; `PauseTask` parks at the next turn boundary; `SteerTask` notes are injected as a user message on the next turn.
+4. **Rules files.** Read AGENTS.md, CLAUDE.md, `.cursor/rules/*.mdc`, `.modbit/rules.md` from repo root down to the touched directory into `workspace_rules`, with provenance hashes in the prompt compiler.
+5. **M4 recovery for in-flight runs.** Persist turn/step checkpoints in the event store runtime tables, link `protocol-state` and `checkpoint` into the scheduler, resume a run at the last committed step after a Core kill (unknown-outcome tool calls surface as attention items). Run the `docs/54` kill points on a real turn and a real tool call. Target: E2E-004.
+6. **Shell correctness.** Accept `argv` as a JSON array (keep the string form with shell-words parsing), stream output chunks as run events, raise the tail to a paginated `OutputRef`, spawn `modbit-execd` from the Core (not Electron) so every host path has a broker.
 
-### Phase 1: close M2 for real, then M4 (resume point)
+Exit: M2 and M4 `E2E_PROVEN` with typed evidence; nightly live job green for 5 consecutive nights.
 
-Concrete changes, smallest first:
-1. `crates/providers/src/transport.rs`: `HttpStreamTransport` implementing `ModelTransport` with incremental SSE, timeouts, cancel token, retry on 429/5xx, usage capture. Needs an HTTP client; ADR-A chooses `tokio`+`reqwest`+`rustls` (recommended) or sync `ureq`. Credentials via a `SecretBroker` trait (env-backed now, keychain in Phase 2).
-2. Tool protocol: emit `tools` from `ToolRegistry` schemas; parse `tool_use`/`tool_calls`; append `tool_result` messages; extend `StreamEvent` with `ToolCallDelta` and `Usage`.
-3. `crates/core-runtime/src/scheduler.rs`: the single scheduler. On `TaskStarted`: allocate worktree and revision (`workspace` + `git`), build context pack, run `OneAgentRuntime` on a worker, write `RunStep`/`Turn`/tool events and receipts, transition task from real outcomes. Wire into `bin/modbit-core.rs` and `daemon.rs`.
-4. Route `shell.run` through `modbit-execd`; add `change.propose`/`change.apply` (edit gate + change engine), `search.grep` (index or ripgrep), `git.status`/`git.diff`, `test.run` (link `verification`, add cargo/vitest/pytest runner adapters).
-5. Surface protocol: `SubscribeEvents`, `GetRunDetail`, `GetDiff`, `SteerTask`, `PauseTask`, `StopTask`. Regenerate bindings.
-6. Desktop: task workspace screen (conversation and steering, timeline, diff bound to revisions, test output); switch to SSE; first real tokens and components in `packages/*`.
-7. M4: persist checkpoints in the event store's runtime tables, link `protocol-state` and `checkpoint` into the scheduler, run the `docs/54` kill points against a real turn and a real tool call (unknown-outcome handling).
-8. Live proof through the daemon: rewrite `tools/live_m2_close.sh` to drive the desktop protocol; nightly CI job with a frozen low-cost task and a repository secret, log to `docs/evidence/`; automate E2E-001 to E2E-003 (E2E-004 with M4).
+### Phase 3: context that beats grep (M3)
 
-Exit: M2 and M4 `E2E_PROVEN` with typed evidence.
+1. Filesystem walker with `.gitignore` respect and incremental Merkle updates feeding `crates/retrieval`; index built on task start and refreshed on `change.apply`.
+2. `context.query` tool over BM25 + path + symbol chunks; `search.symbol` via tree-sitter (Rust, TS/JS, Python first) with definitions/references.
+3. Context pack compiled by `crates/context` with token budgets, provenance and a "recently changed files" section; retrieve-before-edit gate on `change.propose`.
+4. Benchmark at a fixed revision (`docs/53`) with a latency and recall gate in CI; embeddings decision (ADR-D, local model per `docs/72`) only if BM25 + symbols miss the gate.
 
-### Phase 2: trust and review (M9 hot path, parts of M10)
-Verification gate in the task state machine; approvals end to end (kernel decision → bound intent → Needs Attention → approve/deny UI → receipt) surviving a Core kill; keychain `SecretBroker`; move receipts to `crates/effects`, credentials to `crates/secrets`, memory to `crates/memory`; Review screen; `tracing` + OpenTelemetry + real cost from usage; `docs/52` attack suite; `cargo deny`, `cargo audit`, `pnpm audit`, license allowlist.
+Exit: M3 `E2E_PROVEN`; benchmark numbers in `docs/evidence/`.
 
-### Phase 3: terminal, browser, external tools (M7, M5, M9)
-PTY via `portable-pty` with ConPTY, `shell.attach/input/cancel`, terminal surface; CDP bridge and Chromium launch reusing the existing fingerprint and lease code, `browser.*` tools, live view, takeover; MCP stdio client in a new `crates/mcp`, `external.*` tools through policy and receipts; procedural isolate after ADR-C (QuickJS or WASM) over the single registry.
+### Phase 4: the desktop a user can run (M1 polish, M10 packaging)
 
-### Phase 4: fleet, context, memory (M3, M5, M6, M9)
-Children through the scheduler with admission tickets and isolated worktrees, `agent.*` tools, fleet surface requests and UI; filesystem walker and incremental Merkle updates feeding `retrieval`, context pack wired into the runtime, benchmark at a fixed revision with `docs/53` gates, embeddings after ADR-D; `memory.*` tools with promotion and provenance; `skill.*` tools and evolution loop.
+1. Repository picker (recent repos, clone by URL) replacing `MODBIT_REPO_ROOT`; per-task base branch selection.
+2. Settings screen: providers, models, base URLs, max turns, execution mode; presets for OpenAI, Anthropic, OpenAI-compatible (Ollama, vLLM, z.ai), Gemini and Bedrock adapters after the first two are stable.
+3. `crates/secrets`: keychain-backed `SecretBroker` (macOS Keychain, Windows Credential Manager, Secret Service) with the env broker as fallback; keys never enter the event store or logs.
+4. Packaging: electron-builder with the Rust binaries as sidecars, code signing and notarization, an update channel, SBOM (`cargo cyclonedx`, `pnpm sbom`), `cargo audit`, `cargo deny`, `pnpm audit` in CI.
+5. Headless CLI (`modbit run <repo> "<task>" --json`) over the same daemon for CI use.
+6. Quick-start doc and provider setup guide; fix README status text.
 
-### Phase 5: cloud (M8), only after local Release Zero steps 1 to 15 pass
-Guest RPC over vsock/TCP; `sandbox-gateway` binary; `cloud-worker` hosting Core against a remote store; `cloud-api` with OIDC (ADR-E); substrate adapter (Firecracker or Cloud Hypervisor; container adapter labelled non-production); conformance suite on a real guest; tenant isolation and loss/recovery tests.
+Exit: a signed build that a new user can open, point at a repo, add a key, and run a task end to end.
 
-### Phase 6: release (M10)
-Packaging, signing, notarisation, update channel, SBOM, reproducible build digest; headless CLI; Release Zero on the packaged build as the release-candidate gate with the full evidence bundle; diagnostics export flow; end-user docs.
+### Phase 5: approvals, receipts and review (M9 hot path, M2.9 depth)
 
-## 6. Enhancement advice
+1. Approval loop end to end: kernel decision → bound intent persisted → task `Waiting(Approval)` → Needs Attention card → `ApproveIntent` / `DenyIntent` RPCs → receipt → resume; survives a Core kill. Bulk approve/deny of identical intents; per-session effect budgets.
+2. Approval modes as a first-class setting (read-only / edits-only / auto with protected effects / full) mapped onto capability grants.
+3. `crates/effects`: tamper-evident receipt chain moved out of `checkpoint`, written on every protected effect; `crates/memory` and `crates/observability` populated or removed with an ADR.
+4. Review surface: hunk-level diff content over `GetDiff`, accept/reject per hunk, inline revision-bound comments, generated review checklist, merge/apply/export actions gated on verification.
+5. `tracing` + OpenTelemetry export, real cost from usage frames, SLO ladder consumer.
+6. `docs/52` attack suite (prompt injection through tool results, path escape, secret exfiltration) as always-on tests.
 
-| Enhancement | Phase | Why |
+Exit: M9 hot-path items and M2.9 `E2E_PROVEN`; E2E approval scenario proven through the desktop.
+
+### Phase 6: terminal, sandbox, external tools (M5, M7 prerequisites, M9)
+
+1. PTY via `portable-pty` (ConPTY on Windows); `shell.attach/input/cancel`; terminal panel in the task workspace streaming from `modbit-execd`.
+2. OS sandbox for `shell.run`: Seatbelt profile on macOS, Landlock + seccomp on Linux, restricted token on Windows; network deny-by-default with allowlist; labelled as part of the capability grant.
+3. `crates/mcp`: stdio and streamable-HTTP MCP client, `external.list/call/cancel` tools through policy and receipts, per-workspace transport pool (types already exist in `checkpoint/mcp_memory.rs`).
+4. `skill.list/load` tools over the existing SKILL.md discovery; procedural isolate after ADR-C (QuickJS or WASM) over the single registry.
+5. Multimodal input: expose the media pipeline through `fs.read` for images and PDFs, and image attachments on task creation.
+
+Exit: M5 `E2E_PROVEN`; MCP conformance and sandbox escape tests green.
+
+### Phase 7: fleet and browser (M6, M7)
+
+1. Children through the scheduler with admission tickets and isolated worktrees; `agent.spawn/steer/park/resume/cancel/wait/result`; parent-child event linkage; fleet UI showing children under parents; conflict proof on merge.
+2. Parallel independent tasks on the same repo with the write coordinator; "run N variants" from New Task.
+3. CDP bridge and Chromium launch reusing the fingerprint and lease code; `browser.navigate/snapshot/action/network/console/capture`; live view and takeover UI; hostile-page test.
+4. Scheduled and event-triggered tasks (automations) on the daemon.
+
+Exit: M6 and M7 `E2E_PROVEN`.
+
+### Phase 8: cloud (M8), only after local Release Zero steps 1 to 15 pass
+
+Guest RPC over vsock/TCP; `sandbox-gateway`, `cloud-worker` hosting Core against a remote store; `cloud-api` with OIDC (ADR-E); substrate adapter (Firecracker or Cloud Hypervisor); GitHub-linked background tasks that open PRs; conformance suite on a real guest; tenant isolation and loss/recovery tests.
+
+### Phase 9: release (M10)
+
+Release Zero on the packaged build as the release-candidate gate with the full evidence bundle; diagnostics export and report-a-problem flow; end-user docs.
+
+## 5. Enhancement backlog (not phase-blocking)
+
+| Enhancement | Earliest phase | Why |
 |---|---|---|
-| Local model provider (Ollama/vLLM through the OpenAI-compatible adapter) | 1 | free live proof in CI, offline mode; adapter already takes a base URL |
-| Cost/latency-aware routing with fallback | 2 | `routing.rs` exists; makes the nightly live job robust |
-| Prompt-cache-aware context reuse | 2 | `cache_economy.rs` exists; needs real usage data |
-| Generated review checklist and inline revision-bound comments | 2 | makes Review the differentiator |
-| Telemetry opt-in and privacy settings | 2 | required before any export leaves the machine |
-| Tree-sitter symbol index for `search.symbol` | 4 | highest retrieval gain per effort, no embeddings needed |
-| Bulk approve/deny of identical intents, per-session budgets, SLO alerts | 4 | SLO ladder has no consumer today |
-| Skill marketplace trust UI | 4 | data already modelled |
-| Report-a-problem using the redacted diagnostics export | 6 | export exists |
-| User quick start and provider setup guide | 1 | nothing user-facing exists |
+| Ollama / vLLM preset with a small local model for the nightly job | 2 | free live proof, offline mode |
+| Cost/latency-aware routing with fallback (`routing.rs` exists) | 2 | robustness of live runs |
+| Prompt-cache-aware context reuse (`cache_economy.rs` exists) | 3 | cost |
+| Plan mode: model drafts a plan the user approves before edits | 5 | Cursor 2.0 / Codex parity |
+| Voice input on New Task | 7 | parity, low cost |
+| Skill marketplace trust UI | 6 | data already modelled |
+| Team policies and shared model settings | 8 | enterprise persona |
 
 Keep deferred (per `docs/72`): pricing, marketplace economics, mobile, consumer automations, embedded editor, Code-OSS adapter.
 
-## 7. Working rules for the next sessions
+## 6. Working rules
 
-- A node closes only through production routing with typed evidence, and only if its module is in the binary's dependency closure.
+- Phase 2 items 1 to 4 are the first tasks of the next session; nothing in later phases starts before the loop sends correct roles.
 - No logic in `crates/checkpoint` that is not checkpointing; no new crate without an owner in `docs/81`.
-- Each phase ends with `check_dossier.py`, the nightly live job, the relevant E2E scenarios, and regenerated README/`docs/98`.
-- First task next session: section 4 items 1 to 5 and 7, then ADR-A, then Phase 1 item 1.
+- Every phase adds at least one always-on daemon-driven E2E test, not only a live-gated one.
+- Update this file when a phase closes: move its items to section 1 with evidence references.

@@ -12,7 +12,7 @@ Skills are listed in the order they normally run inside the mandatory execution 
 **Inputs:** `graph/project-graph.json`.  
 **Steps:**
 1. `python3 tools/graph.py ready` — list work items whose dependencies are `COMPLETE` and whose milestone is unblocked.
-2. Choose one item. Prefer the critical path `M0 → M1 → M2 → M4` while it is not proven.
+2. Choose one item. Take the lowest open phase and item in `Future-tasks.md` section 4, in the order written; a later phase is not eligible until the earlier phase's exit condition is recorded in section 1. Prefer the critical path `M0 → M1 → M2 → M4` while it is not proven.
 3. `python3 tools/graph.py show <id>` — print the node with its requirements, tests, subsystem, docs and dependencies.
 4. `python3 tools/graph.py set <id> AUDITING` and create a task card from `docs/86_TASK_CARD_TEMPLATE.md`.
 **Outputs:** task card with identity block filled; graph node in `AUDITING`.  
@@ -136,9 +136,22 @@ Update the milestone row in `docs/98_BUILD_MANIFEST.md` only from the roll-up. N
 **Steps:** run every mandatory E2E in `docs/51_E2E_ACCEPTANCE_TEST_CATALOG.md` on signed candidate binaries; run `docs/91_FEATURE_COMPLETION_AUDIT.md` per production requirement; verify no item in `docs/73_RELEASE_BLOCKERS_AND_STOP_THE_LINE_RULES.md` is present; verify `python3 tools/check_dossier.py` passes; archive the evidence bundle. Release Zero (`docs/60_RELEASE_ZERO_EXPANDED_PROOF.md`) must pass before any "end-to-end works" claim.  
 **Governed by:** `docs/70_CI_CD_RELEASE_AND_SUPPLY_CHAIN.md`, `docs/83_DEFINITION_OF_DONE_AND_ACCEPTANCE.md`, `docs/74_PACKAGE_INTEGRITY_AND_BUILD_COVERAGE.md`.
 
+## `phase-closure`
+
+**Trigger:** the last item of a phase in `Future-tasks.md` section 4 reaches its required state, or a phase's exit condition is proven.  
+**Inputs:** `Future-tasks.md`, `graph/project-graph.json`, `docs/evidence/`.  
+**Steps:**
+1. Verify every item of the phase against the graph (`python3 tools/graph.py show <id>`): states match the exit condition and each carries typed evidence. A `BLOCKED` item keeps the phase open.
+2. Re-run the closure fact checks from section 1 of `Future-tasks.md` (`cargo tree -p modbit-core-runtime`, empty-crate and stub-binary counts, `cargo test --workspace`, `pnpm -r test`, screen and RPC counts) and update the facts table with the new values.
+3. Move the phase's items from section 4 to section 1 as a table row per item with commit, file and evidence references; record the exit condition's proof (log, scenario, run IDs).
+4. Refresh section 2 (open defects) and section 3 (parity) where the phase changed them.
+5. Run `dossier-maintenance`; commit `Future-tasks.md` with the regenerated manifest in the same commit as the last item of the phase.
+**Outputs:** `Future-tasks.md` with the phase in section 1 and the next phase first in section 4.  
+**Governed by:** `AGENTS.md` (mandatory execution loop, phase order), `docs/82_NO_PLACEHOLDER_PRODUCTION_EVIDENCE_GATE.md`, `docs/87_HANDOFF_AND_MANIFEST_PROTOCOL.md`.
+
 ## `dossier-maintenance`
 
-**Trigger:** any edit under `docs/`, `graph/` or the root governing files.  
+**Trigger:** any edit under `docs/`, `graph/` or the root governing files (`AGENTS.md`, `SKILLS.md`, `Future-tasks.md`).  
 **Steps:**
 ```bash
 python3 tools/build_manifest.py   # regenerates MANIFEST.md + manifest.json

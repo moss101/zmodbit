@@ -31,6 +31,9 @@ pub enum TerminalError {
     /// A bounded wait elapsed before the run left the Running state; the
     /// caller stopped it (no orphan processes).
     Timeout(String),
+    /// The run was cancelled through its cancellation flag; the broker
+    /// run was stopped (killed) before returning (Phase 2.3).
+    Cancelled(String),
     EmptyArgv,
     AlreadyExists(String),
     Io(std::io::Error),
@@ -42,6 +45,7 @@ impl fmt::Display for TerminalError {
         match self {
             TerminalError::UnknownRun(id) => write!(f, "unknown run {id}"),
             TerminalError::Timeout(id) => write!(f, "timed out waiting for run {id} (stopped)"),
+            TerminalError::Cancelled(id) => write!(f, "run {id} cancelled (stopped)"),
             TerminalError::EmptyArgv => write!(f, "empty argv"),
             TerminalError::AlreadyExists(p) => write!(f, "already exists: {p}"),
             TerminalError::Io(e) => write!(f, "io: {e}"),

@@ -26,19 +26,42 @@ fn main() {
             std::process::exit(1);
         }
     };
+
+    // Phase 2.6 (Future-tasks §2.4): every host path gets a process
+    // broker — when no execd address is provided, the CORE spawns a
+    // modbit-execd child next to its own binary (the desktop never has
+    // to export MODBIT_EXECD_ADDR by hand). The child is a daemon
+    // lifetime companion; shell.run fails closed if it cannot start.
+    if std::env::var("MODBIT_EXECD_ADDR").map(|v| v.is_empty()).unwrap_or(true) {
+        match spawn_embedded_execd() {
+            Ok(addr) => {
+                eprintln!("modbit-core: spawned modbit-execd on {addr}");
+                std::env::set_var("MODBIT_EXECD_ADDR", addr);
+            }
+            Err(e) => {
+                eprintln!(
+                    "modbit-core: embedded modbit-execd unavailable ({e}); shell.run will fail closed"
+                );
+            }
+        }
+    }
+
     let mut services = CoreServices::new(store.clone());
     if let Some(source) = modbit_core_runtime::scheduler::EnvWorktreeSource::from_env() {
         services = services.with_task_worktrees(std::sync::Arc::new(source));
     }
-    let services = Arc::new(services);
 
     // The single scheduler (docs/14): tails the store for task_started and
     // owns every run. Started in every host mode so runs begin whichever
     // surface executed the command (socket or HTTP daemon).
-    let _scheduler = modbit_core_runtime::scheduler::Scheduler::spawn(
+    let scheduler = modbit_core_runtime::scheduler::Scheduler::spawn(
         store.clone(),
         modbit_core_runtime::scheduler::SchedulerConfig::from_env(),
     );
+    // Phase 2.3: the surface signals in-flight runs (Stop/Pause/Steer)
+    // through the scheduler's live control registry.
+    services = services.with_run_controls(scheduler.controls());
+    let services = Arc::new(services);
 
     // Optional multi-client HTTP+SSE daemon (headless mode):
     // MODBIT_HTTP_ADDR=127.0.0.1:0 binds it alongside the socket transport.
@@ -105,4 +128,41 @@ fn main() {
         secret,
         Arc::new(move |request| services.handle(request)),
     );
+}
+
+/// Spawns a `modbit-execd` child next to the running core binary and
+/// returns its boot address (Phase 2.6). The child's stdout boot line is
+/// `{"addr": "..."}`; its lifetime is the core's (the scheduler's runs
+/// die with the process; resume is the M4 spine's job).
+fn spawn_embedded_execd() -> Result<String, String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    // Windows binaries carry the .exe suffix; both live beside the core.
+    let execd_name = if cfg!(windows) { "modbit-execd.exe" } else { "modbit-execd" };
+    let execd_path = exe
+        .parent()
+        .ok_or("no parent dir for core binary")?
+        .join(execd_name);
+    if !execd_path.is_file() {
+        return Err(format!("no modbit-execd beside the core ({})", execd_path.display()));
+    }
+    let mut child = std::process::Command::new(&execd_path)
+        .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .map_err(|e| format!("spawn {}: {e}", execd_path.display()))?;
+    let stdout = child.stdout.take().ok_or("execd stdout not piped")?;
+    let mut line = String::new();
+    use std::io::BufRead;
+    std::io::BufReader::new(stdout)
+        .read_line(&mut line)
+        .map_err(|e| format!("read execd boot line: {e}"))?;
+    let addr = serde_json::from_str::<serde_json::Value>(&line)
+        .ok()
+        .and_then(|v| v.get("addr").and_then(|a| a.as_str()).map(String::from))
+        .ok_or_else(|| format!("malformed execd boot line: {line:?}"))?;
+    // Daemon companion: leak the handle (the child outlives this frame by
+    // design; it dies with the session or is reused across resume boots).
+    std::mem::forget(child);
+    Ok(addr)
 }

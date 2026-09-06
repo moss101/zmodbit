@@ -1,7 +1,7 @@
 # Modbit Project Graph
 
 > Generated from `graph/project-graph.json` by `tools/graph.py render --write`. Do not edit by hand; edit the graph through `tools/graph.py set` or regenerate structure with `tools/build_graph.py`.  
-> Graph generated on 2026-09-05; view rendered on 2026-09-05.
+> Graph generated on 2026-09-06; view rendered on 2026-09-05.
 
 ## What the graph is
 
@@ -44,15 +44,15 @@ One JSON file that answers *what exists, what depends on what, what proves what,
 flowchart LR
   M0["M0<br/>Repository and authority<br/>6/6 done"]
   M1["M1<br/>Durable local shell and Core<br/>31/31 done"]
-  M2["M2<br/>Real local engineering loop<br/>72/73 done"]
-  M3["M3<br/>Context intelligence<br/>54/54 done"]
-  M4["M4<br/>Durable recovery spine<br/>11/11 done"]
-  M5["M5<br/>Procedural runtime and skills<br/>39/39 done"]
-  M6["M6<br/>Subagents/fleet<br/>45/45 done"]
-  M7["M7<br/>Live browser<br/>26/26 done"]
-  M8["M8<br/>Cloud isolated execution<br/>22/22 done"]
-  M9["M9<br/>Engineering memory/effects/security hardening<br/>22/22 done"]
-  M10["M10<br/>Release hardening<br/>15/15 done"]
+  M2["M2<br/>Real local engineering loop<br/>0/73 done"]
+  M3["M3<br/>Context intelligence<br/>0/54 done"]
+  M4["M4<br/>Durable recovery spine<br/>0/11 done"]
+  M5["M5<br/>Procedural runtime and skills<br/>0/39 done"]
+  M6["M6<br/>Subagents/fleet<br/>0/45 done"]
+  M7["M7<br/>Live browser<br/>0/26 done"]
+  M8["M8<br/>Cloud isolated execution<br/>0/22 done"]
+  M9["M9<br/>Engineering memory/effects/security hardening<br/>0/22 done"]
+  M10["M10<br/>Release hardening<br/>0/15 done"]
   M0 --> M1
   M1 --> M2
   M2 --> M3
@@ -74,14 +74,14 @@ flowchart LR
   style M0 fill:#dcfce7,stroke:#16a34a,color:#111827
   style M1 fill:#dcfce7,stroke:#16a34a,color:#111827
   style M2 fill:#fef3c7,stroke:#d97706,color:#111827
-  style M3 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M4 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M5 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M6 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M7 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M8 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M9 fill:#dcfce7,stroke:#16a34a,color:#111827
-  style M10 fill:#dcfce7,stroke:#16a34a,color:#111827
+  style M3 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M4 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M5 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M6 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M7 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M8 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M9 fill:#fef3c7,stroke:#d97706,color:#111827
+  style M10 fill:#fef3c7,stroke:#d97706,color:#111827
 ```
 
 Critical path (reliability spine): **M0 → M1 → M2 → M4**. Do not start broad multi-agent or cloud work before the single-agent durable local loop is E2E proven.
@@ -92,15 +92,15 @@ Critical path (reliability spine): **M0 → M1 → M2 → M4**. Do not start bro
 |---|---|---|---:|---:|---:|---:|---|---|
 | M0 Repository and authority | COMPLETE | yes | 4 | 2 | 6 | 0 | — | clean clone build + architecture lint (CI runs 3-OS matrix + architecture/decision/coverage guards; runs 33820576307, 33821105668) |
 | M1 Durable local shell and Core | COMPLETE | yes | 5 | 26 | 31 | 0 | M0 | user creates durable task, kills/restarts app/Core, same task recovers with no fake state. |
-| M2 Real local engineering loop | IN_PROGRESS | yes | 11 | 62 | 72 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
-| M3 Context intelligence | COMPLETE | no | 9 | 45 | 54 | 0 | M2 | profile A/B/C benchmark plus retrieval-before-edit visible in task evidence. |
-| M4 Durable recovery spine | COMPLETE | no | 6 | 5 | 11 | 0 | M2 | E2E-004/005/006/007/008. |
-| M5 Procedural runtime and skills | COMPLETE | no | 7 | 32 | 39 | 0 | M2 | E2E-011/012; direct and procedural mode yield equivalent receipts/policy behavior. |
-| M6 Subagents/fleet | COMPLETE | no | 7 | 38 | 45 | 0 | M2, M4 | E2E-009/010 and user can supervise multiple tasks without raw-log polling. |
-| M7 Live browser | COMPLETE | no | 8 | 18 | 26 | 0 | M2 | E2E-013..016. |
-| M8 Cloud isolated execution | COMPLETE | yes | 9 | 13 | 22 | 0 | M4, M7 | E2E-017/018/024. |
-| M9 Engineering memory/effects/security hardening | COMPLETE | yes | 6 | 16 | 22 | 0 | M4, M5 | memory cannot be created from transcript without promotion; receipt chain verifies; threat tests pass. |
-| M10 Release hardening | COMPLETE | yes | 7 | 8 | 15 | 0 | M3, M5, M6, M7, M8, M9 | full Release Zero proof + package evidence |
+| M2 Real local engineering loop | IN_PROGRESS | yes | 11 | 62 | 0 | 0 | M1 | E2E-001/002/003 with live model and actual test pass. |
+| M3 Context intelligence | IN_PROGRESS | no | 9 | 45 | 0 | 0 | M2 | profile A/B/C benchmark plus retrieval-before-edit visible in task evidence. |
+| M4 Durable recovery spine | IN_PROGRESS | no | 6 | 5 | 0 | 0 | M2 | E2E-004/005/006/007/008. |
+| M5 Procedural runtime and skills | IN_PROGRESS | no | 7 | 32 | 0 | 0 | M2 | E2E-011/012; direct and procedural mode yield equivalent receipts/policy behavior. |
+| M6 Subagents/fleet | IN_PROGRESS | no | 7 | 38 | 0 | 0 | M2, M4 | E2E-009/010 and user can supervise multiple tasks without raw-log polling. |
+| M7 Live browser | IN_PROGRESS | no | 8 | 18 | 0 | 0 | M2 | E2E-013..016. |
+| M8 Cloud isolated execution | IN_PROGRESS | no | 9 | 13 | 0 | 0 | M4, M7 | E2E-017/018/024. |
+| M9 Engineering memory/effects/security hardening | IN_PROGRESS | no | 6 | 16 | 0 | 0 | M4, M5 | memory cannot be created from transcript without promotion; receipt chain verifies; threat tests pass. |
+| M10 Release hardening | IN_PROGRESS | no | 7 | 8 | 0 | 0 | M3, M5, M6, M7, M8, M9 | full Release Zero proof + package evidence |
 
 ## Subsystems → milestones
 
@@ -221,116 +221,116 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M2.1` | COMPLETE | Workspace File Service with safe paths/revisions |  |
-| `M2.2` | COMPLETE | Git branch/worktree/diff operations |  |
-| `M2.3` | COMPLETE | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
-| `M2.4` | COMPLETE | Tool Registry + direct `fs/git/shell/test` tools |  |
-| `M2.5` | COMPLETE | Capability Kernel + basic approval flow |  |
-| `M2.6` | COMPLETE | Provider Gateway OpenAI + Anthropic streaming |  |
-| `M2.7` | COMPLETE | Basic Prompt Compiler and one-agent runtime |  |
-| `M2.8` | COMPLETE | Verification engine build/test checks |  |
-| `M2.9` | COMPLETE | Trusted Code Review Surface |  |
-| `M2.10` | COMPLETE | MediaEnvelope + Media Pipeline (before any multimodal provider/tool feature) | real PNG/JPEG/text-PDF read through fs.read with provenance, budgets and artifact digests |
-| `M2.11` | NOT_STARTED | Daemon-driven live E2E proof (E2E-001/002/003) with a live provider | E2E-001..003 pass against the real modbit-core daemon over the surface protocol with a live model; typed evidence (log/scenario/receipt) committed under docs/evidence/ and a nightly CI job |
+| `M2.1` | E2E_PROVEN | Workspace File Service with safe paths/revisions |  |
+| `M2.2` | E2E_PROVEN | Git branch/worktree/diff operations |  |
+| `M2.3` | E2E_PROVEN | `modbit-execd` structured argv/PTy/replay/OutputRef |  |
+| `M2.4` | E2E_PROVEN | Tool Registry + direct `fs/git/shell/test` tools |  |
+| `M2.5` | E2E_PROVEN | Capability Kernel + basic approval flow |  |
+| `M2.6` | E2E_PROVEN | Provider Gateway OpenAI + Anthropic streaming |  |
+| `M2.7` | E2E_PROVEN | Basic Prompt Compiler and one-agent runtime |  |
+| `M2.8` | E2E_PROVEN | Verification engine build/test checks |  |
+| `M2.9` | E2E_PROVEN | Trusted Code Review Surface |  |
+| `M2.10` | WIRED | MediaEnvelope + Media Pipeline (before any multimodal provider/tool feature) | real PNG/JPEG/text-PDF read through fs.read with provenance, budgets and artifact digests |
+| `M2.11` | E2E_PROVEN | Daemon-driven live E2E proof (E2E-001/002/003) with a live provider | E2E-001..003 pass against the real modbit-core daemon over the surface protocol with a live model; typed evidence (log/scenario/receipt) committed under docs/evidence/ and a nightly CI job |
 
 ### M3 — Context intelligence
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M3.1` | COMPLETE | exact/regex/path index |  |
-| `M3.2` | COMPLETE | Tantivy BM25 |  |
-| `M3.3` | COMPLETE | tree-sitter AST/symbol index |  |
-| `M3.4` | COMPLETE | headless LSP diagnostics/symbol bridge |  |
-| `M3.5` | COMPLETE | USearch embeddings + changed-chunk incremental update |  |
-| `M3.6` | COMPLETE | dependency/Git/test/runtime evidence graph |  |
-| `M3.7` | COMPLETE | L0-L3 retrieval planner + fusion |  |
-| `M3.8` | COMPLETE | Context Pack/token budget/provenance ledger |  |
-| `M3.9` | COMPLETE | retrieval benchmark harness |  |
+| `M3.1` | IMPLEMENTING | exact/regex/path index |  |
+| `M3.2` | IMPLEMENTING | Tantivy BM25 |  |
+| `M3.3` | IMPLEMENTING | tree-sitter AST/symbol index |  |
+| `M3.4` | IMPLEMENTING | headless LSP diagnostics/symbol bridge |  |
+| `M3.5` | IMPLEMENTING | USearch embeddings + changed-chunk incremental update |  |
+| `M3.6` | IMPLEMENTING | dependency/Git/test/runtime evidence graph |  |
+| `M3.7` | IMPLEMENTING | L0-L3 retrieval planner + fusion |  |
+| `M3.8` | IMPLEMENTING | Context Pack/token budget/provenance ledger |  |
+| `M3.9` | IMPLEMENTING | retrieval benchmark harness |  |
 
 ### M4 — Durable recovery spine
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M4.1` | COMPLETE | Protocol State store |  |
-| `M4.2` | COMPLETE | Compaction epochs + async worker + stale rejection + sync fallback |  |
-| `M4.3` | COMPLETE | Workspace checkpoint baseline/delta objects + epoch fencing |  |
-| `M4.4` | COMPLETE | kernel lease/session fencing |  |
-| `M4.5` | COMPLETE | terminal/browser/sandbox cursor metadata interfaces |  |
-| `M4.6` | COMPLETE | kill-point recovery suite |  |
+| `M4.1` | WIRED | Protocol State store |  |
+| `M4.2` | IMPLEMENTING | Compaction epochs + async worker + stale rejection + sync fallback |  |
+| `M4.3` | IMPLEMENTING | Workspace checkpoint baseline/delta objects + epoch fencing |  |
+| `M4.4` | IMPLEMENTING | kernel lease/session fencing |  |
+| `M4.5` | IMPLEMENTING | terminal/browser/sandbox cursor metadata interfaces |  |
+| `M4.6` | IMPLEMENTING | kill-point recovery suite |  |
 
 ### M5 — Procedural runtime and skills
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M5.1` | COMPLETE | Dynamic task-scoped tool projection |  |
-| `M5.2` | COMPLETE | embedded QuickJS isolate with no ambient authority |  |
-| `M5.3` | COMPLETE | generated `tools.*` bindings routed through normal Tool Registry |  |
-| `M5.4` | COMPLETE | exec/wait/request_user_input surface |  |
-| `M5.5` | COMPLETE | skill manifest/selector/compiler, provenance and signing |  |
-| `M5.6` | COMPLETE | tool-schema/token-economics benchmark |  |
-| `M5.7` | COMPLETE | Skill Evolution Lab as shadow/EXPERIMENT behind Skill Registry + Eval Harness | WSK-E2E-001..010; candidate cannot self-promote; production recovery independent of lab data |
+| `M5.1` | IMPLEMENTING | Dynamic task-scoped tool projection |  |
+| `M5.2` | IMPLEMENTING | embedded QuickJS isolate with no ambient authority |  |
+| `M5.3` | IMPLEMENTING | generated `tools.*` bindings routed through normal Tool Registry |  |
+| `M5.4` | IMPLEMENTING | exec/wait/request_user_input surface |  |
+| `M5.5` | IMPLEMENTING | skill manifest/selector/compiler, provenance and signing |  |
+| `M5.6` | IMPLEMENTING | tool-schema/token-economics benchmark |  |
+| `M5.7` | IMPLEMENTING | Skill Evolution Lab as shadow/EXPERIMENT behind Skill Registry + Eval Harness | WSK-E2E-001..010; candidate cannot self-promote; production recovery independent of lab data |
 
 ### M6 — Subagents/fleet
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M6.1` | COMPLETE | WorkGraph/AgentGraph projections |  |
-| `M6.2` | COMPLETE | capacity ticket allocator |  |
-| `M6.3` | COMPLETE | transactional subagent admission |  |
-| `M6.4` | COMPLETE | semantic write-conflict detector |  |
-| `M6.5` | COMPLETE | subagent result/evidence handoff |  |
-| `M6.6` | COMPLETE | attention-first Fleet states/UI |  |
-| `M6.7` | COMPLETE | Durable subagent continuation (background child survives restart) | kill Core mid-child run; child identity, lineage, event offsets and result envelope survive |
+| `M6.1` | IMPLEMENTING | WorkGraph/AgentGraph projections |  |
+| `M6.2` | IMPLEMENTING | capacity ticket allocator |  |
+| `M6.3` | IMPLEMENTING | transactional subagent admission |  |
+| `M6.4` | IMPLEMENTING | semantic write-conflict detector |  |
+| `M6.5` | IMPLEMENTING | subagent result/evidence handoff |  |
+| `M6.6` | IMPLEMENTING | attention-first Fleet states/UI |  |
+| `M6.7` | IMPLEMENTING | Durable subagent continuation (background child survives restart) | kill Core mid-child run; child identity, lineage, event offsets and result envelope survive |
 
 ### M7 — Live browser
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M7.1` | COMPLETE | local sandboxed WebContents session + CDP bridge |  |
-| `M7.2` | COMPLETE | AX/DOM/layout semantic entities and stable IDs |  |
-| `M7.3` | COMPLETE | state fingerprints + delta stream |  |
-| `M7.4` | COMPLETE | semantic actions and postconditions |  |
-| `M7.5` | COMPLETE | targeted screenshot/vision fallback |  |
-| `M7.6` | COMPLETE | control lease/takeover |  |
-| `M7.7` | COMPLETE | prompt-injection provenance isolation |  |
-| `M7.8` | COMPLETE | credential handle fill path |  |
+| `M7.1` | IMPLEMENTING | local sandboxed WebContents session + CDP bridge |  |
+| `M7.2` | IMPLEMENTING | AX/DOM/layout semantic entities and stable IDs |  |
+| `M7.3` | IMPLEMENTING | state fingerprints + delta stream |  |
+| `M7.4` | IMPLEMENTING | semantic actions and postconditions |  |
+| `M7.5` | IMPLEMENTING | targeted screenshot/vision fallback |  |
+| `M7.6` | IMPLEMENTING | control lease/takeover |  |
+| `M7.7` | IMPLEMENTING | prompt-injection provenance isolation |  |
+| `M7.8` | IMPLEMENTING | credential handle fill path |  |
 
 ### M8 — Cloud isolated execution
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M8.1` | COMPLETE | Cloud API/Postgres/object store |  |
-| `M8.2` | COMPLETE | cloud session kernel lease + worker |  |
-| `M8.3` | COMPLETE | Sandbox Gateway + sandbox substrate adapter |  |
-| `M8.4` | COMPLETE | signed/versioned `modbit-guest` |  |
-| `M8.5` | COMPLETE | typed guest process/fs/PTy RPC |  |
-| `M8.6` | COMPLETE | credential broker + egress policy |  |
-| `M8.7` | COMPLETE | local→cloud checkpoint handoff |  |
-| `M8.8` | COMPLETE | cloud browser remote stream/CDP |  |
-| `M8.9` | COMPLETE | sandbox-loss recovery |  |
+| `M8.1` | NOT_STARTED | Cloud API/Postgres/object store |  |
+| `M8.2` | NOT_STARTED | cloud session kernel lease + worker |  |
+| `M8.3` | NOT_STARTED | Sandbox Gateway + sandbox substrate adapter |  |
+| `M8.4` | NOT_STARTED | signed/versioned `modbit-guest` |  |
+| `M8.5` | IMPLEMENTING | typed guest process/fs/PTy RPC |  |
+| `M8.6` | IMPLEMENTING | credential broker + egress policy |  |
+| `M8.7` | IMPLEMENTING | local→cloud checkpoint handoff |  |
+| `M8.8` | NOT_STARTED | cloud browser remote stream/CDP |  |
+| `M8.9` | NOT_STARTED | sandbox-loss recovery |  |
 
 ### M9 — Engineering memory/effects/security hardening
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M9.1` | COMPLETE | Engineering Memory schemas/scopes/promotion |  |
-| `M9.2` | COMPLETE | protected-effect receipt hash chain |  |
-| `M9.3` | COMPLETE | full protected-path/secret redaction/broker hardening |  |
-| `M9.4` | COMPLETE | external MCP gateway |  |
-| `M9.5` | COMPLETE | emergency stop |  |
-| `M9.6` | COMPLETE | security fuzz/property/attack suites |  |
+| `M9.1` | IMPLEMENTING | Engineering Memory schemas/scopes/promotion |  |
+| `M9.2` | IMPLEMENTING | protected-effect receipt hash chain |  |
+| `M9.3` | IMPLEMENTING | full protected-path/secret redaction/broker hardening |  |
+| `M9.4` | IMPLEMENTING | external MCP gateway |  |
+| `M9.5` | IMPLEMENTING | emergency stop |  |
+| `M9.6` | IMPLEMENTING | security fuzz/property/attack suites |  |
 
 ### M10 — Release hardening
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M10.1` | COMPLETE | telemetry/cost/SLO dashboards |  |
-| `M10.2` | COMPLETE | updater/signing/SBOM |  |
-| `M10.3` | COMPLETE | full RC E2E catalog |  |
-| `M10.4` | COMPLETE | performance regression gates |  |
-| `M10.5` | COMPLETE | docs/runbooks/support diagnostics |  |
-| `M10.6` | COMPLETE | Release Zero scenario |  |
-| `M10.7` | COMPLETE | Canonical tool and capability conformance harness | every production tool family passes its real-substrate conformance suite; no canned success |
+| `M10.1` | IMPLEMENTING | telemetry/cost/SLO dashboards |  |
+| `M10.2` | IMPLEMENTING | updater/signing/SBOM |  |
+| `M10.3` | IMPLEMENTING | full RC E2E catalog |  |
+| `M10.4` | IMPLEMENTING | performance regression gates |  |
+| `M10.5` | IMPLEMENTING | docs/runbooks/support diagnostics |  |
+| `M10.6` | IMPLEMENTING | Release Zero scenario |  |
+| `M10.7` | IMPLEMENTING | Canonical tool and capability conformance harness | every production tool family passes its real-substrate conformance suite; no canned success |
 
 ## Proof scenarios by milestone
 

@@ -78,6 +78,9 @@ impl From<std::io::Error> for StoreError {
 
 pub struct EventStore {
     conn: Mutex<Connection>,
+    /// Runtime tables (output refs, tool-call pairs) on the SAME db file
+    /// (docs/31 § Core tables; Phase 2.6 wires them into production).
+    runtime: crate::runtime::RuntimeStore,
 }
 
 impl EventStore {
@@ -99,9 +102,22 @@ impl EventStore {
         conn.pragma_update(None, "foreign_keys", "ON")?;
         conn.pragma_update(None, "synchronous", "FULL")?;
         migrate(&conn)?;
+        let runtime = crate::runtime::RuntimeStore::open(path).map_err(|e| {
+            // Same db file: surface runtime-table failures as store io errors.
+            StoreError::Io(match e {
+                crate::runtime::RuntimeError::Io(io) => io,
+                other => std::io::Error::other(other.to_string()),
+            })
+        })?;
         Ok(Self {
             conn: Mutex::new(conn),
+            runtime,
         })
+    }
+
+    /// Runtime record store (output refs, tool pairs) sharing this db.
+    pub fn runtime(&self) -> &crate::runtime::RuntimeStore {
+        &self.runtime
     }
 
     fn next_sequence(conn: &Connection, aggregate_id: &str) -> Result<u64, StoreError> {

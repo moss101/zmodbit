@@ -130,6 +130,44 @@ pub enum DomainEvent {
     RunStepFailed {
         failure_code: String,
     },
+    /// Context compaction applied to the model-visible conversation
+    /// (docs/19 § compaction): the canonical event history is untouched —
+    /// only the projection the model sees changed. Emitted by the
+    /// one-agent loop when the conversation exceeds the input-token
+    /// budget (Future-tasks Phase 2 item 2).
+    CompactionApplied {
+        turn_id: TurnId,
+        epoch_id: String,
+        /// Conversation messages replaced or truncated.
+        affected_messages: u32,
+        /// Estimated input tokens removed from the projection.
+        reclaimed_tokens: u64,
+        /// sha256 digest of the CompactionManifest (modbit-compaction).
+        manifest_digest: String,
+    },
+    /// Conversation checkpoint at a turn boundary (docs/19 § Checkpoint
+    /// epochs; Future-tasks Phase 2 item 5): recovery data for resuming a
+    /// run after a Core kill — the model-visible conversation serialized
+    /// as JSON. Bounded by the emitter; the canonical history is the
+    /// event log itself.
+    ConversationCheckpointed {
+        turn_ordinal: u32,
+        /// JSON array of the gateway ChatMessage projection.
+        conversation_json: String,
+    },
+    /// One streamed chunk of a tool's output (docs/21 § durable terminal,
+    /// Future-tasks Phase 2 item 6): emitted DURING execution so the run
+    /// plane shows progress. Bounded preview; the full bytes live behind
+    /// the paginated OutputRef in the runtime store.
+    ToolOutputChunk {
+        /// The broker run that produced the bytes.
+        broker_run_id: String,
+        /// Byte offset of this chunk within the run's output stream.
+        offset: u64,
+        byte_length: u64,
+        /// Lossy UTF-8 preview (bounded; full bytes are in the OutputRef).
+        preview: String,
+    },
     /// Session fork (REQ-EV-0122): a new branch carries the selected
     /// decisions/evidence capsule and NEVER pending approvals.
     SessionForked {
@@ -264,6 +302,9 @@ impl EventEnvelope {
             DomainEvent::RunStepPrepared { .. } => "run_step_prepared",
             DomainEvent::RunStepCompleted => "run_step_completed",
             DomainEvent::RunStepFailed { .. } => "run_step_failed",
+            DomainEvent::CompactionApplied { .. } => "compaction_applied",
+            DomainEvent::ConversationCheckpointed { .. } => "conversation_checkpointed",
+            DomainEvent::ToolOutputChunk { .. } => "tool_output_chunk",
             DomainEvent::SessionForked { .. } => "session_forked",
             DomainEvent::SessionRewound { .. } => "session_rewound",
             DomainEvent::GoalSet { .. } => "goal_set",
