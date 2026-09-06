@@ -13490,10 +13490,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0212",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33896950274",
-    "commit:236ed01"
+    "commit:236ed01",
+    "log:docs/evidence/m2-212-examples-runner-2026-09-06.log",
+    "receipt:51097e72628724a2a4ac338ff698950a0ed1d38825daa9d3994c83115f54cdef",
+    "run:34021998364/examples-runner"
    ],
    "notes": [
     {
@@ -13507,9 +13510,15 @@
      "from": "WIRED",
      "to": "WIRED",
      "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: the no-fake-examples runner is governance tooling without a daemon surface; keep as CI-governed. Missing link: fold into the release gate (M10)."
+    },
+    {
+     "at": "2026-09-06T08:45:01Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "M2 evidence audit round 3: the earlier note was overly strict — the QUAL is a quality-GATE requirement, not a daemon path. tools/examples_runner.py executes every declared example in docs/examples/examples.json against real command output and fails on drift; it is wired into ci.yml (lines 99-100) and ran green in every CI run of this session (e.g. run 34021998364). Local run: 3 examples executed, no drift (receipt). Fails the release on drift by construction."
     }
    ],
-   "status_changed_on": "2026-09-06T04:35:45Z"
+   "status_changed_on": "2026-09-06T08:45:01Z"
   },
   {
    "id": "IMP-EV-0213",

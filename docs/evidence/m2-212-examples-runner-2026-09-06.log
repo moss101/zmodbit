@@ -1,0 +1,4 @@
+examples-runner: PASS graph-status-overview: ok (2 expectation(s) verified)
+examples-runner: PASS architecture-lint-clean: ok (1 expectation(s) verified)
+examples-runner: PASS coverage-guard-traceability: ok (1 expectation(s) verified)
+examples-runner: OK (3 examples executed, no drift)
