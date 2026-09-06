@@ -491,6 +491,7 @@ impl Scheduler {
             observer: Some(&observer),
             control: Some(&*signal),
             resume_conversation: resume,
+            async_compaction: true,
         };
         let task = AgentTask {
             task_id: task_id.to_string(),

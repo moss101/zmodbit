@@ -2102,10 +2102,14 @@
    "milestone": "M4",
    "order": 1,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33925189162",
-    "commit:9d0a4fd"
+    "commit:9d0a4fd",
+    "log:docs/evidence/phase2-m4-2-async-compaction-2026-09-06.log",
+    "receipt:707b7ba0452a215773d9c5a7edfcd1b5a8306505ed4d39a19a4ca7a0fde4ce0e",
+    "run:2026-09-06T01:45Z/async_compaction_plan_applies_when_fresh",
+    "run:2026-09-06T01:45Z/appended_steer_note_does_not_invalidate_the_async_plan"
    ],
    "notes": [
     {
@@ -2119,9 +2123,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T00:58:10Z",
+     "from": "IMPLEMENTING",
+     "to": "IMPLEMENTING",
+     "note": "M4.2 remaining gap audit: epochs + stale rejection + sync fallback are delivered and E2E-proven (Phase 2.2 hot-path compaction on M2.7; the stale guard unit-proven in the compaction crate). MISSING: the async compaction worker (docs/19: plans precomputed off the turn thread, accepted only if the conversation revision is still current, sync fallback otherwise). Slice: revision-tracked precompute after each turn above a soft threshold; boundary applies fresh async plans, recomputes synchronously on staleness."
+    },
+    {
+     "at": "2026-09-06T01:08:54Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "M4.2 complete: epochs + stale rejection + sync fallback (Phase 2.2, M2.7 evidence) now joined by the async worker — off-thread plan precompute with a bounded 5ms arrival window and sync fallback; index-based plans survive appends (steer notes) and go stale only on structural change. Mutation (worker disabled) detected. The daemon compaction E2E stays green through the async-first production path."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-06T01:08:54Z"
   },
   {
    "id": "M4.3",

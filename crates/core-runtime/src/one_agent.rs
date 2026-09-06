@@ -162,6 +162,9 @@ pub struct AgentRunResult {
     pub paused: bool,
     /// Last usage snapshot reported by the provider stream (docs/15).
     pub usage: Option<modbit_providers::TokenUsage>,
+    /// Compactions applied from a PRECOMPUTED (async worker) plan whose
+    /// revision was still current (M4.2). Test/telemetry visibility.
+    pub async_compactions: u32,
 }
 
 #[derive(Debug)]
@@ -200,6 +203,13 @@ fn transition(state: &mut TurnState, to: TurnState) -> Result<(), AgentError> {
 /// answers the call on the conversation.
 const INVALID_TOOL_PAYLOAD: &str = "invalid tool payload: arguments must be a JSON object";
 
+/// M4.2 async worker slot: a precomputed compaction plan plus the
+/// arrival signal the boundary waits on (bounded window, docs/19).
+type PrecomputedPlanSlot = std::sync::Arc<(
+    std::sync::Mutex<Option<(u64, modbit_compaction::hot_path::CompactionPlan)>>,
+    std::sync::Condvar,
+)>;
+
 /// One agent, one durable loop (docs/14): prompt → stream → typed events →
 /// policy-checked tools → verify → complete. Bounded by `max_turns`.
 pub struct OneAgentRuntime<'a> {
@@ -214,10 +224,15 @@ pub struct OneAgentRuntime<'a> {
     /// Live stop/pause/steer control (Phase 2.3); None in unit tests.
     pub control: Option<&'a dyn RunControl>,
     /// Resume payload (Phase 2.5): a conversation checkpoint restored
-    /// from the store after a Core kill. When set, the run continues
+    /// from the store after a store kill. When set, the run continues
     /// from this conversation (plus an interruption note) instead of
     /// compiling a fresh prompt.
     pub resume_conversation: Option<Vec<ChatMessage>>,
+    /// M4.2 async compaction worker: precompute plans off the turn
+    /// thread once the conversation passes a soft threshold; the next
+    /// boundary applies the plan only if the conversation revision is
+    /// unchanged (stale plans are discarded and recomputed inline).
+    pub async_compaction: bool,
 }
 
 impl<'a> OneAgentRuntime<'a> {
@@ -269,6 +284,18 @@ impl<'a> OneAgentRuntime<'a> {
         // covers the initial projection; every compaction extends it.
         let mut epochs = modbit_compaction::EpochRegistry::new();
         let mut current_epoch = epochs.create(0, compiled.compiled.as_bytes());
+        // M4.2 async worker state: a precomputed plan is INDEX-BASED
+        // (truncate at i, summarize [s,e)), so appended messages (new
+        // turns, steer notes) do not shift it — it goes stale only when
+        // the conversation STRUCTURE changes (a compaction apply). The
+        // structure epoch tracks exactly that (docs/19 stale rejection).
+        let mut structure_epoch: u64 = 0;
+        // Worker slot + arrival signal (docs/19): the boundary gives a
+        // pending worker a bounded wait window; if the result does not
+        // arrive in time, bounded SYNCHRONOUS compaction runs instead.
+        let precomputed: PrecomputedPlanSlot = PrecomputedPlanSlot::default();
+        let worker_pending = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let mut async_compactions: u32 = 0;
 
         loop {
             if turns_used >= self.max_turns {
@@ -287,6 +314,7 @@ impl<'a> OneAgentRuntime<'a> {
                     cancelled: false,
                     paused: false,
                     usage: last_usage,
+                    async_compactions,
                 });
             }
             turns_used += 1;
@@ -319,6 +347,7 @@ impl<'a> OneAgentRuntime<'a> {
                         cancelled: true,
                         paused: false,
                         usage: last_usage,
+                        async_compactions,
                     });
                 }
                 if control.is_paused() {
@@ -337,10 +366,60 @@ impl<'a> OneAgentRuntime<'a> {
                         cancelled: false,
                         paused: true,
                         usage: last_usage,
+                        async_compactions,
                     });
                 }
             }
 
+            // M4.2 async worker: once the conversation passes a soft
+            // threshold, precompute the NEXT compaction plan off the turn
+            // thread. The plan applies at the next boundary only if the
+            // revision is still current (computed against this snapshot).
+            if self.async_compaction {
+                let estimate: u64 = conversation
+                    .iter()
+                    .map(|m| modbit_compaction::hot_path::estimate_tokens(&m.content))
+                    .sum();
+                if estimate > task.max_input_tokens / 5 {
+                    let snapshot: Vec<modbit_compaction::hot_path::ConversationItem> =
+                        conversation
+                            .iter()
+                            .map(|m| {
+                                use modbit_compaction::hot_path::ItemKind;
+                                modbit_compaction::hot_path::ConversationItem {
+                                    kind: match m.role {
+                                        modbit_providers::gateway::Role::User => {
+                                            ItemKind::UserTurn
+                                        }
+                                        modbit_providers::gateway::Role::Assistant => {
+                                            if m.tool_calls.is_empty() {
+                                                ItemKind::AssistantText
+                                            } else {
+                                                ItemKind::AssistantToolCalls
+                                            }
+                                        }
+                                        modbit_providers::gateway::Role::Tool => {
+                                            ItemKind::ToolResult
+                                        }
+                                    },
+                                    text: m.content.clone(),
+                                }
+                            })
+                            .collect();
+                    let epoch = structure_epoch;
+                    let budget = task.max_input_tokens;
+                    let slot = precomputed.clone();
+                    let pending = worker_pending.clone();
+                    pending.store(true, std::sync::atomic::Ordering::SeqCst);
+                    std::thread::spawn(move || {
+                        let plan = modbit_compaction::hot_path::plan_compaction(&snapshot, budget);
+                        let (lock, signal) = &*slot;
+                        *lock.lock().expect("precomputed slot") = plan.map(|p| (epoch, p));
+                        pending.store(false, std::sync::atomic::Ordering::SeqCst);
+                        signal.notify_all();
+                    });
+                }
+            }
             // Token budget (Phase 2.2, docs/19 § compaction): when the
             // conversation estimate exceeds the input budget, compact the
             // MODEL-VISIBLE projection BEFORE the invoke — oldest tool
@@ -367,7 +446,32 @@ impl<'a> OneAgentRuntime<'a> {
                         text: m.content.clone(),
                     })
                     .collect();
-                if let Some(plan) = plan_compaction(&view, task.max_input_tokens) {
+                // M4.2 async worker: a plan precomputed after the previous
+                // turn applies ONLY if the conversation revision is still
+                // current; anything else (steer note, new turns) is stale
+                // and discarded (docs/19 stale rejection) — recompute.
+                let mut from_async_worker = false;
+                let candidate: Option<modbit_compaction::hot_path::CompactionPlan> = {
+                    let (lock, signal) = &*precomputed;
+                    let mut slot = lock.lock().expect("precomputed slot");
+                    if slot.is_none()
+                        && worker_pending.load(std::sync::atomic::Ordering::SeqCst)
+                    {
+                        let (guard, _timeout) = signal
+                            .wait_timeout(slot, std::time::Duration::from_millis(5))
+                            .expect("precomputed slot");
+                        slot = guard;
+                    }
+                    match slot.take() {
+                        Some((epoch, plan)) if epoch == structure_epoch => {
+                            from_async_worker = true;
+                            Some(plan)
+                        }
+                        // Stale or none: recompute synchronously now.
+                        _ => plan_compaction(&view, task.max_input_tokens),
+                    }
+                };
+                if let Some(plan) = candidate {
                     let before: u64 = view.iter().map(|i| modbit_compaction::hot_path::estimate_tokens(&i.text)).sum();
                     // Apply actions in reverse order so earlier indices
                     // stay valid while ranges are replaced.
@@ -401,6 +505,10 @@ impl<'a> OneAgentRuntime<'a> {
                         current_epoch = epoch;
                     }
                     let reclaimed = before.saturating_sub(plan.projected_tokens);
+                    if from_async_worker {
+                        async_compactions += 1;
+                    }
+                    structure_epoch += 1; // a compaction changes the structure
                     if let Some(o) = self.observer {
                         o.compaction_applied(
                             &turn_id,
@@ -542,6 +650,7 @@ impl<'a> OneAgentRuntime<'a> {
                     cancelled: false,
                     paused: false,
                     usage: last_usage,
+                    async_compactions,
                 });
             }
 
@@ -666,6 +775,7 @@ mod tests {
     use modbit_policy::{CapabilityGrant, EffectClass};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::time::Duration;
 
     struct StubTransport {
         /// Scripted responses, consumed per call.
@@ -714,6 +824,7 @@ mod tests {
             observer: None,
             control: None,
             resume_conversation: None,
+            async_compaction: false,
         }
     }
 
@@ -1118,6 +1229,7 @@ mod tests {
             observer: None,
             control: None,
             resume_conversation: None,
+            async_compaction: false,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1201,6 +1313,7 @@ mod tests {
             observer: Some(&observer),
             control: None,
             resume_conversation: None,
+            async_compaction: false,
         };
         let result = rt.run(&small_budget).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -1258,6 +1371,7 @@ mod tests {
             observer: None,
             control: None,
             resume_conversation: None,
+            async_compaction: false,
         };
         rt.run(&task()).unwrap();
         let seen = transport.seen.lock().unwrap();
@@ -1361,6 +1475,7 @@ mod tests {
             observer: None,
             control: Some(&control),
             resume_conversation: None,
+            async_compaction: false,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1408,6 +1523,7 @@ mod tests {
             observer: None,
             control: Some(&control),
             resume_conversation: None,
+            async_compaction: false,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1450,6 +1566,7 @@ mod tests {
             observer: None,
             control: None,
             resume_conversation: Some(checkpoint),
+            async_compaction: false,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1464,6 +1581,186 @@ mod tests {
         let note = &messages[3];
         assert_eq!(note.role, Role::User);
         assert!(note.content.contains("previous run attempt was interrupted"));
+    }
+
+    /// M4.2: a plan precomputed off the turn thread applies at the next
+    /// boundary when the conversation revision is still current.
+    #[test]
+    fn async_compaction_plan_applies_when_fresh() {
+        use modbit_providers::gateway::Role;
+        let big = "y".repeat(8_000);
+        // Three turns: the plan precomputed at boundary 2 (while turn 2's
+        // tool runs) is consumed at boundary 3.
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-1".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"big"}"#.into(),
+            }],
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-2".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"big2"}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("done".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(move |_args| {
+                    // Give the async worker the turn's window.
+                    std::thread::sleep(Duration::from_millis(25));
+                    Ok(serde_json::json!({ "content": big }))
+                }),
+            )
+            .unwrap();
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let mut budget = task();
+        budget.max_input_tokens = 700;
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 4,
+            observer: None,
+            control: None,
+            resume_conversation: None,
+            async_compaction: true,
+        };
+
+        let result = rt.run(&budget).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        assert!(
+            result.async_compactions >= 1,
+            "the precomputed plan applied (async_compactions: {})",
+            result.async_compactions
+        );
+        // The turn-3 request carries truncated tool results.
+        let seen = transport.seen.lock().unwrap();
+        let tools: Vec<_> = seen[2]
+            .messages
+            .iter()
+            .filter(|m| m.role == Role::Tool)
+            .collect();
+        assert!(!tools.is_empty());
+        assert!(tools
+            .iter()
+            .any(|m| m.content.contains("[compacted:")));
+    }
+
+    /// M4.2 freshness semantics: plans are index-based, so APPENDED
+    /// messages (a steer note riding between the precompute and the
+    /// boundary) do not invalidate the precomputed plan — it still
+    /// applies from the worker. (Staleness by structural change is the
+    /// compaction crate's epoch/apply guard, unit-proven there.)
+    #[test]
+    fn appended_steer_note_does_not_invalidate_the_async_plan() {
+        use modbit_providers::gateway::Role;
+        use std::sync::atomic::AtomicBool;
+        let big = "z".repeat(8_000);
+        let steered = Arc::new(AtomicBool::new(false));
+        let flag = steered.clone();
+        let transport = StubTransport::new(vec![
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-1".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"big"}"#.into(),
+            }],
+            vec![StreamEvent::ToolRequest {
+                call_id: "call-2".into(),
+                name: "modbit.file.read".into(),
+                arguments: r#"{"path":"big2"}"#.into(),
+            }],
+            vec![
+                StreamEvent::Delta("done".into()),
+                StreamEvent::Completed {
+                    stop_reason: Some("stop".into()),
+                },
+            ],
+        ]);
+        let registry = ToolRegistry::new();
+        registry
+            .register(
+                "modbit.file.read",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                Arc::new(move |_args| {
+                    std::thread::sleep(Duration::from_millis(25));
+                    // Steer lands during the tools (appended at the next
+                    // boundary): an append must NOT invalidate the plan.
+                    flag.store(true, Ordering::SeqCst);
+                    Ok(serde_json::json!({ "content": big }))
+                }),
+            )
+            .unwrap();
+        struct SteerOnce(AtomicBool);
+        impl RunControl for SteerOnce {
+            fn take_steer_notes(&self) -> Vec<String> {
+                if self.0.swap(false, Ordering::SeqCst) {
+                    vec!["revised priorities".into()]
+                } else {
+                    Vec::new()
+                }
+            }
+        }
+        let control = SteerOnce(AtomicBool::new(true));
+        let kernel = PolicyKernel::new(vec![]);
+        let grants = vec![CapabilityGrant {
+            grant_id: "g1".into(),
+            tool: "modbit.file.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        }];
+        let mut budget = task();
+        budget.max_input_tokens = 700;
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &grants,
+            max_turns: 4,
+            observer: None,
+            control: Some(&control),
+            resume_conversation: None,
+            async_compaction: true,
+        };
+
+        let result = rt.run(&budget).unwrap();
+        assert_eq!(result.final_state, TurnState::Completed);
+        assert!(
+            result.async_compactions >= 1,
+            "the append-only change keeps the plan fresh (async_compactions: {})",
+            result.async_compactions
+        );
+        // The steer note still rode the conversation, and the plan still
+        // compacted the tool results on the turn-3 request.
+        let seen = transport.seen.lock().unwrap();
+        let tools: Vec<_> = seen[2]
+            .messages
+            .iter()
+            .filter(|m| m.role == Role::Tool)
+            .collect();
+        assert!(tools
+            .iter()
+            .any(|m| m.content.contains("[compacted:")));
+        let steered_request_has_note = seen[2]
+            .messages
+            .iter()
+            .any(|m| m.role == Role::User && m.content.contains("revised priorities"));
+        assert!(steered_request_has_note, "the steer note rode the turn");
     }
 
     /// Phase 2.3: SteerTask notes ride as user messages before the next
@@ -1515,6 +1812,7 @@ mod tests {
             observer: None,
             control: Some(&*control),
             resume_conversation: None,
+            async_compaction: false,
         };
 
         let result = rt.run(&task()).unwrap();

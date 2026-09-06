@@ -1,0 +1,66 @@
+M4.2 — async compaction worker (completing the M4.2 task surface)
+===================================================================
+Node: M4.2 (Compaction epochs + async worker + stale rejection + sync
+fallback)
+Phase context: Future-tasks Phase 2 exit work (between-nights M4 program)
+Revision: commit "M4.2: async compaction worker — off-thread plans with a
+bounded arrival window" on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED
+------------
+Epochs, stale rejection (apply_compaction Stale) and the synchronous
+fallback were delivered with Phase 2.2 (E2E-proven on M2.7: the
+daemon_compaction_e2e hot-path proof). The ASYNC WORKER did not exist
+anywhere; this commit completes the task's named surface (docs/19
+"async compaction result ... accepted only if the source branch/
+generation is still current ... hard pressure before async result
+arrives -> bounded synchronous compaction"):
+
+- at each turn boundary, when the conversation estimate passes a soft
+  threshold (budget/5), a worker thread precomputes the compaction
+  plan off the turn thread and signals a Condvar
+- a boundary that finds the conversation over budget gives a pending
+  worker a bounded 5ms arrival window; a late plan falls back to the
+  synchronous path (the Phase 2.2 behavior, unchanged)
+- freshness: plans are INDEX-BASED (truncate at i / summarize [s,e)),
+  so appended messages (new turns, steer notes) do not shift them — a
+  precomputed plan goes stale only on a structural change (a compaction
+  apply bumps the structure epoch); stale plans are discarded and
+  recomputed
+- the scheduler enables the worker on the production path
+
+PROOFS (always-on)
+------------------
+Unit (2026-09-06T01:4xZ): one_agent 15 passed —
+  async_compaction_plan_applies_when_fresh: the worker's plan applies
+  at the crossing boundary (async_compactions >= 1) with truncated
+  tool results on the wire request
+  appended_steer_note_does_not_invalidate_the_async_plan: a steer note
+  appended between the precompute and the boundary does NOT invalidate
+  the plan (the append-only freshness rule) while still riding as a
+  user message
+Daemon E2E: daemon_compaction_e2e stays green with the worker enabled
+in production routing (async_compaction: true) — the hot-path
+compaction proof now runs through the async-first path.
+
+MUTATION CHECK (docs/55), 2026-09-06T01:5xZ
+--------------------------------------------
+worker disabled (spawn guarded with `false &&`):
+  async_compaction_plan_applies_when_fresh FAILED at
+  "the precomputed plan applied (async_compactions: 0)" (exit 101).
+  Restored; 15/15 green.
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (466 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (no TS/protocol change)
+
+RESULT: M4.2 E2E_PROVEN with typed evidence (graph close follows).
+M4 roll-up remaining after this: M4.1 (protocol-state wiring), M4.3
+(checkpoint crate wiring), M4.5 (cursor metadata interfaces).
+Nightly-live: validated green on merged main (run 34002162962); the
+five-night scheduled sequence started at 2026-09-06T03:00Z.

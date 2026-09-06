@@ -147,6 +147,7 @@ fn live_one_agent_loop_reaches_completed() {
         observer: None,
         control: None,
         resume_conversation: None,
+        async_compaction: false,
     };
 
     let result = rt.run(&task()).unwrap();
