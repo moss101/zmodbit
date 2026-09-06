@@ -366,7 +366,6 @@ fn shell_output_streams_and_pages_through_output_refs() {
     } else {
         assert_eq!(payload, b"first-burst\nsecond-burst\n");
     }
-    assert_eq!(payload, b"first-burst\nsecond-burst\n");
     drop(conn);
 
     // 4. The surface RPC pages through the exact bytes: two ranges
