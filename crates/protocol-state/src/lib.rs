@@ -154,6 +154,23 @@ impl ProtocolStateStore {
             .map(|(id, (tool, status))| (id, tool, status))
     }
 
+    /// The latest persisted cursor for a consumer (run/client id): the
+    /// LATEST record wins — a crashed writer's earlier cursors are
+    /// superseded (M4.1 SSE replay resume).
+    pub fn last_cursor(&self, consumer_id: &str) -> Option<u64> {
+        self.records
+            .iter()
+            .rev()
+            .find_map(|r| match r {
+                ProtocolRecord::TerminalCursor { run_id, offset }
+                    if run_id == consumer_id =>
+                {
+                    Some(*offset)
+                }
+                _ => None,
+            })
+    }
+
     /// All tool calls in their persisted status.
     pub fn tool_calls(&self) -> Vec<(&str, ToolCallStatus)> {
         self.records
@@ -236,6 +253,35 @@ mod tests {
         // The LATEST approval state wins; no pending remains.
         assert!(reopened.pending_approval().is_none());
         assert!(std::fs::remove_file(&path).is_ok());
+    }
+
+    /// M4.1: the cursor query is LATEST-wins per consumer — an advanced
+    /// cursor supersedes earlier ones for the same id.
+    #[test]
+    fn last_cursor_is_latest_per_consumer() {
+        let path = temp_path("cursor");
+        {
+            let mut store = ProtocolStateStore::open(&path).unwrap();
+            for offset in [10u64, 42, 7] {
+                store
+                    .append(ProtocolRecord::TerminalCursor {
+                        run_id: "desk-1".into(),
+                        offset,
+                    })
+                    .unwrap();
+            }
+            store
+                .append(ProtocolRecord::TerminalCursor {
+                    run_id: "desk-2".into(),
+                    offset: 99,
+                })
+                .unwrap();
+        }
+        let store = ProtocolStateStore::open(&path).unwrap();
+        assert_eq!(store.last_cursor("desk-1"), Some(7), "latest record wins");
+        assert_eq!(store.last_cursor("desk-2"), Some(99));
+        assert_eq!(store.last_cursor("unknown"), None);
+        let _ = std::fs::remove_file(&path);
     }
 
     /// Questions and subagent records persist with the same durability.

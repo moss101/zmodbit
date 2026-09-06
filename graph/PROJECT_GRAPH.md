@@ -251,7 +251,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M4.1` | WIRED | Protocol State store |  |
+| `M4.1` | E2E_PROVEN | Protocol State store |  |
 | `M4.2` | E2E_PROVEN | Compaction epochs + async worker + stale rejection + sync fallback |  |
 | `M4.3` | IMPLEMENTING | Workspace checkpoint baseline/delta objects + epoch fencing |  |
 | `M4.4` | E2E_PROVEN | kernel lease/session fencing |  |

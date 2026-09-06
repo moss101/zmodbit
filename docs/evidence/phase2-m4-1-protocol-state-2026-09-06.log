@@ -1,0 +1,59 @@
+M4.1 — Protocol State store wired into production (SSE cursor journal)
+========================================================================
+Node: M4.1 (Protocol State store)
+Phase context: Future-tasks Phase 2 exit work (between-nights M4 program)
+Revision: commit "M4.1: protocol-state journal wired as the daemon's SSE
+replay-cursor store" on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: LOGIC-ONLY — the crate's durable JSONL
+journal with prefix-consistent replay and torn-tail tolerance had unit
+tests and ZERO production callers; SSE clients had to remember their own
+offsets and a reconnect after a Core restart replayed from zero)
+---------------------------------------------------------------------
+- Daemon::bind_with_protocol_state: the daemon holds a
+  ProtocolStateStore (modbit-core opens it at <db-dir>/protocol-
+  state.jsonl next to core.db).
+- GET /events?client=<id> WITHOUT an explicit since resumes from the
+  client's last PERSISTED cursor (latest-wins per consumer id — new
+  ProtocolStateStore::last_cursor). Cursors persist durably
+  (append+flush) per advanced batch; journal append failure is
+  fail-open for the live stream (replay semantics are at-least-once by
+  construction). bind() (persistence off) preserved for existing
+  callers.
+
+PROOFS (always-on)
+------------------
+Unit (2026-09-06T02:0xZ): protocol-state 3 passed — last_cursor is
+latest-wins per consumer across journal replays; the crate's prior
+crash/pending-state tests stay green.
+
+Daemon E2E daemon_protocol_state_e2e (2026-09-06T02:0xZ) — the REAL
+daemon, real journal file, real SIGKILL:
+  sse_cursor_journal_resumes_exactly_across_restart ... ok (1.7s)
+  - client desk-1 (no offset) streams to offset N (task_created seen)
+  - the journal file on disk carries terminal_cursor records keyed by
+    client id
+  - the core is SIGKILLED and restarted on the same store + journal
+  - desk-1 reconnects with NO offset: its first event has offset
+    EXACTLY N+1 (no replay of delivered events, no skips)
+  - a fresh client (desk-2) replays from offset 1
+
+MUTATION CHECK (docs/55), 2026-09-06T02:1xZ — against the committed
+implementation, bin rebuilt before the run:
+  cursor persistence removed (journal append dropped):
+    E2E FAILED at the exact-resume assertion (exit 101).
+  Restored; clean run green.
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (468 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (no TS/protocol change)
+
+RESULT: M4.1 E2E_PROVEN with typed evidence (graph close follows).
+M4 roll-up now 4/6; remaining: M4.3 (checkpoint-crate wiring), M4.5
+(cursor-metadata scope decision). Nightly clock: scheduled sequence
+starts 2026-09-06T03:00Z.

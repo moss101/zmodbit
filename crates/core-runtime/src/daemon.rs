@@ -29,6 +29,11 @@ pub struct Daemon {
     listener: TcpListener,
     store: Arc<EventStore>,
     services: Arc<super::CoreServices>,
+    /// Durable SSE client cursors (M4.1): a reconnecting
+    /// client — including across a Core restart — resumes from its last
+    /// PERSISTED offset instead of replaying from zero. None disables
+    /// persistence (clients pass their own `since`).
+    protocol_state: Option<Arc<std::sync::Mutex<modbit_protocol_state::ProtocolStateStore>>>,
 }
 
 impl Daemon {
@@ -37,11 +42,23 @@ impl Daemon {
         store: Arc<EventStore>,
         services: Arc<super::CoreServices>,
     ) -> Result<Self, String> {
+        Self::bind_with_protocol_state(addr, store, services, None)
+    }
+
+    pub fn bind_with_protocol_state(
+        addr: &str,
+        store: Arc<EventStore>,
+        services: Arc<super::CoreServices>,
+        protocol_state: Option<
+            Arc<std::sync::Mutex<modbit_protocol_state::ProtocolStateStore>>,
+        >,
+    ) -> Result<Self, String> {
         let listener = TcpListener::bind(addr).map_err(|e| e.to_string())?;
         Ok(Self {
             listener,
             store,
             services,
+            protocol_state,
         })
     }
 
@@ -58,8 +75,9 @@ impl Daemon {
             let Ok(stream) = stream else { continue };
             let store = self.store.clone();
             let services = self.services.clone();
+            let protocol_state = self.protocol_state.clone();
             std::thread::spawn(move || {
-                handle_connection(stream, store, services);
+                handle_connection(stream, store, services, protocol_state);
             });
         }
     }
@@ -69,6 +87,7 @@ fn handle_connection(
     stream: TcpStream,
     store: Arc<EventStore>,
     services: Arc<super::CoreServices>,
+    protocol_state: Option<Arc<std::sync::Mutex<modbit_protocol_state::ProtocolStateStore>>>,
 ) {
     let mut reader = BufReader::new(match stream.try_clone() {
         Ok(s) => s,
@@ -163,10 +182,25 @@ fn handle_connection(
     }
 
     if method == "GET" && path == "/events" {
+        let client = query_param(&query, "client").unwrap_or_default();
+        // M4.1: a client that reconnects WITHOUT an explicit offset
+        // resumes from its last PERSISTED cursor — the journal survives
+        // Core restarts, so the resume point is exact.
         let since = query_param(&query, "since")
             .and_then(|v| v.parse::<u64>().ok())
+            .or_else(|| {
+                if client.is_empty() {
+                    return None;
+                }
+                protocol_state.as_ref().and_then(|state| {
+                    state
+                        .lock()
+                        .ok()
+                        .and_then(|s| s.last_cursor(&client))
+                })
+            })
             .unwrap_or(0);
-        sse_stream(stream, store, since);
+        sse_stream(stream, store, since, client, protocol_state);
         return;
     }
 
@@ -180,7 +214,13 @@ fn query_param(query: &str, key: &str) -> Option<String> {
     })
 }
 
-fn sse_stream(mut stream: TcpStream, store: Arc<EventStore>, mut since: u64) {
+fn sse_stream(
+    mut stream: TcpStream,
+    store: Arc<EventStore>,
+    mut since: u64,
+    client: String,
+    protocol_state: Option<Arc<std::sync::Mutex<modbit_protocol_state::ProtocolStateStore>>>,
+) {
     let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: keep-alive\r\n\r\n");
     let _ = stream.flush();
     // Replaying bounded batches; a client that cannot keep up simply falls
@@ -207,6 +247,25 @@ fn sse_stream(mut stream: TcpStream, store: Arc<EventStore>, mut since: u64) {
                     }
                 }
                 since = new_offset;
+                // M4.1: persist the advanced cursor durably (append +
+                // flush) so a reconnect — same process or a restarted
+                // Core — resumes exactly here. Fail-open for the live
+                // stream: a journal error logs and the stream continues
+                // (replay is at-least-once by construction).
+                if !client.is_empty() {
+                    if let Some(state) = protocol_state.as_ref() {
+                        if let Ok(mut state) = state.lock() {
+                            if let Err(e) = state.append(
+                                modbit_protocol_state::ProtocolRecord::TerminalCursor {
+                                    run_id: client.clone(),
+                                    offset: new_offset,
+                                },
+                            ) {
+                                eprintln!("modbit daemon: cursor journal append failed: {e}");
+                            }
+                        }
+                    }
+                }
             }
             Err(_) => return,
         }

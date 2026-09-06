@@ -819,6 +819,7 @@ dependencies = [
  "modbit-policy",
  "modbit-prompt-compiler",
  "modbit-protocol",
+ "modbit-protocol-state",
  "modbit-providers",
  "modbit-terminal",
  "modbit-tools",

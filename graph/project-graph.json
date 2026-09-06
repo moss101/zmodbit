@@ -2073,10 +2073,13 @@
    "milestone": "M4",
    "order": 0,
    "source": "docs/43",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33925189162",
-    "commit:9d0a4fd"
+    "commit:9d0a4fd",
+    "log:docs/evidence/phase2-m4-1-protocol-state-2026-09-06.log",
+    "receipt:90f8b2db585092686c9c28e450d40bddca5b3a1f8b2babcc38bcce9410b07870",
+    "run:2026-09-06T02:05Z/sse_cursor_journal_resumes_exactly_across_restart"
    ],
    "notes": [
     {
@@ -2090,9 +2093,21 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T01:43:36Z",
+     "from": "WIRED",
+     "to": "IMPLEMENTING",
+     "note": "M4.1 wiring slice: the protocol-state crate's durable JSONL journal (append+flush, prefix-consistent replay with torn-tail tolerance) is wired into the daemon as the SSE client-cursor journal — a reconnecting client (with no explicit offset) resumes from its last PERSISTED cursor, including across a Core SIGKILL and restart; cursors persist per advanced batch; journal lives next to core.db; fail-open for the live stream (replay is at-least-once). New last_cursor query (latest-wins per consumer)."
+    },
+    {
+     "at": "2026-09-06T01:44:21Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Protocol State store wired into production: the crate's durable journal is the daemon's SSE replay-cursor store — reconnecting clients resume from their last persisted cursor across a REAL Core SIGKILL/restart (exact offset continuation asserted: first post-restart event at N+1; fresh clients replay from 1). Torn-tail replay + fail-open live-stream semantics. Mutation (persistence removed) detected."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-06T01:44:21Z"
   },
   {
    "id": "M4.2",

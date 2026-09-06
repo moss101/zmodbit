@@ -65,8 +65,28 @@ fn main() {
 
     // Optional multi-client HTTP+SSE daemon (headless mode):
     // MODBIT_HTTP_ADDR=127.0.0.1:0 binds it alongside the socket transport.
+    // M4.1: the SSE client-cursor journal lives next to the durable store
+    // and survives restarts (append+flush per advanced batch).
     if let Ok(addr) = std::env::var("MODBIT_HTTP_ADDR") {
-        match modbit_core_runtime::daemon::Daemon::bind(&addr, store.clone(), services.clone()) {
+        let journal_path = std::path::PathBuf::from(&db)
+            .with_file_name("protocol-state.jsonl");
+        let protocol_state =
+            match modbit_protocol_state::ProtocolStateStore::open(&journal_path) {
+                Ok(state) => Some(std::sync::Arc::new(std::sync::Mutex::new(state))),
+                Err(e) => {
+                    eprintln!(
+                        "modbit-core: protocol-state journal unavailable at {}: {e}",
+                        journal_path.display()
+                    );
+                    None
+                }
+            };
+        match modbit_core_runtime::daemon::Daemon::bind_with_protocol_state(
+            &addr,
+            store.clone(),
+            services.clone(),
+            protocol_state,
+        ) {
             Ok(daemon) => {
                 let bound = daemon.local_addr().unwrap_or_default();
                 eprintln!("modbit-core: http daemon on {bound}");
