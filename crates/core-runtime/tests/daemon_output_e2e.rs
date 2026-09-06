@@ -307,8 +307,11 @@ fn shell_output_streams_and_pages_through_output_refs() {
     let ref_id = output_ref["output_ref_id"].as_str().expect("ref id").to_string();
     assert!(ref_id.starts_with("outref-"), "content-addressed id: {ref_id}");
     let total = output_ref["byte_length"].as_u64().expect("byte length");
-    // "first-burst\nsecond-burst\n" == 26 bytes on every platform (sh echo).
-    assert_eq!(total, 25, "exact full-output length: {total}");
+    // "first-burst\nsecond-burst\n" == 25 bytes on every platform (sh echo).
+    assert_eq!(
+        total, 25,
+        "exact full-output length; tool result was: {content}"
+    );
     drop(bodies);
 
     // 2. Chunk events streamed DURING execution (two bursts -> >= 2 events
