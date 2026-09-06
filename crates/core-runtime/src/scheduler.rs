@@ -457,12 +457,20 @@ impl Scheduler {
             session_id,
             shared: shared.clone(),
         });
+        // M4.3: the run's worktree journal (epoch-fenced checkpoints on
+        // every successful change.apply).
+        let worktree_journal: Arc<WorktreeJournalWriter> = Arc::new(WorktreeJournalWriter::new(
+            self.store.clone(),
+            session_id,
+            shared.clone(),
+        ));
         let registry = build_worktree_registry(
             &ws,
             &worktree_path,
             execd.as_ref(),
             signal.cancel_token(),
             Some(output_sink),
+            Some(worktree_journal),
         );
         let kernel = PolicyKernel::new(vec![]);
         for grant in worktree_grants() {
@@ -870,6 +878,7 @@ pub fn build_worktree_registry(
     execd: Option<&ExecdClient>,
     cancel: Arc<std::sync::atomic::AtomicBool>,
     output_sink: Option<Arc<dyn ToolOutputSink>>,
+    worktree_journal: Option<Arc<WorktreeJournalWriter>>,
 ) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
@@ -1073,6 +1082,7 @@ pub fn build_worktree_registry(
             Some(ToolSchema { aliases: Default::default(), parameters: apply_params }),
             {
                 let ws = ws.clone();
+                let journal = worktree_journal.clone();
                 Arc::new(move |args| {
                     let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
                     let old = args.get("old_text").and_then(|v| v.as_str()).ok_or("missing old_text")?;
@@ -1100,6 +1110,16 @@ pub fn build_worktree_registry(
                     let new_rev = ws
                         .replace(path, updated.as_bytes(), rev)
                         .map_err(|e| e.to_string())?;
+                    // M4.3: record the edit into the run's journal and
+                    // write an epoch-fenced worktree checkpoint (baseline
+                    // = pre-edit bytes, delta = post-edit content).
+                    if let Some(journal) = journal.as_ref() {
+                        journal.record(
+                            path,
+                            bytes.to_vec(),
+                            Some(updated.as_bytes().to_vec()),
+                        );
+                    }
                     Ok(serde_json::json!({ "ok": true, "file_revision": new_rev }))
                 })
             },
@@ -1394,6 +1414,132 @@ struct RunPlaneOutputSink {
     store: Arc<EventStore>,
     session_id: SessionId,
     shared: Arc<RunPlaneShared>,
+}
+
+impl RunPlaneShared {
+    /// Builds and appends one Run-aggregate event under the session
+    /// lease, mirroring the observer's envelope + sequence rules. Shared
+    /// by the output sink and the worktree journal writer.
+    fn append_run_event(
+        &self,
+        store: &EventStore,
+        session_id: SessionId,
+        run_id: RunId,
+        payload: DomainEvent,
+    ) {
+        let aggregate_id = run_id.to_string();
+        let mut envelope = EventEnvelope {
+            event_id: uuid::Uuid::now_v7().to_string(),
+            session_id,
+            task_id: None,
+            run_id: Some(run_id),
+            turn_id: None,
+            step_id: None,
+            aggregate_type: AggregateType::Run,
+            aggregate_id: aggregate_id.clone(),
+            sequence: 0,
+            event_type: EventEnvelope::event_type_of(&payload).to_string(),
+            schema_version: modbit_domain::SCHEMA_VERSION,
+            occurred_at: now_rfc3339(),
+            actor: Actor {
+                actor_type: ActorType::System,
+                actor_id: "scheduler".into(),
+            },
+            causation_id: None,
+            correlation_id: None,
+            payload,
+            payload_object_hash: None,
+            integrity_hash: String::new(),
+        };
+        let mut sequences = self.sequences.lock().expect("observer mutex");
+        let next = sequences.get(&aggregate_id).copied().unwrap_or(1);
+        envelope.sequence = next;
+        envelope.seal();
+        sequences.insert(aggregate_id, next + 1);
+        drop(sequences);
+        if let Err(e) = self.append_fenced(store, &mut envelope) {
+            eprintln!("modbit scheduler: append run event failed: {e}");
+        }
+    }
+}
+
+/// M4.3: writes the run's worktree checkpoint journal (docs/22). Every
+/// successful change.apply records baseline + delta into a
+/// modbit-checkpoint DeltaJournal and persists an epoch-fenced
+/// WorktreeCheckpointed run event (strictly increasing epochs via the
+/// crate's CheckpointStore; replay restores the edited state exactly).
+pub struct WorktreeJournalWriter {
+    store: Arc<EventStore>,
+    session_id: SessionId,
+    shared: Arc<RunPlaneShared>,
+    inner: std::sync::Mutex<modbit_checkpoint::delta::DeltaJournal>,
+    checkpoints: std::sync::Mutex<modbit_checkpoint::CheckpointStore>,
+    next_epoch: std::sync::atomic::AtomicU64,
+}
+
+impl WorktreeJournalWriter {
+    fn new(
+        store: Arc<EventStore>,
+        session_id: SessionId,
+        shared: Arc<RunPlaneShared>,
+    ) -> Self {
+        WorktreeJournalWriter {
+            store,
+            session_id,
+            shared,
+            inner: std::sync::Mutex::new(modbit_checkpoint::delta::DeltaJournal::default()),
+            checkpoints: std::sync::Mutex::new(modbit_checkpoint::CheckpointStore::new()),
+            next_epoch: std::sync::atomic::AtomicU64::new(1),
+        }
+    }
+
+    /// Records one edit and writes the durable epoch-fenced checkpoint.
+    pub fn record(&self, path: &str, baseline: Vec<u8>, delta: Option<Vec<u8>>) {
+        const MAX_JOURNAL_BYTES: usize = 256 * 1024;
+        let run_id = match *self.shared.run.lock().expect("run cell") {
+            Some(id) => id,
+            None => return,
+        };
+        let epoch = self
+            .next_epoch
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let Ok(mut journal) = self.inner.lock() else { return };
+        journal
+            .baseline
+            .entry(path.to_string())
+            .or_insert_with(|| baseline.clone());
+        if let Some(content) = delta {
+            journal.deltas.push(modbit_checkpoint::delta::WorktreeDelta {
+                path: path.to_string(),
+                content: Some(content),
+            });
+        }
+        let Ok(journal_json) = serde_json::to_string(&*journal) else {
+            return;
+        };
+        if journal_json.len() > MAX_JOURNAL_BYTES {
+            // Bounded journals: a run editing beyond the bound keeps its
+            // in-memory journal but stops persisting snapshots (git
+            // remains the full-fidelity record for the worktree).
+            return;
+        }
+        // Epoch fencing (crate-enforced): strictly increasing writes only.
+        if let Err(e) = self
+            .checkpoints
+            .lock()
+            .expect("checkpoint store")
+            .write(epoch, &journal_json)
+        {
+            eprintln!("modbit scheduler: worktree checkpoint fenced: {e}");
+            return;
+        }
+        self.shared.append_run_event(
+            &self.store,
+            self.session_id,
+            run_id,
+            DomainEvent::WorktreeCheckpointed { epoch, journal_json },
+        );
+    }
 }
 
 impl RunPlaneOutputSink {

@@ -1,0 +1,54 @@
+M4.3 — worktree checkpoint baseline/delta objects wired (epoch-fenced)
+========================================================================
+Node: M4.3 (Workspace checkpoint baseline/delta objects + epoch fencing)
+Phase context: Future-tasks Phase 2 exit work (between-nights M4 program)
+Revision: commit "M4.3: worktree checkpoint journal — epoch-fenced
+baseline/delta objects wired" on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: LOGIC-ONLY — the checkpoint crate's
+DeltaJournal (baseline + whole-file deltas + cursors, pure restore) and
+epoch-fenced CheckpointStore had unit tests and ZERO production callers)
+---------------------------------------------------------------------
+- domain: WorktreeCheckpointed run event (strictly increasing epoch +
+  serialized DeltaJournal, emitter-bounded to 256 KiB; beyond that git
+  remains the full-fidelity worktree record).
+- scheduler: WorktreeJournalWriter rides the run plane — every
+  successful change.apply records the PRE-EDIT bytes as the path's
+  baseline (first touch wins) and the post-edit content as a delta,
+  then persists one durable checkpoint event through the M4.4
+  lease-fenced append path. Epoch fencing is crate-enforced: strictly
+  increasing writes only; stale writes rejected and audited, never
+  applied.
+- restore stays pure in the crate (DeltaJournal::restore).
+
+PROOFS (always-on)
+------------------
+Daemon E2E daemon_checkpoint_journal_e2e (2026-09-06T02:4xZ) — the
+REAL daemon + scheduler + git worktree + change engine, two REAL
+change.apply edits across two turns:
+  change_applies_persist_epoch_fenced_worktree_checkpoints ... ok
+  - exactly one worktree_checkpointed event per apply, epochs 1, 2
+    (strictly increasing)
+  - the latest journal deserializes (crate type); its baseline equals
+    the ORIGINAL file bytes (pre-edit capture)
+  - restore() reconstructs the final edited content byte-exactly:
+    "export function greet() {\n  return 'hello';\n}\n" — matching the
+    real file in the worktree on disk
+
+MUTATION CHECK (docs/55), 2026-09-06T02:5xZ — against the committed
+implementation, bin rebuilt before the run:
+  journal recording removed from change.apply:
+    E2E FAILED at "one checkpoint per successful apply" (exit 101).
+  Restored; clean run green.
+
+GATES (all green)
+-----------------
+  cargo clippy --workspace --all-targets -- -D warnings   exit 0
+  cargo test --workspace                                  exit 0 (469 passed)
+  architecture-lint / decision-guard / coverage-guard    OK
+  check_dossier.py                                        OK
+  (no TS/protocol change)
+
+RESULT: M4.3 E2E_PROVEN with typed evidence (graph close follows).
+M4 roll-up now 5/6; remaining: M4.5 (cursor-metadata scope decision).

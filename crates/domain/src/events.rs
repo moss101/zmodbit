@@ -155,6 +155,16 @@ pub enum DomainEvent {
         /// JSON array of the gateway ChatMessage projection.
         conversation_json: String,
     },
+    /// Worktree checkpoint (docs/22 § Checkpoint/rollback, M4.3): the
+    /// baseline+delta journal for files edited by the run, written under
+    /// a strictly increasing epoch (fenced) — replay restores the edited
+    /// state exactly.
+    WorktreeCheckpointed {
+        epoch: u64,
+        /// Serialized modbit-checkpoint DeltaJournal (baseline + deltas
+        /// + cursors), bounded by the emitter.
+        journal_json: String,
+    },
     /// One streamed chunk of a tool's output (docs/21 § durable terminal,
     /// Future-tasks Phase 2 item 6): emitted DURING execution so the run
     /// plane shows progress. Bounded preview; the full bytes live behind
@@ -305,6 +315,7 @@ impl EventEnvelope {
             DomainEvent::CompactionApplied { .. } => "compaction_applied",
             DomainEvent::ConversationCheckpointed { .. } => "conversation_checkpointed",
             DomainEvent::ToolOutputChunk { .. } => "tool_output_chunk",
+            DomainEvent::WorktreeCheckpointed { .. } => "worktree_checkpointed",
             DomainEvent::SessionForked { .. } => "session_forked",
             DomainEvent::SessionRewound { .. } => "session_rewound",
             DomainEvent::GoalSet { .. } => "goal_set",

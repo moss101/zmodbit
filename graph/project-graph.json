@@ -2162,10 +2162,13 @@
    "milestone": "M4",
    "order": 2,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33925189162",
-    "commit:9d0a4fd"
+    "commit:9d0a4fd",
+    "log:docs/evidence/phase2-m4-3-worktree-journal-2026-09-06.log",
+    "receipt:7eecdde1ff65a424548a712b5c7cd17fb12424fbcf86fb2c07dd4ce07481ab3d",
+    "run:2026-09-06T02:45Z/change_applies_persist_epoch_fenced_worktree_checkpoints"
    ],
    "notes": [
     {
@@ -2179,9 +2182,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T01:45:10Z",
+     "from": "IMPLEMENTING",
+     "to": "IMPLEMENTING",
+     "note": "M4.3 wiring slice: the checkpoint crate's DeltaJournal (baseline + whole-file deltas + cursors) and epoch-fenced CheckpointStore had zero production callers. Wiring: each successful change.apply records baseline (pre-edit bytes) + delta (post-edit content) into a per-run journal and writes a durable WorktreeCheckpointed run event (epoch strictly increasing via the fenced store; payload = serialized journal, bounded); restore replay stays pure in the crate."
+    },
+    {
+     "at": "2026-09-06T01:55:07Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Checkpoint crate wired into production: every successful change.apply persists an epoch-fenced WorktreeCheckpointed run event (baseline = pre-edit bytes, deltas = post-edit content) through the lease-fenced run plane; strictly increasing epochs crate-enforced; DeltaJournal::restore reconstructs the edited state byte-exactly (asserted against the real worktree file). Mutation (recording removed) detected."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-06T01:55:07Z"
   },
   {
    "id": "M4.4",

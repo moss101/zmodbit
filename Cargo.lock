@@ -812,6 +812,7 @@ name = "modbit-core-runtime"
 version = "0.1.0"
 dependencies = [
  "futures",
+ "modbit-checkpoint",
  "modbit-compaction",
  "modbit-domain",
  "modbit-event-store",

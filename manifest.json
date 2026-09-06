@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 821459,
-      "sha256": "417aedf5e30b39172781b98464b91cd63a6da23a9ef5a7016fa209379cd96ec3"
+      "bytes": 822797,
+      "sha256": "c52ae9ad5a0f706177a730c6f1192493fa9ea66b3f39958eed91fcfa524644df"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
-      "bytes": 22616,
-      "sha256": "c2a001bf1ea8435528aa627e75af97a2f3ad7d3e8fc19aefa4a635d57e55a180"
+      "bytes": 22621,
+      "sha256": "ba23b2de7f4f022651b83ba4e24d75705d1de81eb2a98a414293364c05bf590e"
     },
     {
       "path": "tools/build_manifest.py",
