@@ -32,13 +32,11 @@ fn notes_fixture(tag: &str) -> PathBuf {
     repo.set_config("user.email", "e2e@modbit.test").unwrap();
     repo.set_config("user.name", "Modbit E2E").unwrap();
     repo.set_config("core.autocrlf", "false").unwrap();
-    // A generator script: writes ~12 MB in 1 KB lines (real command, real
-    // bytes; the broker streams them through the offset-addressed log).
-    std::fs::write(
-        root.join("big_output.sh"),
-        "#!/bin/sh\ni=0\nwhile [ $i -lt 12000 ]; do echo '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'; i=$((i+1)); done\n",
-    )
-    .unwrap();
+    // A fixture-written large file (12000 x 131 bytes = 1,572,000): each
+    // platform dumps it with a REAL executable (no shell — sh scripts
+    // exit 1 silently on windows runners).
+    let line = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\n";
+    std::fs::write(root.join("big.txt"), line.repeat(12_000)).unwrap();
     repo.commit_all("fixture baseline").expect("baseline");
     root
 }
@@ -258,7 +256,15 @@ fn multimegabyte_output_bounded_view_with_retrievable_artifact() {
     let repo = notes_fixture("sa");
     let worktrees = tempdir("sw");
     let (model, bodies) = spawn_model_fixture(vec![
-        tool_call_turn("c1", "shell.run", r#"{"argv":["sh","big_output.sh"]}"#),
+        tool_call_turn(
+            "c1",
+            "shell.run",
+            if cfg!(windows) {
+                r#"{"argv":["powershell","-NoProfile","-Command","[Console]::Out.Write([IO.File]::ReadAllText('big.txt'))"]}"#
+            } else {
+                r#"{"argv":["cat","big.txt"]}"#
+            },
+        ),
         text_turn("digested"),
     ]);
     let (mut core, daemon) = spawn_core(&repo, &worktrees, model);
@@ -301,8 +307,11 @@ fn multimegabyte_output_bounded_view_with_retrievable_artifact() {
     let output_ref = content["output_ref"].as_object().expect("artifact ref");
     let ref_id = output_ref["output_ref_id"].as_str().unwrap().to_string();
     let total = output_ref["byte_length"].as_u64().unwrap();
-    // 12000 lines x 131 bytes = 1_572_000 bytes (~1.5 MB >> the 2KB view).
-    assert_eq!(total, 1_572_000, "exact full-artifact length: {total}");
+    if !cfg!(windows) {
+        assert_eq!(total, 1_572_000, "exact full-artifact length: {total}");
+    } else {
+        assert_eq!(total, 1_572_000, "ReadAllText is byte-exact for ASCII: {total}");
+    }
     assert!(total as usize > 100 * inline.len(), "artifact >> model view");
     drop(bodies);
 
