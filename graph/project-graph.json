@@ -7864,11 +7864,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0011",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
     "run:https://github.com/moss101/zmodbit/actions/runs/33860508030",
-    "commit:2df101f"
+    "commit:2df101f",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "run:2026-09-06T01:10Z/shell_output_streams_and_pages_through_output_refs"
    ],
    "notes": [
     {
@@ -7876,10 +7878,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:02Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Blob-addressed large run state wired: the RuntimeStore output_refs table (content-addressed sha256 blobs) holds full tool outputs, read paginated by ref id."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:02Z"
   },
   {
    "id": "IMP-EV-0012",
@@ -7973,11 +7981,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0014",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
     "run:https://github.com/moss101/zmodbit/actions/runs/33860508030",
-    "commit:2df101f"
+    "commit:2df101f",
+    "log:docs/evidence/phase2-m4-3-worktree-journal-2026-09-06.log",
+    "run:2026-09-06T02:45Z/change_applies_persist_epoch_fenced_worktree_checkpoints"
    ],
    "notes": [
     {
@@ -7985,10 +7995,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:15Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Canonical edit transaction in production: change.apply routes the edit gate (unique old_text match) + revision-guarded atomic replace through the daemon in every run; the journal E2E asserts pre-edit baseline and post-edit delta byte-exactly."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:15Z"
   },
   {
    "id": "IMP-EV-0015",
@@ -8027,10 +8043,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: the daemon's change.apply uses exact-unique matching only; the fallback match ladder is a workspace-crate internal with no production caller. Missing link: route the ladder (or surface it behind change.apply) through the scheduler."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0016",
@@ -8043,11 +8065,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0016",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33856257372",
     "run:https://github.com/moss101/zmodbit/actions/runs/33860508030",
-    "commit:2df101f"
+    "commit:2df101f",
+    "log:docs/evidence/phase2-m4-3-worktree-journal-2026-09-06.log",
+    "run:2026-09-06T02:45Z/change_applies_persist_epoch_fenced_worktree_checkpoints"
    ],
    "notes": [
     {
@@ -8055,10 +8079,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:15Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Sequential multi-edit at the production boundary: two sequential revision-guarded applies to one file in a single daemon run; the journal proves each edit's baseline/delta consistency and byte-exact replay of the composed result."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:15Z"
   },
   {
    "id": "IMP-EV-0017",
@@ -8122,10 +8152,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: diagnostics regression comparison is a verification-crate integration test; no daemon surface invokes it. Missing link: wire diagnostics comparison into the review/verification path."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0019",
@@ -8156,10 +8192,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: scrollback-as-artifact lacks a daemon surface; the broker holds output.log but nothing exports it as an artifact ref. Missing link: surface terminal scrollback through OutputRef."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0020",
@@ -8217,10 +8259,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: environment source hierarchy is a workspace-crate feature with no scheduler caller. Missing link: consume the hierarchy when building the environment for runs."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0022",
@@ -8244,10 +8292,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: git snapshot handoff targets the cloud path (M8); no local production caller today."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0023",
@@ -8312,12 +8366,14 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0025",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33862287543",
     "commit:0035212",
     "run:https://github.com/moss101/zmodbit/actions/runs/33863214970",
-    "commit:3cc4a03"
+    "commit:3cc4a03",
+    "log:docs/evidence/phase2-5-run-resume-2026-09-06.log",
+    "run:2026-09-06T00:10Z/core_kill_mid_run_resumes_from_checkpoint"
    ],
    "notes": [
     {
@@ -8331,10 +8387,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:02Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Stateless process / stateful shell: the core dies (real SIGKILL) while a real tool runs; broker state and output survive; a fresh core resumes the task from durable state."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:02Z"
   },
   {
    "id": "IMP-EV-0026",
@@ -8347,10 +8409,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0026",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33862287543",
-    "commit:0035212"
+    "commit:0035212",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "run:2026-09-06T01:10Z/shell_output_streams_and_pages_through_output_refs"
    ],
    "notes": [
     {
@@ -8358,10 +8422,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:02Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Layered output economics in production: bounded 2KB inline tail in the conversation, streamed bounded-preview chunk events during execution, full bytes behind the paginated OutputRef."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:02Z"
   },
   {
    "id": "IMP-EV-0027",
@@ -8385,10 +8455,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: fg->bg handoff is a broker test (detach_reattach, real execd) but no daemon surface exposes background handles to the agent. Missing link: shell.run background mode + reattach tool (Phase 6 PTY item)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0028",
@@ -8412,10 +8488,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: the capability catalog has no production roster; the scheduler picks one env model. Missing link: feed resolve_dispatch/routing from a real catalog (Phase 4 settings)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0029",
@@ -8439,10 +8521,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: task fingerprint + capability routing unused at request time (single-model env). Missing link: scheduler consults routing on model selection."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0030",
@@ -8466,10 +8554,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: specialist model chains have no production caller. Missing link: chain dispatch in the scheduler (post Phase 4 settings)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0031",
@@ -8493,10 +8587,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: enterprise model policy (envelope resolution) is gateway logic only. Missing link: policy-driven dispatch in the request path."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0032",
@@ -8581,10 +8681,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: GetDiff serves per-file numstat views; hunk-level accept/reject has no surface. Missing link: Phase 5 review surface (per-hunk actions)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0037",
@@ -8666,10 +8772,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: DevicePolicy/machine authority has no daemon consumer. Missing link: policy evaluation consults device authority (Phase 5/6)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0041",
@@ -8693,10 +8805,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:43Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: policy generation/hot revalidation lacks a production trigger. Missing link: policy reload path on the daemon."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:43Z"
   },
   {
    "id": "IMP-EV-0042",
@@ -8746,10 +8864,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: ProtocolCapabilitySet is not consulted by the transport. Missing link: capability-negotiated protocol surface."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0044",
@@ -8773,10 +8897,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: the e2e capability invariant has no enforced runtime check. Missing link: invariant gate in the daemon/protocol layer."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0045",
@@ -8800,10 +8930,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: capability-oriented autonomous mode is not selectable from the surface. Missing link: mode-setting surface + grant mapping (Phase 5 approval modes)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0046",
@@ -9273,10 +9409,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: EnvironmentSnapshot/Revision has no scheduler caller. Missing link: snapshot on run boundaries."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0063",
@@ -9306,10 +9448,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: EnvironmentHandoffBundle awaits the cloud path (M8)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0064",
@@ -9339,10 +9487,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: typed UndoPlan has no surface action. Missing link: undo surface over the change engine."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0065",
@@ -9372,10 +9526,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: optimistic-concurrency revert is crate-level. Missing link: revert surface action."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0066",
@@ -9425,10 +9585,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: MergeTransaction awaits parallel-agent merge (M6 fleet item)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0068",
@@ -9441,12 +9607,14 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0068",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33871402984",
     "commit:2ad3efc",
     "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
-    "commit:6973749"
+    "commit:6973749",
+    "log:docs/evidence/m2-11-scripted-e2e.log",
+    "run:local/daemon_scripted_e2e"
    ],
    "notes": [
     {
@@ -9454,10 +9622,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:15Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "VerificationPlane in production: test.run routes the verification crate's Gate/run_plan through the daemon, spawning REAL runners in the worktree — E2E-002/003 run real node test suites and gate the review transition on their outcome."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:15Z"
   },
   {
    "id": "IMP-EV-0069",
@@ -9481,9 +9655,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: adaptive LLM verification is optional and unwired in the verification stage."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0070",
@@ -9509,10 +9689,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: Diagnostic Change Window has no production consumer."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0071",
@@ -9538,10 +9724,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: PatchPolicyGate is not consulted by the review path. Missing link: Phase 5 review gating."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0072",
@@ -9728,10 +9920,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0079",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
-    "commit:e7929f1"
+    "commit:e7929f1",
+    "log:docs/evidence/phase2-1-message-roles-2026-09-06.log",
+    "run:2026-09-05T22:14Z/openai_wire_body_carries_typed_roles"
    ],
    "notes": [
     {
@@ -9739,9 +9933,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:34:48Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Typed tools in production: registry schemas serialize into every provider request (asserted on the fixture-captured bodies) and every daemon E2E executes the typed toolset end to end."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:34:48Z"
   },
   {
    "id": "IMP-EV-0080",
@@ -9754,12 +9954,14 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0080",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33871402984",
     "commit:2ad3efc",
     "run:https://github.com/moss101/zmodbit/actions/runs/33879658892",
-    "commit:6973749"
+    "commit:6973749",
+    "log:docs/evidence/phase2-1-message-roles-2026-09-06.log",
+    "run:2026-09-05T22:14Z/anthropic_wire_body_carries_typed_roles"
    ],
    "notes": [
     {
@@ -9767,10 +9969,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:34:48Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Policy before execution: every tool call in the production loop passes the capability kernel check before any effect; denials never execute and feed back as error tool results (fail-closed path unit-proven on the same loop the daemon drives)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:34:48Z"
   },
   {
    "id": "IMP-EV-0081",
@@ -9976,9 +10184,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: semantic UI risk classification has no production caller."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0089",
@@ -10056,10 +10270,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: admin policy precedence lacks a production evaluation path."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0092",
@@ -10109,10 +10329,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: workspace trust + sandbox separation awaits OS sandbox work (Phase 6 item 2)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0096",
@@ -10136,10 +10362,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: configuration-dependent model tool surface (turn_surface) is not consumed by the scheduler's registry build. Missing link: filter the projected toolset by model capability."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0097",
@@ -10239,10 +10471,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0100",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33890230648",
-    "commit:3a408c8"
+    "commit:3a408c8",
+    "log:docs/evidence/phase2-3-cancellation-2026-09-06.log",
+    "run:2026-09-05T23:10Z/stop_task_aborts_long_running_tool_and_cancels"
    ],
    "notes": [
     {
@@ -10250,10 +10484,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:02Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Structured command contract over the real broker: spawn/status/read/stop JSON ops exercised in production — streaming reads drain by offset (phase 2.6), stop kills the real process on cancellation (phase 2.3 E2E)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:02Z"
   },
   {
    "id": "IMP-EV-0101",
@@ -10411,10 +10651,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0106",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33890230648",
-    "commit:3a408c8"
+    "commit:3a408c8",
+    "log:docs/evidence/m2-11-scripted-e2e.log",
+    "run:local/daemon_scripted_e2e"
    ],
    "notes": [
     {
@@ -10422,10 +10664,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:15Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Typed file-change diff over the surface: GetDiff returns typed per-file diff views bound to the task's base revision (E2E-001 asserts the changed file appears; commit-diff regression covered by 5e99a9b)."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:15Z"
   },
   {
    "id": "IMP-EV-0107",
@@ -10577,10 +10825,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0112",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33894159340",
-    "commit:e4c0d11"
+    "commit:e4c0d11",
+    "log:docs/evidence/phase2-2-compaction-2026-09-06.log",
+    "run:2026-09-05T22:30Z/over_budget_daemon_compacts_and_records_the_event"
    ],
    "notes": [
     {
@@ -10588,9 +10838,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:34:48Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Provider/model/effort envelope in production: per-model settings (max_output_tokens, temperature, reasoning_effort) resolve through profiles and ride every request body — asserted on the daemon-captured wire (max_tokens 4096; reasoning_effort present iff configured)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:34:48Z"
   },
   {
    "id": "IMP-EV-0114",
@@ -10666,9 +10922,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): PARTIAL: the worktree registry is a minimal per-agent toolset in production, but the crate's minimal-set logic per agent profile is not consulted. Missing link: per-agent profile toolsets."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0117",
@@ -10910,9 +11172,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: clone-branch-into-session lineage has no surface action. Missing link: session fork surface (M6)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0125",
@@ -10925,10 +11193,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0125",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33892931330",
-    "commit:e7929f1"
+    "commit:e7929f1",
+    "log:docs/evidence/m2-11-live-e2e-2026-09-05T20-25Z.log",
+    "run:2026-09-05T20:25Z/live-m2-close"
    ],
    "notes": [
     {
@@ -10936,9 +11206,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:15Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Git worktree commands in production: every task run allocates an isolated linked worktree (branch per task) from the scheduler; resume reuses it (phase 2.5); proven live and scripted."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-06T04:35:15Z"
   },
   {
    "id": "IMP-EV-0126",
@@ -11107,10 +11383,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0132",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33894159340",
-    "commit:e4c0d11"
+    "commit:e4c0d11",
+    "log:docs/evidence/m2-11-scripted-e2e.log",
+    "run:local/daemon_scripted_e2e"
    ],
    "notes": [
     {
@@ -11118,9 +11396,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:15Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Searchable transcript/tool evidence in production: GetRunDetail reconstructs turns and typed steps from the durable run plane (E2E-001 asserts >= 4 steps: model invoke + fs.read + change.apply + shell.run)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-06T04:35:15Z"
   },
   {
    "id": "IMP-EV-0133",
@@ -11144,9 +11428,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: host-conditional tool visibility is not applied at registration time. Missing link: registry filters by host support."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0134",
@@ -11170,9 +11460,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: deferred tool search is not exposed to the model. Missing link: tool-discovery tool."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0135",
@@ -11196,9 +11492,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): PARTIAL: bounded background output exists at the broker; no daemon surface starts background runs. Missing link: shell.run background mode (Phase 6)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0136",
@@ -11222,10 +11524,16 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: permission modes are not selectable from the surface. Missing link: Phase 5 approval modes item."
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0137",
@@ -11460,9 +11768,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: blueprint/environment snapshots have no production caller."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0147",
@@ -11486,9 +11800,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:44Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: browser/E2E evidence awaits the browser subsystem (M7)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-06T04:35:44Z"
   },
   {
    "id": "IMP-EV-0150",
@@ -12168,9 +12488,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: Workspace Capsule has no production caller. Missing link: capsule export surface."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0177",
@@ -12194,9 +12520,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): PARTIAL: schemas are rebuilt per request; lazy/contextual schema selection is not consulted. Missing link: lazy schema context per model capability."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0178",
@@ -12489,9 +12821,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: media split for provider compliance is unused while conversations are text-only. Missing link: multimodal message routing (Phase 6 multimodal item)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0189",
@@ -12515,9 +12853,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): PARTIAL: per-model settings resolve through profiles in production, but the full vision/agent/modality capability metadata is not consulted. Missing link: capability-driven request shaping."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0190",
@@ -12678,9 +13022,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: multi-client permission mediation has no daemon caller. Missing link: Phase 5 approval loop."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0196",
@@ -13135,9 +13485,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: the no-fake-examples runner is governance tooling without a daemon surface; keep as CI-governed. Missing link: fold into the release gate (M10)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0213",
@@ -13228,10 +13584,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0217",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
-    "commit:09fc533"
+    "commit:09fc533",
+    "log:docs/evidence/m2-11-scripted-e2e.log",
+    "run:local/daemon_scripted_e2e"
    ],
    "notes": [
     {
@@ -13239,9 +13597,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:34:48Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Explicit built-in tool families routed per worktree in every production run: fs.read/fs.list, change.propose/apply, search.grep, git.status/diff, shell.run (execd), test.run (verification gates)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-06T04:34:48Z"
   },
   {
    "id": "IMP-EV-0218",
@@ -13378,9 +13742,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: structured AskUserQuestion is not exposed as a tool. Missing link: question tool + waiting(user) park (Phase 5)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0223",
@@ -13482,9 +13852,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: toolsets/capability grouping is not consumed by the scheduler registry. Missing link: register toolsets, not individual tools."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0230",
@@ -13664,9 +14040,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: the typed pre/execute/post pipeline is not invoked by the production registry execute path. Missing link: route tool execution through the pipeline."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0240",
@@ -14219,9 +14601,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:45Z",
+     "from": "WIRED",
+     "to": "WIRED",
+     "note": "M2 roll-up evidence audit (2026-09-06): NOT production-routed: Q&A->Plan->visual review ceremony awaits the desktop review surface (Phase 5)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-06T04:35:45Z"
   },
   {
    "id": "IMP-EV-0267",
@@ -14286,10 +14674,12 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0269",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33897815138",
-    "commit:09fc533"
+    "commit:09fc533",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "run:2026-09-06T01:10Z/shell_output_streams_and_pages_through_output_refs"
    ],
    "notes": [
     {
@@ -14297,9 +14687,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:02Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "OutputRef pagination in production: full tool output lands behind the content-addressed output_refs runtime table; the ReadOutputRef surface RPC pages exact ranges (two ranges concatenate to the byte-exact output in the E2E)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-06T04:35:02Z"
   },
   {
    "id": "IMP-EV-0270",
@@ -14338,10 +14734,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0271",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33898661734",
-    "commit:b2fa516"
+    "commit:b2fa516",
+    "log:docs/evidence/phase2-6-streamed-output-2026-09-06.log",
+    "log:docs/evidence/phase2-m4-5-cursor-metadata-2026-09-06.log",
+    "run:2026-09-06T01:10Z/shell_output_streams_and_pages_through_output_refs"
    ],
    "notes": [
     {
@@ -14349,9 +14748,15 @@
      "from": "COMPLETE",
      "to": "WIRED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T04:35:02Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "Durable terminal + replay window: the broker's runs and output survive producer death (resume E2E restarts the core and replays); offset-addressed reads page the replay window; reattachment cursors ride the unified CursorMeta contract (M4.5)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-06T04:35:02Z"
   },
   {
    "id": "IMP-EV-0272",
