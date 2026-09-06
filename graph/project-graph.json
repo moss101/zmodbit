@@ -2218,10 +2218,14 @@
    "milestone": "M4",
    "order": 5,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33925189162",
-    "commit:9d0a4fd"
+    "commit:9d0a4fd",
+    "log:docs/evidence/phase2-5-run-resume-2026-09-06.log",
+    "receipt:aba88a5b66765c374de548c132be8732e3675fb4992cdb882623523d8485a806",
+    "run:2026-09-06T00:10Z/core_kill_mid_run_resumes_from_checkpoint",
+    "run:2026-09-06T00:10Z/core_kill_first_tool_resumes_with_note"
    ],
    "notes": [
     {
@@ -2235,9 +2239,27 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-06T00:48:58Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "Phase 2.5 wired the kill-point suite into production routing: the daemon boot scan resumes interrupted runs from ConversationCheckpointed events in the real store."
+    },
+    {
+     "at": "2026-09-06T00:48:58Z",
+     "from": "WIRED",
+     "to": "REAL_TESTING",
+     "note": "Always-on daemon_resume_e2e exercises the docs/54 kill points for real: SIGKILL of the modbit-core daemon during a model turn's tool execution (mid-run with a committed checkpoint, and mid-first-tool without one), restart on the same SQLite store, resume with typed-role conversation restore and interruption note."
+    },
+    {
+     "at": "2026-09-06T00:48:58Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Kill-point recovery suite E2E_PROVEN through the real daemon: checkpoint restore asserted on the fixture-captured post-restart wire request (roles + call-id linkage + checkpointed result content), durable conversation_checkpointed events verified in the daemon's SQLite; checkpoint-less kills resume as fresh attempts carrying the unknown-outcome note. Mutation (checkpoint loader pinned to None) detected. Nightly-live validated green on merged main (run 34002162962) for the live path."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-06T00:48:58Z"
   },
   {
    "id": "M5.1",

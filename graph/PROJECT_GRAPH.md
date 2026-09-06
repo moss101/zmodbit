@@ -1,7 +1,7 @@
 # Modbit Project Graph
 
 > Generated from `graph/project-graph.json` by `tools/graph.py render --write`. Do not edit by hand; edit the graph through `tools/graph.py set` or regenerate structure with `tools/build_graph.py`.  
-> Graph generated on 2026-09-06; view rendered on 2026-09-05.
+> Graph generated on 2026-09-06; view rendered on 2026-09-06.
 
 ## What the graph is
 
@@ -256,7 +256,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M4.3` | IMPLEMENTING | Workspace checkpoint baseline/delta objects + epoch fencing |  |
 | `M4.4` | IMPLEMENTING | kernel lease/session fencing |  |
 | `M4.5` | IMPLEMENTING | terminal/browser/sandbox cursor metadata interfaces |  |
-| `M4.6` | IMPLEMENTING | kill-point recovery suite |  |
+| `M4.6` | E2E_PROVEN | kill-point recovery suite |  |
 
 ### M5 — Procedural runtime and skills
 
