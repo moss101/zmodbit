@@ -10,11 +10,11 @@ name: nightly-live
 
 on:
   schedule:
-    # 17 past the hour: GitHub's documented guidance — top-of-hour
-    # schedules are delayed or dropped under Actions queue load (the
-    # 03:00Z slot never fired on 2026-09-06; both prior runs were
-    # manual dispatches).
-    - cron: "17 3 * * *" # 03:17 UTC daily
+    # 43 past the hour: BOTH prior slots (03:00Z on 09-06, 03:17Z on
+    # 09-07) were dropped under Actions queue load — zero scheduled runs
+    # in workflow history. Nightly coverage is additionally guaranteed by
+    # the per-night verification checks (documented dispatch fallback).
+    - cron: "43 3 * * *" # 03:43 UTC daily
   workflow_dispatch: {}
 
 jobs:
