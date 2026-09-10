@@ -11,8 +11,14 @@ Manager / Secret Service), env broker as fallback
 ---------------------------------------------------------------------
 - dependency admission (docs/36): the `keyring` crate v3 (MIT/Apache-2.0,
   actively maintained), per-OS native features so no platform builds
-  another's backend (apple-native / windows-native /
-  sync-secret-service). Confined to modbit-providers::keychain.
+  another's backend (apple-native / windows-native / linux-native
+  kernel-keyutils). Confined to modbit-providers::keychain. CI NOTE:
+  the sync-secret-service (dbus) Linux backend was REJECTED after it
+  broke the ubuntu build (libdbus-sys needs system libdbus); linux-native
+  keyutils needs nothing external. On Linux the secret store is the
+  kernel keyring rather than the desktop Secret Service — the DBus
+  variant can be re-admitted alongside keyutils when a desktop (not
+  headless-CI) Secret Service consumer exists.
 - crates/providers/src/keychain.rs (new): KeychainSecretBroker —
   keychain-first lookups (service "modbit-core", account = the broker
   name the transport asks for, e.g. OPENAI_API_KEY) with the env broker

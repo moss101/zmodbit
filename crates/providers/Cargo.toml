@@ -27,7 +27,11 @@ keyring = { version = "3", features = ["apple-native"] }
 keyring = { version = "3", features = ["windows-native"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-keyring = { version = "3", features = ["sync-secret-service"] }
+# linux-native (kernel keyutils) needs NO system dbus at build time —
+# the dbus-backed Secret Service variant broke CI builds (libdbus).
+# Switch the feature to sync-secret-service when a dbus-backed store is
+# genuinely required.
+keyring = { version = "3", features = ["linux-native"] }
 
 [dev-dependencies]
 uuid = { workspace = true }
