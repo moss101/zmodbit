@@ -1,0 +1,86 @@
+Phase 4.2 — settings screen: persisted settings replacing env-only configuration
+========================================================================
+Phase context: Future-tasks Phase 4 item 2 ("settings screen: providers,
+models, base URLs, max turns, execution mode with presets for OpenAI,
+Anthropic and OpenAI-compatible endpoints")
+Revision: the Phase 4.2 commit on main (after 6cc8f12)
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: ALL configuration was environment
+variables read once at boot — defect §2 item 6 of the 2026-09-06 audit,
+deferred to Phase 4; no settings surface, no persistence, no presets)
+---------------------------------------------------------------------
+- event-store: migration v7 adds `app_settings` (single JSON document,
+  docs/31 § Runtime configuration tables) + `settings.rs`
+  (get/set/merge). Secrets NEVER live here: API keys belong to the
+  secret broker (keychain broker = Phase 4 item 3, next).
+- proto 17 → 19 requests: `GetSettingsRequest`,
+  `UpdateSettingsCommand` (PARTIAL update — empty fields keep stored
+  values), `SettingsView`; SurfaceResponse gains `settings`. TS
+  bindings regenerated. Provider allowlist (openai | anthropic |
+  openai-compatible), URL shape check, maxTurns 1..200,
+  executionMode enum — enforced at the bridge schema guard BEFORE the
+  privileged host sees the message (REQ ledger EV-0103 discipline).
+- scheduler: PER-RUN overlay — each run takes provider / model /
+  base_url / max_turns from the PERSISTED settings over the boot
+  configuration (env stays the fallback for unset fields). A task
+  started after a settings change runs with the new values with no
+  daemon restart.
+- execution_mode is a REAL consumer, not a stored string:
+  "readonly" drops every write/external grant at the capability
+  kernel — change.apply/shell.run/test.run are refused for the whole
+  task; "default" keeps the full grant set. (Approval modes expand in
+  Phase 5 per the work order.)
+- desktop: a Settings screen (fleet ⇄ settings nav) with provider
+  presets — OpenAI (api.openai.com/v1), Anthropic (api.anthropic.com),
+  OpenAI-compatible with endpoint presets for Ollama (localhost:11434/
+  v1), vLLM (localhost:8000/v1) and z.ai (api.z.ai/api/paas/v4) — plus
+  model id, max turns, execution mode. Values load from GetSettings
+  and save as partial UpdateSettings. An explicit note states API keys
+  are NOT stored here (secret broker owns them).
+
+PROOFS (full workspace suite exit 0, 503 Rust tests; desktop vitest 36
+green; tsc clean; clippy clean)
+---------------------------------------------------------------------
+settings_e2e (REAL daemon + REAL model endpoint):
+  persisted_settings_drive_runs_and_the_readonly_mode_refuses_edits . ok
+  - UpdateSettings persists; GetSettings round-trips; both survive a
+    core restart on the same DB (durable, docs/31)
+  - the core booted with NO MODBIT_BASE_URL / MODBIT_MODEL /
+    MODBIT_PROVIDER: the run REACHED the model endpoint configured in
+    the settings (the fixture served the turns) — the overlay really
+    routes
+  - execution_mode=readonly: the model's change.apply attempt is
+    refused by the kernel (denial rides the durable conversation) and
+    the worktree file is byte-identical afterwards — nothing written
+  default_mode_applies_the_edit ................................ ok
+  - control: the SAME edit with execution_mode=default applies — the
+    refusal is the SETTING's effect, not a breakage
+- one debug iteration recorded: the fixture's turn index was used
+  after increment (off-by-one served the finish text first); test
+  fixed, production code untouched.
+
+MUTATION CHECK (docs/55), against the Phase 4.2 commit:
+  Mutation: the settings overlay disabled (boot config forced for every
+  run, execution_mode forced default) -> the readonly E2E FAILED: with
+  no overlay the run cannot reach the settings' model endpoint (no
+  MODBIT_BASE_URL in the environment) and the task never completes.
+  The overlay is load-bearing. REVERTED; post-revert green.
+
+DOCS
+---------------------------------------------------------------------
+- docs/31: app_settings + recent_repos runtime-table sections.
+- docs/30: GetSettings/UpdateSettings in the command list; the
+  CreateTask repo note.
+- docs/32: § Repository picker (Phase 4.1) + the settings screen
+  contract (Phase 4.2).
+- Future-tasks: facts (RPCs 17 → 19) updated; Phase 4.2 evidence row
+  lands with the phase table at the next closure checkpoint.
+
+REMAINING GAPS (Phase 4)
+---------------------------------------------------------------------
+Item 3 (keychain SecretBroker: macOS Keychain / Windows Credential
+Manager / Secret Service, env fallback) — NEXT. Items 4-6: packaging
+(signing/notarization need user credentials), headless CLI, quick-start
+docs. Settings items intentionally OUT of scope here: per-secret
+storage and credential entry UX ride item 3.
