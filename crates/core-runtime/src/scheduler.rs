@@ -408,7 +408,6 @@ impl Scheduler {
         let ws = Arc::new(
             WorkspaceFileService::open(&worktree_path).map_err(|e| format!("open workspace: {e}"))?,
         );
-        let context_pack = build_context_pack(&ws, &title, &prompt);
         // IMP-EV-0004: the task's repository index, built by walking the
         // real worktree at task start (gitignore/hidden/policy/binary/size
         // filters). The writer is attached to the run plane below; refreshes
@@ -480,6 +479,18 @@ impl Scheduler {
             built_index,
         ));
         task_index.queue_built_evidence();
+        // M3.8: the task context pack compiles through modbit-context
+        // (token-derived budget, full provenance, recently-changed section,
+        // index-seeded file heads). Packed file paths are retrieval
+        // evidence for the retrieve-before-edit gate (MOD-CTX-001).
+        let (context_pack, packed_files) = build_context_pack(
+            &ws,
+            Some(&task_index),
+            &title,
+            &prompt,
+            self.config.max_input_tokens,
+        );
+        task_index.record_evidence(packed_files);
         let registry = build_worktree_registry(
             &ws,
             &worktree_path,
@@ -752,16 +763,204 @@ fn task_has_run(store: &EventStore, task_id: &TaskId) -> Result<bool, String> {
         })
 }
 
-/// Bounded context pack from the real worktree via the canonical service
-/// (the M3 context engine replaces the internals, not this wiring).
-fn build_context_pack(ws: &WorkspaceFileService, title: &str, prompt: &str) -> String {
+/// Compiles the task context pack through the canonical context engine
+/// (docs/18 § Context Pack; M3.8): fragments packed value-ordered under a
+/// token-derived character budget by `modbit-context`'s pack compiler,
+/// EVERY packed fragment carrying full provenance (source, sha256,
+/// revision, retrieval reason — validated by the provenance module), with
+/// a "recently changed files" section from the workspace journal and
+/// index-seeded file heads. Content is read FRESH through the workspace
+/// service (hydration discipline — the index never supplies bytes).
+/// Returns the pack text and the packed file paths (retrieval evidence).
+fn build_context_pack(
+    ws: &WorkspaceFileService,
+    task_index: Option<&TaskIndexWriter>,
+    title: &str,
+    prompt: &str,
+    max_input_tokens: u64,
+) -> (String, Vec<String>) {
+    use modbit_context::pack_compiler::{pack_with_budget, Fragment};
+    use modbit_context::provenance::{validate_envelope, EnvelopeFragment, Provenance};
+
+    // ~4 chars per token; bounded to keep the prompt segment sane.
+    const CHARS_PER_TOKEN: usize = 4;
+    let budget = (max_input_tokens as usize)
+        .saturating_mul(CHARS_PER_TOKEN)
+        .clamp(2_000, 64_000);
+    let revision = ws.workspace_revision();
+    let repo = "task-worktree".to_string();
+
+    let mut fragments: Vec<Fragment> = Vec::new();
+    let mut reasons: Vec<(String, String)> = Vec::new(); // path -> retrieval reason
+
+    // 1. Task brief — critical, always retained.
+    let brief = format!("# Task\n{title}\n\n# Objective\n{prompt}");
+    reasons.insert(0, ("task:brief".into(), "task brief".into()));
+    fragments.push(Fragment {
+        path: "task:brief".into(),
+        text: brief,
+        value: 1.0,
+        critical: true,
+    });
+
+    // 2. Recently changed files (journal tail, latest state per path).
+    if let Ok(changes) = ws.changes() {
+        let mut latest: std::collections::BTreeMap<&str, &modbit_workspace::FileChangeEvent> =
+            std::collections::BTreeMap::new();
+        for event in &changes {
+            latest.insert(event.path.as_str(), event);
+        }
+        let mut recent: Vec<_> = latest.values().collect();
+        recent.sort_by_key(|e| std::cmp::Reverse(e.workspace_revision));
+        let lines: Vec<String> = recent
+            .iter()
+            .take(10)
+            .map(|e| {
+                format!(
+                    "- {} ({:?} at workspace revision {}, content sha256 {})",
+                    e.path,
+                    e.change_kind,
+                    e.workspace_revision,
+                    &e.sha256[..e.sha256.len().min(12)]
+                )
+            })
+            .collect();
+        if !lines.is_empty() {
+            reasons.push(("workspace:recently-changed".into(), "workspace change journal".into()));
+            fragments.push(Fragment {
+                path: "workspace:recently-changed".into(),
+                text: format!("# Recently changed files\n{}", lines.join("\n")),
+                value: 0.9,
+                critical: false,
+            });
+        }
+    }
+
+    // 3. Top-level workspace map (bounded).
     let entries = ws.list("").unwrap_or_default();
     let shown: Vec<String> = entries.iter().take(50).cloned().collect();
-    format!(
-        "# Task\n{title}\n\n# Objective\n{prompt}\n\n# Workspace files (top level, first 50)\n{}\n\n# Total top-level entries\n{}",
-        shown.join("\n"),
-        entries.len()
-    )
+    reasons.push(("workspace:top-level".into(), "workspace map".into()));
+    fragments.push(Fragment {
+        path: "workspace:top-level".into(),
+        text: format!(
+            "# Workspace files (top level, first 50)\n{}\n\n# Total top-level entries\n{}",
+            shown.join("\n"),
+            entries.len()
+        ),
+        value: 0.5,
+        critical: false,
+    });
+
+    // 4. Index-seeded file heads: the task objective queries the live
+    // index; each hit contributes a bounded fresh-content head.
+    if let (Some(index), false) = (task_index, prompt.trim().is_empty()) {
+        for hit in index.retrieval_hits(ws, prompt, 8) {
+            if hit.path.ends_with(":brief")
+                || hit.path.starts_with("workspace:")
+                || hit.path.starts_with("task:")
+            {
+                continue;
+            }
+            let Ok((bytes, _rev)) = ws.read(&hit.path) else { continue };
+            let head: String = String::from_utf8_lossy(&bytes)
+                .lines()
+                .take(40)
+                .collect::<Vec<_>>()
+                .join("\n");
+            if head.trim().is_empty() {
+                continue;
+            }
+            let score = (hit.score.clamp(0.0, 4.0) / 4.0) + 0.6;
+            reasons.push((format!("file:{}", hit.path), format!("index query hit (score {:.3})", hit.score)));
+            fragments.push(Fragment {
+                path: format!("file:{}", hit.path),
+                text: head,
+                value: score.min(0.95),
+                critical: false,
+            });
+        }
+    }
+
+    // Pack under budget through the canonical compiler, then render with
+    // provenance lines validated by the provenance module.
+    let mut store = modbit_context::pack_compiler::CompressionStore::new();
+    match pack_with_budget(&fragments, budget, &mut store) {
+        Ok(pack) => {
+            let envelope: Vec<EnvelopeFragment> = pack
+                .packed
+                .iter()
+                .map(|f| EnvelopeFragment {
+                    text: f.text.clone(),
+                    ephemeral: false,
+                    provenance: Some(Provenance {
+                        source: f.path.clone(),
+                        repo: repo.clone(),
+                        revision,
+                        sha256: modbit_context::pack_compiler::sha256_hex(f.text.as_bytes()),
+                        retrieval_reason: reasons
+                            .iter()
+                            .find(|(p, _)| *p == f.path)
+                            .map(|(_, r)| r.clone())
+                            .unwrap_or_else(|| "packed".into()),
+                    }),
+                })
+                .collect();
+            if validate_envelope(&envelope).is_err() {
+                // A provenance bug must never silently ship an
+                // unattributable pack: fall back to the brief only.
+                eprintln!("modbit scheduler: context pack provenance validation failed; shipping brief only");
+                let brief_text = fragments[0].text.clone();
+                return (
+                    format!(
+                        "{brief_text}\n\n# Context pack\nunavailable (provenance validation failed)"
+                    ),
+                    Vec::new(),
+                );
+            }
+            let mut sections: Vec<String> = Vec::new();
+            let mut packed_files: Vec<String> = Vec::new();
+            for (fragment, env) in pack.packed.iter().zip(&envelope) {
+                let provenance = env.provenance.as_ref().expect("validated above");
+                sections.push(format!(
+                    "=== {} ===\n{}\n[provenance] source={} sha256={} revision={} reason={}",
+                    fragment.path,
+                    fragment.text,
+                    provenance.source,
+                    &provenance.sha256[..16],
+                    provenance.revision,
+                    provenance.retrieval_reason,
+                ));
+                if let Some(file) = fragment.path.strip_prefix("file:") {
+                    packed_files.push(file.to_string());
+                }
+            }
+            let handles: Vec<String> = pack
+                .handles
+                .iter()
+                .map(|h| format!("- {} (hydratable by digest {})", h.path, &h.sha256[..12]))
+                .collect();
+            let text = format!(
+                "{}\n\n=== context-pack ===\npacked {} fragment(s), {} compressed handle(s), {} / {} budgeted characters (context engine: modbit-context)\n{}",
+                sections.join("\n\n"),
+                pack.packed.len(),
+                pack.handles.len(),
+                pack.used_bytes,
+                budget,
+                if handles.is_empty() {
+                    String::new()
+                } else {
+                    format!("compressed (hydratable on demand):\n{}", handles.join("\n"))
+                }
+            );
+            (text, packed_files)
+        }
+        Err(e) => {
+            // Critical overflow (budget smaller than the brief): ship the
+            // brief unbound rather than fail the task.
+            eprintln!("modbit scheduler: context pack failed ({e}); shipping brief only");
+            (fragments[0].text.clone(), Vec::new())
+        }
+    }
 }
 
 /// Workspace rules files (Future-tasks Phase 2 item 4, docs/14 step 3):
@@ -923,12 +1122,18 @@ pub fn build_worktree_registry(
             {
                 let ws = ws.clone();
                 let media = media.clone();
+                let task_index = task_index.clone();
                 Arc::new(move |args| {
                     let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
                     // Files checked out by git are adopted on first touch so
                     // reads carry revisions (canonical change-engine guard).
                     let _ = ws.adopt(path);
                     let (bytes, rev) = ws.read(path).map_err(|e| e.to_string())?;
+                    // MOD-CTX-001: a read IS retrieval evidence for the
+                    // retrieve-before-edit gate.
+                    if let Some(index) = task_index.as_ref() {
+                        index.record_evidence([path.to_string()]);
+                    }
                     // M2.10: binary media (PNG/JPEG/PDF) reads through the
                     // media pipeline — typed envelope with provenance
                     // digest and content-addressed artifact, bounded
@@ -1116,10 +1321,29 @@ pub fn build_worktree_registry(
             Some(ToolSchema { aliases: Default::default(), parameters: propose_params }),
             {
                 let ws = ws.clone();
+                let task_index = task_index.clone();
                 Arc::new(move |args| {
                     let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
                     let old = args.get("old_text").and_then(|v| v.as_str()).ok_or("missing old_text")?;
                     let new = args.get("new_text").and_then(|v| v.as_str()).ok_or("missing new_text")?;
+                    // MOD-CTX-001 retrieve-before-edit gate: an edit
+                    // proposal must be grounded in retrieved context. When
+                    // the task index tracks evidence and THIS path has
+                    // none — no fs.read, no query/search hit, not packed —
+                    // the proposal is refused with the remedy named. With
+                    // no index (tracking unavailable) the gate stays open
+                    // and says so.
+                    if let Some(index) = task_index.as_ref() {
+                        if !index.has_evidence(path) {
+                            return Ok(serde_json::json!({
+                                "ok": false,
+                                "gate": "retrieve_before_edit",
+                                "reason": format!(
+                                    "no retrieval evidence for '{path}' in this task; read it with fs.read or surface it via context.query / search.grep / search.symbol before proposing an edit (docs/02 MOD-CTX-001)"
+                                ),
+                            }));
+                        }
+                    }
                     let _ = ws.adopt(path);
                     let (bytes, rev) = ws.read(path).map_err(|e| e.to_string())?;
                     let content = String::from_utf8_lossy(&bytes).to_string();
@@ -1222,6 +1446,7 @@ pub fn build_worktree_registry(
             Some(ToolSchema { aliases: Default::default(), parameters: grep_params }),
             {
                 let worktree = worktree.to_path_buf();
+                let task_index = task_index.clone();
                 Arc::new(move |args| {
                     let pattern = args.get("pattern").and_then(|v| v.as_str()).ok_or("missing pattern")?;
                     let base = args
@@ -1252,6 +1477,14 @@ pub fn build_worktree_registry(
                             }
                         }
                     });
+                    // MOD-CTX-001: matched files are retrieval evidence.
+                    if let Some(index) = task_index.as_ref() {
+                        let paths: std::collections::BTreeSet<String> = matches
+                            .iter()
+                            .filter_map(|m| m.rsplit_once(':').map(|(p, _)| p.to_string()))
+                            .collect();
+                        index.record_evidence(paths);
+                    }
                     Ok(serde_json::json!({ "matches": matches, "files_searched": visited }))
                 })
             },
@@ -1282,7 +1515,15 @@ pub fn build_worktree_registry(
                         .and_then(|v| v.as_i64())
                         .map(|l| l.clamp(1, 50) as usize)
                         .unwrap_or(20);
-                    Ok(index.query_context(&ws, query, limit))
+                    let result = index.query_context(&ws, query, limit);
+                    // MOD-CTX-001: hit paths are retrieval evidence.
+                    if let Some(hits) = result.get("hits").and_then(|h| h.as_array()) {
+                        let paths = hits
+                            .iter()
+                            .filter_map(|h| h.get("path").and_then(|p| p.as_str()).map(String::from));
+                        index.record_evidence(paths);
+                    }
+                    Ok(result)
                 })
             },
         )
@@ -1306,7 +1547,25 @@ pub fn build_worktree_registry(
                         return Ok(serde_json::json!({ "definitions": [], "references": [], "note": "index unavailable for this task" }));
                     };
                     let name = args.get("name").and_then(|v| v.as_str()).ok_or("missing name")?;
-                    Ok(index.query_symbol(&ws, name))
+                    let result = index.query_symbol(&ws, name);
+                    // MOD-CTX-001: def/ref paths are retrieval evidence.
+                    let paths = result
+                        .get("definitions")
+                        .and_then(|d| d.as_array())
+                        .map(|a| a.iter())
+                        .into_iter()
+                        .flatten()
+                        .chain(
+                            result
+                                .get("references")
+                                .and_then(|r| r.as_array())
+                                .map(|a| a.iter())
+                                .into_iter()
+                                .flatten(),
+                        )
+                        .filter_map(|e| e.get("path").and_then(|p| p.as_str()).map(String::from));
+                    index.record_evidence(paths);
+                    Ok(result)
                 })
             },
         )
@@ -1771,6 +2030,10 @@ pub struct TaskIndexWriter {
     session_id: SessionId,
     shared: Arc<RunPlaneShared>,
     index: std::sync::Mutex<modbit_retrieval::task_index::TaskIndex>,
+    /// Paths with retrieval evidence in this task (MOD-CTX-001
+    /// retrieve-before-edit): read via fs.read, hit by context.query /
+    /// search.grep / search.symbol, or packed into the task context.
+    evidence: std::sync::Mutex<std::collections::BTreeSet<String>>,
 }
 
 /// Evidence bound for the recomputed-segment list in one event.
@@ -1788,7 +2051,36 @@ impl TaskIndexWriter {
             session_id,
             shared,
             index: std::sync::Mutex::new(index),
+            evidence: std::sync::Mutex::new(std::collections::BTreeSet::new()),
         }
+    }
+
+    /// Records retrieval evidence for paths (MOD-CTX-001): they were
+    /// surfaced to the agent (read, queried, matched, or packed).
+    pub(crate) fn record_evidence<I: IntoIterator<Item = String>>(&self, paths: I) {
+        let mut evidence = self.evidence.lock().expect("evidence set");
+        evidence.extend(paths);
+    }
+
+    /// Whether a path has retrieval evidence yet.
+    pub(crate) fn has_evidence(&self, path: &str) -> bool {
+        self.evidence
+            .lock()
+            .expect("evidence set")
+            .contains(path)
+    }
+
+    /// Ranked index hits for pack seeding (task-context compilation):
+    /// freshens the index first, then queries. Provenance rides each hit.
+    pub(crate) fn retrieval_hits(
+        &self,
+        ws: &WorkspaceFileService,
+        query: &str,
+        limit: usize,
+    ) -> Vec<modbit_retrieval::task_index::ContextHit> {
+        self.refresh_from_journal(ws, "context_pack");
+        let index = self.index.lock().expect("task index mutex");
+        index.context_query(query, limit)
     }
 
     /// Emits the task-start build summary. Called before the run id exists

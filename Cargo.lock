@@ -1152,6 +1152,7 @@ dependencies = [
  "futures",
  "modbit-checkpoint",
  "modbit-compaction",
+ "modbit-context",
  "modbit-domain",
  "modbit-event-store",
  "modbit-git",

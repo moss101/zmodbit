@@ -19,6 +19,7 @@ modbit-compaction = { path = "../compaction" }
 modbit-protocol-state = { path = "../protocol-state" }
 modbit-checkpoint = { path = "../checkpoint" }
 modbit-retrieval = { path = "../retrieval" }
+modbit-context = { path = "../context" }
 tokio = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
