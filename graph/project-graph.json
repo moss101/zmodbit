@@ -1847,10 +1847,14 @@
    "milestone": "M3",
    "order": 1,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34452032966",
+    "commit:b3e6159",
+    "log:docs/evidence/phase3-2-context-query-symbols-2026-09-10.log",
+    "run:2026-09-10T07:4xZ/context_query_and_search_symbol_answer_from_the_live_index"
    ],
    "notes": [
     {
@@ -1858,9 +1862,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T08:01:30Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "Tantivy 0.26 BM25 in production: real tantivy admitted per docs/36 (orphan in-crate bm25 deleted), per-task in-RAM index with exact-path incremental replacement committed per delta batch, ranked through the context.query tool via the fusion layer; daemon E2E proves post-edit lexical freshness with bm25 provenance; mutation check (lexical commit dropped) detected by the E2E."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T08:01:30Z"
   },
   {
    "id": "M3.3",
@@ -1870,10 +1880,14 @@
    "milestone": "M3",
    "order": 2,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34452032966",
+    "commit:b3e6159",
+    "log:docs/evidence/phase3-2-context-query-symbols-2026-09-10.log",
+    "run:2026-09-10T07:4xZ/context_query_and_search_symbol_answer_from_the_live_index"
    ],
    "notes": [
     {
@@ -1887,9 +1901,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T08:01:30Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "tree-sitter 0.27 symbol surface in production: definitions (function/method/class/struct/enum/trait/module/interface/type_alias) for Rust/TS/TSX/JS/Python via per-language queries; references are a query-time view over the current def set (later definitions resolve pre-indexed occurrences; incremental == cold); search.symbol tool answers cross-file defs+refs through the REAL daemon (E2E turn 2); cross-language identity gate exercised in symbols::tests (QUAL-EV-0005's fixture shape)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T08:01:30Z"
   },
   {
    "id": "M3.4",
