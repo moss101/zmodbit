@@ -1258,6 +1258,60 @@ pub fn build_worktree_registry(
         )
         .expect("register search.grep");
 
+    // ---- context.query: fused BM25 + path + symbol index query --------
+    let mut cq_params = std::collections::BTreeMap::new();
+    cq_params.insert("query".into(), param(ParamType::Str, true, "What to find: terms, an identifier, or a path fragment"));
+    cq_params.insert("limit".into(), param(ParamType::Int, false, "Max hits (default 20, max 50)"));
+    registry
+        .register_with_schema(
+            "context.query",
+            "1.0.0",
+            EffectClass::ReadOnly,
+            "Query the task's repository index for context: Tantivy BM25 lexical ranking + exact path match + tree-sitter symbol candidates, fused with provenance. Freshened from the change journal before answering.",
+            Some(ToolSchema { aliases: Default::default(), parameters: cq_params }),
+            {
+                let ws = ws.clone();
+                let task_index = task_index.clone();
+                Arc::new(move |args| {
+                    let Some(index) = task_index.as_ref() else {
+                        return Ok(serde_json::json!({ "hits": [], "note": "index unavailable for this task" }));
+                    };
+                    let query = args.get("query").and_then(|v| v.as_str()).ok_or("missing query")?;
+                    let limit = args
+                        .get("limit")
+                        .and_then(|v| v.as_i64())
+                        .map(|l| l.clamp(1, 50) as usize)
+                        .unwrap_or(20);
+                    Ok(index.query_context(&ws, query, limit))
+                })
+            },
+        )
+        .expect("register context.query");
+
+    // ---- search.symbol: tree-sitter definitions/references ------------
+    let mut sym_params = std::collections::BTreeMap::new();
+    sym_params.insert("name".into(), param(ParamType::Str, true, "Exact symbol name to resolve"));
+    registry
+        .register_with_schema(
+            "search.symbol",
+            "1.0.0",
+            EffectClass::ReadOnly,
+            "Find symbol definitions and references by exact name via tree-sitter (Rust, TypeScript/TSX, JavaScript, Python). Freshened from the change journal before answering.",
+            Some(ToolSchema { aliases: Default::default(), parameters: sym_params }),
+            {
+                let ws = ws.clone();
+                let task_index = task_index.clone();
+                Arc::new(move |args| {
+                    let Some(index) = task_index.as_ref() else {
+                        return Ok(serde_json::json!({ "definitions": [], "references": [], "note": "index unavailable for this task" }));
+                    };
+                    let name = args.get("name").and_then(|v| v.as_str()).ok_or("missing name")?;
+                    Ok(index.query_symbol(&ws, name))
+                })
+            },
+        )
+        .expect("register search.symbol");
+
     // ---- git.status / git.diff: canonical git crate --------------------
     let status_params = std::collections::BTreeMap::new();
     registry
@@ -1371,6 +1425,8 @@ pub fn worktree_grants() -> Vec<CapabilityGrant> {
         CapabilityGrant { grant_id: "g-fs-read".into(), tool: "fs.read".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-fs-list".into(), tool: "fs.list".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-grep".into(), tool: "search.grep".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-context-query".into(), tool: "context.query".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-search-symbol".into(), tool: "search.symbol".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-git-status".into(), tool: "git.status".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-git-diff".into(), tool: "git.diff".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-change-propose".into(), tool: "change.propose".into(), effect_class: EffectClass::ReadOnly },
@@ -1809,6 +1865,41 @@ impl TaskIndexWriter {
             },
         );
         true
+    }
+
+    /// context.query (docs/17: Context Engine): refreshes the index from
+    /// the change journal FIRST (freshness before answering), then runs
+    /// the fused BM25 + path + symbol query. Bounded, deterministic.
+    fn query_context(&self, ws: &WorkspaceFileService, query: &str, limit: usize) -> serde_json::Value {
+        self.refresh_from_journal(ws, "context_query");
+        let index = self.index.lock().expect("task index mutex");
+        let hits = index.context_query(query, limit);
+        serde_json::json!({
+            "hits": hits
+                .iter()
+                .map(|h| {
+                    serde_json::json!({
+                        "path": h.path,
+                        "line": h.line,
+                        "score": (h.score * 1000.0).round() / 1000.0,
+                        "sources": h.sources,
+                    })
+                })
+                .collect::<Vec<_>>(),
+            "note": "paths + provenance only; read files with fs.read for current content",
+        })
+    }
+
+    /// search.symbol (docs/17: Search family): refreshes the index, then
+    /// resolves definitions and references for an exact symbol name via
+    /// the tree-sitter surface (Rust, TypeScript/TSX, JavaScript, Python).
+    fn query_symbol(&self, ws: &WorkspaceFileService, name: &str) -> serde_json::Value {
+        self.refresh_from_journal(ws, "symbol_query");
+        let index = self.index.lock().expect("task index mutex");
+        serde_json::json!({
+            "definitions": index.symbol_definitions(name),
+            "references": index.symbol_references(name),
+        })
     }
 }
 

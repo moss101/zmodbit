@@ -15,13 +15,13 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 |---|---|---:|---:|
 | Authority and orientation | 00–09 | 5 | 26678 |
 | Architecture and subsystems | 10–29 | 17 | 79393 |
-| Implementation specifications | 30–39 | 8 | 30508 |
+| Implementation specifications | 30–39 | 8 | 31250 |
 | Requirements, tasks and traceability | 40–49 | 9 | 292645 |
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
 | Live state | 98–99 | 1 | 2382 |
-| **Total docs** | | **70** | **511573** |
+| **Total docs** | | **70** | **512315** |
 
 ## Specification files (`docs/`)
 
@@ -54,7 +54,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 32 | `docs/32_DESKTOP_FRONTEND_IMPLEMENTATION.md` | Desktop Frontend Implementation | implementation | 4183 | `fb96b5be03dd7699e5b3c236e179e2338c3abcf2fd71c723ec098d7ce33dc2c0` |
 | 33 | `docs/33_CORE_AND_CLOUD_BACKEND_IMPLEMENTATION.md` | Core and Cloud Backend Implementation | implementation | 4169 | `ccf8a07c3afc5ec451b6dac6a7464bc83566f630f0a68f303acfef6a05163635` |
 | 34 | `docs/34_OBSERVABILITY_COST_AND_OPERATIONS_DATA.md` | Observability, Cost, and Operations Data | implementation | 2849 | `0be1a2c47a758c70b75e1678efcadd06fdb27994beb5a1ed6769611792064243` |
-| 35 | `docs/35_DEPENDENCY_AND_BINDING_DECISIONS.md` | Dependency and Binding Decisions | implementation | 1729 | `f25c4f8270ea42e0ea9273884c5826f5c3f3e02c297703a510ebdda327f790ae` |
+| 35 | `docs/35_DEPENDENCY_AND_BINDING_DECISIONS.md` | Dependency and Binding Decisions | implementation | 2471 | `b6c6dd7c6dbc7dc6bfd63660e1f0dc58ed7861463902d48b1b391093af9b8783` |
 | 36 | `docs/36_BUILD_BUY_DEPENDENCY_AND_LICENSE_POLICY.md` | Build / Buy / Dependency / License Decisions | implementation | 3363 | `538f768996bec4254231f7671517e68bea6cf529f51b60588a5b2dd91007071a` |
 | 37 | `docs/37_EXISTING_CODE_DONOR_AND_REUSE_POLICY.md` | Existing-Code Donor and Reuse Policy | implementation | 2968 | `3b694bd3111e152492f2973edaf293f3d0afa40d1e87b1362deda9e31f7e91b6` |
 | 40 | `docs/40_EVIDENCE_DERIVED_REQUIREMENT_LEDGER.md` | Evidence-Derived Requirement Ledger — Build Edition | requirements | 76383 | `d673606834f48960f015f4719c0b6fd956988469c39348aa859c4c0d91e20336` |
@@ -105,7 +105,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
-| `graph/project-graph.json` | project driver graph with live status | 851520 | `f1e1fea5f96f41de63a23c09109ec2d3b8f70456d88fccfb2a12c493daba31f1` |
+| `graph/project-graph.json` | project driver graph with live status | 853061 | `6b8d7e6399d8f0c96595a8b25880363f90dcd87cd7d939896ef4903774a30881` |
 | `graph/PROJECT_GRAPH.md` | human view of the graph | 22622 | `da9f6d01fdc39660630848c76cccdf95b67b87303366faf957c305b945ec73a1` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |

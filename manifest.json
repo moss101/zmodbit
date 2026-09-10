@@ -7,7 +7,7 @@
   "counts": {
     "docs": 70,
     "root_and_tooling": 84,
-    "docs_bytes": 511573
+    "docs_bytes": 512315
   },
   "sections": [
     {
@@ -301,8 +301,8 @@
       "section": "implementation",
       "section_title": "Implementation specifications",
       "title": "Dependency and Binding Decisions",
-      "bytes": 1729,
-      "sha256": "f25c4f8270ea42e0ea9273884c5826f5c3f3e02c297703a510ebdda327f790ae"
+      "bytes": 2471,
+      "sha256": "b6c6dd7c6dbc7dc6bfd63660e1f0dc58ed7861463902d48b1b391093af9b8783"
     },
     {
       "path": "docs/36_BUILD_BUY_DEPENDENCY_AND_LICENSE_POLICY.md",
@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 851520,
-      "sha256": "f1e1fea5f96f41de63a23c09109ec2d3b8f70456d88fccfb2a12c493daba31f1"
+      "bytes": 853061,
+      "sha256": "6b8d7e6399d8f0c96595a8b25880363f90dcd87cd7d939896ef4903774a30881"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",

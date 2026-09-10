@@ -6,8 +6,8 @@ Most architecture is dependency-neutral. Exact names appear here only where impl
 
 - Desktop shell: **PROVISIONAL** Electron-based shell. Must remain behind SurfaceProtocol and browser/session boundaries so it can be replaced.
 - Local durable store: SQLite-class embedded SQL store with migrations and WAL behavior suitable for crash recovery.
-- Structural parsing: tree-sitter-class parsers plus headless language-service adapters where needed.
-- Full-text index: Tantivy-class local index.
+- Structural parsing: tree-sitter-class parsers plus headless language-service adapters where needed. Concrete binding (Phase 3, 2026-09-10): `tree-sitter` 0.27 runtime with grammar crates `tree-sitter-rust` 0.24, `tree-sitter-typescript` 0.23 (TypeScript + TSX), `tree-sitter-javascript` 0.25, `tree-sitter-python` 0.25, confined to `modbit-retrieval`'s symbol surface (definitions/queries per language; grammars are the only language-specific code).
+- Full-text index: Tantivy-class local index. Concrete binding (Phase 3, 2026-09-10): `tantivy` 0.26 (default features), confined to `modbit-retrieval`'s lexical index (in-RAM per task index; one document per indexed file, replaced by exact path term). All grammars and tantivy are MIT/Apache-2.0 permissively licensed; replaceability contract: the fusion layer consumes only ranked (path, score) pairs, proven by the lexical unit tests.
 - ANN/vector index: **PROVISIONAL** USearch-class embedded ANN implementation; benchmark before lock.
 - Procedural isolation: **PROVISIONAL** QuickJS-class isolate with no ambient authority.
 - Browser: Chromium/CDP-compatible runtime exposed through Modbit-owned browser abstractions.

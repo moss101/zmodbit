@@ -12,15 +12,16 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fmt;
 
-pub mod bm25;
 pub mod context_graph;
 pub mod engineering_context;
 pub mod history_context;
 pub mod hydration;
 pub mod index_bench;
 pub mod knowledge;
+pub mod lexical;
 pub mod merkle;
 pub mod rerank;
+pub mod symbols;
 pub mod task_index;
 pub mod walker;
 
