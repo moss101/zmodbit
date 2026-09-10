@@ -17,29 +17,38 @@ Previous version of this file: the 2026-09-05 component audit and its section 4 
 | Phase 1.6 desktop task workspace, SSE consumption, real tokens and UI components | `apps/desktop/src/task-workspace`, `packages/ui`, `packages/design-tokens` |
 | Phase 1.7 daemon-driven E2E automation, nightly live job, rewritten `live_m2_close.sh` | `.github/workflows/nightly-live.yml`, `crates/core-runtime/tests/daemon_*_e2e.rs` |
 | M2 → `E2E_PROVEN` against a live model (E2E-001/002/003) | `docs/evidence/m2-11-live-e2e-2026-09-05T20-25Z.log` |
+| Phase 2.1 proper message roles — `Vec<ChatMessage>`, assistant turns carry `tool_calls`, tool results keyed by call id | commit `e80394d`; `crates/core-runtime/src/one_agent.rs`, `tests/daemon_roles_e2e.rs`, `docs/evidence/phase2-1-message-roles-2026-09-06.log` |
+| Phase 2.2 token budget + hot-path compaction (oldest tool results first, `CompactionApplied` run event) + per-model request settings | commit `6ee7135`; `crates/compaction/src/hot_path.rs`, `one_agent.rs` |
+| Phase 2.3 cancellation — `StopTask` aborts the in-flight stream and kills the broker run, `PauseTask` parks at the turn boundary, `SteerTask` injects on the next turn | commit `271dc35`; `scheduler.rs`, `one_agent.rs`, `tests/daemon_cancellation_e2e.rs` |
+| Phase 2.4 repo rules files (`AGENTS.md` / `CLAUDE.md` / `.cursor/rules` / `.modbit/rules.md`) ride the compiled prompt with provenance hashes | commit `c5307da`; `scheduler.rs` rules loader, `docs/evidence/phase2-4-rules-files-2026-09-06.log` |
+| Phase 2.5 M4 recovery — a Core kill mid-run resumes from the last committed checkpoint; `docs/54` kill points proven | commit `dabe36c`; `scheduler.rs`, `one_agent.rs`, `tests/daemon_resume_e2e.rs`, `docs/evidence/phase2-5-run-resume-2026-09-06.log` |
+| Phase 2.6 shell correctness — `argv` array form, streamed output chunks as run events, paginated `OutputRef`, Core-spawned `modbit-execd` broker | commits `dfc923a`, `0bf3638`; `bin/modbit-core.rs`, `scheduler.rs`, `tests/daemon_output_e2e.rs` |
+| Phase 2 exit: M2 + M4 `E2E_PROVEN` with typed evidence; nightly live job green 5 consecutive nights, one revision (main @ `ecf5e6a`) | runs `34002162962` (09-06), `34080928159` (09-07), `34186289909` (09-08), `34310197890` (09-09), `34436444933` (09-10) — typed `run:` refs on graph node `M2.11` |
 
 Current facts:
 
 | Fact | Value |
 |---|---|
-| Crates in the `modbit-core` dependency closure | 12 of 26 (`browser`, `checkpoint`, `compaction`, `context`, `diagnostics`, `procedural-runtime`, `protocol-state`, `retrieval`, `sandbox`, `skills` + 4 empty crates unlinked) |
+| Crates in the `modbit-core-runtime` dependency closure | 15 of 26 (`checkpoint`, `compaction`, `core-runtime`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `terminal`, `tools`, `verification`, `workspace`) |
 | Empty canonical crates | `effects`, `secrets`, `memory`, `observability` |
 | Stub binaries (`fn main() {}`) | `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest` |
-| Rust / TS tests | 437 / 53 |
+| Rust / TS tests | 474 / 53 |
 | Desktop screens | 2 (fleet, task workspace) |
-| Milestones | M0, M1 COMPLETE; M2 E2E_PROVEN; M3–M10 IN_PROGRESS with 0 IMP tasks closed |
+| Surface RPCs | 15 requests in the `surface.proto` oneof |
+| Nightly live workflow | `.github/workflows/nightly-live.yml` active (cron 03:43Z; five-night gate 2026-09-06..10 green, see section 1) |
+| Milestones | M0, M1 COMPLETE; M2 + M4 `E2E_PROVEN` at task level (M2: 11/11 milestone_tasks and 20 IMPs `E2E_PROVEN`, 42 cross-phase IMPs WIRED with audit notes — never paper-closed; M4: 11/11 tasks `E2E_PROVEN`); M3, M5–M10 IN_PROGRESS |
 
 ## 2. Open defects found in the live path (fix before anything else)
 
-These are inside code that is already "proven"; they cap the quality of every live run.
+Status after the Phase 2 closure (2026-09-10): defects 1–5 are **cleared** by Phase 2 items 2.1–2.6 (see section 1 for the per-item commits and evidence). Defects 6–7 remain open and are deferred to Phase 4 (desktop a user can run).
 
-1. **Conversation roles are wrong.** `one_agent.rs` keeps `conversation: Vec<String>` and sends every entry as `ChatMessage::user`, including the model's own prior text and tool results serialized as `tool <name> → {json}` strings (`crates/core-runtime/src/one_agent.rs` ~L200 and ~L373). The gateway already supports `assistant_with_tool_calls` and tool-result messages; the loop never uses them, so the model loses call-id linkage.
-2. **No context-window management.** The conversation grows unbounded; `crates/compaction` is not linked; `max_output_tokens` is fixed at 4096, `temperature` at 0.2; no reasoning/thinking or prompt-cache controls.
-3. **Context pack is a directory listing.** `build_context_pack` emits title, prompt and the first 50 top-level entries. `workspace_rules` is always empty: AGENTS.md / CLAUDE.md / `.cursor/rules` in the target repo are never read.
-4. **`shell.run` splits argv on whitespace** (no quoting), no PTY, no streamed output, 600 s cap, 8 KB tail. Electron never spawns `modbit-execd`, so the desktop path has no working shell unless `MODBIT_EXECD_ADDR` is exported by hand.
-5. **Stop/Pause do not cancel.** They write events; no cancellation token reaches the in-flight model stream or tool. Steer notes are stored but not injected into the next turn.
-6. **All configuration is environment variables** (`MODBIT_REPO_ROOT`, `MODBIT_PROVIDER`, `MODBIT_MODEL`, `MODBIT_BASE_URL`, `*_API_KEY`, `MODBIT_MAX_TURNS`). No repo picker, no provider/model settings, `EnvSecretBroker` only.
-7. **README.md line 5** still says the repository contains no product code.
+1. ~~**Conversation roles are wrong.**~~ **Cleared** by Phase 2.1 (commit `e80394d`): the loop sends typed `ChatMessage` turns — assistant `tool_calls` and tool-result messages keyed by call id.
+2. ~~**No context-window management.**~~ **Cleared** by Phase 2.2 (commit `6ee7135`): `crates/compaction` hot path compacts oldest tool results first, emits `CompactionApplied`, per-model `max_output_tokens`/settings.
+3. ~~**Context pack is a directory listing / rules never read.**~~ **Cleared** by Phase 2.4 (commit `c5307da`): AGENTS.md / CLAUDE.md / `.cursor/rules` / `.modbit/rules.md` are read into `workspace_rules` with provenance. (The pack is still listing-based; the real context engine is Phase 3 / M3.)
+4. ~~**`shell.run` splits argv on whitespace / no streaming / desktop has no broker.**~~ **Cleared** by Phase 2.6 (commits `dfc923a`, `0bf3638`): argv arrays, streamed run events, paginated `OutputRef`, Core-spawned `modbit-execd`.
+5. ~~**Stop/Pause do not cancel.**~~ **Cleared** by Phase 2.3 (commit `271dc35`): cancellation reaches the in-flight stream and broker run; Steer injects on the next turn.
+6. **All configuration is environment variables** (`MODBIT_REPO_ROOT`, `MODBIT_PROVIDER`, `MODBIT_MODEL`, `MODBIT_BASE_URL`, `*_API_KEY`, `MODBIT_MAX_TURNS`). No repo picker, no provider/model settings, `EnvSecretBroker` only. **Deferred to Phase 4.**
+7. **README.md line 5** still says the repository contains no product code. **Deferred to Phase 4.**
 
 ## 3. Parity snapshot (Cursor / Codex / Modbit)
 
@@ -73,17 +82,6 @@ Modbit's differentiators (receipts, exact recovery, one Core local and cloud, ev
 ## 4. Recommended work order
 
 Each phase ends with `python3 tools/check_dossier.py`, the nightly live job green, the named E2E scenarios, and regenerated README / `docs/98`. A node closes only through production routing with typed evidence and only if its module is in the binary closure.
-
-### Phase 2: fix the loop (M2 hardening, M4 link)
-
-1. **Proper message roles.** Replace `Vec<String>` with `Vec<ChatMessage>`; assistant turns carry `tool_calls`, tool results go back as tool-result messages keyed by call id, on both providers. Update `daemon_scripted_e2e` fixtures.
-2. **Token budget and compaction on the hot path.** Link `crates/compaction`; count tokens per message (provider usage frames already parsed); compact oldest tool results first, then summarize epochs; emit a `CompactionApplied` run event; make `max_output_tokens` and reasoning/thinking effort per-model config.
-3. **Cancellation.** A `CancellationToken` per run threaded through `LiveGatewayTransport` and `execd.run_capture`; `StopTask` aborts the stream and kills the broker run; `PauseTask` parks at the next turn boundary; `SteerTask` notes are injected as a user message on the next turn.
-4. **Rules files.** Read AGENTS.md, CLAUDE.md, `.cursor/rules/*.mdc`, `.modbit/rules.md` from repo root down to the touched directory into `workspace_rules`, with provenance hashes in the prompt compiler.
-5. **M4 recovery for in-flight runs.** Persist turn/step checkpoints in the event store runtime tables, link `protocol-state` and `checkpoint` into the scheduler, resume a run at the last committed step after a Core kill (unknown-outcome tool calls surface as attention items). Run the `docs/54` kill points on a real turn and a real tool call. Target: E2E-004.
-6. **Shell correctness.** Accept `argv` as a JSON array (keep the string form with shell-words parsing), stream output chunks as run events, raise the tail to a paginated `OutputRef`, spawn `modbit-execd` from the Core (not Electron) so every host path has a broker.
-
-Exit: M2 and M4 `E2E_PROVEN` with typed evidence; nightly live job green for 5 consecutive nights.
 
 ### Phase 3: context that beats grep (M3)
 

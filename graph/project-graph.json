@@ -3,7 +3,7 @@
  "product": "Modbit",
  "edition": "V3.1",
  "authority_date": "2026-09-03",
- "generated_on": "2026-09-06",
+ "generated_on": "2026-09-10",
  "generator": "tools/build_graph.py",
  "status_vocabulary": [
   "NOT_STARTED",
@@ -3455,7 +3455,12 @@
     "receipt:3ed62a54909699d974c2a051c181ca05ea5f01faf1568cd5e8469405ecd60762",
     "scenario:E2E-001",
     "scenario:E2E-002",
-    "scenario:E2E-003"
+    "scenario:E2E-003",
+    "run:34002162962/night-1",
+    "run:34080928159/night-2",
+    "run:34186289909/night-3",
+    "run:34310197890/night-4",
+    "run:34436444933/night-5"
    ],
    "notes": [
     {
@@ -3475,9 +3480,15 @@
      "from": "REAL_TESTING",
      "to": "E2E_PROVEN",
      "note": "LIVE proof: E2E-001/002/003 passed end to end through the modbit-core daemon (scheduler, git worktrees, execd-routed shell, change engine, verification) against the live GLM provider (glm-5.3-flash @ api.z.ai), run 2026-09-05T20:25Z."
+    },
+    {
+     "at": "2026-09-10T04:17:56Z",
+     "from": "E2E_PROVEN",
+     "to": "E2E_PROVEN",
+     "note": "five-night gate 2026-09-06..10"
     }
    ],
-   "status_changed_on": "2026-09-05T20:40:00Z"
+   "status_changed_on": "2026-09-10T04:17:56Z"
   },
   {
    "id": "M5.7",
