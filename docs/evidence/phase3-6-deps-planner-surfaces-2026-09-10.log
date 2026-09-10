@@ -1,0 +1,92 @@
+Phase 3.6 — M3.1 surfaces + M3.7 planner + M3.6 dependency evidence graph
+========================================================================
+Nodes: M3.1 (exact/regex/path index), M3.7 (L0-L3 retrieval planner +
+fusion), M3.6 (dependency/call evidence graph)
+Phase context: M3 milestone cards (Future-tasks Phase 3 items 1-4 all
+closed; this work continues the M3 exit condition)
+Revisions: 727814a (M3.1), the M3.7 auto-mode commit, 685047b (M3.6) on
+main; CI run 34466358948 green through 09e8b6c (M3.1 + M3.7 included);
+M3.6 CI run recorded on its push
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+M3.1 — exact/regex/path surfaces (commit 727814a)
+---------------------------------------------------------------------
+Before: RepositoryIndex::exact()/regex() had NO production caller.
+- TaskIndex::query_exact/query_regex: bounded direct surfaces (path-
+  ordered hits with line+snippet; invalid regex = typed IndexError).
+- context.query mode=fused|exact|regex|path; all direct modes refresh
+  from the change journal first and record retrieval evidence.
+- E2E (daemon, turns c5/c6): exact + regex against content created
+  mid-run by change.apply.
+- MUTATION CHECK: regex surface disabled — FIRST ATTEMPT PASSED (the
+  assertion matched the mode label, not real hits); hardened to require
+  the body-line snippet ("snippet":"true", a line appearing nowhere else
+  in the conversation) — the mutation then FAILED the E2E. Both the
+  false-pass and the fix are recorded deliberately.
+
+M3.7 — planner-routed auto mode
+---------------------------------------------------------------------
+Before: modbit_context::planner (dynamic query planning) was logic-only
+with zero production callers.
+- TaskIndexWriter::query_auto: REAL index signals (bounded exact probe,
+  symbol-defined check, term count, structural/engineering phrasing) →
+  planner::plan → MINIMUM sufficient level: L0 exact / L1 hybrid
+  (fused) / L2 structural (symbol surface) / L3 engineering (fused ×2,
+  later + import-impact). The plan (level, rationale, signals) rides
+  every auto response. auto is the tool default. (docs/18: LLM rerank
+  optional, NOT required for P0 — rerank.rs stays unwired.)
+- E2E (REAL daemon, 9-10 turns): multi-term → hybrid; "definition of X"
+  → structural; bare defined identifier → EXACT (no over-escalation —
+  the REQ ledger EV-0001 core); architectural phrasing → engineering.
+- Honest iteration: the first c7 expectation assumed a bare identifier
+  routes to structural; the planner correctly chose the cheaper L0
+  exact. The TEST was fixed, not the planner.
+- MUTATION CHECK: planner bypassed (all forced hybrid) → the
+  structural/engineering/exact routing assertions FAILED (dump shows
+  every turn "rationale":"mutated"). REVERTED; post-revert green.
+
+M3.6 — import/dependency evidence graph + impact mode (commit 685047b)
+---------------------------------------------------------------------
+Before: context_graph.rs offered a line-shape parser with no production
+caller; no real import edges existed anywhere.
+- crates/retrieval/dependencies.rs (new): tree-sitter extraction of use/
+  import edges — Rust (crate:: → src/ trees and root layouts, super::/
+  self:: climbing, externals dropped), TS/TSX/JS (relative specifiers,
+  candidate extensions + index files), Python (dotted + relative with
+  __init__.py packages) — resolved deterministically against the
+  indexed corpus; self-edges dropped; only corpus targets kept.
+- TaskIndex: deps index maintained by build_at AND apply_delta
+  (re-extract changed, drop deleted, prune edges into evicted targets);
+  impact(path, depth) = transitive dependents with hop counts (bounded
+  BFS, deterministic ordering).
+- Production surface: context.query mode=impact (dependents + hops +
+  test-file flag); the M3.7 L3-engineering route now carries
+  impact_of_top_hit (note updated honestly: diagnostics/runtime
+  evidence still pending — M3.4 and the M3.6 remainder).
+- Tests: 5 dependency unit tests (per-language resolution, prune,
+  impact BFS) + task_index integration (edges survive build and
+  incremental deltas).
+- E2E (REAL daemon): the fixture gains a real import (caller.rs →
+  helpers.rs via `use crate::helpers;`); turn c10 impact query proves
+  the EDITED file's dependent appears at hop 1 in the durable
+  conversation; turn c8's L3 answer carries impact_of_top_hit.
+- MUTATION CHECK: edge extraction disabled (env-gated) → the E2E FAILED
+  at "the import dependent appears at hop 1" (impact returned empty
+  dependents). REVERTED; post-revert green.
+
+TOOLCHAIN / LINTS
+---------------------------------------------------------------------
+- cargo test --workspace exit 0, 495 Rust tests; clippy 0 warnings;
+  check_dossier OK; architecture-lint OK (after rewording two REQ-EV-0001
+  tags that mis-sat in core-runtime — the placement lint caught them in
+  CI, exactly as designed).
+
+REMAINING GAPS (M3)
+---------------------------------------------------------------------
+M3.4 (headless LSP bridge) remains IMPLEMENTING — heavy per-language
+process management. M3.5 (USearch embeddings) stays gated behind the
+PASSING benchmark gate (ADR-D deferred, docs/72 MOD-EMB-001
+provisional). M3.6 remainder: git-commit recency evidence and
+diagnostics/runtime linkage are NOT in this slice (the graph is
+import-edge + test-mapping today; the workspace journal carries change
+recency).
