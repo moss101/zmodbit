@@ -15,13 +15,13 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 |---|---|---:|---:|
 | Authority and orientation | 00–09 | 5 | 26678 |
 | Architecture and subsystems | 10–29 | 17 | 79393 |
-| Implementation specifications | 30–39 | 8 | 30178 |
+| Implementation specifications | 30–39 | 8 | 30508 |
 | Requirements, tasks and traceability | 40–49 | 9 | 292645 |
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
 | Live state | 98–99 | 1 | 2382 |
-| **Total docs** | | **70** | **511243** |
+| **Total docs** | | **70** | **511573** |
 
 ## Specification files (`docs/`)
 
@@ -49,7 +49,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 24 | `docs/24_CLOUD_CONTROL_PLANE_AND_SYNC.md` | Cloud Control Plane, Remote Execution, and Sync | architecture | 2971 | `adbd0235a34e23792054573eb80b94de23bac62e9e959d8d17824adfb2d22f8f` |
 | 25 | `docs/25_MULTIMODAL_MEDIA_AND_NOTEBOOK_RUNTIME.md` | Multimodal, Media and Notebook Runtime | architecture | 2960 | `e35d2b47f9ee33aa17e682f4226b26b8daa6ac8823a06722c3877fe416b02918` |
 | 26 | `docs/26_SKILL_REGISTRY_AND_EVOLUTION.md` | Skill Registry and Evolution Integration — Skill Evolution Without a Second Runtime | architecture | 6505 | `624555fe55a2697f966a0b76293467e4614fbaef9c6f69580da4b50995412491` |
-| 30 | `docs/30_PROTOCOL_APIS_AND_EVENT_SCHEMAS.md` | Protocol, APIs, and Event Schemas | implementation | 5472 | `6927e07ba380272c2a9353bfa855ce2ae450118168fc81826cdb571973cd4af3` |
+| 30 | `docs/30_PROTOCOL_APIS_AND_EVENT_SCHEMAS.md` | Protocol, APIs, and Event Schemas | implementation | 5802 | `812434d9eac4ded4eeb1fa2d72580af71801c522f5d27c554174829968c00d1b` |
 | 31 | `docs/31_DATABASE_AND_STORAGE_SCHEMA.md` | Database and Storage Schema | implementation | 5445 | `0c7ad8b3021b7f762708700e53f7393d8e29fb8a90fcf5b37b5630833aaf4cc8` |
 | 32 | `docs/32_DESKTOP_FRONTEND_IMPLEMENTATION.md` | Desktop Frontend Implementation | implementation | 4183 | `fb96b5be03dd7699e5b3c236e179e2338c3abcf2fd71c723ec098d7ce33dc2c0` |
 | 33 | `docs/33_CORE_AND_CLOUD_BACKEND_IMPLEMENTATION.md` | Core and Cloud Backend Implementation | implementation | 4169 | `ccf8a07c3afc5ec451b6dac6a7464bc83566f630f0a68f303acfef6a05163635` |
@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
-| `graph/project-graph.json` | project driver graph with live status | 851559 | `3e282ab8e54b1858757d238fb067480172acbe790c099adb3ea7ab9c0bde678b` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22622 | `2e298fa5b6bbb7014a3c416c6e0587b710620e391e781c620a87f11c90199052` |
+| `graph/project-graph.json` | project driver graph with live status | 851520 | `f1e1fea5f96f41de63a23c09109ec2d3b8f70456d88fccfb2a12c493daba31f1` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22622 | `da9f6d01fdc39660630848c76cccdf95b67b87303366faf957c305b945ec73a1` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |

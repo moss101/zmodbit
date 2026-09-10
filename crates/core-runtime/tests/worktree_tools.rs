@@ -36,7 +36,15 @@ fn worktree_fixture(tag: &str) -> PathBuf {
 
 fn registry_for(worktree: &std::path::Path, execd: Option<&ExecdClient>) -> ToolRegistry {
     let ws = Arc::new(WorkspaceFileService::open(worktree).unwrap());
-    build_worktree_registry(&ws, worktree, execd, std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)), None, None)
+    build_worktree_registry(
+        &ws,
+        worktree,
+        execd,
+        std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        None,
+        None,
+        None,
+    )
 }
 
 fn grants() -> Vec<CapabilityGrant> {

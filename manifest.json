@@ -7,7 +7,7 @@
   "counts": {
     "docs": 70,
     "root_and_tooling": 84,
-    "docs_bytes": 511243
+    "docs_bytes": 511573
   },
   "sections": [
     {
@@ -256,8 +256,8 @@
       "section": "implementation",
       "section_title": "Implementation specifications",
       "title": "Protocol, APIs, and Event Schemas",
-      "bytes": 5472,
-      "sha256": "6927e07ba380272c2a9353bfa855ce2ae450118168fc81826cdb571973cd4af3"
+      "bytes": 5802,
+      "sha256": "812434d9eac4ded4eeb1fa2d72580af71801c522f5d27c554174829968c00d1b"
     },
     {
       "path": "docs/31_DATABASE_AND_STORAGE_SCHEMA.md",
@@ -701,13 +701,13 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 851559,
-      "sha256": "3e282ab8e54b1858757d238fb067480172acbe790c099adb3ea7ab9c0bde678b"
+      "bytes": 851520,
+      "sha256": "f1e1fea5f96f41de63a23c09109ec2d3b8f70456d88fccfb2a12c493daba31f1"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
       "bytes": 22622,
-      "sha256": "2e298fa5b6bbb7014a3c416c6e0587b710620e391e781c620a87f11c90199052"
+      "sha256": "da9f6d01fdc39660630848c76cccdf95b67b87303366faf957c305b945ec73a1"
     },
     {
       "path": "tools/build_manifest.py",

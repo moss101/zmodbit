@@ -214,6 +214,25 @@ pub enum DomainEvent {
         question: String,
         context_event_count: u64,
     },
+    /// Repository index evidence (incremental Merkle repository indexing,
+    /// Future-tasks Phase 3 item 1; owner subsystem context-engine): the
+    /// task's Merkle repository index was built at task start or
+    /// incrementally refreshed from the workspace change journal.
+    /// `recomputed` names the only-affected index segments (leaves + dir
+    /// chain), bounded by the emitter with `recomputed_truncated`.
+    IndexUpdated {
+        /// Why the index moved: `task_start` (cold build) or the refresh
+        /// trigger (`change_apply`, `turn_boundary`).
+        reason: String,
+        workspace_revision: u64,
+        /// Files currently in the index.
+        file_count: u32,
+        /// Canonical Merkle root digest over the indexed tree.
+        root_digest: String,
+        /// Bounded recomputation evidence: `leaf:<path>` / `dir:<path>`.
+        recomputed: Vec<String>,
+        recomputed_truncated: bool,
+    },
 }
 
 /// Why a running task is waiting (docs/13 Task state machine `Waiting` kinds).
@@ -321,6 +340,7 @@ impl EventEnvelope {
             DomainEvent::GoalSet { .. } => "goal_set",
             DomainEvent::TaskInputQueued { .. } => "task_input_queued",
             DomainEvent::SideQuestionAsked { .. } => "side_question_asked",
+            DomainEvent::IndexUpdated { .. } => "index_updated",
         }
     }
 

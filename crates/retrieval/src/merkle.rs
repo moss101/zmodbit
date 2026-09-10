@@ -150,9 +150,26 @@ impl MerkleIndex {
         touched.reverse(); // deepest first
         for dir in &touched {
             let digest = self.compute_dir(dir);
-            if self.dirs.get(dir) != Some(&digest) {
-                self.dirs.insert(dir.clone(), digest);
-                recomputed.push(Recomputed::DirNode { dir: dir.clone() });
+            let has_files = self.leaves.keys().any(|p| dir_of(p) == *dir);
+            let has_subdirs = self.dirs.keys().any(|d| d != dir && dir_of(d) == *dir);
+            let existing = self.dirs.get(dir);
+            match (has_files || has_subdirs, existing) {
+                // A dir emptied by this delta must be PRUNED — a stale
+                // empty-dir digest would make the incremental root drift
+                // from a full rebuild.
+                (false, Some(_)) => {
+                    self.dirs.remove(dir);
+                    recomputed.push(Recomputed::DirNode { dir: dir.clone() });
+                }
+                // Empty and already absent: nothing to recompute.
+                (false, None) => {}
+                // Present and byte-identical: nothing recomputed.
+                (true, Some(old)) if old == &digest => {}
+                // Changed or newly materialized dir.
+                (true, _) => {
+                    self.dirs.insert(dir.clone(), digest);
+                    recomputed.push(Recomputed::DirNode { dir: dir.clone() });
+                }
             }
         }
 
@@ -236,5 +253,15 @@ mod tests {
             .iter()
             .any(|r| matches!(r, Recomputed::FileLeaf { path } if path == "docs/readme.md")));
         assert!(!index.leaves.contains_key("docs/readme.md"));
+        // The emptied docs dir is pruned, so the incremental root still
+        // equals a full rebuild (an empty dir carries no digest).
+        assert!(!index.dirs.contains_key("docs"), "empty dir pruned");
+        let mut without_docs = tree_v2();
+        without_docs.remove("docs/readme.md");
+        assert_eq!(
+            index.root_digest(),
+            MerkleIndex::build(&without_docs, 4).root_digest(),
+            "incremental after dir-emptying deletion equals full rebuild"
+        );
     }
 }

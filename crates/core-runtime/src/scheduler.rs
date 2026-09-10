@@ -409,6 +409,12 @@ impl Scheduler {
             WorkspaceFileService::open(&worktree_path).map_err(|e| format!("open workspace: {e}"))?,
         );
         let context_pack = build_context_pack(&ws, &title, &prompt);
+        // IMP-EV-0004: the task's repository index, built by walking the
+        // real worktree at task start (gitignore/hidden/policy/binary/size
+        // filters). The writer is attached to the run plane below; refreshes
+        // ride the change journal from change.apply and the turn boundary.
+        let built_index =
+            modbit_retrieval::task_index::TaskIndex::build_at(&worktree_path, ws.workspace_revision());
 
         // 3. Task-scoped tools bound to the worktree. shell.run routes
         // through modbit-execd (durable broker); everything stays inside the
@@ -464,6 +470,16 @@ impl Scheduler {
             session_id,
             shared.clone(),
         ));
+        // IMP-EV-0004: attach the task-start index build to the run plane
+        // and queue its build evidence (drained onto the run aggregate
+        // right after RunStarted).
+        let task_index: Arc<TaskIndexWriter> = Arc::new(TaskIndexWriter::new(
+            self.store.clone(),
+            session_id,
+            shared.clone(),
+            built_index,
+        ));
+        task_index.queue_built_evidence();
         let registry = build_worktree_registry(
             &ws,
             &worktree_path,
@@ -471,6 +487,7 @@ impl Scheduler {
             signal.cancel_token(),
             Some(output_sink),
             Some(worktree_journal),
+            Some(task_index.clone()),
         );
         let kernel = PolicyKernel::new(vec![]);
         for grant in worktree_grants() {
@@ -487,6 +504,8 @@ impl Scheduler {
             store: self.store.clone(),
             session_id,
             task_id,
+            ws: ws.clone(),
+            task_index: Some(task_index),
             shared,
         };
         let transport = LiveGatewayTransport::new(&self.config, signal.cancel_token());
@@ -879,6 +898,7 @@ pub fn build_worktree_registry(
     cancel: Arc<std::sync::atomic::AtomicBool>,
     output_sink: Option<Arc<dyn ToolOutputSink>>,
     worktree_journal: Option<Arc<WorktreeJournalWriter>>,
+    task_index: Option<Arc<TaskIndexWriter>>,
 ) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
@@ -1138,6 +1158,7 @@ pub fn build_worktree_registry(
             {
                 let ws = ws.clone();
                 let journal = worktree_journal.clone();
+                let task_index = task_index.clone();
                 Arc::new(move |args| {
                     let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
                     let old = args.get("old_text").and_then(|v| v.as_str()).ok_or("missing old_text")?;
@@ -1174,6 +1195,13 @@ pub fn build_worktree_registry(
                             bytes.to_vec(),
                             Some(updated.as_bytes().to_vec()),
                         );
+                    }
+                    // IMP-EV-0004: the edit advanced the workspace
+                    // revision — refresh the repository index from the
+                    // change journal and emit the recomputed-segment
+                    // evidence (only affected segments move).
+                    if let Some(index) = task_index.as_ref() {
+                        index.refresh_from_journal(&ws, "change_apply");
                     }
                     Ok(serde_json::json!({ "ok": true, "file_revision": new_rev }))
                 })
@@ -1427,6 +1455,29 @@ struct RunPlaneShared {
     /// The run's cancellation token; flipped on fencing so the transport,
     /// tools and turn boundary all abort through one path.
     cancel_hook: std::sync::Mutex<Option<Arc<std::sync::atomic::AtomicBool>>>,
+    /// Run-aggregate events produced BEFORE the run id exists (e.g. the
+    /// task-start repository-index build, IMP-EV-0004); drained onto the
+    /// run aggregate right after RunStarted.
+    pending_run_events: std::sync::Mutex<Vec<DomainEvent>>,
+}
+
+impl RunPlaneShared {
+    /// Queues a run-aggregate event emitted before the run id is known.
+    fn queue_run_event(&self, payload: DomainEvent) {
+        self.pending_run_events
+            .lock()
+            .expect("pending run events")
+            .push(payload);
+    }
+
+    fn take_pending_run_events(&self) -> Vec<DomainEvent> {
+        std::mem::take(
+            &mut self
+                .pending_run_events
+                .lock()
+                .expect("pending run events"),
+        )
+    }
 }
 
 impl RunPlaneShared {
@@ -1649,6 +1700,115 @@ impl WorktreeJournalWriter {
             run_id,
             DomainEvent::WorktreeCheckpointed { epoch, journal_json },
         );
+    }
+}
+
+/// Phase 3 / IMP-EV-0004: the task-scoped repository index. Built ONCE at
+/// task start by walking the real worktree (modbit-retrieval walker:
+/// gitignore/hidden/policy/binary/size filters), then refreshed
+/// incrementally from the workspace change journal — the canonical FS
+/// delta source — on every successful change.apply and at the turn
+/// boundary. Evidence rides `index_updated` run events: root digest, file
+/// count, and the only-affected-segments recomputation list (QUAL-EV-0004).
+pub struct TaskIndexWriter {
+    store: Arc<EventStore>,
+    session_id: SessionId,
+    shared: Arc<RunPlaneShared>,
+    index: std::sync::Mutex<modbit_retrieval::task_index::TaskIndex>,
+}
+
+/// Evidence bound for the recomputed-segment list in one event.
+const MAX_RECOMPUTED_EVIDENCE: usize = 128;
+
+impl TaskIndexWriter {
+    fn new(
+        store: Arc<EventStore>,
+        session_id: SessionId,
+        shared: Arc<RunPlaneShared>,
+        index: modbit_retrieval::task_index::TaskIndex,
+    ) -> Self {
+        TaskIndexWriter {
+            store,
+            session_id,
+            shared,
+            index: std::sync::Mutex::new(index),
+        }
+    }
+
+    /// Emits the task-start build summary. Called before the run id exists
+    /// (the index is built when the task starts, before the run does), so
+    /// the event is queued and drained right after RunStarted.
+    fn queue_built_evidence(&self) {
+        let index = self.index.lock().expect("task index mutex");
+        self.shared.queue_run_event(DomainEvent::IndexUpdated {
+            reason: "task_start".into(),
+            workspace_revision: index.indexed_workspace_revision,
+            file_count: index.repo.files.len() as u32,
+            root_digest: index.root_digest(),
+            recomputed: Vec::new(),
+            recomputed_truncated: false,
+        });
+    }
+
+    /// Drains the workspace change journal for everything after the last
+    /// indexed revision, folds it into both index halves incrementally,
+    /// and emits the evidence event with the recomputed segments. A journal
+    /// with nothing new is a no-op (no event). Returns true when the index
+    /// moved.
+    fn refresh_from_journal(&self, ws: &WorkspaceFileService, reason: &str) -> bool {
+        let Ok(events) = ws.changes() else { return false };
+        let mut index = self.index.lock().expect("task index mutex");
+        let fresh: Vec<_> = events
+            .into_iter()
+            .filter(|e| e.workspace_revision > index.indexed_workspace_revision)
+            .collect();
+        if fresh.is_empty() {
+            return false;
+        }
+        let new_revision = fresh
+            .iter()
+            .map(|e| e.workspace_revision)
+            .max()
+            .unwrap_or(index.indexed_workspace_revision);
+        let changes: Vec<modbit_retrieval::task_index::IndexChange> = fresh
+            .iter()
+            .map(|e| modbit_retrieval::task_index::IndexChange {
+                path: e.path.clone(),
+                deleted: matches!(e.change_kind, modbit_workspace::FileChangeKind::Deleted),
+            })
+            .collect();
+        let recomputed = index.apply_delta(ws.root(), &changes, new_revision);
+        let recomputed_truncated = recomputed.len() > MAX_RECOMPUTED_EVIDENCE;
+        let evidence: Vec<String> = recomputed
+            .iter()
+            .take(MAX_RECOMPUTED_EVIDENCE)
+            .map(|r| match r {
+                modbit_retrieval::merkle::Recomputed::FileLeaf { path } => {
+                    format!("leaf:{path}")
+                }
+                modbit_retrieval::merkle::Recomputed::DirNode { dir } => format!("dir:{dir}"),
+            })
+            .collect();
+        self.shared.append_run_event(
+            &self.store,
+            self.session_id,
+            match *self.shared.run.lock().expect("run cell") {
+                Some(id) => id,
+                // Refresh can only be triggered from inside the run; a
+                // missing run id means the run already ended — keep the
+                // index fresh but emit nothing (no aggregate to ride).
+                None => return true,
+            },
+            DomainEvent::IndexUpdated {
+                reason: reason.to_string(),
+                workspace_revision: index.indexed_workspace_revision,
+                file_count: index.repo.files.len() as u32,
+                root_digest: index.root_digest(),
+                recomputed: evidence,
+                recomputed_truncated,
+            },
+        );
+        true
     }
 }
 
@@ -1961,6 +2121,12 @@ struct EventStoreObserver {
     store: Arc<EventStore>,
     session_id: SessionId,
     task_id: TaskId,
+    /// The run's workspace — the turn-boundary index refresh drains its
+    /// change journal (IMP-EV-0004).
+    ws: Arc<WorkspaceFileService>,
+    /// The task's repository index writer; None when the initial walk
+    /// failed (the run proceeds unindexed rather than not at all).
+    task_index: Option<Arc<TaskIndexWriter>>,
     /// Sequence accounting + current run, SHARED with the output sink
     /// (both append to the same run aggregate).
     shared: Arc<RunPlaneShared>,
@@ -2046,6 +2212,13 @@ impl RunObserver for EventStoreObserver {
                 attempt,
             },
         );
+        // Events produced at task start (before the run id existed — e.g.
+        // the repository-index build, IMP-EV-0004) land on the run
+        // aggregate right after RunStarted, preserving order.
+        for payload in self.shared.take_pending_run_events() {
+            self.shared
+                .append_run_event(&self.store, self.session_id, parsed, payload);
+        }
     }
 
 
@@ -2105,6 +2278,14 @@ impl RunObserver for EventStoreObserver {
     }
 
     fn turn_completed(&self, turn_id: &str) {
+        // IMP-EV-0004: reconcile the repository index at the turn boundary.
+        // The journal drain covers every workspace-mediated write of the
+        // turn (change engine edits); shell-spawned writes carry no journal
+        // events and are reconciled by the query path before any indexed
+        // answer (M3.2).
+        if let Some(index) = self.task_index.as_ref() {
+            index.refresh_from_journal(&self.ws, "turn_boundary");
+        }
         self.append(AggregateType::Turn, turn_id, DomainEvent::TurnCompleted);
     }
 

@@ -18,6 +18,7 @@ modbit-verification = { path = "../verification" }
 modbit-compaction = { path = "../compaction" }
 modbit-protocol-state = { path = "../protocol-state" }
 modbit-checkpoint = { path = "../checkpoint" }
+modbit-retrieval = { path = "../retrieval" }
 tokio = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }

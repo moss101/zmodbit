@@ -94,7 +94,7 @@ CommandEnvelope {
 `ToolCallProposed, ToolCallValidated, ToolCallPolicyDecision, ToolCallDispatched, ToolOutputDelta, ToolCallSucceeded, ToolCallFailed, ToolCallUnknownOutcome, ProcedureStarted, ProcedureCompleted, ProcedureFailed`.
 
 ### Workspace/execution
-`WorkspaceRevisionAdvanced, FileChanged, GitStateChanged, TerminalCreated, TerminalOutputAdvanced, ProcessExited, SandboxLeaseAcquired, SandboxLost, BrowserSessionCreated, BrowserStateAdvanced, BrowserControlTransferred`.
+`WorkspaceRevisionAdvanced, FileChanged, GitStateChanged, IndexUpdated, TerminalCreated, TerminalOutputAdvanced, ProcessExited, SandboxLeaseAcquired, SandboxLost, BrowserSessionCreated, BrowserStateAdvanced, BrowserControlTransferred`. `IndexUpdated` (implemented as a run-aggregate event in `modbit-core-runtime`; payload: `reason`, `workspace_revision`, `file_count`, `root_digest`, `recomputed[]`, `recomputed_truncated`) carries the task repository index's build/refresh evidence — root digest plus the only-affected-segments recomputation list.
 
 ### Durability
 `CheckpointStarted, CheckpointCommitted, CheckpointRejectedStale, CompactionStarted, CompactionCommitted, CompactionRejectedStale, MemoryItemPromoted, MemoryItemSuperseded`.

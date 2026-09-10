@@ -21,6 +21,8 @@ pub mod index_bench;
 pub mod knowledge;
 pub mod merkle;
 pub mod rerank;
+pub mod task_index;
+pub mod walker;
 
 pub fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
@@ -65,7 +67,7 @@ impl std::error::Error for IndexError {}
 /// The exact/regex/path repository index (M3.1). Bound to a workspace
 /// revision; queries run over in-memory line data for candidate ranking,
 /// while fresh BYTES always come from hydration.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct RepositoryIndex {
     pub workspace_revision: u64,
     pub files: BTreeMap<String, FileEntry>,
