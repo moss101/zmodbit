@@ -266,7 +266,7 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         tool_call_turn("c4", "context.query", r#"{"query":"brand_new_marker"}"#),
         // M3.1 direct index modes through the same tool.
         tool_call_turn("c5", "context.query", r#"{"query":"brand_new_marker","mode":"exact"}"#),
-        tool_call_turn("c6", "context.query", r#"{"query":"fn brand_new_marker","mode":"regex"}"#),
+        tool_call_turn("c6", "context.query", r#"{"query":"^    true$","mode":"regex"}"#),
         text_turn("done"),
     ]);
     let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
@@ -379,9 +379,12 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         visible.contains("\"mode\":\"regex\""),
         "regex mode rides the conversation"
     );
+    // The regex surface returns the function BODY line (`    true` — a
+    // line that appears nowhere else in the conversation, so the hit
+    // proves the regex surface really searched the indexed corpus).
     assert!(
-        visible.contains("retry_helpers") && visible.contains("\"snippet\":"),
-        "regex hits carry snippets from the indexed corpus"
+        visible.contains("\"snippet\":\"true\""),
+        "the regex hit carries the body-line snippet: {visible}"
     );
 
     // The edit is real on disk.
