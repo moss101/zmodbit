@@ -119,12 +119,15 @@ impl CoreServices {
             .ok_or_else(|| "worktree source has no worktree root".to_string())?;
 
         let (repo, clone_url) = if !register.clone_url.is_empty() {
-            let dir_name = register
-                .clone_url
+            // Windows URLs arrive with backslash separators; normalize so
+            // the last segment (and only it) names the clone directory.
+            let normalized = register.clone_url.replace('\\', "/");
+            let dir_name = normalized
                 .rsplit('/')
-                .next()
+                .find(|s| !s.is_empty())
                 .unwrap_or("repo")
-                .trim_end_matches(".git");
+                .trim_end_matches(".git")
+                .to_string();
             let into = worktree_root.join("registered").join(dir_name);
             (
                 GitRepo::clone(&register.clone_url, &into).map_err(|e| e.to_string())?,
