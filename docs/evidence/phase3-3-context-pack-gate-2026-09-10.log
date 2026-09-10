@@ -1,0 +1,91 @@
+Phase 3.3 — context pack through modbit-context + retrieve-before-edit gate
+========================================================================
+Node: M3.8 (Context Pack/token budget/provenance ledger)
+Locked decision enforced: docs/02 MOD-CTX-001 (retrieval-before-edit,
+LOCKED)
+Phase context: Future-tasks Phase 3 item 3
+Revision: commit "Phase 3.3 (M3.8 + MOD-CTX-001 gate): context pack
+through modbit-context + retrieve-before-edit" on main; items 1-2 base
+9bfc91a / b3e6159
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: the task context pack was a directory
+LISTING (title + `ws.list("")` head) with no budget, no provenance, no
+journal awareness; crates/context was logic-only OUTSIDE the product
+binary closure)
+---------------------------------------------------------------------
+- Closure: modbit-context is now a modbit-core-runtime dependency
+  (17 of 26 modbit-* crates in the product closure).
+- build_context_pack rewritten through the canonical context engine:
+  * fragments packed value-ordered under a token-derived character
+    budget (max_input_tokens * 4 chars, clamped 2k..64k) by
+    modbit-context pack_with_budget — critical task brief reserved
+    FIRST and retained even under pressure; overflow compresses into
+    digest-addressed hydratable handles;
+  * EVERY packed fragment carries provenance (source, sha256 of the
+    packed text, workspace revision, retrieval reason) and the envelope
+    is VALIDATED by modbit-context's provenance module before shipping;
+    a validation failure falls back to the brief alone, loudly (never
+    ships an unattributable pack silently);
+  * NEW "recently changed files" section: latest state per path from
+    the workspace change journal (kind, workspace revision, content
+    digest), newest first, bounded 10;
+  * index-seeded file heads: the task objective queries the live
+    repository index (top 8 fused hits); each contributes a bounded
+    head read FRESH through the workspace service (hydration discipline
+    — the index never supplies bytes).
+- MOD-CTX-001 retrieve-before-edit gate: change.propose is REFUSED with
+  a typed result (gate=retrieve_before_edit) naming the path and the
+  remedy unless the path carries retrieval evidence in the task. The
+  evidence set is recorded by fs.read, context.query hits,
+  search.grep matches, search.symbol defs/refs, and context-pack
+  membership (a packed file IS retrieved context). When no index tracks
+  evidence the gate stays OPEN and the result says so (tracking
+  unavailable — never a silent bypass). change.apply keeps its own
+  unique-match + revision guards (the phase item gates propose, the
+  preview step; apply remains the enforcement point for writes).
+
+PROOFS (always-on; full workspace suite exit 0, 487 Rust tests green,
+2026-09-10)
+---------------------------------------------------------------------
+modbit-context lib: 24 tests ok (budget never exceeded / critical
+retained / handle hydration verbatim / critical overflow fails loudly /
+envelope provenance validation / stale-never-current).
+Daemon E2E crates/core-runtime/tests/daemon_retrieve_gate_e2e.rs — the
+REAL daemon + scheduler + git worktree + change engine + scripted model:
+  ungrounded_edit_proposal_is_refused_until_the_file_is_retrieved ... ok
+  - the durable conversation shows the NEW context pack: provenance
+    lines ([provenance] source=... sha256=... revision=... reason=...),
+    budget accounting ("packed 2 fragment(s), 0 compressed handle(s),
+    133 / 64000 budgeted characters (context engine: modbit-context)")
+  - turn 1: change.propose on a never-retrieved path is REFUSED with
+    gate=retrieve_before_edit and "no retrieval evidence for
+    'greet.js'" (the fixture prompt matches nothing, so no file head is
+    packed — zero evidence at start)
+  - turn 2: fs.read records evidence
+  - turn 3: the SAME proposal passes and returns preview_head with the
+    proposed content
+  - nothing was ever written: worktree file byte-identical, ZERO
+    worktree_checkpointed events (propose never writes)
+
+MUTATION CHECK (docs/55), 2026-09-10, against the committed tree
+---------------------------------------------------------------------
+  Mutation: the gate condition disabled (env-gated) ->
+  ungrounded_edit_proposal_is_refused_until_the_file_is_retrieved
+  FAILED at "typed gate refusal must ride the conversation" — with the
+  gate off, the ungrounded proposal previewed immediately (ok:true on
+  turn 1). The gate is load-bearing. REVERTED (git checkout of the
+  committed file); post-revert E2E ok; no mutation remnants (grep 0).
+
+TOOLCHAIN / LINTS
+---------------------------------------------------------------------
+- cargo test --workspace ... exit 0, 108 binaries, 487 Rust tests
+- cargo clippy -p modbit-core-runtime -p modbit-context --all-targets
+  ... 0 warnings
+- build_manifest / build_graph / check_dossier ... OK
+
+REMAINING GAPS
+---------------------------------------------------------------------
+None for Phase 3 item 3 as scoped. Item 4 next: docs/53 benchmark at a
+fixed revision with the recall/latency gate in CI; ADR-D (embeddings)
+only if the gate misses.
