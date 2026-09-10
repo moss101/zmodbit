@@ -27,6 +27,7 @@ Previous version of this file: the 2026-09-05 component audit and its section 4 
 | Phase 3.1 filesystem walker + incremental Merkle index feeding `crates/retrieval` (IMP-EV-0004): index built on task start, refreshed from the change journal on `change.apply` + turn boundary; `index_updated` run event carries root digest + only-affected-segments evidence; `modbit-retrieval` enters the product binary closure (15→16); empty-dir prune defect in `MerkleIndex::apply_changes` fixed | commit `9bfc91a`; `docs/evidence/phase3-1-repository-index-2026-09-10.log` |
 | Phase 3.2 `context.query` + `search.symbol` (M3.2 + M3.3): real Tantivy 0.26 BM25 + tree-sitter 0.27 symbols (Rust/TS/TSX/JS/Python) admitted per docs/35/36, fused in `TaskIndex::context_query` with provenance; tools refresh from the change journal before answering; orphan `bm25.rs` deleted (docs/36 mandates the dependency, no second implementation) | commit `b3e6159`; `docs/evidence/phase3-2-context-query-symbols-2026-09-10.log` |
 | Phase 3.3 context pack + retrieve-before-edit gate (M3.8 + docs/02 MOD-CTX-001): task pack compiled by `modbit-context` (token-derived budget, per-fragment provenance validated before shipping, recently-changed journal section, index-seeded fresh file heads); `change.propose` gated on retrieval evidence recorded by fs.read / all query tools / pack membership; `modbit-context` enters the product closure (16→17) | commit `fd366b1`; `docs/evidence/phase3-3-context-pack-gate-2026-09-10.log` |
+| Phase 3.4 retrieval benchmark at a fixed revision (M3.9): deterministic 2,600-file corpus through the REAL pipeline (walker→Tantivy→tree-sitter→fusion), 100 ground-truth queries, 3 families; gates ALWAYS-ON in CI — recall@5 fused 0.970 ≥ exact 0.970 ≥ 0.90 floor, warm p95 2 ms < 300 ms (docs/53 L1), cold 19.3 s reported; ADR-D embeddings NOT required (gate passed, MOD-EMB-001 stays deferred) | see phase-closure evidence; `docs/evidence/phase3-4-retrieval-benchmark-2026-09-10.log` + `.json` |
 
 Current facts:
 
@@ -35,7 +36,7 @@ Current facts:
 | Crates in the `modbit-core-runtime` dependency closure | 16 of 26 (`checkpoint`, `compaction`, `core-runtime`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `retrieval`, `terminal`, `tools`, `verification`, `workspace`) |
 | Empty canonical crates | `effects`, `secrets`, `memory`, `observability` |
 | Stub binaries (`fn main() {}`) | `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest` |
-| Rust / TS tests | 487 / 53 |
+| Rust / TS tests | 488 / 53 |
 | Desktop screens | 2 (fleet, task workspace) |
 | Surface RPCs | 15 requests in the `surface.proto` oneof |
 | Nightly live workflow | `.github/workflows/nightly-live.yml` active (cron 03:43Z; five-night gate 2026-09-06..10 green, see section 1) |

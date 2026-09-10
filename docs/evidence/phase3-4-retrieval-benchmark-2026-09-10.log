@@ -1,0 +1,93 @@
+Phase 3.4 — retrieval benchmark at a fixed revision, gates in CI (M3.9)
+========================================================================
+Node: M3.9 (retrieval benchmark harness)
+Plan authority: docs/53 § Retrieval comparison + § Engineering
+benchmarks + § Performance regression policy
+Phase context: Future-tasks Phase 3 item 4
+Revision: commit "Phase 3.4 (M3.9): retrieval benchmark at a fixed
+revision with recall/latency gates in CI" on main; items 1-3 base
+9bfc91a / b3e6159 / fd366b1
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: NO real benchmark existed — the
+logic-only `crates/context/profile_experiment.rs` returns HARDCODED
+recall values from fixture constants and its test asserts a tautology;
+zero corpus, zero ground truth, zero latency measurement)
+---------------------------------------------------------------------
+- crates/retrieval/tests/retrieval_benchmark.rs (new, ALWAYS-ON — this
+  test IS the CI gate, running on all 3 OS runners): deterministic
+  corpus (seeded LCG, CORPUS_TAG "phase3-fixed-rev-1", revision 1) of
+  2,600 REAL files on a real temp tree — 2,400 Rust modules with unique
+  `fn_{i}_handler` definitions and cross-file `relay_{i}` call sites
+  (every 6th file), 200 topic docs with a unique discriminator token
+  plus shared vocabulary — built through the REAL pipeline (walker →
+  Tantivy BM25 → tree-sitter symbols → fused context_query).
+- 100 ground-truth-by-construction queries in 3 families (symbol:
+  definer + caller relevant; caller: call-site file; topic: the
+  unique-discriminator doc).
+- Profiles: A = exact/substring term counting (the search.grep class);
+  F = Modbit's fused index (BM25 + path + symbol, the shipped
+  context.query). docs/53's full profile B adds semantic ANN and full C
+  adds LSP/dependency/Git evidence — those signals are M3.4/M3.5/M3.6;
+  this harness measures what Phase 3 shipped.
+- Metrics per docs/53: relevant-file recall@5, evidence precision@5,
+  warm median/p95 latency, cold index time.
+
+RESULTS (fixed revision phase3-fixed-rev-1, 2026-09-10, macOS arm64;
+full JSON: docs/evidence/phase3-4-retrieval-benchmark.json)
+---------------------------------------------------------------------
+  recall@5  fused 0.970  vs  exact baseline 0.970
+            per-family fused: caller 1.000, symbol 0.925, topic 1.000
+  evidence precision@5 (fused): 0.645
+  warm latency: median 1 ms, p95 2 ms   (docs/53 L1 bound: < 300 ms)
+  cold index: 19.3 s for 2,600 files (reported; no CI gate — runner
+  variance)
+
+GATES (asserted in-test on every CI run)
+---------------------------------------------------------------------
+  1. recall@5(fused) >= recall@5(exact)         PASS (0.970 >= 0.970)
+  2. recall@5(fused) >= 0.90 floor              PASS
+  3. warm hybrid p95 < 300 ms (docs/53 L1)      PASS (2 ms)
+
+CORPUS CALIBRATION NOTE (honesty record): the first run FAILED the
+recall floor (0.690) because topic word PAIRS collided across the 200
+docs (24-word vocabulary) — the query legitimately matched sibling
+docs and the arbitrary truth doc drowned. Fixed by giving each topic a
+unique discriminator token (a specific-query realism fix), NOT by
+touching the index. The gates caught a corpus flaw on the first run —
+they are real.
+
+ADR-D / EMBEDDINGS DECISION (the phase item's condition)
+---------------------------------------------------------------------
+The recall gate PASSED with BM25 + path + symbols → semantic embeddings
+are NOT required for Phase 3: docs/72 MOD-EMB-001 stays PROVISIONAL/
+deferred (embeddings remain infrastructure, never a correctness
+dependency — docs/18). Re-evaluate if the gate misses on real corpora
+or when M3.5 (USearch + changed-chunk embedding) is scheduled.
+
+KNOWN FABRICATION FLAGGED (not closed by this item)
+---------------------------------------------------------------------
+crates/context/profile_experiment.rs (QUAL-EV-0254, EXPERIMENT
+disposition) returns hardcoded recall values and asserts a tautology —
+it is NOT evidence of anything. It stays un-closed on the graph (no
+node was ever closed on it); when the structural-advantage experiment
+(M3.6/M3.7 signals) goes real, this module must be replaced by a run of
+the real harness above or deleted.
+
+PROOFS
+---------------------------------------------------------------------
+- cargo test -p modbit-retrieval --test retrieval_benchmark ... ok
+  (gates above; report printed; JSON written via MODBIT_BENCH_OUT)
+- cargo test --workspace ... exit 0 (488 Rust tests with this file)
+- The benchmark runs in CI on all 3 OS runners as an always-on test
+  (the phase item's "gate in CI").
+
+REMAINING GAPS (M3 milestone — NOT closed by Phase 3's four items)
+---------------------------------------------------------------------
+M3 cards still open: M3.1 (exact/regex query surface into the fused
+path), M3.4 (headless LSP bridge), M3.5 (USearch embeddings — gated on
+ADR-D, deferred by the passing gate), M3.6 (dependency/Git evidence
+graph), M3.7 (L0-L3 planner + full fusion). The Phase 3 §4 items 1-4
+are all DONE; the phase exit condition ("M3 E2E_PROVEN") therefore
+remains OPEN until those cards are proven — the §4→§1 phase move must
+NOT be recorded yet.

@@ -1,0 +1,28 @@
+{
+  "adr_d_embeddings": "not required: the recall gate passed with BM25 + path + symbols (docs/72 MOD-EMB-001 stays provisional/deferred)",
+  "cold_index_ms": 19280,
+  "corpus_tag": "phase3-fixed-rev-1",
+  "evidence_precision_at_5_fused": 0.6450000000000011,
+  "files": 2600,
+  "gates": {
+    "recall_floor_090": true,
+    "recall_fused_ge_exact": true,
+    "warm_p95_lt_300ms": true
+  },
+  "latency": {
+    "gate": "< 300ms (docs/53 L1)",
+    "warm_median_ms": 1,
+    "warm_p95_ms": 2
+  },
+  "queries": 100,
+  "recall_at_5": {
+    "exact_baseline": 0.97,
+    "fused": 0.97,
+    "fused_per_family": {
+      "caller": 1.0,
+      "symbol": 0.925,
+      "topic": 1.0
+    }
+  },
+  "revision": 1
+}

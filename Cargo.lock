@@ -1309,6 +1309,7 @@ dependencies = [
  "ignore",
  "regex",
  "serde",
+ "serde_json",
  "sha2",
  "tantivy",
  "tree-sitter",
