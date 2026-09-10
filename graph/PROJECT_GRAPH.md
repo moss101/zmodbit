@@ -240,7 +240,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M3.1` | E2E_PROVEN | exact/regex/path index |  |
 | `M3.2` | E2E_PROVEN | Tantivy BM25 |  |
 | `M3.3` | E2E_PROVEN | tree-sitter AST/symbol index |  |
-| `M3.4` | IMPLEMENTING | headless LSP diagnostics/symbol bridge |  |
+| `M3.4` | E2E_PROVEN | headless LSP diagnostics/symbol bridge |  |
 | `M3.5` | IMPLEMENTING | USearch embeddings + changed-chunk incremental update |  |
 | `M3.6` | E2E_PROVEN | dependency/Git/test/runtime evidence graph |  |
 | `M3.7` | E2E_PROVEN | L0-L3 retrieval planner + fusion |  |

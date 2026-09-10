@@ -1929,10 +1929,14 @@
    "milestone": "M3",
    "order": 3,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34483202782",
+    "commit:5f55508",
+    "log:docs/evidence/phase3-7-lsp-bridge-exit-2026-09-10.log",
+    "run:2026-09-10T15:5xZ/context_query_and_search_symbol_answer_from_the_live_index"
    ],
    "notes": [
     {
@@ -1946,9 +1950,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T13:45:07Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "headless LSP bridge in production: minimal JSON-RPC/stdio client (framing, handshake, didOpen, definition/references, typed errors, bounded, kill-on-drop) in modbit-diagnostics (closure 17->18); a REAL wire-protocol fixture server tests the bridge on every runner; TaskIndexWriter holds lazy per-language sessions (MODBIT_LSP_<LANG> commands, spawn-failure cached); search.symbol enriches the tree-sitter answer with the LSP section through the REAL daemon — any LSP failure degrades to an explicit unavailable note and the deterministic surface stays authoritative; rust-analyzer smoke is opportunistic (any probe failure skips); enrichment mutation caught by the E2E. LSP answers normalize to worktree-relative 1-based records per docs/18."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T13:45:07Z"
   },
   {
    "id": "M3.5",
