@@ -134,9 +134,9 @@ async function getSettings() {
   return withRetry((s) => s.request({ getSettings: {} }));
 }
 
-async function updateSettings({ provider = "", model = "", baseUrl = "", maxTurns = 0, executionMode = "" }) {
+async function updateSettings({ provider = "", model = "", baseUrl = "", maxTurns = 0, executionMode = "", apiKey = "" }) {
   return withRetry((s) =>
-    s.request({ updateSettings: { provider, model, baseUrl, maxTurns, executionMode } })
+    s.request({ updateSettings: { provider, model, baseUrl, maxTurns, executionMode, apiKey } })
   );
 }
 

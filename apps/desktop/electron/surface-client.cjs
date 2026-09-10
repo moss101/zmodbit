@@ -136,6 +136,7 @@ function encodeSurfaceRequest(request) {
     if (u.baseUrl) parts.push(encodeLenField(3, Buffer.from(u.baseUrl, "utf8")));
     if (u.maxTurns) parts.push(encodeVarintField(4, u.maxTurns));
     if (u.executionMode) parts.push(encodeLenField(5, Buffer.from(u.executionMode, "utf8")));
+    if (u.apiKey) parts.push(encodeLenField(6, Buffer.from(u.apiKey, "utf8")));
     return encodeLenField(19, Buffer.concat(parts));
   }
   if (request.taskEvents !== undefined) return encodeGetTaskEvents(request.taskEvents);
@@ -290,6 +291,7 @@ function decodeSettingsView(buf) {
     baseUrl: "",
     maxTurns: 0,
     executionMode: "",
+    hasApiKey: false,
   };
   for (const [f, v] of decodeFields(buf)) {
     if (f === 1) settings.provider = v.toString("utf8");
@@ -297,6 +299,7 @@ function decodeSettingsView(buf) {
     else if (f === 3) settings.baseUrl = v.toString("utf8");
     else if (f === 4) settings.maxTurns = Number(v);
     else if (f === 5) settings.executionMode = v.toString("utf8");
+    else if (f === 6) settings.hasApiKey = v !== 0n;
   }
   return settings;
 }

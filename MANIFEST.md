@@ -102,7 +102,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 
 | File | Role | Bytes | SHA-256 |
 |---|---|---:|---|
-| `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
+| `README.md` | human orientation | 7544 | `36191e61c92e9b910b97a5068b1a155425fe9a13e703de432b27717e1bbb07e0` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
 | `graph/project-graph.json` | project driver graph with live status | 861240 | `5db1e66521f26631e16a2d937ef8b404eb45f4154156e31caa275674bc951d56` |
@@ -119,14 +119,14 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/dist/assets/index-BngEqeZV.js` |  | 146638 | `e2e0c547a033d2e8e1cbef8e576bbf394c5f488745d80c2bf376906fce067f61` |
 | `apps/desktop/dist/assets/index-DrM0Ho-V.css` |  | 664 | `e0f5b17ca79348d107ea783cbc7cf8118ecae0a838287dbc82973ee6e5bfffc4` |
 | `apps/desktop/dist/index.html` |  | 448 | `5a322bc5abed3f7d0a907a96f4a5015bfe135d17db2d4d3eaebe8bfbdc2e02e1` |
-| `apps/desktop/electron/bridge-schema.cjs` |  | 8100 | `f444ddd97be015ed43dda44b771b9ea7f2da351d81def832dfd599a9f6f39c58` |
+| `apps/desktop/electron/bridge-schema.cjs` |  | 10580 | `e8617cb7574d76cdd246af7a2c4c9e06297990a21c5d3cd4b80d29dd4e5261f2` |
 | `apps/desktop/electron/event-stream.cjs` |  | 2901 | `e32366e9970eecf2325129f9dff40f427107d0e864d2d24ea5db5552b2001a65` |
-| `apps/desktop/electron/main.cjs` |  | 8421 | `2b0a2dcbdbf6f89d72a9fbdf675876320051967d88db31a166bc9d814db738ce` |
-| `apps/desktop/electron/preload.cjs` |  | 1898 | `41bcb6fa5c85ff00b66c162367abbfabf30d9d176c8c149d57471096c557a202` |
-| `apps/desktop/electron/surface-client.cjs` |  | 16596 | `45338887240702c1b054728cbd63a3ff61232204a2c61ce1dc75bca6a2d54aa0` |
+| `apps/desktop/electron/main.cjs` |  | 9113 | `e8e3616cee43647c5202baed130562d0725e86dde342d9ec1f0ba4b9912cc9f1` |
+| `apps/desktop/electron/preload.cjs` |  | 2259 | `a0280998ede308f6b9896bf7acc5006a67f063abd07cd9a206204faf57406b91` |
+| `apps/desktop/electron/surface-client.cjs` |  | 18027 | `4012496d08d6d3a937480c71dc72e6283e35585d117e6d3a9d828c2f8b8410d8` |
 | `apps/desktop/index.html` |  | 348 | `fe3a3fc8fb9f256a4f651b6252eede9328674eaef7d67dc9ebba05e3366b0f5d` |
 | `apps/desktop/package.json` |  | 633 | `8d7e6bcfcb00c699953c7235723c6476088dcf64c355ae88bdf7ca3a95d4074e` |
-| `apps/desktop/src/App.tsx` |  | 7548 | `e7ba87a0c2db4075b639abc52fefd6f4431ad5f4adbad958d40d0aef82f4d087` |
+| `apps/desktop/src/App.tsx` |  | 7880 | `aaf41f985a97807e3b20c7ba9b4188ae8faaca7975ff644bfaa43ad9870a84e1` |
 | `apps/desktop/src/bridge-schema.test.ts` |  | 1527 | `6df5ce2dced367e8f6c7b939d8bd09aad0448896934dc1028083244013b0027b` |
 | `apps/desktop/src/code-review/revisions.test.ts` |  | 1796 | `cecdc9b266d2a291273dd8738489ec374a4f9d2079755e9cffe582d2c287c6ab` |
 | `apps/desktop/src/command-center/commands.ts` |  | 2241 | `789f1cecc06fd978e60eb5304fcdc04995bceeb489d404de82008dafeee33f24` |
@@ -137,9 +137,10 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/src/fleet/grouping.ts` |  | 2067 | `289eced8443546348bb7f941b247405307ba92df798dfd1c98546785bfe5c55e` |
 | `apps/desktop/src/fleet/supervision.test.ts` |  | 1085 | `b5bcfae4e3b7c1e7e3d2cdf336765e4c2d5cc6382f7d4ae15bde0c6313993283` |
 | `apps/desktop/src/fleet/supervision.ts` |  | 918 | `7676a5b0d2bd6909b23c281d741d623743fcaa627048efb55f885f096c15aee4` |
-| `apps/desktop/src/global.d.ts` |  | 2244 | `4354a53278cbe1d2076fc66d7b80437ae30f357f2a5fc31befa2c14b2c8420b7` |
+| `apps/desktop/src/global.d.ts` |  | 2656 | `99a1885fbe492a4310ba507a627d019521478f5392c488140effe2307af1f1e6` |
 | `apps/desktop/src/main.ts` |  | 188 | `e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42` |
 | `apps/desktop/src/main.tsx` |  | 232 | `ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140` |
+| `apps/desktop/src/settings/SettingsScreen.tsx` |  | 7519 | `7cea4b5e0cb2c177d211b269993c4eb69c334568d339e7fc820f22f57d95ac84` |
 | `apps/desktop/src/status-center/status.test.ts` |  | 1210 | `21829549ac56b4673383e5f91af4f9fd61bf875816d55eb877813f3d7b7d1005` |
 | `apps/desktop/src/status-center/status.ts` |  | 1251 | `b5bac21314e4e4a7d79ad2d05626714e24057e35eb6591ff29ec744ab2e37b3d` |
 | `apps/desktop/src/styles.css` |  | 4024 | `ebb7b83f7347d098ec019701e4acb02779b024d9d93db302aa46154c4d1d1dbc` |
@@ -165,9 +166,9 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3659 | `47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2886 | `eab432c06eb3fc6480a201930f869418ed42236bf040e85dace4e00c50e59f8b` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23242 | `f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 95536 | `705c221860eed63b86e164cf766478811cbea6907f8a9555301f5151413940a7` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 108583 | `e75d76d64fcec39db536e466d6b608497e12938d8556cfc443fdc32c1c58ca70` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts` |  | 11854 | `c1eb6739e86a75a80872a57916f9526bcd90607a3096efff3067b100e18b3133` |
-| `packages/surface-protocol/src/index.ts` |  | 982 | `77c0c29d8abf4afe3bae446919589a7e08d675fadc8c3f0c9027624c5b57bc7a` |
+| `packages/surface-protocol/src/index.ts` |  | 1023 | `76a5c4953423dd885c4c33be4796e33a3c429d235e6047f9d257be091bd22d38` |
 | `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |
 | `packages/surface-protocol/tsconfig.json` |  | 323 | `8a64916c72e55ad9185511e81712786b381fea18711dd8741593564b02b26110` |
 | `packages/ui/package.json` |  | 652 | `14d0cd2a83c8a1d583e71b4b4d538ca51f257fb492c452d32c6b30ac69681ac7` |

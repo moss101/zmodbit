@@ -50,6 +50,7 @@ declare global {
         baseUrl?: string;
         maxTurns?: number;
         executionMode?: string;
+        apiKey?: string;
       }): Promise<{ ok: boolean; error?: string; settings?: SettingsView }>;
       createSession(displayName: string): Promise<{ ok: boolean; sessionId?: string }>;
       taskEvents(taskId: string): Promise<{

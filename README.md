@@ -2,7 +2,34 @@
 
 Modbit is an **agent-first engineering workspace**: a desktop Work + Code application where a user delegates software tasks to AI agents, supervises a fleet of them, and reviews real diffs, test output, browser actions and effect receipts, without living inside an IDE. One canonical Rust Core owns state, orchestration, policy, context, tool execution, evidence and recovery, and the same Core runs locally and in isolated cloud MicroVMs.
 
-This repository currently contains the **complete implementation specification** (the "dossier") and the **project graph that drives the build**. It contains no product code yet; every milestone starts at `NOT_STARTED`.
+The product is real and running: the Rust Core (a daemon with an authenticated local SurfaceProtocol), the desktop Work + Code app, a headless CLI, and the retrieval/context stack (incremental Merkle repository index, Tantivy BM25, tree-sitter symbols, import-impact graph, planner-routed context queries) are implemented and proven by always-on E2E suites. The **specification dossier** and the **project graph that drives the build** remain in this repository; milestones still in progress are tracked in `Future-tasks.md` §4.
+
+## Quick start (headless CLI)
+
+```bash
+# 1. Build the daemon + CLI
+cargo build --release -p modbit-core-runtime --bin modbit --bin modbit-core
+
+# 2. Configure the provider once (persisted in the daemon's settings store;
+#    the API key goes into the OS keychain — never the env or any file)
+target/debug/modbit settings --provider openai \
+  --model gpt-4o-mini --base-url https://api.openai.com/v1 \
+  --api-key sk-...
+
+# 3. Run a task against a repository (boots a local daemon for that repo)
+target/debug/modbit run /path/to/your/repo "Fix the failing test in foo.rs" --json
+```
+
+`modbit run` prints the durable task state as JSON and exits 0 when the
+task reaches `ReadyForReview`. The same daemon powers the desktop app;
+settings and recent repositories are shared.
+
+### Building the desktop app
+
+```bash
+pnpm install && pnpm --filter @modbit/desktop build   # Electron shell + React UI
+```
+
 
 ## Layout
 

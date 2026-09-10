@@ -33,6 +33,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [apiKey, setApiKey] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -70,15 +71,18 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         baseUrl?: string;
         maxTurns?: number;
         executionMode?: string;
+        apiKey?: string;
       } = { maxTurns, executionMode };
       // "openai-compatible" stores the openai wire protocol (an
       // OpenAI-compatible endpoint IS OpenAI-wire) + its base URL.
       patch.provider = provider === "anthropic" ? "anthropic" : "openai";
       if (model.trim()) patch.model = model.trim();
       if (provider !== "anthropic" && baseUrl.trim()) patch.baseUrl = baseUrl.trim();
+      if (apiKey.trim()) patch.apiKey = apiKey.trim();
       const response = await window.modbit.updateSettings(patch);
       if (response.ok) {
         setSaved(true);
+        setApiKey("");
         if (response.settings) setSettings(response.settings);
       } else {
         setError(response.error ?? "settings save failed");
@@ -86,7 +90,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
     } finally {
       setSaving(false);
     }
-  }, [provider, model, baseUrl, maxTurns, executionMode]);
+  }, [provider, model, baseUrl, maxTurns, executionMode, apiKey]);
 
   return (
     <main>
@@ -158,6 +162,21 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         />
       </section>
 
+      <section aria-label="API key">
+        <h2>API key</h2>
+        <input
+          aria-label="API key"
+          type="password"
+          placeholder={settings?.hasApiKey ? "Stored in the system keychain — enter to replace" : "Paste the provider API key"}
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+        />
+        <p className="empty">
+          {settings?.hasApiKey
+            ? "A key is stored in the system keychain (macOS Keychain / Windows Credential Manager / Secret Service). It never appears here again."
+            : "No key stored yet. It will go straight into the OS keychain — never the settings file, environment, or event store."}
+        </p>
+      </section>
       <section aria-label="Execution mode">
         <h2>Execution mode</h2>
         <select

@@ -106,7 +106,11 @@ impl SchedulerConfig {
             // qualification script exports it); MODBIT_MODEL takes precedence.
             model,
             base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
-            broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
+            // Phase 4.3: keychain-first secret broker — the OS keychain
+            // (macOS Keychain / Windows Credential Manager / Secret
+            // Service) wins; the env broker stays the fallback so CI and
+            // headless boots keep working.
+            broker: Arc::new(modbit_providers::keychain::KeychainSecretBroker),
             // Phase 4.1: without MODBIT_REPO_ROOT the repo picker (task
             // repo_id) replaces the ambient repo — but task worktrees still
             // need a ROOT, so a bare root source is configured from

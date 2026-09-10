@@ -101,6 +101,16 @@ impl CoreServices {
         self
     }
 
+    /// The broker name a provider's key is stored under (the same names
+    /// the env broker reads — OPENAI_API_KEY / ANTHROPIC_API_KEY).
+    fn credential_env_for(provider: &str) -> &'static str {
+        if provider == "anthropic" {
+            "ANTHROPIC_API_KEY"
+        } else {
+            "OPENAI_API_KEY"
+        }
+    }
+
     /// Phase 4.2: the persisted settings as a wire view (empty strings =
     /// unset → the boot/env configuration applies).
     fn settings_view(&self) -> Result<pb::SettingsView, String> {
@@ -115,12 +125,18 @@ impl CoreServices {
                 .unwrap_or_default()
                 .to_string()
         };
+        let provider = if get_str("provider").is_empty() {
+            "openai".to_string()
+        } else {
+            get_str("provider")
+        };
         Ok(pb::SettingsView {
             provider: get_str("provider"),
             model: get_str("model"),
             base_url: get_str("base_url"),
             max_turns: doc.get("max_turns").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
             execution_mode: get_str("execution_mode"),
+            has_api_key: modbit_providers::keychain::has_secret(Self::credential_env_for(&provider)),
         })
     }
 
@@ -452,8 +468,9 @@ impl CoreServices {
             }
             Some(pb::surface_request::Request::UpdateSettings(update)) => {
                 // Phase 4.2: partial update — empty fields keep the stored
-                // value. Secrets NEVER ride this message (the secret broker
-                // owns credentials; docs/31).
+                // value. Phase 4.3: an api_key goes to the OS KEYCHAIN and
+                // is NEVER merged into the settings document, the
+                // environment, or the event store (docs/31 § Secrets).
                 let outcome = self
                     .store
                     .with_conn(|conn| {
@@ -482,6 +499,35 @@ impl CoreServices {
                         Ok((merged, ()))
                     })
                     .map(|(merged, _)| merged);
+                if !update.api_key.is_empty() {
+                    // Bind the key to the CURRENT provider (the update's
+                    // provider if given, else the stored one, else openai).
+                    let stored = self
+                        .store
+                        .with_conn(|conn| modbit_event_store::settings::get(conn).map_err(|e| e.to_string()))
+                        .ok()
+                        .flatten()
+                        .unwrap_or_else(|| serde_json::Value::Object(Default::default()));
+                    let provider = if !update.provider.is_empty() {
+                        update.provider.clone()
+                    } else {
+                        stored
+                            .get("provider")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("openai")
+                            .to_string()
+                    };
+                    let credential_name = Self::credential_env_for(&provider);
+                    if let Err(e) =
+                        modbit_providers::keychain::store_secret(credential_name, &update.api_key)
+                    {
+                        return pb::SurfaceResponse {
+                            ok: false,
+                            error: e.to_string(),
+                            ..Default::default()
+                        };
+                    }
+                }
                 match outcome {
                     Ok(merged) => {
                         let mut view = self.settings_view().unwrap_or_default();

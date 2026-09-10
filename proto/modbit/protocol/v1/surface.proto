@@ -47,6 +47,9 @@ message SettingsView {
   string base_url = 3;
   uint32 max_turns = 4;
   string execution_mode = 5;
+  // Phase 4.3: whether the current provider's API key is stored in the
+  // OS keychain. The KEY ITSELF never appears in any message.
+  bool has_api_key = 6;
 }
 
 // Phase 4.2: partial update — empty fields leave the stored value
@@ -58,6 +61,10 @@ message UpdateSettingsCommand {
   string base_url = 3;
   uint32 max_turns = 4;
   string execution_mode = 5;
+  // Phase 4.3: storing an API key goes to the OS keychain and is NEVER
+  // merged into the settings document, the environment, or the event
+  // store. Empty = leave the stored key unchanged.
+  string api_key = 6;
 }
 
 // Phase 4.1: register a repository with the daemon. Exactly one of

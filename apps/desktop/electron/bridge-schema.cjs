@@ -112,7 +112,14 @@ const CHANNELS = {
     "settings:update": {
         validate(payload) {
             if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
-            requireKnownFields(payload, ["provider", "model", "baseUrl", "maxTurns", "executionMode"]);
+            requireKnownFields(payload, [
+              "provider",
+              "model",
+              "baseUrl",
+              "maxTurns",
+              "executionMode",
+              "apiKey",
+            ]);
             const patch = {};
             if (payload.provider !== undefined) {
                 const v = requireString(payload, "provider", 40).toLowerCase();
@@ -141,6 +148,10 @@ const CHANNELS = {
                     throw new Rejected("executionMode must be default or readonly");
                 }
                 patch.executionMode = m;
+            }
+            if (payload.apiKey !== undefined) {
+                const k = optionalString(payload, "apiKey", 400);
+                patch.apiKey = k;
             }
             return { kind: "updateSettings", ...patch };
         },

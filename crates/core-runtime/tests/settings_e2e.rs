@@ -121,6 +121,12 @@ fn spawn_core(
         .env("MODBIT_REPO_ROOT", repo_root)
         .env("MODBIT_WORKTREE_ROOT", worktree_root)
         .env("MODBIT_EXECD_ADDR", &execd_addr)
+        // Run-scoped keychain namespace: E2E credentials never touch a
+        // real user keychain, and reads always miss (env fallback).
+        .env(
+            "MODBIT_KEYCHAIN_SERVICE",
+            format!("modbit-core-e2e-{}", uuid::Uuid::now_v7().simple()),
+        )
         // NO MODBIT_BASE_URL / MODBIT_MODEL / MODBIT_PROVIDER / MODBIT_MAX_TURNS:
         // the run must take them from the PERSISTED settings. The API key
         // still comes from the env secret broker (keychain = item 3).
@@ -227,6 +233,7 @@ fn update_settings(
             base_url: base_url.into(),
             max_turns,
             execution_mode: execution_mode.into(),
+            api_key: String::new(),
         }),
     )
 }

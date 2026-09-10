@@ -64,6 +64,11 @@ export interface SettingsView {
   baseUrl: string;
   maxTurns: number;
   executionMode: string;
+  /**
+   * Phase 4.3: whether the current provider's API key is stored in the
+   * OS keychain. The KEY ITSELF never appears in any message.
+   */
+  hasApiKey: boolean;
 }
 
 /**
@@ -77,6 +82,12 @@ export interface UpdateSettingsCommand {
   baseUrl: string;
   maxTurns: number;
   executionMode: string;
+  /**
+   * Phase 4.3: storing an API key goes to the OS keychain and is NEVER
+   * merged into the settings document, the environment, or the event
+   * store. Empty = leave the stored key unchanged.
+   */
+  apiKey: string;
 }
 
 /**
@@ -749,7 +760,7 @@ export const GetSettingsRequest: MessageFns<GetSettingsRequest> = {
 };
 
 function createBaseSettingsView(): SettingsView {
-  return { provider: "", model: "", baseUrl: "", maxTurns: 0, executionMode: "" };
+  return { provider: "", model: "", baseUrl: "", maxTurns: 0, executionMode: "", hasApiKey: false };
 }
 
 export const SettingsView: MessageFns<SettingsView> = {
@@ -768,6 +779,9 @@ export const SettingsView: MessageFns<SettingsView> = {
     }
     if (message.executionMode !== "") {
       writer.uint32(42).string(message.executionMode);
+    }
+    if (message.hasApiKey !== false) {
+      writer.uint32(48).bool(message.hasApiKey);
     }
     return writer;
   },
@@ -819,6 +833,14 @@ export const SettingsView: MessageFns<SettingsView> = {
           message.executionMode = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.hasApiKey = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -835,6 +857,7 @@ export const SettingsView: MessageFns<SettingsView> = {
       baseUrl: isSet(object.baseUrl) ? globalThis.String(object.baseUrl) : "",
       maxTurns: isSet(object.maxTurns) ? globalThis.Number(object.maxTurns) : 0,
       executionMode: isSet(object.executionMode) ? globalThis.String(object.executionMode) : "",
+      hasApiKey: isSet(object.hasApiKey) ? globalThis.Boolean(object.hasApiKey) : false,
     };
   },
 
@@ -855,6 +878,9 @@ export const SettingsView: MessageFns<SettingsView> = {
     if (message.executionMode !== "") {
       obj.executionMode = message.executionMode;
     }
+    if (message.hasApiKey !== false) {
+      obj.hasApiKey = message.hasApiKey;
+    }
     return obj;
   },
 
@@ -868,12 +894,13 @@ export const SettingsView: MessageFns<SettingsView> = {
     message.baseUrl = object.baseUrl ?? "";
     message.maxTurns = object.maxTurns ?? 0;
     message.executionMode = object.executionMode ?? "";
+    message.hasApiKey = object.hasApiKey ?? false;
     return message;
   },
 };
 
 function createBaseUpdateSettingsCommand(): UpdateSettingsCommand {
-  return { provider: "", model: "", baseUrl: "", maxTurns: 0, executionMode: "" };
+  return { provider: "", model: "", baseUrl: "", maxTurns: 0, executionMode: "", apiKey: "" };
 }
 
 export const UpdateSettingsCommand: MessageFns<UpdateSettingsCommand> = {
@@ -892,6 +919,9 @@ export const UpdateSettingsCommand: MessageFns<UpdateSettingsCommand> = {
     }
     if (message.executionMode !== "") {
       writer.uint32(42).string(message.executionMode);
+    }
+    if (message.apiKey !== "") {
+      writer.uint32(50).string(message.apiKey);
     }
     return writer;
   },
@@ -943,6 +973,14 @@ export const UpdateSettingsCommand: MessageFns<UpdateSettingsCommand> = {
           message.executionMode = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -959,6 +997,7 @@ export const UpdateSettingsCommand: MessageFns<UpdateSettingsCommand> = {
       baseUrl: isSet(object.baseUrl) ? globalThis.String(object.baseUrl) : "",
       maxTurns: isSet(object.maxTurns) ? globalThis.Number(object.maxTurns) : 0,
       executionMode: isSet(object.executionMode) ? globalThis.String(object.executionMode) : "",
+      apiKey: isSet(object.apiKey) ? globalThis.String(object.apiKey) : "",
     };
   },
 
@@ -979,6 +1018,9 @@ export const UpdateSettingsCommand: MessageFns<UpdateSettingsCommand> = {
     if (message.executionMode !== "") {
       obj.executionMode = message.executionMode;
     }
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
     return obj;
   },
 
@@ -992,6 +1034,7 @@ export const UpdateSettingsCommand: MessageFns<UpdateSettingsCommand> = {
     message.baseUrl = object.baseUrl ?? "";
     message.maxTurns = object.maxTurns ?? 0;
     message.executionMode = object.executionMode ?? "";
+    message.apiKey = object.apiKey ?? "";
     return message;
   },
 };

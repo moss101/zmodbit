@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 84,
+    "root_and_tooling": 85,
     "docs_bytes": 513371
   },
   "sections": [
@@ -686,8 +686,8 @@
   "root_and_tooling": [
     {
       "path": "README.md",
-      "bytes": 6333,
-      "sha256": "98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f"
+      "bytes": 7544,
+      "sha256": "36191e61c92e9b910b97a5068b1a155425fe9a13e703de432b27717e1bbb07e0"
     },
     {
       "path": "AGENTS.md",
@@ -771,8 +771,8 @@
     },
     {
       "path": "apps/desktop/electron/bridge-schema.cjs",
-      "bytes": 8100,
-      "sha256": "f444ddd97be015ed43dda44b771b9ea7f2da351d81def832dfd599a9f6f39c58"
+      "bytes": 10580,
+      "sha256": "e8617cb7574d76cdd246af7a2c4c9e06297990a21c5d3cd4b80d29dd4e5261f2"
     },
     {
       "path": "apps/desktop/electron/event-stream.cjs",
@@ -781,18 +781,18 @@
     },
     {
       "path": "apps/desktop/electron/main.cjs",
-      "bytes": 8421,
-      "sha256": "2b0a2dcbdbf6f89d72a9fbdf675876320051967d88db31a166bc9d814db738ce"
+      "bytes": 9113,
+      "sha256": "e8e3616cee43647c5202baed130562d0725e86dde342d9ec1f0ba4b9912cc9f1"
     },
     {
       "path": "apps/desktop/electron/preload.cjs",
-      "bytes": 1898,
-      "sha256": "41bcb6fa5c85ff00b66c162367abbfabf30d9d176c8c149d57471096c557a202"
+      "bytes": 2259,
+      "sha256": "a0280998ede308f6b9896bf7acc5006a67f063abd07cd9a206204faf57406b91"
     },
     {
       "path": "apps/desktop/electron/surface-client.cjs",
-      "bytes": 16596,
-      "sha256": "45338887240702c1b054728cbd63a3ff61232204a2c61ce1dc75bca6a2d54aa0"
+      "bytes": 18027,
+      "sha256": "4012496d08d6d3a937480c71dc72e6283e35585d117e6d3a9d828c2f8b8410d8"
     },
     {
       "path": "apps/desktop/index.html",
@@ -806,8 +806,8 @@
     },
     {
       "path": "apps/desktop/src/App.tsx",
-      "bytes": 7548,
-      "sha256": "e7ba87a0c2db4075b639abc52fefd6f4431ad5f4adbad958d40d0aef82f4d087"
+      "bytes": 7880,
+      "sha256": "aaf41f985a97807e3b20c7ba9b4188ae8faaca7975ff644bfaa43ad9870a84e1"
     },
     {
       "path": "apps/desktop/src/bridge-schema.test.ts",
@@ -861,8 +861,8 @@
     },
     {
       "path": "apps/desktop/src/global.d.ts",
-      "bytes": 2244,
-      "sha256": "4354a53278cbe1d2076fc66d7b80437ae30f357f2a5fc31befa2c14b2c8420b7"
+      "bytes": 2656,
+      "sha256": "99a1885fbe492a4310ba507a627d019521478f5392c488140effe2307af1f1e6"
     },
     {
       "path": "apps/desktop/src/main.ts",
@@ -873,6 +873,11 @@
       "path": "apps/desktop/src/main.tsx",
       "bytes": 232,
       "sha256": "ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140"
+    },
+    {
+      "path": "apps/desktop/src/settings/SettingsScreen.tsx",
+      "bytes": 7519,
+      "sha256": "7cea4b5e0cb2c177d211b269993c4eb69c334568d339e7fc820f22f57d95ac84"
     },
     {
       "path": "apps/desktop/src/status-center/status.test.ts",
@@ -1001,8 +1006,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 95536,
-      "sha256": "705c221860eed63b86e164cf766478811cbea6907f8a9555301f5151413940a7"
+      "bytes": 108583,
+      "sha256": "e75d76d64fcec39db536e466d6b608497e12938d8556cfc443fdc32c1c58ca70"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",
@@ -1011,8 +1016,8 @@
     },
     {
       "path": "packages/surface-protocol/src/index.ts",
-      "bytes": 982,
-      "sha256": "77c0c29d8abf4afe3bae446919589a7e08d675fadc8c3f0c9027624c5b57bc7a"
+      "bytes": 1023,
+      "sha256": "76a5c4953423dd885c4c33be4796e33a3c429d235e6047f9d257be091bd22d38"
     },
     {
       "path": "packages/surface-protocol/test/wire-compat.test.ts",

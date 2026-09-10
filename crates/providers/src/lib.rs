@@ -6,6 +6,7 @@ pub mod gateway;
 pub mod media_split;
 pub mod profiles;
 pub mod routing;
+pub mod keychain;
 pub mod transport;
 pub mod usage;
 pub use gateway::{

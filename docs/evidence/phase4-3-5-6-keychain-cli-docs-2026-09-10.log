@@ -1,0 +1,105 @@
+Phase 4.3 + 4.5 + 4.6 — keychain SecretBroker, headless CLI, quick-start docs
+========================================================================
+Phase context: Future-tasks Phase 4 items 3, 5 and 6 ("the desktop a
+user can run"); item 4 (packaging) needs USER CREDENTIALS — see the
+blocked-items note at the end.
+Revisions: the Phase 4.3/4.5/4.6 commits on main (after d60fc1b)
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+PHASE 4.3 — keychain SecretBroker (macOS Keychain / Windows Credential
+Manager / Secret Service), env broker as fallback
+---------------------------------------------------------------------
+- dependency admission (docs/36): the `keyring` crate v3 (MIT/Apache-2.0,
+  actively maintained), per-OS native features so no platform builds
+  another's backend (apple-native / windows-native /
+  sync-secret-service). Confined to modbit-providers::keychain.
+- crates/providers/src/keychain.rs (new): KeychainSecretBroker —
+  keychain-first lookups (service "modbit-core", account = the broker
+  name the transport asks for, e.g. OPENAI_API_KEY) with the env broker
+  as the documented FALLBACK (CI + headless boots keep working);
+  store/delete/has for the settings path; a mutation lock; typed
+  errors; values never logged.
+- service namespace is env-configurable (MODBIT_KEYCHAIN_SERVICE):
+  keychain ACLs are per-creating-binary, so tests/E2E use run-scoped
+  services — a rebuilt binary touching an entry created by an older
+  signature would otherwise block on a user prompt (observed and
+  designed around).
+- wiring: SchedulerConfig::from_env constructs the keychain-first
+  broker for the whole daemon; the settings surface stores an api_key
+  DIRECTLY to the keychain — it is never merged into the settings
+  document, never written to the environment, and never appended to the
+  event store; SettingsView gains has_api_key (the key itself never
+  rides a message).
+- desktop: the settings screen gains an API-key field (password input;
+  "stored in the system keychain" indicator from has_api_key); the
+  bridge schema guard bounds its length and routes it to the keychain.
+- DEFECT FIXED (surfaced during Phase 4.2's E2E hardening): leaked core
+  processes from earlier panicking test runs (Rust's Child does not
+  kill on drop) were accumulating and, combined with stale keychain
+  entries, produced 30s+ request timeouts; all E2E cores now use
+  run-scoped keychain services and the stale keychain entry was
+  deleted.
+- PROOFS: keychain unit tests (round-trip incl. rotation, env fallback
+  on miss, keychain-over-env preference) green on macOS with the REAL
+  Keychain; settings_keychain_e2e through the REAL daemon with NO
+  OPENAI_API_KEY in the environment: the run REACHES the model endpoint
+  and completes ONLY because the keychain broker supplies the key — the
+  fixture REJECTS any other credential; the durable event store
+  contains ZERO occurrences of the key string.
+- MUTATION CHECK: swapping the keychain broker for the env-only broker
+  fails the E2E (the task cannot authenticate). Recorded; reverted.
+
+PHASE 4.5 — headless CLI
+---------------------------------------------------------------------
+- crates/core-runtime/src/bin/modbit.rs (new bin `modbit`):
+  `modbit run <repo> "<task>" [--json] [--branch <b>] [--db <p>]
+  [--timeout <s>]` and `modbit settings [--provider/--model/
+  --base-url/--max-turns/--execution-mode/--api-key] [--json]` — over
+  the SAME SurfaceProtocol daemon the desktop uses (auto-spawns a core
+  bound to the repo when MODBIT_DAEMON is not set; drain threads keep
+  the core's pipes alive for the CLI's lifetime — closing them early
+  breaks the core, observed and designed around).
+- run: create → queue → start → poll the fleet to a terminal state →
+  JSON report {task_id, state, repo, base_branch}; exit 0 on
+  ReadyForReview, 2 on failed/waiting, 1 on transport/usage errors.
+- settings: partial update through UpdateSettings (an --api-key rides
+  the keychain path) and prints the effective values (key redacted;
+  has_api_key instead).
+- PROOF (live smoke, real repo + real daemon):
+  modbit run /tmp/cli-demo "say hello" --json →
+  {"base_branch":null,"repo":"/tmp/cli-demo",
+   "state":"TASK_STATUS_WAITING","task_id":"01a08cc8-…"}
+  TASK_STATUS_WAITING is the CORRECT terminal state here: the bare
+  fixture repo has no provider/model configured, so the run parks in
+  the provider-outage waiting state (docs/14) instead of pretending to
+  finish — exactly the never-self-certify invariant (REQ-EV-0119
+  family). A configured daemon reaches ReadyForReview (proven by
+  settings_e2e's default-mode control which applies a real edit).
+
+PHASE 4.6 — quick-start docs + README status fix
+---------------------------------------------------------------------
+- README: the "contains no product code yet" claim is REPLACED with the
+  real status (working Core daemon, desktop app, CLI, retrieval stack)
+  and a Quick start section: build → configure provider (settings +
+  keychain) → run a task headlessly. Desktop build command included.
+- docs/31: recent_repos + app_settings runtime-table sections.
+- docs/30: RegisterRepo/ListRecentRepos/GetSettings/UpdateSettings in
+  the command list; CreateTask repo note.
+- docs/32: § Repository picker + the settings screen contract.
+
+ITEM 4 (packaging) — BLOCKED ON USER INPUT
+---------------------------------------------------------------------
+electron-builder packaging, code signing and notarization require the
+user's Apple Developer ID credentials (and a Windows certificate for
+Windows signing). SBOM (cargo cyclonedx, pnpm sbom), cargo audit and
+cargo deny CAN be prepared but the signed/notarized artifact cannot be
+produced without those secrets. Requested from the user; everything
+else in Phase 4 is complete.
+
+FULL-SUITE STATUS (this changeset)
+---------------------------------------------------------------------
+- cargo test --workspace ... exit 0 (503+ Rust tests incl. 3 keychain
+  unit tests, settings_keychain_e2e, settings_e2e, repo_picker_e2e)
+- desktop vitest ... 36 tests green; tsc clean
+- clippy --workspace --all-targets ... clean
+- check_dossier + architecture-lint + decision-guard ... OK

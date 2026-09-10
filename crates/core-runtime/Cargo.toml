@@ -22,6 +22,7 @@ modbit-retrieval = { path = "../retrieval" }
 modbit-context = { path = "../context" }
 modbit-diagnostics = { path = "../diagnostics" }
 tokio = { workspace = true }
+reqwest = { workspace = true, features = ["blocking"] }
 serde = { workspace = true }
 sha2 = { workspace = true }
 serde_json = { workspace = true }
@@ -33,6 +34,10 @@ rusqlite = { workspace = true }
 [[bin]]
 name = "modbit-core"
 path = "src/bin/modbit-core.rs"
+
+[[bin]]
+name = "modbit"
+path = "src/bin/modbit.rs"
 
 [dev-dependencies]
 reqwest = { workspace = true, features = ["blocking"] }

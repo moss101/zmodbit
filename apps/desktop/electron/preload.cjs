@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld("modbit", {
     ipcRenderer.invoke("repo:register", { path: path || "", cloneUrl: cloneUrl || "" }),
   getSettings: () => ipcRenderer.invoke("settings:get"),
   updateSettings: (patch) => ipcRenderer.invoke("settings:update", patch),
+  // api_key rides the SAME guarded channel; the schema guard bounds its
+  // length and the host routes it to the OS keychain — never to logs.
+  updateApiKey: (apiKey) =>
+    ipcRenderer.invoke("settings:update", { apiKey }),
   createSession: (displayName) => ipcRenderer.invoke("session:create", { displayName }),
   taskEvents: (taskId) => ipcRenderer.invoke("task:events", { taskId }),
   codeView: (path) => ipcRenderer.invoke("code:view", { path }),

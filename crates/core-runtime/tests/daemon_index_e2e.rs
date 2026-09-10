@@ -176,6 +176,12 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         .env("MODBIT_REPO_ROOT", repo_root)
         .env("MODBIT_WORKTREE_ROOT", worktree_root)
         .env("MODBIT_EXECD_ADDR", &execd_addr)
+        // Run-scoped keychain namespace: E2E credentials never touch a
+        // real user keychain, and reads always miss (env fallback).
+        .env(
+            "MODBIT_KEYCHAIN_SERVICE",
+            format!("modbit-core-e2e-{}", uuid::Uuid::now_v7().simple()),
+        )
         .env("MODBIT_BASE_URL", format!("http://{model_addr}"))
         .env("MODBIT_MODEL", "fixture-model")
         .env("MODBIT_PROVIDER", "openai")
