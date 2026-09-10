@@ -1,0 +1,107 @@
+Phase 3.7 — M3.4 headless LSP bridge + Phase 3 exit
+========================================================================
+Node: M3.4 (headless LSP diagnostics/symbol bridge)
+Plan authority: docs/18 § Concrete local indexing stack ("Semantic
+language services: headless LSP processes normalized into Modbit
+diagnostics/symbol records") + the fallback invariant ("If semantic
+embedding is unavailable, exact/BM25/AST/LSP remain fully functional";
+here: LSP itself is the optional input and the deterministic
+tree-sitter surface is the always-on backbone)
+Phase context: Future-tasks Phase 3 — final milestone card before the
+exit record
+Revisions: the M3.4 commit (lsp.rs + lsp-fixture + TaskIndexWriter
+enrichment + E2E) and the closure commit on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: modbit-diagnostics was logic-only
+pull-diagnostics with zero LSP code and zero product callers)
+---------------------------------------------------------------------
+- crates/diagnostics/src/lsp.rs (new): minimal headless LSP client —
+  Content-Length-framed JSON-RPC over stdio, initialize handshake +
+  initialized notification, didOpen (once per file per session),
+  textDocument/definition and textDocument/references, answers
+  normalized to worktree-relative 1-based locations, typed errors
+  (spawn/io/timeout/server/closed), bounded requests (10 s in
+  production), kill-on-drop. FAIL-SOFT by design: every failure is
+  typed and every caller degrades to the deterministic tree-sitter
+  surface (docs/18 fallback invariant).
+- lsp-fixture bin (new): a REAL wire-protocol peer — a framed JSON-RPC
+  server with canned semantic answers resolved against didOpen'd
+  document text (word-at-position lookup, null answers for non-symbol
+  positions, includeDeclaration honored). The bridge is tested against
+  an actual protocol peer on every CI runner with NO language-server
+  installation.
+- crates/core-runtime: modbit-diagnostics enters the product closure
+  (17 → 18 of 26). TaskIndexWriter gains a lazy per-language LSP
+  session pool (MODBIT_LSP_RUST/_TYPESCRIPT/_JAVASCRIPT/_PYTHON env
+  commands; spawn failures cached so a missing binary is not retried
+  per query); search.symbol enriches the tree-sitter answer with the
+  LSP definition/references section — ANY LSP failure degrades to an
+  explicit {"unavailable": reason} note and the tool never fails
+  because LSP did. The planner's L2 structural route serves through
+  the same surface (search.symbol IS the L2 answer path).
+- E2E (daemon_context_query_e2e): the daemon runs with the fixture as
+  a REAL wire peer (MODBIT_LSP_RUST=target/debug/lsp-fixture); turn 2's
+  durable conversation carries the lsp section — server provenance,
+  the null-definition path (the fixture only knows its own symbol),
+  and a normalized cross-document reference.
+- Bridge integration (crates/diagnostics/tests/lsp_bridge.rs):
+  handshake + didOpen + definition (call site → defining line) +
+  references (same-document and cross-document, includeDeclaration
+  honored) + idempotent didOpen against the fixture; a real
+  rust-analyzer smoke runs ONLY when the binary is installed and is
+  bounded to the handshake claim (semantic queries need full indexing —
+  not gated).
+
+PROOFS (full workspace suite exit 0, 500 Rust tests green, 2026-09-10)
+---------------------------------------------------------------------
+  lsp::framing_round_trip_and_extra_headers ................ ok
+  lsp::uri_conversion_round_trip ........................... ok
+  bridge_handshakes_and_resolves_definition_and_references . ok
+    (REAL wire peer: handshake, didOpen, definition call-site ->
+     defining line 3 (1-based), null path, references with
+     includeDeclaration honored, cross-document normalization)
+  real_rust_analyzer_smoke_when_installed ................. ok
+    (runtime-skip on runners without the binary)
+  daemon_context_query_e2e (REAL daemon + REAL fixture wire peer) .. ok
+    - the lsp section with server provenance rides the DURABLE
+      conversation
+    - cross-document reference normalized
+    - one debug iteration recorded: the enrichment silently returned
+      None because the defining file was not yet ADOPTED — fixed by
+      following the fs.read convention (adopt on first touch); the
+      read-failure path now logs loudly
+- MUTATION CHECK: LSP enrichment disabled (env-gated) -> the E2E FAILED
+  at "the lsp section rides search.symbol" (the c2 answer carried no
+  lsp section). REVERTED; post-revert green. The enrichment is
+  load-bearing and observable.
+
+PHASE 3 EXIT RECORD (with the phase-closure skill)
+---------------------------------------------------------------------
+- Phase 3 §4 items 1-4: ALL DONE with typed evidence (see
+  phase3-1..phase3-6 logs + the graph nodes IMP-EV-0004, M3.1, M3.2,
+  M3.3, M3.6, M3.7, M3.8, M3.9 — all E2E_PROVEN, CI run ids recorded).
+- Benchmark numbers in docs/evidence/ ✓ (phase3-4 JSON + log; gates
+  green in CI on every push).
+- M3.5 (embeddings): resolved by DECISION, not by build — the item-4
+  condition ("embeddings decision only if BM25 + symbols miss the
+  gate") was not met (gate passed), so embeddings stay out of the M3
+  path; the card remains IMPLEMENTING, gated on the recorded revisit
+  triggers. A formal ACCEPTED ADR needs explicit user approval
+  (decision-guard enforces it); the decision is otherwise recorded in
+  Future-tasks + the M3.5 graph note.
+- Exit condition reading, recorded honestly: "M3 E2E_PROVEN" holds at
+  task level for every card Phase 3 scoped as build work (8 of 9);
+  M3.5 is decision-deferred, not proven — the M3 milestone node stays
+  IN_PROGRESS (the same precedent as the M2 node, which also remains
+  IN_PROGRESS after Phase 2's exit was recorded at task level).
+
+REMAINING GAPS
+---------------------------------------------------------------------
+- M3.5 (embeddings): revisit triggers recorded; needs user approval for
+  a formal ADR or an explicit build order.
+- M3.6 remainder: git-commit recency and diagnostics/runtime evidence
+  linkage (the graph is import-edge + test-mapping today).
+- Known fabrication still open: crates/context/profile_experiment.rs
+  (hardcoded recalls; QUAL-EV-0254 EXPERIMENT) — replace with a real
+  run of the benchmark harness or delete; no node is closed on it.

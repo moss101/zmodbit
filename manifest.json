@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 860174,
-      "sha256": "2e0029e92cf4224f9ad068191f84617fb59144a8e368b7f9d27bd88bd9d906dc"
+      "bytes": 860135,
+      "sha256": "f8261a44267a6d644f9ddd0141ede6c3f57eed3543b8bc87327e94f709ba3fc4"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -731,8 +731,8 @@
     },
     {
       "path": "tools/decision-guard.py",
-      "bytes": 7908,
-      "sha256": "cda3b0c9feeb2706ab93489d809dfd5ff0caa8da9207662d51a2e5dbf961bcfc"
+      "bytes": 8246,
+      "sha256": "908b60886aef695857bb4ab621c51ed2758904616651216eb9a76f1797ef289b"
     },
     {
       "path": ".github/workflows/ci.yml",

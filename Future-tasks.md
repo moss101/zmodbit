@@ -24,27 +24,27 @@ Previous version of this file: the 2026-09-05 component audit and its section 4 
 | Phase 2.5 M4 recovery — a Core kill mid-run resumes from the last committed checkpoint; `docs/54` kill points proven | commit `dabe36c`; `scheduler.rs`, `one_agent.rs`, `tests/daemon_resume_e2e.rs`, `docs/evidence/phase2-5-run-resume-2026-09-06.log` |
 | Phase 2.6 shell correctness — `argv` array form, streamed output chunks as run events, paginated `OutputRef`, Core-spawned `modbit-execd` broker | commits `dfc923a`, `0bf3638`; `bin/modbit-core.rs`, `scheduler.rs`, `tests/daemon_output_e2e.rs` |
 | Phase 2 exit: M2 + M4 `E2E_PROVEN` with typed evidence; nightly live job green 5 consecutive nights, one revision (main @ `ecf5e6a`) | runs `34002162962` (09-06), `34080928159` (09-07), `34186289909` (09-08), `34310197890` (09-09), `34436444933` (09-10) — typed `run:` refs on graph node `M2.11` |
-| Phase 3.1 filesystem walker + incremental Merkle index feeding `crates/retrieval` (IMP-EV-0004): index built on task start, refreshed from the change journal on `change.apply` + turn boundary; `index_updated` run event carries root digest + only-affected-segments evidence; `modbit-retrieval` enters the product binary closure (15→16); empty-dir prune defect in `MerkleIndex::apply_changes` fixed | commit `9bfc91a`; `docs/evidence/phase3-1-repository-index-2026-09-10.log` |
-| Phase 3.2 `context.query` + `search.symbol` (M3.2 + M3.3): real Tantivy 0.26 BM25 + tree-sitter 0.27 symbols (Rust/TS/TSX/JS/Python) admitted per docs/35/36, fused in `TaskIndex::context_query` with provenance; tools refresh from the change journal before answering; orphan `bm25.rs` deleted (docs/36 mandates the dependency, no second implementation) | commit `b3e6159`; `docs/evidence/phase3-2-context-query-symbols-2026-09-10.log` |
-| Phase 3.3 context pack + retrieve-before-edit gate (M3.8 + docs/02 MOD-CTX-001): task pack compiled by `modbit-context` (token-derived budget, per-fragment provenance validated before shipping, recently-changed journal section, index-seeded fresh file heads); `change.propose` gated on retrieval evidence recorded by fs.read / all query tools / pack membership; `modbit-context` enters the product closure (16→17) | commit `fd366b1`; `docs/evidence/phase3-3-context-pack-gate-2026-09-10.log` |
-| M3.1 exact/regex/path surfaces: `context.query` mode=fused\|exact\|regex\|path over the journal-refreshed indexed corpus; E2E proves the regex surface searches live content (mutation-checked, incl. a recorded false-pass fix) | commit `727814a`; `docs/evidence/phase3-6-deps-planner-surfaces-2026-09-10.log` |
-| M3.7 L0-L3 retrieval planner: `auto` default mode routes from REAL index signals (minimum sufficient level; no over-escalation proven); plan rides every response; L3 serves import-impact (mutation-checked) | commits `727814a`+`09e8b6c` run 34466358948; `docs/evidence/phase3-6-deps-planner-surfaces-2026-09-10.log` |
-| Embeddings decision (Phase 3 item 4 condition): the gate PASSED, so embeddings stay OUT of the M3 path — M3.5 remains deferred behind the revisit triggers (recall-floor miss on a real corpus, nightly L1 recall drop, or explicit product decision); formal ADR awaiting user approval | `docs/evidence/phase3-4-retrieval-benchmark-2026-09-10.log`; graph note on M3.5 |
-| M3.6 dependency evidence graph: tree-sitter import edges (Rust/TS/TSX/JS/Python) resolved against the corpus, maintained incrementally, `impact` mode + L3 impact_of_top_hit through the daemon (mutation-checked) | commit `685047b`; `docs/evidence/phase3-6-deps-planner-surfaces-2026-09-10.log` |
-| Phase 3.4 retrieval benchmark at a fixed revision (M3.9): deterministic 2,600-file corpus through the REAL pipeline (walker→Tantivy→tree-sitter→fusion), 100 ground-truth queries, 3 families; gates ALWAYS-ON in CI — recall@5 fused 0.970 ≥ exact 0.970 ≥ 0.90 floor, warm p95 2 ms < 300 ms (docs/53 L1), cold 19.3 s reported; ADR-D embeddings NOT required (gate passed, MOD-EMB-001 stays deferred) | see phase-closure evidence; `docs/evidence/phase3-4-retrieval-benchmark-2026-09-10.log` + `.json` |
+| Phase 3 EXIT: M3 `E2E_PROVEN` at task level for every card Phase 3 scoped as build work — M3.1 (index surfaces), M3.2 (Tantivy BM25), M3.3 (tree-sitter symbols), M3.4 (headless LSP bridge), M3.6 (import/dependency graph + impact), M3.7 (L0-L3 planner, auto mode), M3.8 (context pack + retrieve-before-edit), M3.9 (benchmark gates in CI: recall@5 0.970 ≥ 0.90 floor, warm p95 2 ms < 300 ms). M3.5 (embeddings) resolved by DECISION per the phase item's own condition ("embeddings only if the gate misses"): the gate passed, so embeddings stay out of the M3 path — the card remains IMPLEMENTING behind recorded revisit triggers; a formal ACCEPTED ADR awaits user approval. Product closure 15→18 (retrieval, context, diagnostics all in). Defects found and fixed en route: `MerkleIndex` empty-dir root drift; docs/36-mandated deps admitted (tantivy, tree-sitter); a hardcoded `profile_experiment` flagged (never closed on) | commits `9bfc91a`, `b3e6159`, `fd366b1`, `bbcb07a`, `727814a`, `49ea54c`, `685047b`, `e3507eb`, M3.4 commit; CI runs `34443959131`, `34452032966`, `34455052293`, `34459967318`, `34470983632`, M3.4 CI run; evidence `docs/evidence/phase3-1-…` through `phase3-7-lsp-bridge-exit-2026-09-10.log` |
+| Phase 3.1 walker + incremental Merkle (IMP-EV-0004): index built at task start, refreshed from the change journal on `change.apply` + turn boundary; `index_updated` events carry only-affected-segments evidence; empty-dir prune defect fixed; `crates/retrieval` enters the closure | commit `9bfc91a`; `docs/evidence/phase3-1-repository-index-2026-09-10.log` |
+| Phase 3.2 `context.query` + `search.symbol` (M3.2+M3.3): real Tantivy 0.26 + tree-sitter 0.27 admitted per docs/35/36 (orphan `bm25.rs` deleted); fused ranking with provenance; journal-refresh before answering | commit `b3e6159`; `docs/evidence/phase3-2-context-query-symbols-2026-09-10.log` |
+| Phase 3.3 context pack + retrieve-before-edit gate (M3.8 + MOD-CTX-001): pack compiled by `modbit-context` (token budget, validated provenance, recently-changed section, index-seeded fresh heads); `change.propose` gated on retrieval evidence; `crates/context` enters the closure | commit `fd366b1`; `docs/evidence/phase3-3-context-pack-gate-2026-09-10.log` |
+| Phase 3.4 benchmark gates in CI (M3.9): deterministic 2,600-file corpus through the real pipeline; recall/latency gates always-on; ADR-D embeddings decision: NOT required (gate passed) | commit `bbcb07a`; `docs/evidence/phase3-4-retrieval-benchmark-2026-09-10.log` + `.json` |
+| Phase 3.5 M3.1+M3.7: exact/regex/path surfaces + L0-L3 planner auto mode (minimum-sufficient-level proven, no over-escalation); both mutation-checked | commits `727814a`, `49ea54c`; `docs/evidence/phase3-5-planner-surfaces-2026-09-10.log` |
+| Phase 3.6 M3.6 dependency graph: tree-sitter import edges resolved against the corpus, maintained incrementally, `impact` mode + L3 `impact_of_top_hit`; Windows path-normalization fix caught by CI | commits `685047b`, `e3507eb`; `docs/evidence/phase3-6-deps-planner-surfaces-2026-09-10.log` |
+| Phase 3.7 M3.4 headless LSP bridge: JSON-RPC/stdio client, REAL wire-protocol fixture peer for CI, lazy per-language sessions, `search.symbol` LSP enrichment with fail-soft degradation; `crates/diagnostics` enters the closure (18/26); rust-analyzer smoke when installed | M3.4 commit; `docs/evidence/phase3-7-lsp-bridge-exit-2026-09-10.log` |
 
 Current facts:
 
 | Fact | Value |
 |---|---|
-| Crates in the `modbit-core-runtime` dependency closure | 16 of 26 (`checkpoint`, `compaction`, `core-runtime`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `retrieval`, `terminal`, `tools`, `verification`, `workspace`) |
+| Crates in the `modbit-core-runtime` dependency closure | 18 of 26 (`checkpoint`, `compaction`, `context`, `core-runtime`, `diagnostics`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `retrieval`, `terminal`, `tools`, `verification`, `workspace`) |
 | Empty canonical crates | `effects`, `secrets`, `memory`, `observability` |
 | Stub binaries (`fn main() {}`) | `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest` |
 | Rust / TS tests | 495 / 53 |
 | Desktop screens | 2 (fleet, task workspace) |
 | Surface RPCs | 15 requests in the `surface.proto` oneof |
 | Nightly live workflow | `.github/workflows/nightly-live.yml` active (cron 03:43Z; five-night gate 2026-09-06..10 green, see section 1) |
-| Milestones | M0, M1 COMPLETE; M2 + M4 `E2E_PROVEN` at task level (M2: 11/11 milestone_tasks and 20 IMPs `E2E_PROVEN`, 42 cross-phase IMPs WIRED with audit notes — never paper-closed; M4: 11/11 tasks `E2E_PROVEN`); M3, M5–M10 IN_PROGRESS |
+| Milestones | M0, M1 COMPLETE; M2 + M4 `E2E_PROVEN` at task level (M2: 11/11 milestone_tasks and 20 IMPs `E2E_PROVEN`, 42 cross-phase IMPs WIRED with audit notes — never paper-closed; M4: 11/11 tasks `E2E_PROVEN`); **M3: 8/9 milestone_tasks `E2E_PROVEN` — M3.5 decision-deferred (gate passed, revisit triggers recorded)**; M5–M10 IN_PROGRESS |
 
 ## 2. Open defects found in the live path (fix before anything else)
 
@@ -52,7 +52,7 @@ Status after the Phase 2 closure (2026-09-10): defects 1–5 are **cleared** by 
 
 1. ~~**Conversation roles are wrong.**~~ **Cleared** by Phase 2.1 (commit `e80394d`): the loop sends typed `ChatMessage` turns — assistant `tool_calls` and tool-result messages keyed by call id.
 2. ~~**No context-window management.**~~ **Cleared** by Phase 2.2 (commit `6ee7135`): `crates/compaction` hot path compacts oldest tool results first, emits `CompactionApplied`, per-model `max_output_tokens`/settings.
-3. ~~**Context pack is a directory listing / rules never read.**~~ **Cleared** by Phase 2.4 (commit `c5307da`): AGENTS.md / CLAUDE.md / `.cursor/rules` / `.modbit/rules.md` are read into `workspace_rules` with provenance. (The pack is still listing-based; the real context engine is Phase 3 / M3.)
+3. ~~**Context pack is a directory listing / rules never read.**~~ **Cleared** by Phase 2.4 (commit `c5307da`): AGENTS.md / CLAUDE.md / `.cursor/rules` / `.modbit/rules.md` are read into `workspace_rules` with provenance. (The pack now compiles through `modbit-context` with budgets/provenance/retrieval seeding — Phase 3.3; pull-based diagnostics-in-context remains future work.)
 4. ~~**`shell.run` splits argv on whitespace / no streaming / desktop has no broker.**~~ **Cleared** by Phase 2.6 (commits `dfc923a`, `0bf3638`): argv arrays, streamed run events, paginated `OutputRef`, Core-spawned `modbit-execd`.
 5. ~~**Stop/Pause do not cancel.**~~ **Cleared** by Phase 2.3 (commit `271dc35`): cancellation reaches the in-flight stream and broker run; Steer injects on the next turn.
 6. **All configuration is environment variables** (`MODBIT_REPO_ROOT`, `MODBIT_PROVIDER`, `MODBIT_MODEL`, `MODBIT_BASE_URL`, `*_API_KEY`, `MODBIT_MAX_TURNS`). No repo picker, no provider/model settings, `EnvSecretBroker` only. **Deferred to Phase 4.**
@@ -64,10 +64,10 @@ Modbit is not an IDE; editor features (tab completion, inline edit) are out of s
 
 | Capability | Cursor | Codex | Modbit today |
 |---|---|---|---|
-| Agentic loop with proper tool messages | yes | yes | broken roles (§2.1) |
-| Context compaction / long sessions | yes | yes | no |
-| Semantic codebase index | embeddings + Merkle | repo map, grep | logic only, unlinked |
-| Repo rules files | `.cursor/rules`, AGENTS.md | AGENTS.md hierarchy | not read |
+| Agentic loop with proper tool messages | yes | yes | real (Phase 2.1) |
+| Context compaction / long sessions | yes | yes | real (Phase 2.2) |
+| Semantic codebase index | embeddings + Merkle | repo map, grep | real: Merkle + Tantivy BM25 + tree-sitter + import graph, wired (embeddings deferred) |
+| Repo rules files | `.cursor/rules`, AGENTS.md | AGENTS.md hierarchy | read with provenance (Phase 2.4) |
 | Multi-provider / local models | many + custom endpoints | OpenAI + OSS via Ollama | OpenAI-compat, Anthropic, env only |
 | Approval modes | ask / auto / YOLO | read-only / auto / full | static grants, no approve UI |
 | OS sandbox for commands | sandboxed terminals | Seatbelt / Landlock / seccomp | policy only, no OS sandbox |
@@ -89,16 +89,7 @@ Modbit's differentiators (receipts, exact recovery, one Core local and cloud, ev
 
 ## 4. Recommended work order
 
-Each phase ends with `python3 tools/check_dossier.py`, the nightly live job green, the named E2E scenarios, and regenerated README / `docs/98`. A node closes only through production routing with typed evidence and only if its module is in the binary closure.
-
-### Phase 3: context that beats grep (M3)
-
-1. Filesystem walker with `.gitignore` respect and incremental Merkle updates feeding `crates/retrieval`; index built on task start and refreshed on `change.apply`.
-2. `context.query` tool over BM25 + path + symbol chunks; `search.symbol` via tree-sitter (Rust, TS/JS, Python first) with definitions/references.
-3. Context pack compiled by `crates/context` with token budgets, provenance and a "recently changed files" section; retrieve-before-edit gate on `change.propose`.
-4. Benchmark at a fixed revision (`docs/53`) with a latency and recall gate in CI; embeddings decision (ADR-D, local model per `docs/72`) only if BM25 + symbols miss the gate.
-
-Exit: M3 `E2E_PROVEN`; benchmark numbers in `docs/evidence/`.
+Phase 3 closed (see section 1). Each phase ends with `python3 tools/check_dossier.py`, the nightly live job green, the named E2E scenarios, and regenerated README / `docs/98`. A node closes only through production routing with typed evidence and only if its module is in the binary closure.
 
 ### Phase 4: the desktop a user can run (M1 polish, M10 packaging)
 

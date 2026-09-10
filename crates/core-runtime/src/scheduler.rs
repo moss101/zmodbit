@@ -2481,7 +2481,7 @@ impl TaskIndexWriter {
                 }
                 r["mode"] = serde_json::json!("auto:engineering:fused");
                 r["note"] = serde_json::json!(
-                    "engineering level: fused context + import-impact of the top hit; diagnostics/runtime evidence still pending (M3.4 and the M3.6 remainder)"
+                    "engineering level: fused context + import-impact of the top hit; pull-based diagnostics-in-context and runtime evidence remain future work"
                 );
                 r
             }
