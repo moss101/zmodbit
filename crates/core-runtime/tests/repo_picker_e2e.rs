@@ -118,8 +118,13 @@ fn spawn_core(db_path: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr
         }
     }
     std::thread::spawn(move || {
-        for line in err_reader.lines().flatten() {
-            eprintln!("CORE: {line}");
+        let mut line = String::new();
+        loop {
+            line.clear();
+            match err_reader.read_line(&mut line) {
+                Ok(0) | Err(_) => break,
+                Ok(_) => {}
+            }
         }
     });
     std::mem::forget(execd);

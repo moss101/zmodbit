@@ -67,12 +67,18 @@ repo_picker_e2e (REAL daemon, REAL git, scripted model):
   (optional, length-bounded), repo:register exactly-one-of + traversal
   rejection, repo:list shape.
 
-MUTATION CHECK (docs/55): LSP... n/a here; the gate for this slice is
-the per-task allocation itself — the E2E's core assertion (edge.txt
-present ONLY when the worktree branches from feature/edge) is the
-control: a worktree allocated from HEAD would fail it. The
-unknown-repo failure transition was itself a defect FIX proven by the
-E2E (the pre-fix behavior hung the task Running forever).
+MUTATION CHECK (docs/55), against the Phase 4.1 commit:
+  Mutation: per-task base-branch selection disabled (start_point
+  forced None) -> repo_picker_e2e FAILED at "the base branch's file is
+  checked out" — a HEAD-based worktree lacks the edge-only file, so the
+  selection is load-bearing and observable. REVERTED; post-revert E2E
+  green. (The unknown-repo failure transition was itself a defect FIX
+  proven by the E2E: the pre-fix behavior hung the task Running
+  forever.)
+
+CI: run recorded on the Phase 4.1 push (main @ 6cc8f12 and the
+evidence-log follow-up); see the graph/Future-tasks row for the run id
+filled at closure time.
 
 REMAINING GAPS (Phase 4)
 ---------------------------------------------------------------------
