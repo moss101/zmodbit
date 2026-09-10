@@ -76,9 +76,13 @@ MUTATION CHECK (docs/55), against the Phase 4.1 commit:
   proven by the E2E: the pre-fix behavior hung the task Running
   forever.)
 
-CI: run recorded on the Phase 4.1 push (main @ 6cc8f12 and the
-evidence-log follow-up); see the graph/Future-tasks row for the run id
-filled at closure time.
+CI: run 34498648352 GREEN on all 3 OS (main @ 67badce). Two CI catches
+fixed en route, both recorded deliberately: (a) newer clippy denies
+io::Lines::flatten in the E2E stderr drain; (b) windows-latest caught
+clone-URL backslash handling — a backslash URL made Path::join resolve
+the clone target to the SOURCE path itself; the resolver now normalizes
+separators before deriving the clone directory (regression covered by
+the same E2E).
 
 REMAINING GAPS (Phase 4)
 ---------------------------------------------------------------------
