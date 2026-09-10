@@ -172,6 +172,12 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         .env("MODBIT_REPO_ROOT", repo_root)
         .env("MODBIT_WORKTREE_ROOT", worktree_root)
         .env("MODBIT_EXECD_ADDR", &execd_addr)
+        // M3.4: a REAL LSP wire peer — the lsp-fixture binary speaks the
+        // Content-Length/JSON-RPC protocol; the bridge spawns it per task.
+        .env(
+            "MODBIT_LSP_RUST",
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/lsp-fixture"),
+        )
         .env("MODBIT_BASE_URL", format!("http://{model_addr}"))
         .env("MODBIT_MODEL", "fixture-model")
         .env("MODBIT_PROVIDER", "openai")
@@ -365,6 +371,19 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
     assert!(
         visible.contains("src/caller.rs"),
         "references resolve across files: {visible}"
+    );
+    // M3.4: the headless LSP bridge enriched the answer — the REAL wire
+    // peer (lsp-fixture) answered references for the defining file. The
+    // fixture only knows its own target symbol, so its definition answer
+    // is null (proving the null path) while references carry the canned
+    // cross-document location.
+    assert!(
+        visible.contains("\"lsp\":{") && visible.contains("\"server\":"),
+        "the lsp section rides search.symbol: {visible}"
+    );
+    assert!(
+        visible.contains("/src/other.rs"),
+        "LSP references normalize cross-document locations: {visible}"
     );
 
     // 3) Freshness (turn 4): the brand-new definition is queryable with

@@ -1153,6 +1153,7 @@ dependencies = [
  "modbit-checkpoint",
  "modbit-compaction",
  "modbit-context",
+ "modbit-diagnostics",
  "modbit-domain",
  "modbit-event-store",
  "modbit-git",
@@ -1182,6 +1183,7 @@ name = "modbit-diagnostics"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
 ]
 
 [[package]]

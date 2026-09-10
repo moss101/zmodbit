@@ -2051,6 +2051,11 @@ pub struct TaskIndexWriter {
     /// retrieve-before-edit): read via fs.read, hit by context.query /
     /// search.grep / search.symbol, or packed into the task context.
     evidence: std::sync::Mutex<std::collections::BTreeSet<String>>,
+    /// Headless LSP sessions per language (M3.4): lazily spawned from the
+    /// MODBIT_LSP_<LANG> env commands, killed when the writer drops.
+    /// None = a previous spawn failed (do not retry every query).
+    lsp_sessions:
+        std::sync::Mutex<std::collections::BTreeMap<String, Option<modbit_diagnostics::lsp::LspSession>>>,
 }
 
 /// Evidence bound for the recomputed-segment list in one event.
@@ -2069,6 +2074,7 @@ impl TaskIndexWriter {
             shared,
             index: std::sync::Mutex::new(index),
             evidence: std::sync::Mutex::new(std::collections::BTreeSet::new()),
+            lsp_sessions: std::sync::Mutex::new(std::collections::BTreeMap::new()),
         }
     }
 
@@ -2201,13 +2207,116 @@ impl TaskIndexWriter {
 
     /// search.symbol (docs/17: Search family): refreshes the index, then
     /// resolves definitions and references for an exact symbol name via
-    /// the tree-sitter surface (Rust, TypeScript/TSX, JavaScript, Python).
+    /// the tree-sitter surface (Rust, TypeScript/TSX, JavaScript, Python),
+    /// ENRICHED with the headless LSP answer when a server is configured
+    /// for the language (M3.4 — docs/18: LSP where available; the
+    /// deterministic tree-sitter surface always stays the backbone).
     fn query_symbol(&self, ws: &WorkspaceFileService, name: &str) -> serde_json::Value {
         self.refresh_from_journal(ws, "symbol_query");
-        let index = self.index.lock().expect("task index mutex");
-        serde_json::json!({
-            "definitions": index.symbol_definitions(name),
-            "references": index.symbol_references(name),
+        let defs = {
+            let index = self.index.lock().expect("task index mutex");
+            index.symbol_definitions(name)
+        };
+        let refs = {
+            let index = self.index.lock().expect("task index mutex");
+            index.symbol_references(name)
+        };
+        let mut result = serde_json::json!({
+            "definitions": defs,
+            "references": refs,
+        });
+        if let Some(lsp) = self.lsp_enrich(ws, name) {
+            result["lsp"] = lsp;
+        }
+        result
+    }
+
+    /// The M3.4 LSP enrichment for one symbol: spawns/reuses the
+    /// language's headless server, resolves definition + references at
+    /// the first tree-sitter definition site, and returns the normalized
+    /// section. Any failure degrades to `{"unavailable": reason}` — the
+    /// tool never fails because LSP did.
+    fn lsp_enrich(&self, ws: &WorkspaceFileService, name: &str) -> Option<serde_json::Value> {
+        let first_def = {
+            let index = self.index.lock().expect("task index mutex");
+            index.symbol_definitions(name).into_iter().next()?
+        };
+        let lang = modbit_retrieval::symbols::language_of(&first_def.path)?;
+        let env_key = format!(
+            "MODBIT_LSP_{}",
+            match lang {
+                "rust" => "RUST",
+                "typescript" | "tsx" => "TYPESCRIPT",
+                "javascript" => "JAVASCRIPT",
+                "python" => "PYTHON",
+                _ => return None,
+            }
+        );
+        let command = std::env::var(&env_key).ok().filter(|c| !c.trim().is_empty())?;
+
+        // Read the defining file's fresh bytes for didOpen (no locks held).
+        // Files checked out by git are adopted on first touch (the same
+        // convention as the fs.read tool).
+        let _ = ws.adopt(&first_def.path);
+        let bytes = match ws.read(&first_def.path).map(|(b, _)| b) {
+            Ok(b) => b,
+            Err(e) => {
+                eprintln!("lsp_enrich: read failed: {e}");
+                return None;
+            }
+        };
+
+        let mut sessions = self.lsp_sessions.lock().expect("lsp sessions");
+        if !sessions.contains_key(lang) {
+            let spawned = modbit_diagnostics::lsp::LspSession::spawn(&command, ws.root())
+                .map(|mut s| {
+                    s.request_timeout = Duration::from_secs(10);
+                    s
+                })
+                .map_err(|e| e.to_string());
+            sessions.insert(lang.to_string(), spawned.ok());
+        }
+        // A fresh error is cached as None (spawn retried never).
+        let slot = match sessions.get_mut(lang) {
+            Some(Some(session)) => session,
+            _ => {
+                eprintln!("lsp_enrich: session unavailable for {lang}");
+                return Some(serde_json::json!({
+                    "unavailable": format!(
+                        "no working {env_key} server (command: {command:?}); the tree-sitter surface above is authoritative"
+                    ),
+                }));
+            }
+        };
+        let session = slot;
+        if let Err(e) = session.ensure_open(&first_def.path, &bytes) {
+            return Some(serde_json::json!({ "unavailable": e.to_string() }));
+        }
+        let text = String::from_utf8_lossy(&bytes);
+        let col = text
+            .lines()
+            .nth(first_def.line.saturating_sub(1))
+            .and_then(|l| l.find(name).map(|b| l[..b].chars().count()))
+            .unwrap_or(0);
+        let definitions = session
+            .definition(&first_def.path, first_def.line.saturating_sub(1), col)
+            .map_err(|e| {
+                eprintln!("lsp_enrich: definition failed: {e}");
+                e.to_string()
+            });
+        let references = session
+            .references(&first_def.path, first_def.line.saturating_sub(1), col, false)
+            .map_err(|e| {
+                eprintln!("lsp_enrich: references failed: {e}");
+                e.to_string()
+            });
+        Some(match (definitions, references) {
+            (Ok(d), Ok(r)) => serde_json::json!({
+                "server": command,
+                "definitions": d,
+                "references": r,
+            }),
+            (Err(e), _) | (_, Err(e)) => serde_json::json!({ "unavailable": e }),
         })
     }
 

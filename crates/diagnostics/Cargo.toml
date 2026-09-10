@@ -5,6 +5,11 @@ edition.workspace = true
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
+
+[[bin]]
+name = "lsp-fixture"
+path = "src/bin/lsp_fixture.rs"
 
 [lints]
 workspace = true

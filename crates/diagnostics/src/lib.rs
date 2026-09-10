@@ -4,3 +4,5 @@
 //! Behavior lands with its scheduled milestone (M3).
 
 pub mod pull;
+
+pub mod lsp;
