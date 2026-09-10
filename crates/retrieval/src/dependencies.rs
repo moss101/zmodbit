@@ -134,8 +134,10 @@ fn resolve(from_path: &str, raw: &str, kind: DepKind, known: &BTreeSet<String>) 
 }
 
 fn normalize(p: &str) -> Option<String> {
+    // Separator-agnostic: Path::join renders '\\' on Windows while the
+    // corpus keys are always forward-slashed (the walker normalizes).
     let mut parts: Vec<&str> = Vec::new();
-    for seg in p.split('/') {
+    for seg in p.split(['/', '\\']) {
         match seg {
             "." => {}
             ".." => {
@@ -159,10 +161,11 @@ impl DependencyIndex {
         known: &BTreeSet<String>,
     ) {
         let mut targets: BTreeMap<String, &'static str> = BTreeMap::new();
+        let from_path = &from_path.replace('\\', "/");
         if let Some(lang) = language_of(from_path) {
             for (raw, kind) in parse_dep_strings(lang, bytes) {
                 if let Some(to) = resolve(from_path, &raw, kind, known) {
-                    if to != from_path {
+                    if to != from_path.as_str() {
                         targets.insert(to, kind.as_str());
                     }
                 }
@@ -311,6 +314,25 @@ mod tests {
         let mut tos: Vec<String> = idx.all().into_iter().map(|e| e.to).collect();
         tos.sort();
         assert_eq!(tos, vec!["pkg/__init__.py", "pkg/util.py"]);
+    }
+
+    /// Windows-style backslash joins normalize to the forward-slashed
+    /// corpus keys (the walker's contract; caught by windows-latest CI).
+    #[test]
+    fn backslash_paths_normalize_to_corpus_keys() {
+        // Simulate a Windows resolve input: backslashes from Path::join.
+        let known = known(&["src/util.ts"]);
+        let mut idx = DependencyIndex::default();
+        idx.index_file(
+            Path::new("/"),
+            "src\\main.ts",
+            b"import { u } from './util';\n",
+            &known,
+        );
+        assert_eq!(
+            idx.all().iter().map(|e| e.to.clone()).collect::<Vec<_>>(),
+            vec!["src/util.ts"]
+        );
     }
 
     /// Impact: transitive dependents with hops, pruned on deletion.
