@@ -1,0 +1,81 @@
+Phase 3.5 — M3.1 index surfaces + M3.7 retrieval planner (auto mode)
+========================================================================
+Nodes: M3.1 (exact/regex/path index) + M3.7 (L0-L3 retrieval planner +
+fusion)
+Locked decision enforced: docs/02 REQ ledger EV-0001 (dynamic query
+planning; escalation ONLY when required), docs/18 § Retrieval planner
+Phase context: M3 milestone cards (Future-tasks Phase 3 items 1-4 all
+closed previously; this continues the M3 exit condition work)
+Revision: commits 727814a (M3.1) + "M3.7 (M3 milestone): retrieval
+planner wired as context.query auto mode" on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+M3.1 — exact/regex/path surfaces (commit 727814a)
+---------------------------------------------------------------------
+Before: RepositoryIndex::exact()/regex() had NO production caller (the
+index fed path candidates only) — the M3.1 reset's "capability landed"
+note was unprovable.
+- TaskIndex::query_exact/query_regex: bounded direct surfaces over the
+  indexed corpus (path-ordered hits with line+snippet; invalid regex =
+  typed IndexError, never a panic); query_paths via RepositoryIndex::path.
+- context.query gains mode=fused|exact|regex|path (default then: fused).
+  All direct modes refresh from the change journal first (reasons
+  exact_query/regex_query/path_query) and record retrieval evidence
+  (MOD-CTX-001) — path-mode string hits included.
+- Proofs: unit exact_regex_and_path_surfaces_answer_from_the_live_index
+  (line-anchored hits, typed regex errors, incremental delta tracked,
+  bounds hold); daemon E2E turns c5/c6 — exact + regex through the REAL
+  daemon against content created mid-run by change.apply.
+- MUTATION CHECK: regex surface disabled (empty hits) — first attempt
+  PASSED (the assertion matched the mode label, not real hits); the
+  assertion was hardened to require the body-line snippet
+  ("snippet":"true" — a line appearing nowhere else in the conversation)
+  and the mutation then FAILED the E2E as required. The false-pass and
+  its fix are recorded here deliberately.
+
+M3.7 — planner-routed auto mode (second commit)
+---------------------------------------------------------------------
+Before: modbit_context::planner (L0-L3 classification, REQ ledger
+EV-0001) was logic-only with zero production callers.
+- TaskIndexWriter::query_auto: REAL index signals (bounded exact probe
+  over the live corpus, symbol-defined check, term count, structural /
+  engineering phrasing) → planner::plan → route to the MINIMUM
+  sufficient level:
+    L0 Exact          → exact surface
+    L1 Hybrid         → fused (BM25+path+symbol)
+    L2 Structural     → symbol defs/refs (single defined identifier) or
+                        fused with structural marker
+    L3 Engineering    → fused ×2 + an explicit note that the full
+                        evidence graph (Git/diagnostics/runtime) lands
+                        with M3.6
+  The plan (level, rationale, signals) rides EVERY auto response as
+  routing provenance. auto is now the tool default; explicit modes
+  unchanged. (docs/18: LLM rerank is optional and NOT required for P0 —
+  rerank.rs stays unwired.)
+- Proofs (daemon E2E, 9 scripted turns, MODBIT_MAX_TURNS=16):
+  multi-term → level hybrid (auto:hybrid); "definition of X" → level
+  structural (auto:structural:fused); bare defined identifier → level
+  exact (auto:exact — NO over-escalation, the REQ-EV-0001 core);
+  "How does the retry flow work" → level engineering
+  (auto:engineering:fused) with the M3.6 note — all asserted in the
+  DURABLE conversation of a REAL daemon run.
+- One honest test iteration: the first c7 expectation assumed a bare
+  identifier routes to structural; the planner correctly chose the
+  cheaper L0-exact (minimum sufficient level). The TEST was fixed, not
+  the planner.
+- MUTATION CHECK: planner bypassed (all queries forced hybrid) → the
+  structural/engineering/exact routing assertions FAILED (the dump shows
+  every turn answered "level":"hybrid","rationale":"mutated"). REVERTED;
+  post-revert E2E green.
+
+TOOLCHAIN / LINTS
+---------------------------------------------------------------------
+- cargo test --workspace ... exit 0 (488 + E2E turn extensions; log in
+  the session record), clippy 0 warnings, check_dossier OK.
+
+REMAINING GAPS (M3)
+---------------------------------------------------------------------
+M3.4 (headless LSP bridge) and M3.6 (dependency/Git/test evidence
+graph) remain IMPLEMENTING — L3's full depth depends on M3.6. M3.5
+(USearch embeddings) stays gated behind the PASSING benchmark gate
+(ADR-D deferred; docs/72 MOD-EMB-001 provisional).
