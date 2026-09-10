@@ -96,15 +96,19 @@ fn bridge_handshakes_and_resolves_definition_and_references() {
 /// passes (the wire-protocol proof above is the always-on evidence).
 #[test]
 fn real_rust_analyzer_smoke_when_installed() {
-    let probe = Command::new("rust-analyzer").arg("--version").output();
-    let Ok(output) = probe else {
+    // ANY probe failure (absent, or present-but-unusable) means skip:
+    // the smoke is opportunistic and must never gate CI.
+    let Ok(output) = Command::new("rust-analyzer").arg("--version").output() else {
         println!("rust-analyzer not installed; smoke skipped (fixture covers the wire protocol)");
         return;
     };
-    assert!(
-        output.status.success(),
-        "rust-analyzer present but not runnable"
-    );
+    if !output.status.success() {
+        println!(
+            "rust-analyzer present but not usable (exit {:?}); smoke skipped",
+            output.status.code()
+        );
+        return;
+    }
 
     // A real (tiny) cargo project for the server to accept.
     let root = temp_root("ra");
