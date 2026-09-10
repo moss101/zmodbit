@@ -1494,7 +1494,7 @@ pub fn build_worktree_registry(
     // ---- context.query: fused BM25 + path + symbol index query --------
     let mut cq_params = std::collections::BTreeMap::new();
     cq_params.insert("query".into(), param(ParamType::Str, true, "What to find: terms, an identifier, or a path fragment"));
-    cq_params.insert("mode".into(), param(ParamType::Str, false, "fused (default) | exact | regex | path — direct index modes for precise lookups"));
+    cq_params.insert("mode".into(), param(ParamType::Str, false, "auto (default: the retrieval planner routes L0-L3) | fused | exact | regex | path"));
     cq_params.insert("limit".into(), param(ParamType::Int, false, "Max hits (default 20, max 50; exact/regex/path max 200)"));
     registry
         .register_with_schema(
@@ -1519,13 +1519,15 @@ pub fn build_worktree_registry(
                     let mode = args
                         .get("mode")
                         .and_then(|v| v.as_str())
-                        .unwrap_or("fused")
+                        .unwrap_or("auto")
                         .to_lowercase();
                     let result = match mode.as_str() {
                         "exact" => index.query_exact(&ws, query, limit),
                         "regex" => index.query_regex(&ws, query, limit)?,
                         "path" => index.query_paths(&ws, query, limit),
-                        _ => index.query_context(&ws, query, limit),
+                        "fused" => index.query_context(&ws, query, limit),
+                        // auto (default): the M3.7 planner routes.
+                        _ => index.query_auto(&ws, query, limit),
                     };
                     // MOD-CTX-001: hit paths are retrieval evidence.
                     if let Some(hits) = result.get("hits").and_then(|h| h.as_array()) {
@@ -2245,6 +2247,100 @@ impl TaskIndexWriter {
         let mut paths = index.repo.path(needle);
         paths.truncate(limit.clamp(1, 200));
         serde_json::json!({ "mode": "path", "hits": paths })
+    }
+
+    /// M3.7: AUTO mode — the retrieval planner (modbit-context) classifies
+    /// the query from REAL index signals and routes to the MINIMUM
+    /// sufficient level; escalation happens only when lower levels cannot
+    /// serve the query (REQ-EV-0001, docs/18 § Retrieval planner). The
+    /// plan rides the response as provenance of the routing decision.
+    /// L3 (engineering) currently escalates to the fused query plus a
+    /// note — its full evidence graph (Git/diagnostics/runtime) is M3.6.
+    fn query_auto(&self, ws: &WorkspaceFileService, query: &str, limit: usize) -> serde_json::Value {
+        use modbit_context::planner::{plan, QuerySignals, RetrievalLevel};
+
+        self.refresh_from_journal(ws, "auto_query");
+        let trimmed = query.trim();
+        let terms: Vec<&str> = trimmed
+            .split(|c: char| !c.is_alphanumeric() && c != '_')
+            .filter(|t| !t.is_empty())
+            .collect();
+        let lower = trimmed.to_lowercase();
+        let structural = terms.len() == 1
+            && matches! {
+                lower.rsplit('_').next(),
+                Some("fn") | Some("struct") | Some("trait") | Some("impl") | Some("enum")
+            } || ["fn ", "struct ", "trait ", "impl ", "definition", "definition of", "references of"]
+                .iter()
+                .any(|k| lower.starts_with(k));
+        let engineering = ["how ", "why ", "flow", "architecture", "impact", "owns "]
+            .iter()
+            .any(|k| lower.starts_with(k) || lower.contains(k));
+
+        // Real index signals (bounded probes on the live corpus).
+        let (exact_hit, exact_recall_insufficient, symbol_defined) = {
+            let index = self.index.lock().expect("task index mutex");
+            let exact_hits = index.query_exact(trimmed, 4).len();
+            let defined = !index.symbol_definitions(trimmed).is_empty();
+            (
+                exact_hits > 0,
+                exact_hits > 0 && exact_hits < 2 && terms.len() == 1 && !defined,
+                defined,
+            )
+        };
+
+        let signals = QuerySignals {
+            exact_hit: exact_hit || symbol_defined,
+            multi_term: terms.len() > 1,
+            structural,
+            engineering,
+            exact_recall_insufficient,
+        };
+        let plan = plan(&signals);
+        let level = format!("{:?}", plan.level).to_lowercase();
+
+        let mut result = match plan.level {
+            RetrievalLevel::Exact => {
+                let mut r = self.query_exact(ws, trimmed, limit);
+                r["mode"] = serde_json::json!("auto:exact");
+                r
+            }
+            RetrievalLevel::Structural if symbol_defined && terms.len() == 1 => {
+                let mut r = self.query_symbol(ws, trimmed);
+                r["mode"] = serde_json::json!("auto:structural");
+                r
+            }
+            RetrievalLevel::Structural => {
+                let mut r = self.query_context(ws, trimmed, limit);
+                r["mode"] = serde_json::json!("auto:structural:fused");
+                r
+            }
+            RetrievalLevel::Engineering => {
+                let mut r = self.query_context(ws, trimmed, limit * 2);
+                r["mode"] = serde_json::json!("auto:engineering:fused");
+                r["note"] = serde_json::json!(
+                    "engineering level: fused context served; full evidence graph (Git/diagnostics/runtime) lands with M3.6"
+                );
+                r
+            }
+            RetrievalLevel::Hybrid => {
+                let mut r = self.query_context(ws, trimmed, limit);
+                r["mode"] = serde_json::json!("auto:hybrid");
+                r
+            }
+        };
+        result["plan"] = serde_json::json!({
+            "level": level,
+            "rationale": plan.rationale,
+            "signals": {
+                "exact_hit": signals.exact_hit,
+                "multi_term": signals.multi_term,
+                "structural": signals.structural,
+                "engineering": signals.engineering,
+                "exact_recall_insufficient": signals.exact_recall_insufficient,
+            },
+        });
+        result
     }
 }
 

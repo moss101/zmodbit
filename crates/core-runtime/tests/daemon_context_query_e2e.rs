@@ -176,6 +176,9 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         .env("MODBIT_MODEL", "fixture-model")
         .env("MODBIT_PROVIDER", "openai")
         .env("OPENAI_API_KEY", "fixture-key")
+        // 8 tool/text turns scripted + headroom (default is 8; exhaustion
+        // fails the task before the last turn lands).
+        .env("MODBIT_MAX_TURNS", "16")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -262,11 +265,20 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
             "change.apply",
             r#"{"path":"src/helpers.rs","old_text":"pub fn retry_helpers() -> bool {","new_text":"pub fn brand_new_marker() {}\n\npub fn retry_helpers() -> bool {"}"#,
         ),
-        // Post-edit: the lexical AND symbol surfaces must know the new fn.
-        tool_call_turn("c4", "context.query", r#"{"query":"brand_new_marker"}"#),
+        // Post-edit: the lexical AND symbol surfaces must know the new fn
+        // (explicit fused mode — this is the lexical-commit freshness proof).
+        tool_call_turn("c4", "context.query", r#"{"query":"brand_new_marker","mode":"fused"}"#),
         // M3.1 direct index modes through the same tool.
         tool_call_turn("c5", "context.query", r#"{"query":"brand_new_marker","mode":"exact"}"#),
         tool_call_turn("c6", "context.query", r#"{"query":"^    true$","mode":"regex"}"#),
+        // M3.7 auto mode: the planner routes from real index signals.
+        // (A bare defined identifier routes to L0-exact — the minimum
+        // sufficient level; structural phrasing escalates to L2.)
+        tool_call_turn("c7", "context.query", r#"{"query":"definition of brand_new_marker"}"#),
+        tool_call_turn("c8", "context.query", r#"{"query":"How does the retry flow work"}"#),
+        // A bare defined identifier takes the CHEAPER L0-exact route —
+        // the planner must not over-escalate (REQ-EV-0001).
+        tool_call_turn("c9", "context.query", r#"{"query":"brand_new_marker"}"#),
         text_turn("done"),
     ]);
     let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
@@ -379,6 +391,35 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         visible.contains("\"mode\":\"regex\""),
         "regex mode rides the conversation"
     );
+    // M3.7 auto routing (turns 7-8): the plan rides the response.
+    // Turn 7: structural phrasing escalates to L2 (fused + structural).
+    assert!(
+        visible.contains("\"mode\":\"auto:structural:fused\"")
+            && visible.contains("\"level\":\"structural\""),
+        "auto routes structural phrasing to the structural level: {visible}"
+    );
+    // A bare defined identifier takes the CHEAPER L0-exact route (turn 7's
+    // neighbor: minimum sufficient level, REQ-EV-0001).
+    assert!(
+        visible.contains("\"mode\":\"auto:exact\"") && visible.contains("\"level\":\"exact\""),
+        "auto keeps a verbatim identifier at L0-exact (no over-escalation)"
+    );
+    // Turn 8: architectural intent escalates to ENGINEERING (fused + note).
+    assert!(
+        visible.contains("\"level\":\"engineering\"")
+            && visible.contains("auto:engineering:fused"),
+        "auto escalates architectural intent to engineering"
+    );
+    assert!(
+        visible.contains("full evidence graph (Git/diagnostics/runtime) lands with M3.6"),
+        "the L3 note names the M3.6 dependency"
+    );
+    // Turn 1 now routes through auto too (multi-term -> hybrid).
+    assert!(
+        visible.contains("\"mode\":\"auto:hybrid\"") && visible.contains("\"level\":\"hybrid\""),
+        "multi-term queries route to the hybrid level"
+    );
+
     // The regex surface returns the function BODY line (`    true` — a
     // line that appears nowhere else in the conversation, so the hit
     // proves the regex surface really searched the indexed corpus).
