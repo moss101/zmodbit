@@ -1975,9 +1975,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T11:46:32Z",
+     "from": "IMPLEMENTING",
+     "to": "IMPLEMENTING",
+     "note": "ADR-0003 (PROPOSED) filed 2026-09-10: embeddings deferred out of the M3 path — the benchmark gate PASSED with BM25 + path + symbols (recall@5 0.970 >= floor 0.90, warm p95 2ms < 300ms; run 34470983632), so the phase item's condition for pulling embeddings in was not met. This card stays IMPLEMENTING and gated behind the ADR's revisit triggers; see docs/decisions/ADR-0003-defer-semantic-embeddings.md."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T11:46:32Z"
   },
   {
    "id": "M3.6",

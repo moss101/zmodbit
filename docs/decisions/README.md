@@ -32,3 +32,4 @@ Changes to these paths require a linked, accepted ADR in the same changeset:
 |---|---|---|---|---|
 | ADR-0001 | Adopt the docs/02 decision register as baseline authority and add decisions workflow | ACCEPTED | 2026-09-04 | docs/02_AUTHORITY_AND_DECISIONS.md |
 | ADR-0002 | tokio + reqwest + rustls as the async runtime and model HTTP transport (sync ureq rejected) | ACCEPTED | 2026-09-05 | crates/providers/Cargo.toml, crates/core-runtime/Cargo.toml, Cargo.toml |
+| ADR-0003 | Defer semantic embeddings out of the M3 retrieval path (gate passed with BM25 + path + symbols; MOD-EMB-001 stays provisional) | PROPOSED | 2026-09-10 | Future-tasks.md, graph M3.5, docs/72, docs/18 |
