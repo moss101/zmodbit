@@ -1494,13 +1494,14 @@ pub fn build_worktree_registry(
     // ---- context.query: fused BM25 + path + symbol index query --------
     let mut cq_params = std::collections::BTreeMap::new();
     cq_params.insert("query".into(), param(ParamType::Str, true, "What to find: terms, an identifier, or a path fragment"));
-    cq_params.insert("limit".into(), param(ParamType::Int, false, "Max hits (default 20, max 50)"));
+    cq_params.insert("mode".into(), param(ParamType::Str, false, "fused (default) | exact | regex | path — direct index modes for precise lookups"));
+    cq_params.insert("limit".into(), param(ParamType::Int, false, "Max hits (default 20, max 50; exact/regex/path max 200)"));
     registry
         .register_with_schema(
             "context.query",
             "1.0.0",
             EffectClass::ReadOnly,
-            "Query the task's repository index for context: Tantivy BM25 lexical ranking + exact path match + tree-sitter symbol candidates, fused with provenance. Freshened from the change journal before answering.",
+            "Query the task's repository index for context: fused mode ranks Tantivy BM25 + exact path + tree-sitter symbols with provenance; exact/regex/path modes query the M3.1 index directly. Freshened from the change journal before answering.",
             Some(ToolSchema { aliases: Default::default(), parameters: cq_params }),
             {
                 let ws = ws.clone();
@@ -1515,12 +1516,25 @@ pub fn build_worktree_registry(
                         .and_then(|v| v.as_i64())
                         .map(|l| l.clamp(1, 50) as usize)
                         .unwrap_or(20);
-                    let result = index.query_context(&ws, query, limit);
+                    let mode = args
+                        .get("mode")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("fused")
+                        .to_lowercase();
+                    let result = match mode.as_str() {
+                        "exact" => index.query_exact(&ws, query, limit),
+                        "regex" => index.query_regex(&ws, query, limit)?,
+                        "path" => index.query_paths(&ws, query, limit),
+                        _ => index.query_context(&ws, query, limit),
+                    };
                     // MOD-CTX-001: hit paths are retrieval evidence.
                     if let Some(hits) = result.get("hits").and_then(|h| h.as_array()) {
-                        let paths = hits
-                            .iter()
-                            .filter_map(|h| h.get("path").and_then(|p| p.as_str()).map(String::from));
+                        let paths = hits.iter().filter_map(|h| {
+                            h.get("path")
+                                .and_then(|p| p.as_str())
+                                .map(String::from)
+                                .or_else(|| h.as_str().map(String::from))
+                        });
                         index.record_evidence(paths);
                     }
                     Ok(result)
@@ -2192,6 +2206,45 @@ impl TaskIndexWriter {
             "definitions": index.symbol_definitions(name),
             "references": index.symbol_references(name),
         })
+    }
+
+    /// M3.1 direct index modes for context.query: exact term, regex, and
+    /// path queries over the indexed corpus (fused stays the default).
+    fn query_exact(&self, ws: &WorkspaceFileService, term: &str, limit: usize) -> serde_json::Value {
+        self.refresh_from_journal(ws, "exact_query");
+        let index = self.index.lock().expect("task index mutex");
+        let hits = index.query_exact(term, limit);
+        serde_json::json!({
+            "mode": "exact",
+            "hits": hits.iter().map(|h| serde_json::json!({
+                "path": h.path, "line": h.line_no, "snippet": h.snippet,
+            })).collect::<Vec<_>>(),
+        })
+    }
+
+    fn query_regex(
+        &self,
+        ws: &WorkspaceFileService,
+        pattern: &str,
+        limit: usize,
+    ) -> Result<serde_json::Value, String> {
+        self.refresh_from_journal(ws, "regex_query");
+        let index = self.index.lock().expect("task index mutex");
+        let hits = index.query_regex(pattern, limit).map_err(|e| e.to_string())?;
+        Ok(serde_json::json!({
+            "mode": "regex",
+            "hits": hits.iter().map(|h| serde_json::json!({
+                "path": h.path, "line": h.line_no, "snippet": h.snippet,
+            })).collect::<Vec<_>>(),
+        }))
+    }
+
+    fn query_paths(&self, ws: &WorkspaceFileService, needle: &str, limit: usize) -> serde_json::Value {
+        self.refresh_from_journal(ws, "path_query");
+        let index = self.index.lock().expect("task index mutex");
+        let mut paths = index.repo.path(needle);
+        paths.truncate(limit.clamp(1, 200));
+        serde_json::json!({ "mode": "path", "hits": paths })
     }
 }
 

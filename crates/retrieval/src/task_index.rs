@@ -207,6 +207,28 @@ impl TaskIndex {
         hits
     }
 
+    /// Exact term query over the indexed corpus (M3.1 surface): lines
+    /// containing the term verbatim, path-ordered, bounded.
+    pub fn query_exact(&self, term: &str, limit: usize) -> Vec<crate::SearchHit> {
+        let limit = limit.clamp(1, 200);
+        let mut hits = self.repo.exact(term);
+        hits.truncate(limit);
+        hits
+    }
+
+    /// Regex query over the indexed corpus (M3.1 surface): typed error on
+    /// an invalid pattern, path-ordered, bounded.
+    pub fn query_regex(
+        &self,
+        pattern: &str,
+        limit: usize,
+    ) -> Result<Vec<crate::SearchHit>, crate::IndexError> {
+        let limit = limit.clamp(1, 200);
+        let mut hits = self.repo.regex(pattern)?;
+        hits.truncate(limit);
+        Ok(hits)
+    }
+
     /// Symbol definitions by exact name (M3.3).
     pub fn symbol_definitions(&self, name: &str) -> Vec<SymbolDef> {
         self.symbols.definitions(name)
@@ -402,6 +424,56 @@ mod tests {
         // Empty query is empty; the limit truncates deterministically.
         assert!(index.context_query("   ", 10).is_empty());
         assert_eq!(index.context_query("retry", 1).len(), 1);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// M3.1 direct surfaces through the task index: exact term hits with
+    /// line numbers, typed regex errors, path lookups — all bound to the
+    /// live (refreshed) index state.
+    #[test]
+    fn exact_regex_and_path_surfaces_answer_from_the_live_index() {
+        let root = scratch("m31");
+        std::fs::write(
+            root.join("src/retry.rs"),
+            b"pub fn retry_policy() -> u8 {\n    retry_policy_caller();\n}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("src/other.rs"),
+            b"fn unrelated() {\n    let s = \"retry later\";\n}\n",
+        )
+        .unwrap();
+        let mut index = TaskIndex::build_at(&root, 1);
+
+        // Exact: every line containing the term, path-ordered.
+        let hits = index.query_exact("retry", 50);
+        assert_eq!(hits.len(), 3, "{hits:?}");
+        assert!(hits.iter().all(|h| h.snippet.contains("retry")));
+
+        // Regex: anchors narrow to the definition; invalid pattern is a
+        // typed error, never a panic.
+        let hits = index.query_regex(r"fn retry_policy\(\)", 50).unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].path, "src/retry.rs");
+        assert_eq!(hits[0].line_no, 1);
+        assert!(index.query_regex("fn ([unclosed", 50).is_err());
+
+        // Path: direct name lookup.
+        assert_eq!(index.repo.path("retry.rs"), vec!["src/retry.rs".to_string()]);
+
+        // The surfaces track an incremental delta (the refresh contract).
+        std::fs::write(root.join("src/new.rs"), b"fn brand_new_thing() {}\n").unwrap();
+        index.apply_delta(
+            &root,
+            &[IndexChange { path: "src/new.rs".into(), deleted: false }],
+            2,
+        );
+        assert_eq!(index.query_exact("brand_new_thing", 50).len(), 1);
+        assert!(index.query_regex(r"fn brand_new_thing", 50).unwrap().len() == 1);
+        assert_eq!(index.repo.path("new.rs"), vec!["src/new.rs".to_string()]);
+
+        // Bounds hold.
+        assert_eq!(index.query_exact("fn", 1).len(), 1);
         let _ = std::fs::remove_dir_all(&root);
     }
 

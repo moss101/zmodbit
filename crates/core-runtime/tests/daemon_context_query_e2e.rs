@@ -264,6 +264,9 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         ),
         // Post-edit: the lexical AND symbol surfaces must know the new fn.
         tool_call_turn("c4", "context.query", r#"{"query":"brand_new_marker"}"#),
+        // M3.1 direct index modes through the same tool.
+        tool_call_turn("c5", "context.query", r#"{"query":"brand_new_marker","mode":"exact"}"#),
+        tool_call_turn("c6", "context.query", r#"{"query":"fn brand_new_marker","mode":"regex"}"#),
         text_turn("done"),
     ]);
     let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
@@ -360,6 +363,25 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
     assert!(
         visible.contains("\"sources\":[\"bm25\",\"symbol\"]"),
         "the new function is found by both index surfaces (lexical batch committed): {visible}"
+    );
+
+    // M3.1 direct modes (turns 5-6): the exact index carries the new
+    // content with line+snippet, and the regex surface anchors it.
+    assert!(
+        visible.contains("\"mode\":\"exact\""),
+        "exact mode rides the conversation: {visible}"
+    );
+    assert!(
+        visible.contains("\"line\":1") && visible.contains("pub fn brand_new_marker() {}"),
+        "exact hit carries the line and snippet of the NEW content"
+    );
+    assert!(
+        visible.contains("\"mode\":\"regex\""),
+        "regex mode rides the conversation"
+    );
+    assert!(
+        visible.contains("retry_helpers") && visible.contains("\"snippet\":"),
+        "regex hits carry snippets from the indexed corpus"
     );
 
     // The edit is real on disk.
