@@ -1824,10 +1824,14 @@
    "milestone": "M3",
    "order": 0,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33909577371",
-    "commit:b3515bb"
+    "commit:b3515bb",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34470983632",
+    "commit:727814a",
+    "log:docs/evidence/phase3-6-deps-planner-surfaces-2026-09-10.log",
+    "run:2026-09-10T10:0xZ/context_query_and_search_symbol_answer_from_the_live_index"
    ],
    "notes": [
     {
@@ -1835,9 +1839,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T11:43:33Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "exact/regex/path index surfaces in production: context.query mode=fused|exact|regex|path over the journal-refreshed corpus (bounded, typed regex errors, evidence recording); daemon E2E proves exact+regex answer mid-run-created content with line+snippet; regex-surface mutation caught (incl. a recorded false-pass assertion fix); windows path handling regression-tested."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T11:43:33Z"
   },
   {
    "id": "M3.2",
@@ -1977,10 +1987,14 @@
    "milestone": "M3",
    "order": 5,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34470983632",
+    "commit:685047b",
+    "log:docs/evidence/phase3-6-deps-planner-surfaces-2026-09-10.log",
+    "run:2026-09-10T11:0xZ/context_query_and_search_symbol_answer_from_the_live_index"
    ],
    "notes": [
     {
@@ -1994,9 +2008,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T11:43:33Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "import/dependency evidence graph in production: tree-sitter use/import edges (Rust crate::/super::/self::, TS/TSX/JS relative, Python dotted+relative) resolved against the corpus, maintained incrementally (re-extract/drop/prune), impact mode returns transitive dependents with hops + test flag through the REAL daemon; L3 engineering answers carry impact_of_top_hit; edge-extraction mutation caught. REMAINDER (noted, not claimed): git-commit recency + diagnostics/runtime linkage."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T11:43:33Z"
   },
   {
    "id": "M3.7",
@@ -2006,10 +2026,14 @@
    "milestone": "M3",
    "order": 6,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34470983632",
+    "commit:09e8b6c",
+    "log:docs/evidence/phase3-6-deps-planner-surfaces-2026-09-10.log",
+    "run:2026-09-10T10:0xZ/context_query_and_search_symbol_answer_from_the_live_index"
    ],
    "notes": [
     {
@@ -2023,9 +2047,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T11:43:33Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "L0-L3 retrieval planner in production: modbit-context planner classifies from REAL index signals and routes auto mode to the minimum sufficient level — proven through the REAL daemon (multi-term->hybrid, structural phrasing->L2, bare defined identifier->L0 with NO over-escalation, architectural intent->L3 fused+import-impact with an honest pending-evidence note); plan rides every response as routing provenance; planner-bypass mutation caught. LLM rerank stays unwired (docs/18: optional, not required for P0)."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T11:43:33Z"
   },
   {
    "id": "M3.8",
