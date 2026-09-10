@@ -2035,10 +2035,14 @@
    "milestone": "M3",
    "order": 7,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34455052293",
+    "commit:fd366b1",
+    "log:docs/evidence/phase3-3-context-pack-gate-2026-09-10.log",
+    "run:2026-09-10T08:3xZ/ungrounded_edit_proposal_is_refused_until_the_file_is_retrieved"
    ],
    "notes": [
     {
@@ -2052,9 +2056,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T08:37:06Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "Context pack in production: compiled through modbit-context (now in the closure, 17/26) with a token-derived budget, full per-fragment provenance validated before shipping, a recently-changed journal section, and index-seeded fresh file heads; MOD-CTX-001 retrieve-before-edit gate enforced on change.propose with evidence recorded by fs.read/all query tools/pack membership; daemon E2E proves refusal->read->preview with zero writes; gate mutation detected."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T08:37:06Z"
   },
   {
    "id": "M3.9",

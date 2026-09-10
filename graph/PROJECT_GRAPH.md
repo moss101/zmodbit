@@ -244,7 +244,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M3.5` | IMPLEMENTING | USearch embeddings + changed-chunk incremental update |  |
 | `M3.6` | IMPLEMENTING | dependency/Git/test/runtime evidence graph |  |
 | `M3.7` | IMPLEMENTING | L0-L3 retrieval planner + fusion |  |
-| `M3.8` | IMPLEMENTING | Context Pack/token budget/provenance ledger |  |
+| `M3.8` | E2E_PROVEN | Context Pack/token budget/provenance ledger |  |
 | `M3.9` | IMPLEMENTING | retrieval benchmark harness |  |
 
 ### M4 — Durable recovery spine
