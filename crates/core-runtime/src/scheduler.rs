@@ -1494,7 +1494,7 @@ pub fn build_worktree_registry(
     // ---- context.query: fused BM25 + path + symbol index query --------
     let mut cq_params = std::collections::BTreeMap::new();
     cq_params.insert("query".into(), param(ParamType::Str, true, "What to find: terms, an identifier, or a path fragment"));
-    cq_params.insert("mode".into(), param(ParamType::Str, false, "auto (default: the retrieval planner routes L0-L3) | fused | exact | regex | path"));
+    cq_params.insert("mode".into(), param(ParamType::Str, false, "auto (default: the retrieval planner routes L0-L3) | fused | exact | regex | path | impact (import dependents of a path)"));
     cq_params.insert("limit".into(), param(ParamType::Int, false, "Max hits (default 20, max 50; exact/regex/path max 200)"));
     registry
         .register_with_schema(
@@ -1525,6 +1525,7 @@ pub fn build_worktree_registry(
                         "exact" => index.query_exact(&ws, query, limit),
                         "regex" => index.query_regex(&ws, query, limit)?,
                         "path" => index.query_paths(&ws, query, limit),
+                        "impact" => index.query_impact(&ws, query, limit),
                         "fused" => index.query_context(&ws, query, limit),
                         // auto (default): the M3.7 planner routes.
                         _ => index.query_auto(&ws, query, limit),
@@ -2241,6 +2242,37 @@ impl TaskIndexWriter {
         }))
     }
 
+    /// M3.6 impact mode: the import-impact set of a corpus path
+    /// (transitive dependents, bounded BFS, test files flagged).
+    fn query_impact(&self, ws: &WorkspaceFileService, path: &str, limit: usize) -> serde_json::Value {
+        self.refresh_from_journal(ws, "impact_query");
+        let index = self.index.lock().expect("task index mutex");
+        let limit = limit.clamp(1, 200);
+        let dependents: Vec<serde_json::Value> = index
+            .impact(path, 3)
+            .into_iter()
+            .take(limit)
+            .map(|(p, hops)| {
+                serde_json::json!({
+                    "path": p,
+                    "hops": hops,
+                    "test": p.contains("/tests/")
+                        || p.ends_with("_test.rs")
+                        || p.ends_with(".test.ts")
+                        || p.ends_with(".test.tsx")
+                        || p.ends_with(".test.js")
+                        || p.starts_with("test_"),
+                })
+            })
+            .collect();
+        serde_json::json!({
+            "mode": "impact",
+            "path": path,
+            "dependents": dependents,
+            "note": "import graph over the indexed corpus (use/import edges); uncommitted-task edits ride the change journal",
+        })
+    }
+
     fn query_paths(&self, ws: &WorkspaceFileService, needle: &str, limit: usize) -> serde_json::Value {
         self.refresh_from_journal(ws, "path_query");
         let index = self.index.lock().expect("task index mutex");
@@ -2317,9 +2349,30 @@ impl TaskIndexWriter {
             }
             RetrievalLevel::Engineering => {
                 let mut r = self.query_context(ws, trimmed, limit * 2);
+                // M3.6: the L3 answer carries the import-impact set of the
+                // top hit — what a change to it would touch.
+                if let Some(top) = r
+                    .get("hits")
+                    .and_then(|h| h.as_array())
+                    .and_then(|h| h.first())
+                    .and_then(|h| h.get("path"))
+                    .and_then(|p| p.as_str())
+                    .map(str::to_string)
+                {
+                    let index = self.index.lock().expect("task index mutex");
+                    let impact: Vec<serde_json::Value> = index
+                        .impact(&top, 2)
+                        .into_iter()
+                        .take(10)
+                        .map(|(p, hops)| {
+                            serde_json::json!({ "path": p, "hops": hops })
+                        })
+                        .collect();
+                    r["impact_of_top_hit"] = serde_json::json!({ "path": top, "dependents": impact });
+                }
                 r["mode"] = serde_json::json!("auto:engineering:fused");
                 r["note"] = serde_json::json!(
-                    "engineering level: fused context served; full evidence graph (Git/diagnostics/runtime) lands with M3.6"
+                    "engineering level: fused context + import-impact of the top hit; diagnostics/runtime evidence still pending (M3.4 and the M3.6 remainder)"
                 );
                 r
             }

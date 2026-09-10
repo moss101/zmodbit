@@ -40,7 +40,7 @@ fn code_fixture(tag: &str) -> PathBuf {
     std::fs::create_dir_all(root.join("src/ui")).unwrap();
     std::fs::create_dir_all(root.join("docs")).unwrap();
     std::fs::write(root.join("src/helpers.rs"), "pub fn retry_helpers() -> bool {\n    true\n}\n").unwrap();
-    std::fs::write(root.join("src/caller.rs"), "fn run_task() {\n    let _ = retry_helpers();\n}\n").unwrap();
+    std::fs::write(root.join("src/caller.rs"), "use crate::helpers;\n\nfn run_task() {\n    let _ = retry_helpers();\n}\n").unwrap();
     std::fs::write(root.join("src/ui/button.rs"), "button click render focus style widget\n").unwrap();
     std::fs::write(root.join("docs/retry-notes.md"), "retry notes about the retry mechanism and its backoff\n").unwrap();
     repo.commit_all("fixture baseline").expect("baseline");
@@ -279,6 +279,8 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         // A bare defined identifier takes the CHEAPER L0-exact route —
         // the planner must not over-escalate (REQ ledger EV-0001 (owner context-engine)).
         tool_call_turn("c9", "context.query", r#"{"query":"brand_new_marker"}"#),
+        // M3.6 impact mode: who imports the edited file?
+        tool_call_turn("c10", "context.query", r#"{"query":"src/helpers.rs","mode":"impact"}"#),
         text_turn("done"),
     ]);
     let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
@@ -411,8 +413,22 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         "auto escalates architectural intent to engineering"
     );
     assert!(
-        visible.contains("full evidence graph (Git/diagnostics/runtime) lands with M3.6"),
-        "the L3 note names the M3.6 dependency"
+        visible.contains("fused context + import-impact of the top hit"),
+        "the L3 note names what the engineering level serves"
+    );
+    assert!(
+        visible.contains("impact_of_top_hit"),
+        "the L3 answer carries the import-impact of its top hit"
+    );
+    // M3.6 impact mode (turn 10): caller.rs imports helpers.rs — the
+    // impact set of the EDITED file contains its real dependent.
+    assert!(
+        visible.contains("\"mode\":\"impact\""),
+        "impact mode rides the conversation"
+    );
+    assert!(
+        visible.contains("src/caller.rs") && visible.contains("\"hops\":1"),
+        "the import dependent appears at hop 1: {visible}"
     );
     // Turn 1 now routes through auto too (multi-term -> hybrid).
     assert!(

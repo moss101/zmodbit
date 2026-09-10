@@ -140,7 +140,7 @@ fn occurrence_query(lang: &str) -> Option<Query> {
     Query::new(&language_for(lang)?, source).ok()
 }
 
-fn language_for(lang: &str) -> Option<Language> {
+pub fn language_for(lang: &str) -> Option<Language> {
     match lang {
         "rust" => Some(tree_sitter_rust::LANGUAGE.into()),
         "typescript" => Some(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
@@ -260,6 +260,63 @@ impl SymbolIndex {
         refs.dedup();
         refs
     }
+}
+
+/// The dependency-string family a language uses.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DepKind {
+    Rust,
+    Ts,
+    Python,
+}
+
+impl DepKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DepKind::Rust => "use",
+            DepKind::Ts => "import",
+            DepKind::Python => "import",
+        }
+    }
+}
+
+/// Extracts RAW dependency strings from one source file (import sources /
+/// use paths; unresolved — the caller resolves against the corpus).
+pub fn parse_dep_strings(lang: &str, bytes: &[u8]) -> Vec<(String, DepKind)> {
+    let (query_text, kind) = match lang {
+        "rust" => (
+            r#"(use_declaration argument: [(scoped_identifier) (identifier)] @dep)"#,
+            DepKind::Rust,
+        ),
+        "typescript" | "tsx" | "javascript" => (
+            r#"(import_statement source: (string) @dep)"#,
+            DepKind::Ts,
+        ),
+        "python" => (
+            r#"[
+                (import_statement name: (dotted_name) @dep)
+                (import_from_statement module_name: [(dotted_name) (relative_import)] @dep)
+            ]"#,
+            DepKind::Python,
+        ),
+        _ => return Vec::new(),
+    };
+    let Some(language) = language_for(lang) else { return Vec::new() };
+    let Ok(query) = Query::new(&language, query_text) else { return Vec::new() };
+    let Some(tree) = tree_for(lang, bytes) else { return Vec::new() };
+    let mut out = Vec::new();
+    let mut cursor = QueryCursor::new();
+    let mut matches = cursor.matches(&query, tree.root_node(), bytes);
+    while let Some(m) = matches.next() {
+        for cap in m.captures() {
+            if let Ok(text) = cap.node.utf8_text(bytes) {
+                if !text.is_empty() {
+                    out.push((text.to_string(), kind));
+                }
+            }
+        }
+    }
+    out
 }
 
 #[cfg(test)]

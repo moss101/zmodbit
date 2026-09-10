@@ -5,6 +5,7 @@
 //! fresh incrementally: a delta only re-reads and recomputes the changed
 //! leaves and their ancestor dir chain — never a full rebuild.
 
+use crate::dependencies::DependencyIndex;
 use crate::lexical::LexicalIndex;
 use crate::merkle::{MerkleIndex, Recomputed};
 use crate::symbols::{SymbolDef, SymbolIndex, SymbolRef};
@@ -31,6 +32,7 @@ pub struct TaskIndex {
     pub repo: RepositoryIndex,
     pub lexical: LexicalIndex,
     pub symbols: SymbolIndex,
+    pub deps: DependencyIndex,
     pub indexed_workspace_revision: u64,
 }
 
@@ -70,11 +72,19 @@ impl TaskIndex {
             symbols.index_file(path, bytes);
         }
         lexical.commit();
+        // Import/dependency edges over the corpus (M3.6): resolved per
+        // file against the full known set.
+        let known: std::collections::BTreeSet<String> = owned.keys().cloned().collect();
+        let mut deps = DependencyIndex::default();
+        for (path, bytes) in &owned {
+            deps.index_file(root, path, bytes, &known);
+        }
         TaskIndex {
             merkle: MerkleIndex::build(&owned, workspace_revision),
             repo,
             lexical,
             symbols,
+            deps,
             indexed_workspace_revision: workspace_revision,
         }
     }
@@ -125,6 +135,17 @@ impl TaskIndex {
             self.symbols.remove_file(path);
         }
         self.lexical.commit();
+        // Dependency edges: re-extract for changed files, drop deletions,
+        // prune edges pointing at evicted targets.
+        let known: std::collections::BTreeSet<String> =
+            self.repo.files.keys().cloned().collect();
+        for (path, bytes) in &changed {
+            self.deps.index_file(root, path, bytes, &known);
+        }
+        for path in &deleted {
+            self.deps.remove_file(path);
+        }
+        self.deps.prune(&known);
         self.indexed_workspace_revision = new_revision;
         self.repo.workspace_revision = new_revision;
         recomputed
@@ -237,6 +258,12 @@ impl TaskIndex {
     /// Symbol references by exact name (M3.3).
     pub fn symbol_references(&self, name: &str) -> Vec<SymbolRef> {
         self.symbols.references(name)
+    }
+
+    /// Import-impact set of a corpus path: transitive dependents with hop
+    /// counts (M3.6). Bounded BFS.
+    pub fn impact(&self, path: &str, max_depth: usize) -> Vec<(String, usize)> {
+        self.deps.impact(path, max_depth)
     }
 }
 
@@ -357,6 +384,63 @@ mod tests {
 
         let rebuilt = TaskIndex::build_at(&root, 2);
         assert_eq!(index.root_digest(), rebuilt.root_digest());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// M3.6 through the task index: import edges survive build and
+    /// incremental deltas, and the impact set tracks the live corpus.
+    #[test]
+    fn dependency_edges_build_refresh_and_answer_impact() {
+        let root = scratch("deps");
+        std::fs::write(root.join("src/base.rs"), b"pub fn base_fn() {}\n").unwrap();
+        std::fs::write(
+            root.join("src/mid.rs"),
+            b"use crate::base;\npub fn mid_fn() { base::base_fn(); }\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("src/top.rs"),
+            b"use crate::mid;\nfn top() { mid::mid_fn(); }\n",
+        )
+        .unwrap();
+        let mut index = TaskIndex::build_at(&root, 1);
+        assert_eq!(index.deps.edge_count(), 2, "{:?}", index.deps.all());
+
+        // Impact: base <- mid <- top.
+        assert_eq!(
+            index.impact("src/base.rs", 3),
+            vec![("src/mid.rs".to_string(), 1), ("src/top.rs".to_string(), 2)]
+        );
+
+        // A delta re-extracts edges for the changed file (new import) and
+        // evictions prune edges into deleted targets.
+        std::fs::write(
+            root.join("src/top.rs"),
+            b"use crate::mid;\nuse crate::base;\nfn top() {}\n",
+        )
+        .unwrap();
+        std::fs::remove_file(root.join("src/mid.rs")).unwrap();
+        index.apply_delta(
+            &root,
+            &[
+                IndexChange { path: "src/top.rs".into(), deleted: false },
+                IndexChange { path: "src/mid.rs".into(), deleted: true },
+            ],
+            2,
+        );
+        assert!(!index.deps.all().iter().any(|e| e.from == "src/mid.rs"));
+        let top_edges: Vec<_> = index
+            .deps
+            .all()
+            .into_iter()
+            .filter(|e| e.from == "src/top.rs")
+            .map(|e| e.to)
+            .collect();
+        assert_eq!(top_edges, vec!["src/base.rs"], "new import extracted");
+        assert_eq!(
+            index.impact("src/base.rs", 3),
+            vec![("src/top.rs".to_string(), 1)]
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 

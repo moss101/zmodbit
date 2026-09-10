@@ -13,6 +13,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 pub mod context_graph;
+pub mod dependencies;
 pub mod engineering_context;
 pub mod history_context;
 pub mod hydration;
