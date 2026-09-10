@@ -105,7 +105,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 6333 | `98cf8aedd8cca1fb3b887ade383f2223a949feb61869821f9dc6e88392acb65f` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
-| `graph/project-graph.json` | project driver graph with live status | 859534 | `cbac58e11a58d5e5a3d00a7de90241205dcadf4b350ed2b4e7f899f746bb5ec4` |
+| `graph/project-graph.json` | project driver graph with live status | 860174 | `2e0029e92cf4224f9ad068191f84617fb59144a8e368b7f9d27bd88bd9d906dc` |
 | `graph/PROJECT_GRAPH.md` | human view of the graph | 22608 | `0415ff620582dd2866dd6458281fa9e4c732f90d858dcf0b46c045681ccbb15e` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
@@ -152,8 +152,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/vite.config.ts` |  | 150 | `ce36fc4ce9db762ab99a5056aabd3c722f73f37010e639c1f1a2c992c63e5f4d` |
 | `docs/decisions/ADR-0001-baseline-decision-register.md` |  | 2328 | `2fcf3eafcce3ccff939244c77c9faa0ebf7106edf2ba7f1cbc9d300524100379` |
 | `docs/decisions/ADR-0002-tokio-reqwest-rustls-transport.md` |  | 5471 | `6328af18e0ecf484d1819e7c4009867dd836894d2d73042cdc550f2543bd14a9` |
-| `docs/decisions/ADR-0003-defer-semantic-embeddings.md` |  | 3926 | `f628dccc6862ae4ece9ca9fa56cb29e1e02b56f52d61d9507f77d72918fed33c` |
-| `docs/decisions/README.md` |  | 2076 | `4e1d80e518a9b2adcd3d215c3da06389277c4cb4e757b13c78e3d9be895165c5` |
+| `docs/decisions/README.md` |  | 1862 | `2108152c6046929fe40d278036ea9f2911fd8567ccf8663b53bd88a5b3833493` |
 | `docs/decisions/TEMPLATE.md` |  | 1195 | `666bfdf99aa951eec878352547e20d9a4ea69e8ac18cb2e935b407d71bc2fca3` |
 | `packages/design-tokens/package.json` |  | 440 | `1dc8d96ad306773e185e560b26b6e4b3f0adf98374450f5ad61e5db3b1f733f0` |
 | `packages/design-tokens/src/index.test.ts` |  | 1580 | `09c9606db66d738f91d8c148a6d747aaac7f1944f5c4ad1c6a845411ef778963` |

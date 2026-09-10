@@ -1981,9 +1981,15 @@
      "from": "IMPLEMENTING",
      "to": "IMPLEMENTING",
      "note": "ADR-0003 (PROPOSED) filed 2026-09-10: embeddings deferred out of the M3 path — the benchmark gate PASSED with BM25 + path + symbols (recall@5 0.970 >= floor 0.90, warm p95 2ms < 300ms; run 34470983632), so the phase item's condition for pulling embeddings in was not met. This card stays IMPLEMENTING and gated behind the ADR's revisit triggers; see docs/decisions/ADR-0003-defer-semantic-embeddings.md."
+    },
+    {
+     "at": "2026-09-10T12:00:02Z",
+     "from": "IMPLEMENTING",
+     "to": "IMPLEMENTING",
+     "note": "Embeddings deferral decision (2026-09-10): the Phase 3 item-4 benchmark gate PASSED with BM25 + path + symbols (recall@5 0.970 >= floor 0.90, warm p95 2ms < 300ms; run 34470983632), so the phase item's condition for pulling embeddings in was NOT met — this card stays IMPLEMENTING and deferred, gated on the revisit triggers recorded in Future-tasks.md and docs/evidence/phase3-4-retrieval-benchmark-2026-09-10.log. A formal ADR (for MOD-EMB-001 disposition) awaits explicit user approval per docs/decisions/README.md."
     }
    ],
-   "status_changed_on": "2026-09-10T11:46:32Z"
+   "status_changed_on": "2026-09-10T12:00:02Z"
   },
   {
    "id": "M3.6",

@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 85,
+    "root_and_tooling": 84,
     "docs_bytes": 512315
   },
   "sections": [
@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 859534,
-      "sha256": "cbac58e11a58d5e5a3d00a7de90241205dcadf4b350ed2b4e7f899f746bb5ec4"
+      "bytes": 860174,
+      "sha256": "2e0029e92cf4224f9ad068191f84617fb59144a8e368b7f9d27bd88bd9d906dc"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -935,14 +935,9 @@
       "sha256": "6328af18e0ecf484d1819e7c4009867dd836894d2d73042cdc550f2543bd14a9"
     },
     {
-      "path": "docs/decisions/ADR-0003-defer-semantic-embeddings.md",
-      "bytes": 3926,
-      "sha256": "f628dccc6862ae4ece9ca9fa56cb29e1e02b56f52d61d9507f77d72918fed33c"
-    },
-    {
       "path": "docs/decisions/README.md",
-      "bytes": 2076,
-      "sha256": "4e1d80e518a9b2adcd3d215c3da06389277c4cb4e757b13c78e3d9be895165c5"
+      "bytes": 1862,
+      "sha256": "2108152c6046929fe40d278036ea9f2911fd8567ccf8663b53bd88a5b3833493"
     },
     {
       "path": "docs/decisions/TEMPLATE.md",
