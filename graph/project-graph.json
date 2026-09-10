@@ -2074,10 +2074,14 @@
    "milestone": "M3",
    "order": 8,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34459967318",
+    "commit:bbcb07a",
+    "log:docs/evidence/phase3-4-retrieval-benchmark-2026-09-10.log",
+    "artifact:docs/evidence/phase3-4-retrieval-benchmark.json"
    ],
    "notes": [
     {
@@ -2091,9 +2095,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T09:31:47Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "Retrieval benchmark harness in production CI (always-on test, 3 OS): deterministic 2600-file corpus at fixed revision phase3-fixed-rev-1 through the REAL pipeline (walker/tantivy/tree-sitter/fusion), 100 ground-truth queries, 3 families. Gates PASS every run: recall@5 fused 0.970 >= exact 0.970 >= 0.90 floor; warm hybrid p95 2ms < 300ms (docs/53 L1); cold 19.3s reported. ADR-D (MOD-EMB-001 embeddings) NOT required — gate passed. First calibration run FAILED 0.690 (corpus word-pair collision; fixed in corpus, not the index — the gates are real). docs/53 full profile B/C signals (semantic ANN, LSP/deps/Git) are M3.4/M3.5/M3.6 and are NOT claimed by this harness."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:42Z"
+   "status_changed_on": "2026-09-10T09:31:47Z"
   },
   {
    "id": "M4.1",
