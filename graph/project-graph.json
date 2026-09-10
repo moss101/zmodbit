@@ -7678,10 +7678,15 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0004",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33909577371",
-    "commit:b3515bb"
+    "commit:b3515bb",
+    "run:https://github.com/moss101/zmodbit/actions/runs/34443959131",
+    "commit:9bfc91a",
+    "log:docs/evidence/phase3-1-repository-index-2026-09-10.log",
+    "run:2026-09-10T06:0xZ/daemon_builds_and_incrementally_refreshes_the_repository_index",
+    "run:2026-09-10T06:0xZ/refused_edit_leaves_the_index_untouched"
    ],
    "notes": [
     {
@@ -7689,9 +7694,21 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-10T06:09:56Z",
+     "from": "IMPLEMENTING",
+     "to": "REAL_TESTING",
+     "note": "Phase 3.1 implemented on 9bfc91a: walker + TaskIndex in crates/retrieval (now in the product binary closure, 16/26), built at task start, refreshed from the change journal on change.apply + turn boundary; index_updated run event evidence. Daemon E2E daemon_index_e2e green locally (build+refresh+rebuild equality; refused-edit fail-closed); both mutation checks caught. CI run 34443959131 in flight for typed evidence."
+    },
+    {
+     "at": "2026-09-10T06:16:37Z",
+     "from": "REAL_TESTING",
+     "to": "E2E_PROVEN",
+     "note": "Incremental Merkle repository indexing in production: modbit-retrieval walker + TaskIndex now in the modbit-core closure (16/26); index built at task start over the real worktree, refreshed from the workspace change journal on change.apply and at the turn boundary; index_updated run events carry root digest + only-affected-segments recomputation evidence; daemon E2E proves refresh == cold rebuild and fail-closed behavior on refused edits; empty-dir prune defect in MerkleIndex::apply_changes fixed; both mutation checks (freshness no-op, prune disabled) detected."
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z"
+   "status_changed_on": "2026-09-10T06:16:37Z"
   },
   {
    "id": "IMP-EV-0005",
