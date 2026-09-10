@@ -25,6 +25,7 @@ Previous version of this file: the 2026-09-05 component audit and its section 4 
 | Phase 2.6 shell correctness — `argv` array form, streamed output chunks as run events, paginated `OutputRef`, Core-spawned `modbit-execd` broker | commits `dfc923a`, `0bf3638`; `bin/modbit-core.rs`, `scheduler.rs`, `tests/daemon_output_e2e.rs` |
 | Phase 2 exit: M2 + M4 `E2E_PROVEN` with typed evidence; nightly live job green 5 consecutive nights, one revision (main @ `ecf5e6a`) | runs `34002162962` (09-06), `34080928159` (09-07), `34186289909` (09-08), `34310197890` (09-09), `34436444933` (09-10) — typed `run:` refs on graph node `M2.11` |
 | Phase 3.1 filesystem walker + incremental Merkle index feeding `crates/retrieval` (IMP-EV-0004): index built on task start, refreshed from the change journal on `change.apply` + turn boundary; `index_updated` run event carries root digest + only-affected-segments evidence; `modbit-retrieval` enters the product binary closure (15→16); empty-dir prune defect in `MerkleIndex::apply_changes` fixed | commit `9bfc91a`; `docs/evidence/phase3-1-repository-index-2026-09-10.log` |
+| Phase 3.2 `context.query` + `search.symbol` (M3.2 + M3.3): real Tantivy 0.26 BM25 + tree-sitter 0.27 symbols (Rust/TS/TSX/JS/Python) admitted per docs/35/36, fused in `TaskIndex::context_query` with provenance; tools refresh from the change journal before answering; orphan `bm25.rs` deleted (docs/36 mandates the dependency, no second implementation) | commit `b3e6159`; `docs/evidence/phase3-2-context-query-symbols-2026-09-10.log` |
 
 Current facts:
 
@@ -33,7 +34,7 @@ Current facts:
 | Crates in the `modbit-core-runtime` dependency closure | 16 of 26 (`checkpoint`, `compaction`, `core-runtime`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `retrieval`, `terminal`, `tools`, `verification`, `workspace`) |
 | Empty canonical crates | `effects`, `secrets`, `memory`, `observability` |
 | Stub binaries (`fn main() {}`) | `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest` |
-| Rust / TS tests | 481 / 53 |
+| Rust / TS tests | 486 / 53 |
 | Desktop screens | 2 (fleet, task workspace) |
 | Surface RPCs | 15 requests in the `surface.proto` oneof |
 | Nightly live workflow | `.github/workflows/nightly-live.yml` active (cron 03:43Z; five-night gate 2026-09-06..10 green, see section 1) |

@@ -1,0 +1,124 @@
+Phase 3.2 — context.query + search.symbol (Tantivy BM25, tree-sitter symbols)
+========================================================================
+Nodes: M3.2 (Tantivy BM25) + M3.3 (tree-sitter AST/symbol index)
+Phase context: Future-tasks Phase 3 item 2
+Revision: commit b3e6159 ("Phase 3.2 (M3.2+M3.3): context.query +
+search.symbol — Tantivy BM25 and tree-sitter symbols in the live index")
+on main; item-1 base 9bfc91a/017ee9b
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+DEPENDENCY ADMISSION (docs/35 § Required/selected bindings updated;
+docs/36 build/buy policy rows "Lexical search — DEPEND: Tantivy" and
+"Syntax — DEPEND: tree-sitter" are now honored LITERALLY)
+---------------------------------------------------------------------
+- tantivy 0.26.2 (default features), tree-sitter 0.27.0,
+  tree-sitter-rust 0.24.2, tree-sitter-typescript 0.23.2 (TypeScript +
+  TSX languages), tree-sitter-javascript 0.25.0, tree-sitter-python
+  0.25.0. All MIT/Apache-2.0. Confined to modbit-retrieval (lexical.rs /
+  symbols.rs); the fusion layer consumes only ranked (path, score) pairs
+  (replaceability contract). Pins live in Cargo.lock + docs/35.
+- The orphan logic-only `bm25.rs` (an agent-authored "tantivy-class"
+  substitute with zero consumers) is DELETED — docs/36 mandates the real
+  dependency; no second BM25 implementation survives.
+- API-drift gotchas pinned by tests: tantivy 0.26 needs
+  `.order_by_score()` + `TEXT` const + `Value::as_str` trait import +
+  `set_stored()`; tree-sitter 0.27 needs `StreamingIterator` +
+  `captures()`; TS grammar names class names type_identifier (a wrong
+  node type fails the WHOLE query — caught by the cross-language test).
+
+WHAT CHANGED
+---------------------------------------------------------------------
+- crates/retrieval/src/lexical.rs (new): Tantivy in-RAM index per task;
+  one doc per indexed file; incremental replace by exact path term
+  (delete_term + add), committed once per delta batch; unparsable query
+  syntax -> empty, never a panic; deterministic tie-break by path.
+- crates/retrieval/src/symbols.rs (new): tree-sitter definitions
+  (function/method/class/struct/enum/trait/module/interface/type_alias)
+  for Rust, TypeScript, TSX, JavaScript, Python + per-file identifier
+  occurrence spans. references(name) is a QUERY-TIME VIEW over the
+  current global definition set minus definition sites — a definition
+  added later resolves occurrences indexed before it existed with no
+  reparse, so incremental updates and cold builds answer identically
+  (per-file purity).
+- crates/retrieval/src/task_index.rs: TaskIndex gains `lexical` +
+  `symbols`, both maintained by build_at/apply_delta; context_query()
+  fuses BM25 (normalized, weight 1.0) + exact symbol definitions
+  (weight 1.2) + case-insensitive path match (weight 0.6), merged per
+  path with provenance and deterministic ordering; symbol_definitions /
+  symbol_references accessors. Paths + provenance only — content bytes
+  always hydrate from the live file (docs/18 freshness rule).
+- crates/core-runtime/scheduler.rs: `context.query` and `search.symbol`
+  tools registered (ReadOnly, granted in worktree_grants); both drain
+  the change journal BEFORE answering (refresh reason context_query /
+  symbol_query); a missing task index degrades to an explicit empty
+  result, never an error.
+
+PROOFS (always-on; full workspace suite exit 0, 486 Rust tests green,
+2026-09-10)
+---------------------------------------------------------------------
+Unit/integration (modbit-retrieval, 26 lib tests):
+  tantivy_bm25_ranks_and_replaces_incrementally ... ok (idf ranking,
+    tie determinism, incremental == cold, removal, syntax tolerance)
+  replace_keeps_one_doc_per_path ... ok
+  cross_language_symbol_identity_is_consistent ... ok — QUAL-EV-0005's
+    cross-language gate exercised on the shared SymbolDef identity:
+    same name/kind/path/1-based-line semantics across Rust, TS, TSX,
+    JS, Python; refs resolve cross-file, def sites excluded; a later
+    definition resolves pre-indexed occurrences; removal drops both axes
+  unsupported_and_broken_sources_are_tolerated ... ok
+  context_query_fuses_sources_and_survives_deltas ... ok (symbol
+    candidates outrank lexical; incremental query output EQUALS a cold
+    rebuild's; deletions drop candidates; empty query/limit bounded)
+Daemon E2E crates/core-runtime/tests/daemon_context_query_e2e.rs — the
+REAL daemon + scheduler + git worktree + change engine + scripted model,
+4 tool turns:
+  context_query_and_search_symbol_answer_from_the_live_index ... ok
+  - turn 1 context.query "retry backoff": fused hits with path
+    provenance ride the DURABLE conversation (docs/retry-notes.md,
+    sources ["bm25","path"])
+  - turn 2 search.symbol "retry_helpers": definition (src/helpers.rs
+    line 1) + cross-file reference (src/caller.rs line 2)
+  - turn 3 REAL change.apply inserts pub fn brand_new_marker()
+  - turn 4 context.query "brand_new_marker": found by BOTH surfaces,
+    sources ["bm25","symbol"] — the Tantivy delta batch is committed
+    and the tree-sitter surface reparsed
+  - evidence stream discipline: index_updated events remain EXACTLY
+    [task_start, change_apply]; pure queries with nothing new emit
+    nothing
+
+MUTATION CHECK (docs/55), 2026-09-10, against commit b3e6159
+---------------------------------------------------------------------
+  Mutation: apply_delta's lexical commit dropped (env-gated) ->
+  context_query_and_search_symbol_answer_from_the_live_index FAILED
+  exactly at the freshness assertion: the post-edit query returned
+  sources ["symbol"] only — the stale (uncommitted) lexical surface is
+  detected. REVERTED (git checkout of the committed file); post-revert:
+  daemon E2E 1 ok, retrieval 26 ok; no mutation remnants (grep 0).
+
+TOOLCHAIN / LINTS
+---------------------------------------------------------------------
+- cargo test --workspace ... exit 0, 107 binaries, 486 Rust tests
+- cargo clippy -p modbit-retrieval -p modbit-core-runtime --all-targets
+  ... 0 warnings (after manual_clamp fix)
+- python3 tools/build_manifest.py && build_graph.py && check_dossier.py
+  ... OK (70 docs, 291 REQ, 265 IMP, 291 QUAL)
+- python3 tools/architecture-lint/lint.py ... OK (untouched closure
+  rules; tantivy/tree-sitter are external deps, not workspace edges)
+
+SCOPE NOTES
+---------------------------------------------------------------------
+- M3.2 closed on the Tantivy engine through the context.query tool; the
+  in-RAM per-task index satisfies the task-scope requirement — a
+  persisted snapshot family (docs/18 "per repository snapshot family")
+  arrives with the M3.8 context-pack work if cross-task reuse demands it.
+- IMP-EV-0005 (Shared AST/symbol chunk representation, owner subsystem
+  context-graph) stays OPEN: its owner crate is not in the product
+  closure; the shared SymbolDef type is in place for it.
+- IMP-EV-0249 (hybrid baseline incl. vector) belongs to item 4's
+  benchmark work; untouched.
+
+REMAINING GAPS
+---------------------------------------------------------------------
+None for Phase 3 item 2 as scoped. Item 3 next: crates/context
+ContextPack/token-budget/provenance + retrieve-before-edit gate on
+change.propose. Item 4: docs/53 benchmark gate.
