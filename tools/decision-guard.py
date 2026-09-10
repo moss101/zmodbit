@@ -96,6 +96,12 @@ def check(changed_files, decisions_dir):
     accepted_affects = set()
     for adr in sorted(changed_adrs):
         path = Path(decisions_dir) / Path(adr).name
+        if not path.exists():
+            # Deletion/withdrawal: nothing to validate. The removal is
+            # visible in git history and the ledger; a deleted ACCEPTED
+            # ADR is a review concern, not a guard crash.
+            print("decision-guard: note: ADR %s was removed in this changeset" % adr)
+            continue
         try:
             text = path.read_text(encoding="utf-8")
         except OSError as exc:
