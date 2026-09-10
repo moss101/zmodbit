@@ -4,6 +4,7 @@ import { groupFleet, FLEET_VIEW_ORDER, FLEET_VIEW_LABELS, TASK_STATUS, type Task
 import { superviseFleet } from "./fleet/supervision";
 import { statusSummary } from "./status-center/status";
 import { TaskWorkspace } from "./task-workspace/TaskWorkspace";
+import { SettingsScreen } from "./settings/SettingsScreen";
 
 // docs/32: the renderer never fabricates completion — every card renders
 // from Core data (projections derived from committed events only).
@@ -18,6 +19,7 @@ export default function App() {
   const [prompt, setPrompt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const [screen, setScreen] = useState<"fleet" | "settings">("fleet");
   const [repos, setRepos] = useState<RecentRepoView[]>([]);
   const [selectedRepo, setSelectedRepo] = useState("");
   const [baseBranch, setBaseBranch] = useState("");
@@ -101,9 +103,16 @@ export default function App() {
   const supervised = superviseFleet(tasks);
   const workspaceTask = tasks.find((t) => t.taskId === selectedTask) ?? null;
 
+  if (screen === "settings") {
+    return <SettingsScreen onBack={() => setScreen("fleet")} />;
+  }
+
   return (
     <main>
       <h1>Modbit Fleet</h1>
+      <button type="button" onClick={() => setScreen("settings")}>
+        Settings
+      </button>
       <section aria-label="Status center">
         <h2>Status center</h2>
         <p>

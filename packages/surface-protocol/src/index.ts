@@ -18,6 +18,8 @@ export type {
   RecentRepoView,
   RecentRepoList,
   RegisterRepoCommand,
+  SettingsView,
+  UpdateSettingsCommand,
 } from "./generated/modbit/protocol/v1/surface";
 export type {
   CommandEnvelope,

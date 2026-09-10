@@ -49,6 +49,7 @@ pub const MIGRATIONS: &[Migration] = &[
     (4, SQL_V4_TASK_INPUTS),
     (5, SQL_V5_FORK_LINEAGE),
     (6, SQL_V6_RECENT_REPOS),
+    (7, SQL_V7_APP_SETTINGS),
 ];
 
 /// Projection tables (docs/31 § Core tables): derived read models, always
@@ -138,6 +139,13 @@ pub const SQL_V5_FORK_LINEAGE: &str = "
     ALTER TABLE sessions ADD COLUMN forked_at_sequence INTEGER;
 ";
 
+pub const SQL_V7_APP_SETTINGS: &str = "
+    CREATE TABLE IF NOT EXISTS app_settings (
+        id   INTEGER PRIMARY KEY CHECK (id = 1),
+        data TEXT NOT NULL
+    );
+";
+
 pub const SQL_V6_RECENT_REPOS: &str = "
     CREATE TABLE IF NOT EXISTS recent_repos (
         repo_id        TEXT PRIMARY KEY,
@@ -172,6 +180,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 6, "latest migration version");
+        assert_eq!(v, 7, "latest migration version");
     }
 }

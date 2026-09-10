@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld("modbit", {
   listRecentRepos: () => ipcRenderer.invoke("repo:list"),
   registerRepo: (path, cloneUrl) =>
     ipcRenderer.invoke("repo:register", { path: path || "", cloneUrl: cloneUrl || "" }),
+  getSettings: () => ipcRenderer.invoke("settings:get"),
+  updateSettings: (patch) => ipcRenderer.invoke("settings:update", patch),
   createSession: (displayName) => ipcRenderer.invoke("session:create", { displayName }),
   taskEvents: (taskId) => ipcRenderer.invoke("task:events", { taskId }),
   codeView: (path) => ipcRenderer.invoke("code:view", { path }),

@@ -130,6 +130,16 @@ async function registerRepo({ path = "", cloneUrl = "" }) {
   return withRetry((s) => s.request({ registerRepo: { path, cloneUrl } }));
 }
 
+async function getSettings() {
+  return withRetry((s) => s.request({ getSettings: {} }));
+}
+
+async function updateSettings({ provider = "", model = "", baseUrl = "", maxTurns = 0, executionMode = "" }) {
+  return withRetry((s) =>
+    s.request({ updateSettings: { provider, model, baseUrl, maxTurns, executionMode } })
+  );
+}
+
 async function createSession({ displayName }) {
   return withRetry((s) => s.request({ createSession: displayName }));
 }
@@ -162,6 +172,14 @@ function registerIpc() {
   guarded("repo:list", (request) => {
     if (request.kind !== "repoList") return { ok: false, error: "wrong request kind" };
     return listRecentRepos();
+  });
+  guarded("settings:get", (request) => {
+    if (request.kind !== "getSettings") return { ok: false, error: "wrong request kind" };
+    return getSettings();
+  });
+  guarded("settings:update", (request) => {
+    if (request.kind !== "updateSettings") return { ok: false, error: "wrong request kind" };
+    return updateSettings(request);
   });
   guarded("session:create", (request) => {
     if (request.kind !== "createSession") return { ok: false, error: "wrong request kind" };

@@ -30,7 +30,34 @@ message SurfaceRequest {
     // and list the recent repos; tasks select a repo + base branch.
     RegisterRepoCommand register_repo = 16;
     ListRecentReposRequest list_recent_repos = 17;
+    // Phase 4.2: the settings screen — persisted daemon configuration
+    // (provider/model/base URL/max turns/execution mode).
+    GetSettingsRequest get_settings = 18;
+    UpdateSettingsCommand update_settings = 19;
   }
+}
+
+message GetSettingsRequest {}
+
+// Phase 4.2: the persisted daemon configuration. Secrets are NEVER part
+// of this message (the secret broker owns credentials).
+message SettingsView {
+  string provider = 1;
+  string model = 2;
+  string base_url = 3;
+  uint32 max_turns = 4;
+  string execution_mode = 5;
+}
+
+// Phase 4.2: partial update — empty fields leave the stored value
+// unchanged. execution_mode: "default" (full grants) | "readonly"
+// (read-only grants only).
+message UpdateSettingsCommand {
+  string provider = 1;
+  string model = 2;
+  string base_url = 3;
+  uint32 max_turns = 4;
+  string execution_mode = 5;
 }
 
 // Phase 4.1: register a repository with the daemon. Exactly one of
@@ -125,6 +152,7 @@ message SurfaceResponse {
   OutputRefChunkView output_chunk = 10;
   RecentRepoList recent_repos = 11;
   RecentRepoView repo = 12;
+  SettingsView settings = 13;
 }
 
 // Paginated read of a stored tool-output reference (Phase 2.6): the full

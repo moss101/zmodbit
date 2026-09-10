@@ -50,6 +50,7 @@ const POLL_INTERVAL: Duration = Duration::from_millis(150);
 
 /// Configuration for scheduler runs; env-driven in production
 /// (`SchedulerConfig::from_env`), injected in tests.
+#[derive(Clone)]
 pub struct SchedulerConfig {
     pub provider: Provider,
     pub model: String,
@@ -411,6 +412,51 @@ impl Scheduler {
 
         // 1. Worktree + revision allocation (E2E-001), through the shared
         // layout source (the GetDiff surface reads the same truth).
+        // Phase 4.2: persisted settings overlay the boot configuration
+        // for THIS run (provider/model/base_url/max_turns/execution_mode).
+        // The settings screen writes them; env stays the fallback.
+        let stored_settings =
+            self.store
+                .with_conn(|conn| {
+                    modbit_event_store::settings::get(conn).map_err(|e| e.to_string())
+                });
+        let (s_provider, s_model, s_base, s_turns, s_mode) = match &stored_settings {
+            Ok(Some(doc)) => (
+                doc.get("provider").and_then(|v| v.as_str()).map(str::to_string),
+                doc.get("model").and_then(|v| v.as_str()).map(str::to_string),
+                doc.get("base_url").and_then(|v| v.as_str()).map(str::to_string),
+                doc.get("max_turns").and_then(|v| v.as_u64()),
+                doc.get("execution_mode")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
+            ),
+            _ => (None, None, None, None, None),
+        };
+        let mut run_config = self.config.clone();
+        if let Some(v) = &s_provider {
+            if v == "anthropic" {
+                run_config.provider = Provider::Anthropic;
+            } else if v == "openai" {
+                run_config.provider = Provider::OpenAi;
+            }
+        }
+        if let Some(m) = &s_model {
+            if !m.is_empty() {
+                run_config.model = m.clone();
+            }
+        }
+        if let Some(b) = &s_base {
+            if !b.is_empty() {
+                run_config.base_url = Some(b.clone());
+            }
+        }
+        if let Some(t) = s_turns {
+            if t > 0 {
+                run_config.max_turns = t as u32;
+            }
+        }
+        let execution_mode = s_mode.unwrap_or_else(|| "default".to_string());
+
         // Phase 4.1: a task created against a REGISTERED repository runs
         // on that repo (per-task base branch selection). Tasks without a
         // repo selection fall back to the configured/env default source.
@@ -578,11 +624,21 @@ impl Scheduler {
             Some(worktree_journal),
             Some(task_index.clone()),
         );
+        // Phase 4.2: execution_mode "readonly" drops effect-class grants
+        // (write/external) — a REAL consumer of the persisted setting: a
+        // readonly task's kernel refuses change.apply/shell.run/test.run.
+        let readonly = execution_mode == "readonly";
         let kernel = PolicyKernel::new(vec![]);
         for grant in worktree_grants() {
+            if readonly && grant.effect_class != EffectClass::ReadOnly {
+                continue;
+            }
             kernel.grant(grant);
         }
-        let grants = worktree_grants();
+        let grants: Vec<_> = worktree_grants()
+            .into_iter()
+            .filter(|g| !readonly || g.effect_class == EffectClass::ReadOnly)
+            .collect();
 
         // 4-5. Run the one-agent runtime over the production transport,
         // writing every Run/Turn/RunStep transition into the store.
@@ -597,13 +653,13 @@ impl Scheduler {
             task_index: Some(task_index),
             shared,
         };
-        let transport = LiveGatewayTransport::new(&self.config, signal.cancel_token());
+        let transport = LiveGatewayTransport::new(&run_config, signal.cancel_token());
         let runtime = OneAgentRuntime {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
             grants: &grants,
-            max_turns: self.config.max_turns,
+            max_turns: run_config.max_turns,
             observer: Some(&observer),
             control: Some(&*signal),
             resume_conversation: resume,

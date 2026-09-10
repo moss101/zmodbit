@@ -101,6 +101,50 @@ const CHANNELS = {
             return { kind: "registerRepo", path, cloneUrl };
         },
     },
+    "settings:get": {
+        validate(payload) {
+            if (payload === undefined) return { kind: "getSettings" };
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, []);
+            return { kind: "getSettings" };
+        },
+    },
+    "settings:update": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["provider", "model", "baseUrl", "maxTurns", "executionMode"]);
+            const patch = {};
+            if (payload.provider !== undefined) {
+                const v = requireString(payload, "provider", 40).toLowerCase();
+                if (!["openai", "anthropic"].includes(v) && v !== "openai-compatible") {
+                    throw new Rejected("provider must be openai, anthropic or openai-compatible");
+                }
+                patch.provider = v === "openai-compatible" ? "openai" : v;
+            }
+            if (payload.model !== undefined) patch.model = requireString(payload, "model", 200);
+            if (payload.baseUrl !== undefined) {
+                const u = optionalString(payload, "baseUrl", 300);
+                if (u && !u.startsWith("http://") && !u.startsWith("https://")) {
+                    throw new Rejected("baseUrl must be an http(s) URL");
+                }
+                patch.baseUrl = u;
+            }
+            if (payload.maxTurns !== undefined) {
+                if (!Number.isInteger(payload.maxTurns) || payload.maxTurns < 1 || payload.maxTurns > 200) {
+                    throw new Rejected("maxTurns must be an integer 1..200");
+                }
+                patch.maxTurns = payload.maxTurns;
+            }
+            if (payload.executionMode !== undefined) {
+                const m = requireString(payload, "executionMode", 40).toLowerCase();
+                if (!["default", "readonly"].includes(m)) {
+                    throw new Rejected("executionMode must be default or readonly");
+                }
+                patch.executionMode = m;
+            }
+            return { kind: "updateSettings", ...patch };
+        },
+    },
     "repo:list": {
         validate(payload) {
             if (payload === undefined) return { kind: "repoList" };

@@ -101,6 +101,29 @@ impl CoreServices {
         self
     }
 
+    /// Phase 4.2: the persisted settings as a wire view (empty strings =
+    /// unset → the boot/env configuration applies).
+    fn settings_view(&self) -> Result<pb::SettingsView, String> {
+        let doc = self
+            .store
+            .with_conn(|conn| modbit_event_store::settings::get(conn).map_err(|e| e.to_string()))?;
+        let empty = || pb::SettingsView::default();
+        let Some(doc) = doc else { return Ok(empty()) };
+        let get_str = |k: &str| {
+            doc.get(k)
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string()
+        };
+        Ok(pb::SettingsView {
+            provider: get_str("provider"),
+            model: get_str("model"),
+            base_url: get_str("base_url"),
+            max_turns: doc.get("max_turns").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+            execution_mode: get_str("execution_mode"),
+        })
+    }
+
     /// Phase 4.1: registers a repository (by local path, or by cloning
     /// `clone_url` into the daemon's worktree root) and records its
     /// default branch. The registry is runtime configuration state
@@ -405,6 +428,85 @@ impl CoreServices {
                         }),
                         ..Default::default()
                     },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::GetSettings(_)) => {
+                let view = self.settings_view();
+                match view {
+                    Ok(settings) => pb::SurfaceResponse {
+                        ok: true,
+                        settings: Some(settings),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::UpdateSettings(update)) => {
+                // Phase 4.2: partial update — empty fields keep the stored
+                // value. Secrets NEVER ride this message (the secret broker
+                // owns credentials; docs/31).
+                let outcome = self
+                    .store
+                    .with_conn(|conn| {
+                        let patch = serde_json::json!({
+                            "provider": if update.provider.is_empty() { serde_json::Value::Null } else { serde_json::json!(update.provider) },
+                            "model": if update.model.is_empty() { serde_json::Value::Null } else { serde_json::json!(update.model) },
+                            "base_url": if update.base_url.is_empty() { serde_json::Value::Null } else { serde_json::json!(update.base_url) },
+                            "max_turns": if update.max_turns == 0 { serde_json::Value::Null } else { serde_json::json!(update.max_turns) },
+                            "execution_mode": if update.execution_mode.is_empty() { serde_json::Value::Null } else { serde_json::json!(update.execution_mode) },
+                        });
+                        // Drop nulls: merge only provided fields.
+                        let patch_obj = patch
+                            .as_object()
+                            .map(|o| {
+                                o.iter()
+                                    .filter(|(_, v)| !v.is_null())
+                                    .map(|(k, v)| (k.clone(), v.clone()))
+                                    .collect::<serde_json::Map<String, serde_json::Value>>()
+                            })
+                            .unwrap_or_default();
+                        let merged = modbit_event_store::settings::merge(
+                            conn,
+                            &serde_json::Value::Object(patch_obj),
+                        )
+                        .map_err(|e| e.to_string())?;
+                        Ok((merged, ()))
+                    })
+                    .map(|(merged, _)| merged);
+                match outcome {
+                    Ok(merged) => {
+                        let mut view = self.settings_view().unwrap_or_default();
+                        // Reflect the merged document immediately.
+                        if let Some(v) = merged.get("provider").and_then(|v| v.as_str()) {
+                            view.provider = v.to_string();
+                        }
+                        if let Some(v) = merged.get("model").and_then(|v| v.as_str()) {
+                            view.model = v.to_string();
+                        }
+                        if let Some(v) = merged.get("base_url").and_then(|v| v.as_str()) {
+                            view.base_url = v.to_string();
+                        }
+                        if let Some(t) = merged.get("max_turns").and_then(|v| v.as_u64()) {
+                            view.max_turns = t as u32;
+                        }
+                        if let Some(m) = merged.get("execution_mode").and_then(|v| v.as_str()) {
+                            view.execution_mode = m.to_string();
+                        }
+                        pb::SurfaceResponse {
+                            ok: true,
+                            settings: Some(view),
+                            ..Default::default()
+                        }
+                    }
                     Err(e) => pb::SurfaceResponse {
                         ok: false,
                         error: e,

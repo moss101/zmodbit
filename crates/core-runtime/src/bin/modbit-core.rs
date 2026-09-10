@@ -46,6 +46,7 @@ fn main() {
         }
     }
 
+eprintln!("boot: services");
     let mut services = CoreServices::new(store.clone());
     if let Some(source) = modbit_core_runtime::scheduler::EnvWorktreeSource::from_env() {
         services = services.with_task_worktrees(std::sync::Arc::new(source));
@@ -62,6 +63,7 @@ fn main() {
         ));
     }
 
+eprintln!("boot: worktree source attached");
     // The single scheduler (docs/14): tails the store for task_started and
     // owns every run. Started in every host mode so runs begin whichever
     // surface executed the command (socket or HTTP daemon).
@@ -74,6 +76,7 @@ fn main() {
     services = services.with_run_controls(scheduler.controls());
     let services = Arc::new(services);
 
+eprintln!("boot: scheduler spawned");
     // Optional multi-client HTTP+SSE daemon (headless mode):
     // MODBIT_HTTP_ADDR=127.0.0.1:0 binds it alongside the socket transport.
     // M4.1: the SSE client-cursor journal lives next to the durable store

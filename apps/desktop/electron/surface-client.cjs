@@ -125,6 +125,19 @@ function encodeSurfaceRequest(request) {
   if (request.listRecentRepos !== undefined) {
     return encodeLenField(17, Buffer.alloc(0));
   }
+  if (request.getSettings !== undefined) {
+    return encodeLenField(18, Buffer.alloc(0));
+  }
+  if (request.updateSettings !== undefined) {
+    const u = request.updateSettings;
+    const parts = [];
+    if (u.provider) parts.push(encodeLenField(1, Buffer.from(u.provider, "utf8")));
+    if (u.model) parts.push(encodeLenField(2, Buffer.from(u.model, "utf8")));
+    if (u.baseUrl) parts.push(encodeLenField(3, Buffer.from(u.baseUrl, "utf8")));
+    if (u.maxTurns) parts.push(encodeVarintField(4, u.maxTurns));
+    if (u.executionMode) parts.push(encodeLenField(5, Buffer.from(u.executionMode, "utf8")));
+    return encodeLenField(19, Buffer.concat(parts));
+  }
   if (request.taskEvents !== undefined) return encodeGetTaskEvents(request.taskEvents);
   if (request.steerTask !== undefined) {
     return encodeSteerTask(request.steerTask.taskId, request.steerTask.note);
@@ -270,6 +283,24 @@ function decodeFleet(buf) {
   return fleet;
 }
 
+function decodeSettingsView(buf) {
+  const settings = {
+    provider: "",
+    model: "",
+    baseUrl: "",
+    maxTurns: 0,
+    executionMode: "",
+  };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) settings.provider = v.toString("utf8");
+    else if (f === 2) settings.model = v.toString("utf8");
+    else if (f === 3) settings.baseUrl = v.toString("utf8");
+    else if (f === 4) settings.maxTurns = Number(v);
+    else if (f === 5) settings.executionMode = v.toString("utf8");
+  }
+  return settings;
+}
+
 function decodeRecentRepoView(buf) {
   const repo = {
     repoId: "",
@@ -310,6 +341,7 @@ function decodeSurfaceResponse(buf) {
     diff: null,
     recentRepos: null,
     repo: null,
+    settings: null,
   };
   for (const [fieldNo, value] of decodeFields(buf)) {
     if (fieldNo === 1) response.ok = value !== 0n;
@@ -322,6 +354,7 @@ function decodeSurfaceResponse(buf) {
     else if (fieldNo === 9) response.diff = decodeDiffView(value);
     else if (fieldNo === 11) response.recentRepos = decodeRecentRepoList(value);
     else if (fieldNo === 12) response.repo = decodeRecentRepoView(value);
+    else if (fieldNo === 13) response.settings = decodeSettingsView(value);
   }
   return response;
 }

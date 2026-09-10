@@ -40,7 +40,43 @@ export interface SurfaceRequest {
    * and list the recent repos; tasks select a repo + base branch.
    */
   registerRepo?: RegisterRepoCommand | undefined;
-  listRecentRepos?: ListRecentReposRequest | undefined;
+  listRecentRepos?:
+    | ListRecentReposRequest
+    | undefined;
+  /**
+   * Phase 4.2: the settings screen — persisted daemon configuration
+   * (provider/model/base URL/max turns/execution mode).
+   */
+  getSettings?: GetSettingsRequest | undefined;
+  updateSettings?: UpdateSettingsCommand | undefined;
+}
+
+export interface GetSettingsRequest {
+}
+
+/**
+ * Phase 4.2: the persisted daemon configuration. Secrets are NEVER part
+ * of this message (the secret broker owns credentials).
+ */
+export interface SettingsView {
+  provider: string;
+  model: string;
+  baseUrl: string;
+  maxTurns: number;
+  executionMode: string;
+}
+
+/**
+ * Phase 4.2: partial update — empty fields leave the stored value
+ * unchanged. execution_mode: "default" (full grants) | "readonly"
+ * (read-only grants only).
+ */
+export interface UpdateSettingsCommand {
+  provider: string;
+  model: string;
+  baseUrl: string;
+  maxTurns: number;
+  executionMode: string;
 }
 
 /**
@@ -151,6 +187,7 @@ export interface SurfaceResponse {
   outputChunk: OutputRefChunkView | undefined;
   recentRepos: RecentRepoList | undefined;
   repo: RecentRepoView | undefined;
+  settings: SettingsView | undefined;
 }
 
 /**
@@ -277,6 +314,8 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     readOutputRef: undefined,
     registerRepo: undefined,
     listRecentRepos: undefined,
+    getSettings: undefined,
+    updateSettings: undefined,
   };
 }
 
@@ -332,6 +371,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.listRecentRepos !== undefined) {
       ListRecentReposRequest.encode(message.listRecentRepos, writer.uint32(138).fork()).join();
+    }
+    if (message.getSettings !== undefined) {
+      GetSettingsRequest.encode(message.getSettings, writer.uint32(146).fork()).join();
+    }
+    if (message.updateSettings !== undefined) {
+      UpdateSettingsCommand.encode(message.updateSettings, writer.uint32(154).fork()).join();
     }
     return writer;
   },
@@ -479,6 +524,22 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.listRecentRepos = ListRecentReposRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.getSettings = GetSettingsRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.updateSettings = UpdateSettingsCommand.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -511,6 +572,8 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       listRecentRepos: isSet(object.listRecentRepos)
         ? ListRecentReposRequest.fromJSON(object.listRecentRepos)
         : undefined,
+      getSettings: isSet(object.getSettings) ? GetSettingsRequest.fromJSON(object.getSettings) : undefined,
+      updateSettings: isSet(object.updateSettings) ? UpdateSettingsCommand.fromJSON(object.updateSettings) : undefined,
     };
   },
 
@@ -566,6 +629,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.listRecentRepos !== undefined) {
       obj.listRecentRepos = ListRecentReposRequest.toJSON(message.listRecentRepos);
+    }
+    if (message.getSettings !== undefined) {
+      obj.getSettings = GetSettingsRequest.toJSON(message.getSettings);
+    }
+    if (message.updateSettings !== undefined) {
+      obj.updateSettings = UpdateSettingsCommand.toJSON(message.updateSettings);
     }
     return obj;
   },
@@ -626,6 +695,303 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     message.listRecentRepos = (object.listRecentRepos !== undefined && object.listRecentRepos !== null)
       ? ListRecentReposRequest.fromPartial(object.listRecentRepos)
       : undefined;
+    message.getSettings = (object.getSettings !== undefined && object.getSettings !== null)
+      ? GetSettingsRequest.fromPartial(object.getSettings)
+      : undefined;
+    message.updateSettings = (object.updateSettings !== undefined && object.updateSettings !== null)
+      ? UpdateSettingsCommand.fromPartial(object.updateSettings)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGetSettingsRequest(): GetSettingsRequest {
+  return {};
+}
+
+export const GetSettingsRequest: MessageFns<GetSettingsRequest> = {
+  encode(_: GetSettingsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetSettingsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetSettingsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetSettingsRequest {
+    return {};
+  },
+
+  toJSON(_: GetSettingsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetSettingsRequest>, I>>(base?: I): GetSettingsRequest {
+    return GetSettingsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetSettingsRequest>, I>>(_: I): GetSettingsRequest {
+    const message = createBaseGetSettingsRequest();
+    return message;
+  },
+};
+
+function createBaseSettingsView(): SettingsView {
+  return { provider: "", model: "", baseUrl: "", maxTurns: 0, executionMode: "" };
+}
+
+export const SettingsView: MessageFns<SettingsView> = {
+  encode(message: SettingsView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.provider !== "") {
+      writer.uint32(10).string(message.provider);
+    }
+    if (message.model !== "") {
+      writer.uint32(18).string(message.model);
+    }
+    if (message.baseUrl !== "") {
+      writer.uint32(26).string(message.baseUrl);
+    }
+    if (message.maxTurns !== 0) {
+      writer.uint32(32).uint32(message.maxTurns);
+    }
+    if (message.executionMode !== "") {
+      writer.uint32(42).string(message.executionMode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SettingsView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSettingsView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.provider = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.baseUrl = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.maxTurns = reader.uint32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.executionMode = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SettingsView {
+    return {
+      provider: isSet(object.provider) ? globalThis.String(object.provider) : "",
+      model: isSet(object.model) ? globalThis.String(object.model) : "",
+      baseUrl: isSet(object.baseUrl) ? globalThis.String(object.baseUrl) : "",
+      maxTurns: isSet(object.maxTurns) ? globalThis.Number(object.maxTurns) : 0,
+      executionMode: isSet(object.executionMode) ? globalThis.String(object.executionMode) : "",
+    };
+  },
+
+  toJSON(message: SettingsView): unknown {
+    const obj: any = {};
+    if (message.provider !== "") {
+      obj.provider = message.provider;
+    }
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    if (message.baseUrl !== "") {
+      obj.baseUrl = message.baseUrl;
+    }
+    if (message.maxTurns !== 0) {
+      obj.maxTurns = Math.round(message.maxTurns);
+    }
+    if (message.executionMode !== "") {
+      obj.executionMode = message.executionMode;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SettingsView>, I>>(base?: I): SettingsView {
+    return SettingsView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SettingsView>, I>>(object: I): SettingsView {
+    const message = createBaseSettingsView();
+    message.provider = object.provider ?? "";
+    message.model = object.model ?? "";
+    message.baseUrl = object.baseUrl ?? "";
+    message.maxTurns = object.maxTurns ?? 0;
+    message.executionMode = object.executionMode ?? "";
+    return message;
+  },
+};
+
+function createBaseUpdateSettingsCommand(): UpdateSettingsCommand {
+  return { provider: "", model: "", baseUrl: "", maxTurns: 0, executionMode: "" };
+}
+
+export const UpdateSettingsCommand: MessageFns<UpdateSettingsCommand> = {
+  encode(message: UpdateSettingsCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.provider !== "") {
+      writer.uint32(10).string(message.provider);
+    }
+    if (message.model !== "") {
+      writer.uint32(18).string(message.model);
+    }
+    if (message.baseUrl !== "") {
+      writer.uint32(26).string(message.baseUrl);
+    }
+    if (message.maxTurns !== 0) {
+      writer.uint32(32).uint32(message.maxTurns);
+    }
+    if (message.executionMode !== "") {
+      writer.uint32(42).string(message.executionMode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateSettingsCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateSettingsCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.provider = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.baseUrl = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.maxTurns = reader.uint32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.executionMode = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateSettingsCommand {
+    return {
+      provider: isSet(object.provider) ? globalThis.String(object.provider) : "",
+      model: isSet(object.model) ? globalThis.String(object.model) : "",
+      baseUrl: isSet(object.baseUrl) ? globalThis.String(object.baseUrl) : "",
+      maxTurns: isSet(object.maxTurns) ? globalThis.Number(object.maxTurns) : 0,
+      executionMode: isSet(object.executionMode) ? globalThis.String(object.executionMode) : "",
+    };
+  },
+
+  toJSON(message: UpdateSettingsCommand): unknown {
+    const obj: any = {};
+    if (message.provider !== "") {
+      obj.provider = message.provider;
+    }
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    if (message.baseUrl !== "") {
+      obj.baseUrl = message.baseUrl;
+    }
+    if (message.maxTurns !== 0) {
+      obj.maxTurns = Math.round(message.maxTurns);
+    }
+    if (message.executionMode !== "") {
+      obj.executionMode = message.executionMode;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UpdateSettingsCommand>, I>>(base?: I): UpdateSettingsCommand {
+    return UpdateSettingsCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UpdateSettingsCommand>, I>>(object: I): UpdateSettingsCommand {
+    const message = createBaseUpdateSettingsCommand();
+    message.provider = object.provider ?? "";
+    message.model = object.model ?? "";
+    message.baseUrl = object.baseUrl ?? "";
+    message.maxTurns = object.maxTurns ?? 0;
+    message.executionMode = object.executionMode ?? "";
     return message;
   },
 };
@@ -1788,6 +2154,7 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     outputChunk: undefined,
     recentRepos: undefined,
     repo: undefined,
+    settings: undefined,
   };
 }
 
@@ -1828,6 +2195,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.repo !== undefined) {
       RecentRepoView.encode(message.repo, writer.uint32(98).fork()).join();
+    }
+    if (message.settings !== undefined) {
+      SettingsView.encode(message.settings, writer.uint32(106).fork()).join();
     }
     return writer;
   },
@@ -1935,6 +2305,14 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.repo = RecentRepoView.decode(reader, reader.uint32());
           continue;
         }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.settings = SettingsView.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1958,6 +2336,7 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       outputChunk: isSet(object.outputChunk) ? OutputRefChunkView.fromJSON(object.outputChunk) : undefined,
       recentRepos: isSet(object.recentRepos) ? RecentRepoList.fromJSON(object.recentRepos) : undefined,
       repo: isSet(object.repo) ? RecentRepoView.fromJSON(object.repo) : undefined,
+      settings: isSet(object.settings) ? SettingsView.fromJSON(object.settings) : undefined,
     };
   },
 
@@ -1999,6 +2378,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.repo !== undefined) {
       obj.repo = RecentRepoView.toJSON(message.repo);
     }
+    if (message.settings !== undefined) {
+      obj.settings = SettingsView.toJSON(message.settings);
+    }
     return obj;
   },
 
@@ -2030,6 +2412,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       : undefined;
     message.repo = (object.repo !== undefined && object.repo !== null)
       ? RecentRepoView.fromPartial(object.repo)
+      : undefined;
+    message.settings = (object.settings !== undefined && object.settings !== null)
+      ? SettingsView.fromPartial(object.settings)
       : undefined;
     return message;
   },

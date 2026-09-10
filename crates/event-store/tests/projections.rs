@@ -238,8 +238,8 @@ fn v1_database_migrates_to_v2_preserving_events() {
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
         assert_eq!(
-            v, 6,
-            "migration applied through fork lineage + input queue tables + repo registry"
+            v, 7,
+            "migration applied through repo registry + app settings"
         );
     });
     let sessions = all_session_aggregates(&store);

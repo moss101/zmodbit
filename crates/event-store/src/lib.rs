@@ -15,6 +15,7 @@ pub mod migrations;
 pub mod projections;
 pub mod repos;
 pub mod runtime;
+pub mod settings;
 pub mod store;
 
 pub use commands::{CommandProcessor, Outcome};
