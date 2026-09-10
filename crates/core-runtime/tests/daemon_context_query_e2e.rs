@@ -277,7 +277,7 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         tool_call_turn("c7", "context.query", r#"{"query":"definition of brand_new_marker"}"#),
         tool_call_turn("c8", "context.query", r#"{"query":"How does the retry flow work"}"#),
         // A bare defined identifier takes the CHEAPER L0-exact route —
-        // the planner must not over-escalate (REQ-EV-0001).
+        // the planner must not over-escalate (REQ ledger EV-0001 (owner context-engine)).
         tool_call_turn("c9", "context.query", r#"{"query":"brand_new_marker"}"#),
         text_turn("done"),
     ]);
@@ -399,7 +399,7 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         "auto routes structural phrasing to the structural level: {visible}"
     );
     // A bare defined identifier takes the CHEAPER L0-exact route (turn 7's
-    // neighbor: minimum sufficient level, REQ-EV-0001).
+    // neighbor: minimum sufficient level, REQ ledger EV-0001 (owner context-engine)).
     assert!(
         visible.contains("\"mode\":\"auto:exact\"") && visible.contains("\"level\":\"exact\""),
         "auto keeps a verbatim identifier at L0-exact (no over-escalation)"

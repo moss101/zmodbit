@@ -2252,7 +2252,7 @@ impl TaskIndexWriter {
     /// M3.7: AUTO mode — the retrieval planner (modbit-context) classifies
     /// the query from REAL index signals and routes to the MINIMUM
     /// sufficient level; escalation happens only when lower levels cannot
-    /// serve the query (REQ-EV-0001, docs/18 § Retrieval planner). The
+    /// serve the query (REQ ledger EV-0001 (owner context-engine), docs/18 § Retrieval planner). The
     /// plan rides the response as provenance of the routing decision.
     /// L3 (engineering) currently escalates to the fused query plus a
     /// note — its full evidence graph (Git/diagnostics/runtime) is M3.6.
