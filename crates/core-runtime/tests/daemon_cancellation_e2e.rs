@@ -236,7 +236,8 @@ fn start_task(daemon: &str, title: &str, prompt: &str) -> String {
             session_id: String::new(),
             title: title.into(),
             prompt: prompt.into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

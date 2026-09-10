@@ -29,6 +29,10 @@ message CreateTaskCommand {
   string session_id = 1;
   string title = 2;
   string prompt = 3;
+  // Phase 4.1: run the task against a registered repository and base
+  // branch (empty = the daemon's default repo source).
+  string repo_id = 4;
+  string base_branch = 5;
 }
 
 message CancelTaskCommand {

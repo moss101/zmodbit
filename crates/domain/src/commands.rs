@@ -24,6 +24,11 @@ pub enum CommandPayload {
         session_id: SessionId,
         title: String,
         prompt: String,
+        /// Phase 4.1: the registered repository the task runs against
+        /// (absent = the daemon's default repo source).
+        repo_id: Option<String>,
+        /// Phase 4.1: per-task base branch (absent = the repo's default).
+        base_branch: Option<String>,
     },
     QueueTask {
         task_id: TaskId,

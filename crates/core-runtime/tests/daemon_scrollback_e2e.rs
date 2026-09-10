@@ -275,7 +275,8 @@ fn multimegabyte_output_bounded_view_with_retrievable_artifact() {
             session_id: String::new(),
             title: "generate big output".into(),
             prompt: "Run the generator.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

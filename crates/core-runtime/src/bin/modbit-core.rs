@@ -49,6 +49,17 @@ fn main() {
     let mut services = CoreServices::new(store.clone());
     if let Some(source) = modbit_core_runtime::scheduler::EnvWorktreeSource::from_env() {
         services = services.with_task_worktrees(std::sync::Arc::new(source));
+    } else {
+        // Phase 4.1: no MODBIT_REPO_ROOT — the repo picker replaces it.
+        // Registration + task-repo selection still need a worktree ROOT
+        // (where clones and task worktrees are allocated), which comes
+        // from MODBIT_WORKTREE_ROOT or the default location.
+        let worktree_root = std::env::var("MODBIT_WORKTREE_ROOT")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|_| std::env::temp_dir().join("modbit-worktrees"));
+        services = services.with_task_worktrees(std::sync::Arc::new(
+            modbit_core_runtime::scheduler::DefaultWorktreeRoot(worktree_root),
+        ));
     }
 
     // The single scheduler (docs/14): tails the store for task_started and

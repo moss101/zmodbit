@@ -20,7 +20,8 @@ fn create_task_with_empty_session_creates_default_session_and_task() {
                 session_id: String::new(),
                 title: "direct".into(),
                 prompt: "p".into(),
-            },
+                ..Default::default()
+},
         )),
     };
     let response =

@@ -203,6 +203,65 @@ impl GitRepo {
         })
     }
 
+    /// Adds a linked worktree on a new branch starting FROM `start_point`
+    /// (a branch, tag, or commit) instead of HEAD — the per-task base
+    /// branch selection (Phase 4.1).
+    pub fn worktree_add_from(
+        &self,
+        worktree_path: &Path,
+        branch: &str,
+        start_point: &str,
+    ) -> Result<GitRepo, GitError> {
+        self.git(
+            "worktree",
+            &[
+                "add",
+                "-b",
+                branch,
+                &worktree_path.display().to_string(),
+                start_point,
+            ],
+        )?;
+        Ok(GitRepo {
+            root: worktree_path.to_path_buf(),
+        })
+    }
+
+    /// Clones a repository URL into `into` (Phase 4.1: register-by-URL).
+    /// Returns a handle rooted at the clone.
+    pub fn clone(url: &str, into: &Path) -> Result<Self, GitError> {
+        if into.exists() && std::fs::read_dir(into).map(|mut d| d.next().is_some()).unwrap_or(false) {
+            return Err(GitError::Git {
+                operation: "clone".into(),
+                message: format!("target {} already exists and is not empty", into.display()),
+            });
+        }
+        let out = Command::new("git")
+            .arg("clone")
+            .arg(url)
+            .arg(into)
+            .env("GIT_AUTHOR_NAME", "modbit-core")
+            .env("GIT_AUTHOR_EMAIL", "core@modbit.local")
+            .env("GIT_COMMITTER_NAME", "modbit-core")
+            .env("GIT_COMMITTER_EMAIL", "core@modbit.local")
+            .output()
+            .map_err(GitError::Io)?;
+        if !out.status.success() {
+            return Err(GitError::Git {
+                operation: format!("clone {url}"),
+                message: String::from_utf8_lossy(&out.stderr).trim().to_string(),
+            });
+        }
+        Ok(GitRepo {
+            root: into.to_path_buf(),
+        })
+    }
+
+    /// The repository's default branch: the symbolic ref of HEAD.
+    pub fn default_branch(&self) -> Result<String, GitError> {
+        self.current_branch()
+    }
+
     pub fn worktree_remove(&self, worktree_path: &Path) -> Result<(), GitError> {
         self.git(
             "worktree",

@@ -256,7 +256,8 @@ fn create_queue_start(daemon: &str, title: &str) -> String {
             session_id: String::new(),
             title: title.into(),
             prompt: "Do it.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

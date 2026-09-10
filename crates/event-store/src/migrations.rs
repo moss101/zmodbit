@@ -48,6 +48,7 @@ pub const MIGRATIONS: &[Migration] = &[
     ),
     (4, SQL_V4_TASK_INPUTS),
     (5, SQL_V5_FORK_LINEAGE),
+    (6, SQL_V6_RECENT_REPOS),
 ];
 
 /// Projection tables (docs/31 § Core tables): derived read models, always
@@ -137,6 +138,17 @@ pub const SQL_V5_FORK_LINEAGE: &str = "
     ALTER TABLE sessions ADD COLUMN forked_at_sequence INTEGER;
 ";
 
+pub const SQL_V6_RECENT_REPOS: &str = "
+    CREATE TABLE IF NOT EXISTS recent_repos (
+        repo_id        TEXT PRIMARY KEY,
+        path           TEXT NOT NULL,
+        clone_url      TEXT NOT NULL DEFAULT '',
+        default_branch TEXT NOT NULL DEFAULT '',
+        registered_at  TEXT NOT NULL,
+        last_used_at   TEXT NOT NULL DEFAULT ''
+    );
+";
+
 pub fn migrate(conn: &Connection) -> Result<(), rusqlite::Error> {
     let current: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
     for (version, sql) in MIGRATIONS {
@@ -160,6 +172,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 5);
+        assert_eq!(v, 6, "latest migration version");
     }
 }

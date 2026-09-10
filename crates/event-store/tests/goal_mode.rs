@@ -70,7 +70,9 @@ fn model_claim_without_host_acceptance_leaves_the_run_incomplete() {
                 session_id: session,
                 title: "goal-gated task".into(),
                 prompt: "p".into(),
-            },
+                repo_id: None,
+    base_branch: None,
+},
         })
         .unwrap();
     assert!(create_task.applied_ok());

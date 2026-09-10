@@ -8,7 +8,11 @@ const { contextBridge, ipcRenderer } = require("node:electron");
 
 contextBridge.exposeInMainWorld("modbit", {
   fleetSnapshot: () => ipcRenderer.invoke("fleet:snapshot"),
-  createTask: (title, prompt) => ipcRenderer.invoke("task:create", { title, prompt }),
+  createTask: (title, prompt, repoId = "", baseBranch = "") =>
+    ipcRenderer.invoke("task:create", { title, prompt, repoId, baseBranch }),
+  listRecentRepos: () => ipcRenderer.invoke("repo:list"),
+  registerRepo: (path, cloneUrl) =>
+    ipcRenderer.invoke("repo:register", { path: path || "", cloneUrl: cloneUrl || "" }),
   createSession: (displayName) => ipcRenderer.invoke("session:create", { displayName }),
   taskEvents: (taskId) => ipcRenderer.invoke("task:events", { taskId }),
   codeView: (path) => ipcRenderer.invoke("code:view", { path }),

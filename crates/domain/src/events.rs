@@ -85,6 +85,13 @@ pub enum DomainEvent {
         session_id: SessionId,
         title: String,
         prompt: String,
+        /// Phase 4.1: the registered repository for this task (serde
+        /// default keeps pre-Phase-4 events deserializable).
+        #[serde(default)]
+        repo_id: Option<String>,
+        /// Phase 4.1: per-task base branch selection.
+        #[serde(default)]
+        base_branch: Option<String>,
     },
     TaskQueued,
     TaskStarted,
@@ -400,7 +407,9 @@ mod tests {
                 session_id: session,
                 title: "t".into(),
                 prompt: "p".into(),
-            },
+                repo_id: None,
+            base_branch: None,
+        },
             payload_object_hash: None,
             integrity_hash: String::new(),
         };

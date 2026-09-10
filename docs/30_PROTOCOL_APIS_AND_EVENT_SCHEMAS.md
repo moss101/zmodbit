@@ -36,12 +36,14 @@ ReturnBrowserControl
 OpenCodeReference
 ListArtifacts
 ReadOutputRef(range)
+RegisterRepo(path | cloneUrl)
+ListRecentRepos
 StartCloudHandoff
 GetSettings
 UpdateSettings
 ```
 
-Every command carries `command_id`, authenticated principal, expected aggregate generation when mutating state, and client timestamp. Mutating commands are idempotent by `command_id`.
+`CreateTask` carries an optional registered `repo_id` + `base_branch` (Phase 4.1 repository picker; empty = the daemon's default repo source). Every command carries `command_id`, authenticated principal, expected aggregate generation when mutating state, and client timestamp. Mutating commands are idempotent by `command_id`.
 
 ## Cloud HTTP control API
 

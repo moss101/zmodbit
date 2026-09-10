@@ -157,7 +157,9 @@ fn stale_lease_cannot_append_but_current_lease_can() {
                 session_id: modbit_domain::SessionId::parse(&session_id).unwrap(),
                 title: "fenced".into(),
                 prompt: "p".into(),
-            },
+                repo_id: None,
+    base_branch: None,
+},
         );
         e.task_id = Some(task_a);
         e.sequence = 1;

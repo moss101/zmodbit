@@ -37,6 +37,12 @@ export interface CreateTaskCommand {
   sessionId: string;
   title: string;
   prompt: string;
+  /**
+   * Phase 4.1: run the task against a registered repository and base
+   * branch (empty = the daemon's default repo source).
+   */
+  repoId: string;
+  baseBranch: string;
 }
 
 export interface CancelTaskCommand {
@@ -320,7 +326,7 @@ export const CreateSessionCommand: MessageFns<CreateSessionCommand> = {
 };
 
 function createBaseCreateTaskCommand(): CreateTaskCommand {
-  return { sessionId: "", title: "", prompt: "" };
+  return { sessionId: "", title: "", prompt: "", repoId: "", baseBranch: "" };
 }
 
 export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
@@ -333,6 +339,12 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
     }
     if (message.prompt !== "") {
       writer.uint32(26).string(message.prompt);
+    }
+    if (message.repoId !== "") {
+      writer.uint32(34).string(message.repoId);
+    }
+    if (message.baseBranch !== "") {
+      writer.uint32(42).string(message.baseBranch);
     }
     return writer;
   },
@@ -368,6 +380,22 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
           message.prompt = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.repoId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.baseBranch = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -382,6 +410,8 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
       sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
       title: isSet(object.title) ? globalThis.String(object.title) : "",
       prompt: isSet(object.prompt) ? globalThis.String(object.prompt) : "",
+      repoId: isSet(object.repoId) ? globalThis.String(object.repoId) : "",
+      baseBranch: isSet(object.baseBranch) ? globalThis.String(object.baseBranch) : "",
     };
   },
 
@@ -396,6 +426,12 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
     if (message.prompt !== "") {
       obj.prompt = message.prompt;
     }
+    if (message.repoId !== "") {
+      obj.repoId = message.repoId;
+    }
+    if (message.baseBranch !== "") {
+      obj.baseBranch = message.baseBranch;
+    }
     return obj;
   },
 
@@ -407,6 +443,8 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
     message.sessionId = object.sessionId ?? "";
     message.title = object.title ?? "";
     message.prompt = object.prompt ?? "";
+    message.repoId = object.repoId ?? "";
+    message.baseBranch = object.baseBranch ?? "";
     return message;
   },
 };

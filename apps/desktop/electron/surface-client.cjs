@@ -64,12 +64,15 @@ function encodeCreateSession(displayName) {
   return encodeLenField(1, encodeLenField(1, Buffer.from(displayName, "utf8")));
 }
 
-function encodeCreateTask(sessionId, title, prompt) {
-  const inner = Buffer.concat([
+function encodeCreateTask(sessionId, title, prompt, repoId = "", baseBranch = "") {
+  const parts = [
     encodeLenField(1, Buffer.from(sessionId, "utf8")),
     encodeLenField(2, Buffer.from(title, "utf8")),
     encodeLenField(3, Buffer.from(prompt, "utf8")),
-  ]);
+  ];
+  if (repoId) parts.push(encodeLenField(4, Buffer.from(repoId, "utf8")));
+  if (baseBranch) parts.push(encodeLenField(5, Buffer.from(baseBranch, "utf8")));
+  const inner = Buffer.concat(parts);
   return encodeLenField(2, inner);
 }
 
@@ -110,7 +113,17 @@ function encodeSurfaceRequest(request) {
   if (request.createSession !== undefined) return encodeCreateSession(request.createSession);
   if (request.createTask !== undefined) {
     const t = request.createTask;
-    return encodeCreateTask(t.sessionId, t.title, t.prompt);
+    return encodeCreateTask(t.sessionId, t.title, t.prompt, t.repoId, t.baseBranch);
+  }
+  if (request.registerRepo !== undefined) {
+    const r = request.registerRepo;
+    const parts = [];
+    if (r.path) parts.push(encodeLenField(1, Buffer.from(r.path, "utf8")));
+    if (r.cloneUrl) parts.push(encodeLenField(2, Buffer.from(r.cloneUrl, "utf8")));
+    return encodeLenField(16, Buffer.concat(parts));
+  }
+  if (request.listRecentRepos !== undefined) {
+    return encodeLenField(17, Buffer.alloc(0));
   }
   if (request.taskEvents !== undefined) return encodeGetTaskEvents(request.taskEvents);
   if (request.steerTask !== undefined) {
@@ -257,6 +270,34 @@ function decodeFleet(buf) {
   return fleet;
 }
 
+function decodeRecentRepoView(buf) {
+  const repo = {
+    repoId: "",
+    path: "",
+    cloneUrl: "",
+    defaultBranch: "",
+    registeredAt: "",
+    lastUsedAt: "",
+  };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) repo.repoId = v.toString("utf8");
+    else if (f === 2) repo.path = v.toString("utf8");
+    else if (f === 3) repo.cloneUrl = v.toString("utf8");
+    else if (f === 4) repo.defaultBranch = v.toString("utf8");
+    else if (f === 5) repo.registeredAt = v.toString("utf8");
+    else if (f === 6) repo.lastUsedAt = v.toString("utf8");
+  }
+  return repo;
+}
+
+function decodeRecentRepoList(buf) {
+  const list = { repos: [] };
+  for (const [f, v] of decodeFields(buf)) {
+    if (f === 1) list.repos.push(decodeRecentRepoView(v));
+  }
+  return list;
+}
+
 function decodeSurfaceResponse(buf) {
   const response = {
     ok: false,
@@ -267,6 +308,8 @@ function decodeSurfaceResponse(buf) {
     taskEvents: null,
     runDetail: null,
     diff: null,
+    recentRepos: null,
+    repo: null,
   };
   for (const [fieldNo, value] of decodeFields(buf)) {
     if (fieldNo === 1) response.ok = value !== 0n;
@@ -277,6 +320,8 @@ function decodeSurfaceResponse(buf) {
     else if (fieldNo === 6) response.taskEvents = decodeTaskEvents(value);
     else if (fieldNo === 8) response.runDetail = decodeRunDetailView(value);
     else if (fieldNo === 9) response.diff = decodeDiffView(value);
+    else if (fieldNo === 11) response.recentRepos = decodeRecentRepoList(value);
+    else if (fieldNo === 12) response.repo = decodeRecentRepoView(value);
   }
   return response;
 }

@@ -32,7 +32,41 @@ export interface SurfaceRequest {
   stopTask?: StopTaskCommand | undefined;
   getRunDetail?: GetRunDetailRequest | undefined;
   getDiff?: GetDiffRequest | undefined;
-  readOutputRef?: ReadOutputRefRequest | undefined;
+  readOutputRef?:
+    | ReadOutputRefRequest
+    | undefined;
+  /**
+   * Phase 4.1: the repository picker — register (by path or clone URL)
+   * and list the recent repos; tasks select a repo + base branch.
+   */
+  registerRepo?: RegisterRepoCommand | undefined;
+  listRecentRepos?: ListRecentReposRequest | undefined;
+}
+
+/**
+ * Phase 4.1: register a repository with the daemon. Exactly one of
+ * `path` (an existing local repository) or `clone_url` (cloned into the
+ * daemon's worktree root) must be provided.
+ */
+export interface RegisterRepoCommand {
+  path: string;
+  cloneUrl: string;
+}
+
+export interface RecentRepoView {
+  repoId: string;
+  path: string;
+  cloneUrl: string;
+  defaultBranch: string;
+  registeredAt: string;
+  lastUsedAt: string;
+}
+
+export interface RecentRepoList {
+  repos: RecentRepoView[];
+}
+
+export interface ListRecentReposRequest {
 }
 
 export interface GetFleetRequest {
@@ -115,6 +149,8 @@ export interface SurfaceResponse {
   runDetail: RunDetailView | undefined;
   diff: DiffView | undefined;
   outputChunk: OutputRefChunkView | undefined;
+  recentRepos: RecentRepoList | undefined;
+  repo: RecentRepoView | undefined;
 }
 
 /**
@@ -239,6 +275,8 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     getRunDetail: undefined,
     getDiff: undefined,
     readOutputRef: undefined,
+    registerRepo: undefined,
+    listRecentRepos: undefined,
   };
 }
 
@@ -288,6 +326,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.readOutputRef !== undefined) {
       ReadOutputRefRequest.encode(message.readOutputRef, writer.uint32(122).fork()).join();
+    }
+    if (message.registerRepo !== undefined) {
+      RegisterRepoCommand.encode(message.registerRepo, writer.uint32(130).fork()).join();
+    }
+    if (message.listRecentRepos !== undefined) {
+      ListRecentReposRequest.encode(message.listRecentRepos, writer.uint32(138).fork()).join();
     }
     return writer;
   },
@@ -419,6 +463,22 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.readOutputRef = ReadOutputRefRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.registerRepo = RegisterRepoCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.listRecentRepos = ListRecentReposRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -447,6 +507,10 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       getRunDetail: isSet(object.getRunDetail) ? GetRunDetailRequest.fromJSON(object.getRunDetail) : undefined,
       getDiff: isSet(object.getDiff) ? GetDiffRequest.fromJSON(object.getDiff) : undefined,
       readOutputRef: isSet(object.readOutputRef) ? ReadOutputRefRequest.fromJSON(object.readOutputRef) : undefined,
+      registerRepo: isSet(object.registerRepo) ? RegisterRepoCommand.fromJSON(object.registerRepo) : undefined,
+      listRecentRepos: isSet(object.listRecentRepos)
+        ? ListRecentReposRequest.fromJSON(object.listRecentRepos)
+        : undefined,
     };
   },
 
@@ -496,6 +560,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.readOutputRef !== undefined) {
       obj.readOutputRef = ReadOutputRefRequest.toJSON(message.readOutputRef);
+    }
+    if (message.registerRepo !== undefined) {
+      obj.registerRepo = RegisterRepoCommand.toJSON(message.registerRepo);
+    }
+    if (message.listRecentRepos !== undefined) {
+      obj.listRecentRepos = ListRecentReposRequest.toJSON(message.listRecentRepos);
     }
     return obj;
   },
@@ -550,6 +620,331 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     message.readOutputRef = (object.readOutputRef !== undefined && object.readOutputRef !== null)
       ? ReadOutputRefRequest.fromPartial(object.readOutputRef)
       : undefined;
+    message.registerRepo = (object.registerRepo !== undefined && object.registerRepo !== null)
+      ? RegisterRepoCommand.fromPartial(object.registerRepo)
+      : undefined;
+    message.listRecentRepos = (object.listRecentRepos !== undefined && object.listRecentRepos !== null)
+      ? ListRecentReposRequest.fromPartial(object.listRecentRepos)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseRegisterRepoCommand(): RegisterRepoCommand {
+  return { path: "", cloneUrl: "" };
+}
+
+export const RegisterRepoCommand: MessageFns<RegisterRepoCommand> = {
+  encode(message: RegisterRepoCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.path !== "") {
+      writer.uint32(10).string(message.path);
+    }
+    if (message.cloneUrl !== "") {
+      writer.uint32(18).string(message.cloneUrl);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RegisterRepoCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRegisterRepoCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.cloneUrl = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RegisterRepoCommand {
+    return {
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      cloneUrl: isSet(object.cloneUrl) ? globalThis.String(object.cloneUrl) : "",
+    };
+  },
+
+  toJSON(message: RegisterRepoCommand): unknown {
+    const obj: any = {};
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.cloneUrl !== "") {
+      obj.cloneUrl = message.cloneUrl;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RegisterRepoCommand>, I>>(base?: I): RegisterRepoCommand {
+    return RegisterRepoCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RegisterRepoCommand>, I>>(object: I): RegisterRepoCommand {
+    const message = createBaseRegisterRepoCommand();
+    message.path = object.path ?? "";
+    message.cloneUrl = object.cloneUrl ?? "";
+    return message;
+  },
+};
+
+function createBaseRecentRepoView(): RecentRepoView {
+  return { repoId: "", path: "", cloneUrl: "", defaultBranch: "", registeredAt: "", lastUsedAt: "" };
+}
+
+export const RecentRepoView: MessageFns<RecentRepoView> = {
+  encode(message: RecentRepoView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.repoId !== "") {
+      writer.uint32(10).string(message.repoId);
+    }
+    if (message.path !== "") {
+      writer.uint32(18).string(message.path);
+    }
+    if (message.cloneUrl !== "") {
+      writer.uint32(26).string(message.cloneUrl);
+    }
+    if (message.defaultBranch !== "") {
+      writer.uint32(34).string(message.defaultBranch);
+    }
+    if (message.registeredAt !== "") {
+      writer.uint32(42).string(message.registeredAt);
+    }
+    if (message.lastUsedAt !== "") {
+      writer.uint32(50).string(message.lastUsedAt);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RecentRepoView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRecentRepoView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repoId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.cloneUrl = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.defaultBranch = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.registeredAt = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.lastUsedAt = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RecentRepoView {
+    return {
+      repoId: isSet(object.repoId) ? globalThis.String(object.repoId) : "",
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      cloneUrl: isSet(object.cloneUrl) ? globalThis.String(object.cloneUrl) : "",
+      defaultBranch: isSet(object.defaultBranch) ? globalThis.String(object.defaultBranch) : "",
+      registeredAt: isSet(object.registeredAt) ? globalThis.String(object.registeredAt) : "",
+      lastUsedAt: isSet(object.lastUsedAt) ? globalThis.String(object.lastUsedAt) : "",
+    };
+  },
+
+  toJSON(message: RecentRepoView): unknown {
+    const obj: any = {};
+    if (message.repoId !== "") {
+      obj.repoId = message.repoId;
+    }
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.cloneUrl !== "") {
+      obj.cloneUrl = message.cloneUrl;
+    }
+    if (message.defaultBranch !== "") {
+      obj.defaultBranch = message.defaultBranch;
+    }
+    if (message.registeredAt !== "") {
+      obj.registeredAt = message.registeredAt;
+    }
+    if (message.lastUsedAt !== "") {
+      obj.lastUsedAt = message.lastUsedAt;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RecentRepoView>, I>>(base?: I): RecentRepoView {
+    return RecentRepoView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RecentRepoView>, I>>(object: I): RecentRepoView {
+    const message = createBaseRecentRepoView();
+    message.repoId = object.repoId ?? "";
+    message.path = object.path ?? "";
+    message.cloneUrl = object.cloneUrl ?? "";
+    message.defaultBranch = object.defaultBranch ?? "";
+    message.registeredAt = object.registeredAt ?? "";
+    message.lastUsedAt = object.lastUsedAt ?? "";
+    return message;
+  },
+};
+
+function createBaseRecentRepoList(): RecentRepoList {
+  return { repos: [] };
+}
+
+export const RecentRepoList: MessageFns<RecentRepoList> = {
+  encode(message: RecentRepoList, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.repos) {
+      RecentRepoView.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RecentRepoList {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRecentRepoList();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repos.push(RecentRepoView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RecentRepoList {
+    return {
+      repos: globalThis.Array.isArray(object?.repos) ? object.repos.map((e: any) => RecentRepoView.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: RecentRepoList): unknown {
+    const obj: any = {};
+    if (message.repos?.length) {
+      obj.repos = message.repos.map((e) => RecentRepoView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RecentRepoList>, I>>(base?: I): RecentRepoList {
+    return RecentRepoList.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RecentRepoList>, I>>(object: I): RecentRepoList {
+    const message = createBaseRecentRepoList();
+    message.repos = object.repos?.map((e) => RecentRepoView.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseListRecentReposRequest(): ListRecentReposRequest {
+  return {};
+}
+
+export const ListRecentReposRequest: MessageFns<ListRecentReposRequest> = {
+  encode(_: ListRecentReposRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListRecentReposRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListRecentReposRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListRecentReposRequest {
+    return {};
+  },
+
+  toJSON(_: ListRecentReposRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ListRecentReposRequest>, I>>(base?: I): ListRecentReposRequest {
+    return ListRecentReposRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ListRecentReposRequest>, I>>(_: I): ListRecentReposRequest {
+    const message = createBaseListRecentReposRequest();
     return message;
   },
 };
@@ -1391,6 +1786,8 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     runDetail: undefined,
     diff: undefined,
     outputChunk: undefined,
+    recentRepos: undefined,
+    repo: undefined,
   };
 }
 
@@ -1425,6 +1822,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.outputChunk !== undefined) {
       OutputRefChunkView.encode(message.outputChunk, writer.uint32(82).fork()).join();
+    }
+    if (message.recentRepos !== undefined) {
+      RecentRepoList.encode(message.recentRepos, writer.uint32(90).fork()).join();
+    }
+    if (message.repo !== undefined) {
+      RecentRepoView.encode(message.repo, writer.uint32(98).fork()).join();
     }
     return writer;
   },
@@ -1516,6 +1919,22 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.outputChunk = OutputRefChunkView.decode(reader, reader.uint32());
           continue;
         }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.recentRepos = RecentRepoList.decode(reader, reader.uint32());
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.repo = RecentRepoView.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1537,6 +1956,8 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       runDetail: isSet(object.runDetail) ? RunDetailView.fromJSON(object.runDetail) : undefined,
       diff: isSet(object.diff) ? DiffView.fromJSON(object.diff) : undefined,
       outputChunk: isSet(object.outputChunk) ? OutputRefChunkView.fromJSON(object.outputChunk) : undefined,
+      recentRepos: isSet(object.recentRepos) ? RecentRepoList.fromJSON(object.recentRepos) : undefined,
+      repo: isSet(object.repo) ? RecentRepoView.fromJSON(object.repo) : undefined,
     };
   },
 
@@ -1572,6 +1993,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.outputChunk !== undefined) {
       obj.outputChunk = OutputRefChunkView.toJSON(message.outputChunk);
     }
+    if (message.recentRepos !== undefined) {
+      obj.recentRepos = RecentRepoList.toJSON(message.recentRepos);
+    }
+    if (message.repo !== undefined) {
+      obj.repo = RecentRepoView.toJSON(message.repo);
+    }
     return obj;
   },
 
@@ -1597,6 +2024,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     message.diff = (object.diff !== undefined && object.diff !== null) ? DiffView.fromPartial(object.diff) : undefined;
     message.outputChunk = (object.outputChunk !== undefined && object.outputChunk !== null)
       ? OutputRefChunkView.fromPartial(object.outputChunk)
+      : undefined;
+    message.recentRepos = (object.recentRepos !== undefined && object.recentRepos !== null)
+      ? RecentRepoList.fromPartial(object.recentRepos)
+      : undefined;
+    message.repo = (object.repo !== undefined && object.repo !== null)
+      ? RecentRepoView.fromPartial(object.repo)
       : undefined;
     return message;
   },

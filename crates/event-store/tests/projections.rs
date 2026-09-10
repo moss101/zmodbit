@@ -89,7 +89,9 @@ fn run_full_lifecycle(proc: &CommandProcessor) {
                 session_id: modbit_domain::SessionId::parse(&session_id).unwrap(),
                 title: "t".into(),
                 prompt: "p".into(),
-            },
+                repo_id: None,
+    base_branch: None,
+},
         })
         .unwrap();
     let task_ids = task_out.applied().expect("task applies");
@@ -236,8 +238,8 @@ fn v1_database_migrates_to_v2_preserving_events() {
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
         assert_eq!(
-            v, 5,
-            "migration applied through fork lineage + input queue tables"
+            v, 6,
+            "migration applied through fork lineage + input queue tables + repo registry"
         );
     });
     let sessions = all_session_aggregates(&store);

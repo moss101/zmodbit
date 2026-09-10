@@ -116,8 +116,18 @@ async function getCodeView(path) {
   return withRetry((s) => s.request({ codeView: path }));
 }
 
-async function createTask({ title, prompt }) {
-  return withRetry((s) => s.request({ createTask: { sessionId: "", title, prompt } }));
+async function createTask({ title, prompt, repoId = "", baseBranch = "" }) {
+  return withRetry((s) =>
+    s.request({ createTask: { sessionId: "", title, prompt, repoId, baseBranch } })
+  );
+}
+
+async function listRecentRepos() {
+  return withRetry((s) => s.request({ listRecentRepos: {} }));
+}
+
+async function registerRepo({ path = "", cloneUrl = "" }) {
+  return withRetry((s) => s.request({ registerRepo: { path, cloneUrl } }));
 }
 
 async function createSession({ displayName }) {
@@ -143,7 +153,15 @@ function registerIpc() {
   guarded("fleet:snapshot", () => getFleet());
   guarded("task:create", (request) => {
     if (request.kind !== "createTask") return { ok: false, error: "wrong request kind" };
-    return createTask({ title: request.title, prompt: request.prompt });
+    return createTask(request);
+  });
+  guarded("repo:register", (request) => {
+    if (request.kind !== "registerRepo") return { ok: false, error: "wrong request kind" };
+    return registerRepo(request);
+  });
+  guarded("repo:list", (request) => {
+    if (request.kind !== "repoList") return { ok: false, error: "wrong request kind" };
+    return listRecentRepos();
   });
   guarded("session:create", (request) => {
     if (request.kind !== "createSession") return { ok: false, error: "wrong request kind" };

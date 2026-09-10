@@ -269,7 +269,8 @@ fn png_read_returns_media_envelope_with_provenance() {
             session_id: String::new(),
             title: "read media".into(),
             prompt: "Read the files.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

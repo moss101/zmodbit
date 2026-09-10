@@ -88,3 +88,7 @@ Postgres mirrors canonical session/task/event/protocol/effect structures with `t
 ## Migration safety
 
 Every migration has forward and rollback/read-compatibility plan. Migrations run against a copied production-like fixture DB in CI. Core never auto-drops unknown columns/tables. Startup refuses write mode if a newer incompatible DB schema is detected.
+
+## Runtime configuration tables (daemon-local, docs/31)
+
+`recent_repos` (migration v6, Phase 4.1 repository picker): `repo_id` PK, `path`, `clone_url`, `default_branch`, `registered_at`, `last_used_at`. Runtime configuration state — repositories the user registered with the daemon (by local path or cloned by URL); NOT event history, never a durability dependency of runs.

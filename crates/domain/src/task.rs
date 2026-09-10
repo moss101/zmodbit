@@ -161,7 +161,9 @@ mod tests {
                 session_id: crate::ids::SessionId::generate(),
                 title: "t".into(),
                 prompt: "p".into(),
-            }),
+                repo_id: None,
+            base_branch: None,
+        }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskWaiting {
@@ -183,7 +185,9 @@ mod tests {
                 session_id: crate::ids::SessionId::generate(),
                 title: "t".into(),
                 prompt: "p".into(),
-            }),
+                repo_id: None,
+            base_branch: None,
+        }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskWaiting {
@@ -200,6 +204,8 @@ mod tests {
             session_id: crate::ids::SessionId::generate(),
             title: "t".into(),
             prompt: "p".into(),
+            repo_id: None,
+            base_branch: None,
         })];
         // Created → Completed directly is illegal (must pass ReadyForReview).
         let mut events = created.clone();
@@ -214,7 +220,9 @@ mod tests {
                 session_id: crate::ids::SessionId::generate(),
                 title: "t".into(),
                 prompt: "p".into(),
-            }),
+                repo_id: None,
+            base_branch: None,
+        }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskReadyForReview,
@@ -235,7 +243,9 @@ mod tests {
                 session_id: crate::ids::SessionId::generate(),
                 title: "t".into(),
                 prompt: "p".into(),
-            }),
+                repo_id: None,
+            base_branch: None,
+        }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskSteered {
@@ -262,7 +272,9 @@ mod state_independence_tests {
                 session_id: crate::ids::SessionId::generate(),
                 title: "t".into(),
                 prompt: "p".into(),
-            },
+                repo_id: None,
+            base_branch: None,
+        },
             DomainEvent::TaskQueued,
         ];
         events.push(DomainEvent::TaskStarted);
@@ -303,7 +315,9 @@ mod state_independence_tests {
                 session_id: crate::ids::SessionId::generate(),
                 title: "t".into(),
                 prompt: "p".into(),
-            },
+                repo_id: None,
+            base_branch: None,
+        },
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskWaiting {

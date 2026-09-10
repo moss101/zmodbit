@@ -280,7 +280,8 @@ fn second_core_fences_the_first_mid_run() {
             session_id: String::new(),
             title: "split brain".into(),
             prompt: "Run the slow command.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

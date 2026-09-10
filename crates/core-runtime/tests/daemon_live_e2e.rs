@@ -276,7 +276,8 @@ fn start_task(core: &CoreProc, title: &str, prompt: &str) -> String {
             session_id: String::new(),
             title: title.into(),
             prompt: prompt.into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "create: {}", created.error);
     let task_id = created.task.expect("task view").task_id;

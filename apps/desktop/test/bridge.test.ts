@@ -13,7 +13,36 @@ const EVIL = {
 describe("bridge schema guard (REQ-EV-0103)", () => {
   it("accepts a well-formed createTask message", () => {
     const request = validateIpcMessage("task:create", { title: "t", prompt: "p" });
-    expect(request).toEqual({ kind: "createTask", title: "t", prompt: "p" });
+    // Phase 4.1: repo selection rides task:create as optional fields.
+    const withRepo = validateIpcMessage("task:create", {
+      title: "t",
+      prompt: "p",
+      repoId: "repo-abc",
+      baseBranch: "main",
+    });
+    expect(withRepo).toMatchObject({ kind: "createTask", repoId: "repo-abc", baseBranch: "main" });
+    // Both repo fields together on repo:register are refused (exactly one).
+    expect(() =>
+      validateIpcMessage("repo:register", { path: "/a", cloneUrl: "https://x" } as never),
+    ).toThrow(/exactly one/);
+    // Path traversal is refused.
+    expect(() => validateIpcMessage("repo:register", { path: "../etc" } as never)).toThrow(
+      /traversal/,
+    );
+    const register = validateIpcMessage("repo:register", { cloneUrl: "https://host/r.git" });
+    expect(register).toMatchObject({ kind: "registerRepo", cloneUrl: "https://host/r.git" });
+    const listed = validateIpcMessage("repo:list");
+    expect(listed).toMatchObject({ kind: "repoList" });
+
+    // Absent repo fields normalize to empty strings (the daemon treats
+    // empty as "use the default repo source").
+    expect(request).toEqual({
+      kind: "createTask",
+      title: "t",
+      prompt: "p",
+      repoId: "",
+      baseBranch: "",
+    });
   });
 
   it("rejects unknown channels", () => {

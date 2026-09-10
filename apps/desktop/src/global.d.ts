@@ -1,6 +1,6 @@
 // Preload bridge contract (docs/32): the renderer sees ONLY these typed
 // SurfaceProtocol functions — never node APIs, never Core internals.
-import type { TaskView, RunDetailView, DiffView } from "@modbit/surface-protocol";
+import type { TaskView, RunDetailView, DiffView, RecentRepoView } from "@modbit/surface-protocol";
 
 /** Core event forwarded from the main-process SSE subscription. */
 interface CoreEventForward {
@@ -21,7 +21,18 @@ declare global {
       createTask(
         title: string,
         prompt: string,
+        repoId?: string,
+        baseBranch?: string,
       ): Promise<{ ok: boolean; error?: string; task?: TaskView }>;
+      listRecentRepos(): Promise<{
+        ok: boolean;
+        error?: string;
+        recentRepos?: { repos: RecentRepoView[] };
+      }>;
+      registerRepo(
+        path: string,
+        cloneUrl: string,
+      ): Promise<{ ok: boolean; error?: string; repo?: RecentRepoView }>;
       createSession(displayName: string): Promise<{ ok: boolean; sessionId?: string }>;
       taskEvents(taskId: string): Promise<{
         ok: boolean;

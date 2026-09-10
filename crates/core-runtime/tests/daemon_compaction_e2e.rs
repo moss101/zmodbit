@@ -281,7 +281,8 @@ fn over_budget_daemon_compacts_and_records_the_event() {
             session_id: String::new(),
             title: "read the big file".into(),
             prompt: "Read big.txt.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

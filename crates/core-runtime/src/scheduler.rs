@@ -106,8 +106,21 @@ impl SchedulerConfig {
             model,
             base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
             broker: Arc::new(modbit_providers::transport::EnvSecretBroker),
+            // Phase 4.1: without MODBIT_REPO_ROOT the repo picker (task
+            // repo_id) replaces the ambient repo — but task worktrees still
+            // need a ROOT, so a bare root source is configured from
+            // MODBIT_WORKTREE_ROOT (or the default location).
             worktrees: EnvWorktreeSource::from_env()
-                .map(|s| Arc::new(s) as Arc<dyn WorktreeSource>),
+                .map(|s| Arc::new(s) as Arc<dyn WorktreeSource>)
+                .or_else(|| {
+                    Some(Arc::new(DefaultWorktreeRoot(
+                        std::env::var("MODBIT_WORKTREE_ROOT")
+                            .map(PathBuf::from)
+                            .unwrap_or_else(|_| {
+                                std::env::temp_dir().join("modbit-worktrees")
+                            }),
+                    )) as Arc<dyn WorktreeSource>)
+                }),
             // Total-request budget: reasoning-tier models legitimately
             // stream one response for several minutes; 180s killed healthy
             // streams (observed live: first invoke never completed).
@@ -310,6 +323,25 @@ impl Scheduler {
                                             "modbit scheduler: task {} run failed: {err}",
                                             e.aggregate_id
                                         );
+                                        // Phase 4.1: a run that errors BEFORE
+                                        // the run starts (e.g. an unknown repo
+                                        // id) must not leave the task Running
+                                        // forever — transition it durably.
+                                        if let Ok(task_id) = TaskId::parse(&e.aggregate_id) {
+                                            let processor = modbit_event_store::CommandProcessor::new(s.store.clone());
+                                            let _ = processor.execute(Command {
+                                                command_id: uuid::Uuid::now_v7().simple().to_string(),
+                                                actor: Actor {
+                                                    actor_type: ActorType::System,
+                                                    actor_id: "scheduler".into(),
+                                                },
+                                                payload: CommandPayload::FailTask {
+                                                    task_id,
+                                                    failure_code: "run_allocation_failed".into(),
+                                                    message: err.clone(),
+                                                },
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -356,7 +388,9 @@ impl Scheduler {
         let Ok(task_id) = TaskId::parse(task_id_str) else {
             return Err(format!("malformed task id {task_id_str:?}"));
         };
-        let (session_id, title, prompt) = read_task_brief(&self.store, &task_id)?;
+        let brief = read_task_brief(&self.store, &task_id)?;
+        let (session_id, title, prompt) = (brief.session_id, brief.title, brief.prompt);
+        let (repo_id, base_branch) = (brief.repo_id, brief.base_branch);
 
         // Idempotency: a task that already has a run is never re-run
         // (resume is the M4 recovery spine's job, not a fresh run).
@@ -377,14 +411,54 @@ impl Scheduler {
 
         // 1. Worktree + revision allocation (E2E-001), through the shared
         // layout source (the GetDiff surface reads the same truth).
+        // Phase 4.1: a task created against a REGISTERED repository runs
+        // on that repo (per-task base branch selection). Tasks without a
+        // repo selection fall back to the configured/env default source.
+        let registered: Option<Arc<dyn WorktreeSource>> = repo_id.as_ref().and_then(|rid| {
+            let lookup = self.store.with_conn(|conn| {
+                modbit_event_store::repos::get(conn, rid).map_err(|e| e.to_string())
+            });
+            match lookup {
+                Ok(Some(repo)) => {
+                    let worktree_root = self
+                        .config
+                        .worktrees
+                        .as_ref()
+                        .and_then(|s| s.worktree_root())
+                        .or_else(|| {
+                            EnvWorktreeSource::from_env()
+                                .and_then(|e| WorktreeSource::worktree_root(&e))
+                        })
+                        .unwrap_or_else(|| std::env::temp_dir().join("modbit-worktrees"));
+                    Some(Arc::new(RegisteredRepoSource {
+                        repo_root: PathBuf::from(&repo.path),
+                        worktree_root,
+                        default_branch: repo.default_branch,
+                        requested_branch: base_branch
+                            .clone()
+                            .filter(|b| !b.trim().is_empty()),
+                    }) as Arc<dyn WorktreeSource>)
+                }
+                Ok(None) => None,
+                Err(e) => {
+                    eprintln!("modbit scheduler: repo registry lookup failed for {rid}: {e}");
+                    None
+                }
+            }
+        });
         // No configured repository is a typed failure (task parks), never
         // a scheduler panic — the poller must survive misconfiguration.
-        let source: Arc<dyn WorktreeSource> = self
-            .config
-            .worktrees
-            .clone()
-            .or_else(|| EnvWorktreeSource::from_env().map(|s| Arc::new(s) as Arc<dyn WorktreeSource>))
-            .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?;
+        let source: Arc<dyn WorktreeSource> = match registered {
+            Some(source) => source,
+            None => self
+                .config
+                .worktrees
+                .clone()
+                .or_else(|| {
+                    EnvWorktreeSource::from_env().map(|s| Arc::new(s) as Arc<dyn WorktreeSource>)
+                })
+                .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?,
+        };
         let layout = source
             .layout(&task_id.to_string())
             .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?;
@@ -399,6 +473,10 @@ impl Scheduler {
             // already exists — reuse it; its state IS the possibly-partial
             // effect surface the resumed run must verify.
             GitRepo::open(&worktree_path).map_err(|e| format!("open existing worktree: {e}"))?;
+        } else if let Some(start_point) = &layout.start_point {
+            // Phase 4.1: per-task base branch selection.
+            repo.worktree_add_from(&worktree_path, &layout.branch, start_point)
+                .map_err(|e| format!("allocate worktree: {e}"))?;
         } else {
             repo.worktree_add(&worktree_path, &layout.branch)
                 .map_err(|e| format!("allocate worktree: {e}"))?;
@@ -642,6 +720,9 @@ pub struct WorktreeLayout {
     pub worktree: PathBuf,
     pub branch: String,
     pub base_revision: String,
+    /// Phase 4.1: branch the new worktree branches FROM (per-task base
+    /// branch selection); None = HEAD.
+    pub start_point: Option<String>,
 }
 
 /// Source of task-worktree layouts, shared by the scheduler and the GetDiff
@@ -652,6 +733,64 @@ pub trait WorktreeSource: Send + Sync + 'static {
     /// The backing repository root, when the source knows it.
     fn repo_root(&self) -> Option<std::path::PathBuf> {
         None
+    }
+    /// Where task worktrees are allocated (clones land beside them).
+    fn worktree_root(&self) -> Option<std::path::PathBuf> {
+        None
+    }
+}
+
+/// Phase 4.1: a bare worktree root without a repository — the source
+/// used when no MODBIT_REPO_ROOT is configured. Tasks created WITHOUT a
+/// registered repo cannot allocate from it (layout returns None → the
+/// task fails with the typed no-repository message); registration and
+/// clones use its worktree root.
+pub struct DefaultWorktreeRoot(pub std::path::PathBuf);
+
+impl WorktreeSource for DefaultWorktreeRoot {
+    fn layout(&self, _task_id: &str) -> Option<WorktreeLayout> {
+        None
+    }
+
+    fn repo_root(&self) -> Option<std::path::PathBuf> {
+        None
+    }
+
+    fn worktree_root(&self) -> Option<std::path::PathBuf> {
+        Some(self.0.clone())
+    }
+}
+
+/// Phase 4.1: a task-scoped source for a REGISTERED repository — the
+/// worktree is allocated from that repo, branching from the requested
+/// base branch (or the repo's default) instead of the daemon-wide HEAD.
+pub struct RegisteredRepoSource {
+    pub repo_root: std::path::PathBuf,
+    pub worktree_root: std::path::PathBuf,
+    pub default_branch: String,
+    pub requested_branch: Option<String>,
+}
+
+impl WorktreeSource for RegisteredRepoSource {
+    fn layout(&self, task_id: &str) -> Option<WorktreeLayout> {
+        let branch = format!("modbit/{}", &task_id[..12.min(task_id.len())]);
+        Some(WorktreeLayout {
+            worktree: self.worktree_root.join(task_id),
+            branch,
+            base_revision: self
+                .requested_branch
+                .clone()
+                .unwrap_or_else(|| self.default_branch.clone()),
+            start_point: self.requested_branch.clone(),
+        })
+    }
+
+    fn repo_root(&self) -> Option<std::path::PathBuf> {
+        Some(self.repo_root.clone())
+    }
+
+    fn worktree_root(&self) -> Option<std::path::PathBuf> {
+        Some(self.worktree_root.clone())
     }
 }
 
@@ -701,11 +840,16 @@ impl WorktreeSource for EnvWorktreeSource {
             worktree: self.worktree_root.join(task_id),
             branch,
             base_revision: self.base_revision.clone(),
+            start_point: None,
         })
     }
 
     fn repo_root(&self) -> Option<std::path::PathBuf> {
         Some(self.repo_root.clone())
+    }
+
+    fn worktree_root(&self) -> Option<std::path::PathBuf> {
+        Some(self.worktree_root.clone())
     }
 }
 
@@ -716,20 +860,38 @@ fn default_worktree_root(repo_root: &std::path::Path) -> PathBuf {
         .unwrap_or_else(|| repo_root.join("../.modbit/worktrees"))
 }
 
-/// Reads the task brief (session, title, prompt) from its created event.
+/// The task's brief + Phase 4.1 repo selection (docs/14 step 2).
+struct TaskBrief {
+    session_id: SessionId,
+    title: String,
+    prompt: String,
+    repo_id: Option<String>,
+    base_branch: Option<String>,
+}
+
+/// Reads the task brief (session, title, prompt) and the Phase 4.1 repo
+/// selection (registered repo id + base branch) from its created event.
 fn read_task_brief(
     store: &EventStore,
     task_id: &TaskId,
-) -> Result<(SessionId, String, String), String> {
+) -> Result<TaskBrief, String> {
     let events = store.load(&task_id.to_string()).map_err(|e| e.to_string())?;
     for e in &events {
         if let DomainEvent::TaskCreated {
             session_id,
             title,
             prompt,
+            repo_id,
+            base_branch,
         } = &e.payload
         {
-            return Ok((*session_id, title.clone(), prompt.clone()));
+            return Ok(TaskBrief {
+                session_id: *session_id,
+                title: title.clone(),
+                prompt: prompt.clone(),
+                repo_id: repo_id.clone(),
+                base_branch: base_branch.clone(),
+            });
         }
     }
     Err(format!("task {task_id} has no TaskCreated event"))

@@ -26,8 +26,32 @@ message SurfaceRequest {
     GetRunDetailRequest get_run_detail = 13;
     GetDiffRequest get_diff = 14;
     ReadOutputRefRequest read_output_ref = 15;
+    // Phase 4.1: the repository picker — register (by path or clone URL)
+    // and list the recent repos; tasks select a repo + base branch.
+    RegisterRepoCommand register_repo = 16;
+    ListRecentReposRequest list_recent_repos = 17;
   }
 }
+
+// Phase 4.1: register a repository with the daemon. Exactly one of
+// `path` (an existing local repository) or `clone_url` (cloned into the
+// daemon's worktree root) must be provided.
+message RegisterRepoCommand {
+  string path = 1;
+  string clone_url = 2;
+}
+message RecentRepoView {
+  string repo_id = 1;
+  string path = 2;
+  string clone_url = 3;
+  string default_branch = 4;
+  string registered_at = 5;
+  string last_used_at = 6;
+}
+message RecentRepoList {
+  repeated RecentRepoView repos = 1;
+}
+message ListRecentReposRequest {}
 
 message GetFleetRequest {}
 
@@ -99,6 +123,8 @@ message SurfaceResponse {
   RunDetailView run_detail = 8;
   DiffView diff = 9;
   OutputRefChunkView output_chunk = 10;
+  RecentRepoList recent_repos = 11;
+  RecentRepoView repo = 12;
 }
 
 // Paginated read of a stored tool-output reference (Phase 2.6): the full

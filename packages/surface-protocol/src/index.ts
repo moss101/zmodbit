@@ -15,6 +15,9 @@ export type {
   SteerTaskCommand,
   PauseTaskCommand,
   StopTaskCommand,
+  RecentRepoView,
+  RecentRepoList,
+  RegisterRepoCommand,
 } from "./generated/modbit/protocol/v1/surface";
 export type {
   CommandEnvelope,

@@ -276,7 +276,8 @@ fn ambiguous_edit_fails_and_leaves_worktree_unchanged() {
             session_id: String::new(),
             title: "ambiguous edit".into(),
             prompt: "Try the edit.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

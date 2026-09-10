@@ -90,7 +90,8 @@ fn create_task(core: &CoreHandle, title: &str) -> String {
                     session_id: String::new(),
                     title: title.into(),
                     prompt: "p".into(),
-                },
+                    ..Default::default()
+},
             )),
         },
     );

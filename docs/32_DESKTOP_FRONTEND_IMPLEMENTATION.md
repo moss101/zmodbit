@@ -57,6 +57,10 @@ Renderer never fabricates task completion. A “completed” card only renders f
 
 Submit button first calls `CreateSession` if needed, then `CreateTask`. UI renders queued task from returned durable IDs. If the window crashes after response, the task is recoverable from Core.
 
+### Repository picker (Phase 4.1)
+
+The composer carries the target repository: a dropdown of `ListRecentRepos` (the daemon's registered repositories, most-recently-used first) plus register-by-path or clone-by-URL inputs (`RegisterRepoCommand`), and an optional per-task base branch. `CreateTask` sends `repo_id` + `base_branch`; empty selects the daemon default repo source. The renderer never fabricates repo data — everything renders from Core registrations (docs/31 `recent_repos`).
+
 Advanced controls map directly to typed policy/execution options; no hidden checkbox that bypasses capability rules.
 
 ## Attention UX

@@ -297,7 +297,8 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
             session_id: String::new(),
             title: "query the index".into(),
             prompt: "Do it.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

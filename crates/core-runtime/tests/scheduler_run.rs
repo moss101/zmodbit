@@ -35,7 +35,8 @@ impl modbit_core_runtime::scheduler::WorktreeSource for FixedSource {
             worktree: self.worktree_root.join(task_id),
             branch: format!("modbit/{}", &task_id[..12]),
             base_revision: self.base_revision.clone(),
-        })
+            start_point: None,
+})
     }
 
     fn repo_root(&self) -> Option<std::path::PathBuf> {
@@ -164,7 +165,9 @@ fn create_task(processor: &CommandProcessor, store: &EventStore) -> (String, Str
                 session_id: SessionId::parse(&sid).unwrap(),
                 title: "read the notes".into(),
                 prompt: "Read NOTES.md and summarize the validation rule.".into(),
-            },
+                repo_id: None,
+    base_branch: None,
+},
         })
         .unwrap();
     let tid: String = store

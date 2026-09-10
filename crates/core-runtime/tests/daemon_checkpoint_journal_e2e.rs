@@ -269,7 +269,8 @@ fn change_applies_persist_epoch_fenced_worktree_checkpoints() {
             session_id: String::new(),
             title: "edit greet".into(),
             prompt: "Make the edits.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
@@ -363,7 +364,8 @@ fn shell_run_records_terminal_cursor_metadata() {
             session_id: String::new(),
             title: "run a command".into(),
             prompt: "Run it.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

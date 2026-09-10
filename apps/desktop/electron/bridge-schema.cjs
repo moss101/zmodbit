@@ -55,6 +55,14 @@ function requireString(obj, field, maxLen) {
     return value;
 }
 
+function optionalString(obj, field, maxLen) {
+    const value = obj[field];
+    if (value === undefined) return "";
+    if (typeof value !== "string") throw new Rejected(`${field} must be a string`);
+    if (value.length > maxLen) throw new Rejected(`${field} exceeds ${maxLen} characters`);
+    return value;
+}
+
 function requireKnownFields(obj, allowed) {
     for (const key of Object.keys(obj)) {
         if (!allowed.includes(key)) throw new Rejected(`unknown field "${key}"`);
@@ -73,10 +81,32 @@ const CHANNELS = {
     "task:create": {
         validate(payload) {
             if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
-            requireKnownFields(payload, ["title", "prompt"]);
+            requireKnownFields(payload, ["title", "prompt", "repoId", "baseBranch"]);
             const title = requireString(payload, "title", MAX_TITLE);
             const prompt = requireString(payload, "prompt", MAX_PROMPT);
-            return { kind: "createTask", title, prompt };
+            const repoId = optionalString(payload, "repoId", 64);
+            const baseBranch = optionalString(payload, "baseBranch", 200);
+            return { kind: "createTask", title, prompt, repoId, baseBranch };
+        },
+    },
+    "repo:register": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["path", "cloneUrl"]);
+            const path = optionalString(payload, "path", 512);
+            const cloneUrl = optionalString(payload, "cloneUrl", 500);
+            if (path && cloneUrl) throw new Rejected("provide exactly one of path or cloneUrl");
+            if (!path && !cloneUrl) throw new Rejected("provide exactly one of path or cloneUrl");
+            if (path.includes("..")) throw new Rejected("path traversal rejected");
+            return { kind: "registerRepo", path, cloneUrl };
+        },
+    },
+    "repo:list": {
+        validate(payload) {
+            if (payload === undefined) return { kind: "repoList" };
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, []);
+            return { kind: "repoList" };
         },
     },
     "task:events": {

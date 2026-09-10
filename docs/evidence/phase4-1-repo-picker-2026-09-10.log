@@ -1,0 +1,83 @@
+Phase 4.1 — repository picker (recent repos, clone by URL, per-task base branch)
+========================================================================
+Phase context: Future-tasks Phase 4 item 1 ("the desktop a user can run")
+Revision: the Phase 4.1 commits on main (see the phase table row)
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: the daemon could run tasks against
+exactly ONE ambient repository — MODBIT_REPO_ROOT — read once from the
+environment; no registry, no clone, no per-task repo or branch)
+---------------------------------------------------------------------
+- modbit-git: `clone(url, into)` (real git clone; refuses a non-empty
+  target) and `worktree_add_from(path, branch, start_point)` (worktrees
+  branch FROM a chosen base instead of HEAD). `default_branch()` reads
+  HEAD's symbolic ref.
+- event-store: migration v6 adds the `recent_repos` registry table
+  (docs/31 § Runtime configuration tables); `repos.rs` register/touch/
+  list/get. Runtime configuration state — NOT event history, never a
+  durability dependency of runs.
+- domain: `CreateTask` + `TaskCreated` carry optional `repo_id` and
+  `base_branch` (serde defaults keep pre-Phase-4 events deserializable).
+- surface.proto (15 → 17 requests): `RegisterRepoCommand`
+  (path XOR clone_url), `ListRecentReposRequest`, `RecentRepoView`,
+  `RecentRepoList`; `CreateTaskCommand` gains repo_id/base_branch;
+  `SurfaceResponse` gains recent_repos/repo. TS bindings regenerated
+  (zero-drift CI check applies).
+- surface dispatch: RegisterRepo registers an existing local repo OR
+  clones the URL into `<worktree_root>/registered/<name>` (real git
+  clone transport), captures the repo's default branch, persists the
+  registry row; ListRecentRepos lists MRU-first.
+- scheduler: tasks naming a registered repo allocate their worktree
+  from THAT repo, branching from the requested base (or the repo
+  default) via worktree_add_from — per-task base branch selection.
+  Without MODBIT_REPO_ROOT the scheduler still has a worktree ROOT
+  (DefaultWorktreeRoot source from MODBIT_WORKTREE_ROOT): tasks WITHOUT
+  a registered repo then fail with the typed no-repository message.
+- DEFECT FIXED (surfaced by the E2E): a run_task error BEFORE the run
+  starts (unknown repo id, no configured source) left the task Running
+  forever — the poller now transitions it durably with FailTask
+  (failure_code run_allocation_failed), so it can never hang.
+- desktop: the composer gains the repository picker — recent repos
+  dropdown (ListRecentRepos), register-by-path / clone-by-URL inputs
+  (RegisterRepo), and a per-task base-branch field. The bridge
+  (preload/main/surface-client/bridge-schema) exposes the typed
+  RPCs with the same renderer-message schema guard (unknown fields
+  rejected; path traversal rejected; exactly-one-of path/cloneUrl).
+  TS types exported from @modbit/surface-protocol.
+
+PROOFS (full workspace suite exit 0, 500+ Rust tests; desktop vitest
+36 tests green; tsc clean)
+---------------------------------------------------------------------
+repo_picker_e2e (REAL daemon, REAL git, scripted model):
+  registered_repos_drive_task_worktrees_with_base_branches ... ok
+  - register-by-path captures default branch "main"
+  - register-by-URL (a local path URL) performs a REAL git clone into
+    <worktree_root>/registered/<name>
+  - the picker list returns both repos with ids
+  - the task pinned to repo A + base branch feature/edge runs in a
+    worktree on branch modbit/<task12> whose content is checked out
+    FROM feature/edge (the edge file exists ONLY on that branch — main
+    never sees it, so a HEAD-based worktree would fail this assertion)
+  - the registry is durable across a core restart on the same DB
+  - an UNKNOWN repo id: the task FAILS durably (run_allocation_failed)
+    instead of hanging or silently running against another repository
+  - the daemon booted with NO MODBIT_REPO_ROOT: the picker path does
+    not need the ambient env var
+  desktop bridge tests: createTask repo fields ride the schema guard
+  (optional, length-bounded), repo:register exactly-one-of + traversal
+  rejection, repo:list shape.
+
+MUTATION CHECK (docs/55): LSP... n/a here; the gate for this slice is
+the per-task allocation itself — the E2E's core assertion (edge.txt
+present ONLY when the worktree branches from feature/edge) is the
+control: a worktree allocated from HEAD would fail it. The
+unknown-repo failure transition was itself a defect FIX proven by the
+E2E (the pre-fix behavior hung the task Running forever).
+
+REMAINING GAPS (Phase 4)
+---------------------------------------------------------------------
+Items 2-6: settings screen, keychain SecretBroker, packaging/signing,
+headless CLI, quick-start docs. Clone-by-URL currently supports the
+ transports the system git supports (https/ssh use the user's
+credentials setup; no bundled credential prompt yet — settings screen
+item 2 owns provider/credential UX).

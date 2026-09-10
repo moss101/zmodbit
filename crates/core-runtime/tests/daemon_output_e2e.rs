@@ -290,7 +290,8 @@ fn shell_output_streams_and_pages_through_output_refs() {
             session_id: String::new(),
             title: "streaming shell output".into(),
             prompt: "Run the bursty command.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

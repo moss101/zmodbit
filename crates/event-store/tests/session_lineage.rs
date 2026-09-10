@@ -86,7 +86,9 @@ fn resume_after_crash_reproduces_pending_state_exactly() -> Result<(), Box<dyn s
                 session_id: modbit_domain::SessionId::parse(&session_id).unwrap(),
                 title: "pending work".into(),
                 prompt: "p".into(),
-            },
+                repo_id: None,
+    base_branch: None,
+},
         };
         assert!(proc.execute(create).unwrap().applied_ok());
         let task_id: String = store.with_conn(|conn| {

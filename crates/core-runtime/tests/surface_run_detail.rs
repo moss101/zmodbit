@@ -35,7 +35,8 @@ impl modbit_core_runtime::scheduler::WorktreeSource for TestSource {
             worktree: self.worktree_root.join(task_id),
             branch: format!("modbit/{}", &task_id[..12]),
             base_revision: self.base_revision.clone(),
-        })
+            start_point: None,
+})
     }
 
     fn repo_root(&self) -> Option<PathBuf> {
@@ -81,7 +82,9 @@ fn setup(tag: &str) -> (PathBuf, PathBuf, Arc<EventStore>, CoreServices, String)
                 session_id: modbit_domain::SessionId::parse(&sid).unwrap(),
                 title: "task".into(),
                 prompt: "prompt".into(),
-            },
+                repo_id: None,
+    base_branch: None,
+},
         })
         .unwrap();
     let tid: String = store

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { RecentRepoView } from "@modbit/surface-protocol";
 import { groupFleet, FLEET_VIEW_ORDER, FLEET_VIEW_LABELS, TASK_STATUS, type TaskCard } from "./fleet/grouping";
 import { superviseFleet } from "./fleet/supervision";
 import { statusSummary } from "./status-center/status";
@@ -6,6 +7,10 @@ import { TaskWorkspace } from "./task-workspace/TaskWorkspace";
 
 // docs/32: the renderer never fabricates completion — every card renders
 // from Core data (projections derived from committed events only).
+// docs/32 § task composer + Phase 4.1: the composer carries the
+// repository picker (recent repos, register-by-path or clone-by-URL)
+// and the per-task base branch. Repo data comes from Core (projections
+// over committed registrations) — the renderer never invents it.
 export default function App() {
   const [tasks, setTasks] = useState<TaskCard[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -13,6 +18,11 @@ export default function App() {
   const [prompt, setPrompt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const [repos, setRepos] = useState<RecentRepoView[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState("");
+  const [baseBranch, setBaseBranch] = useState("");
+  const [repoPath, setRepoPath] = useState("");
+  const [cloneUrl, setCloneUrl] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -28,19 +38,34 @@ export default function App() {
     }
   }, []);
 
+  const refreshRepos = useCallback(async () => {
+    try {
+      const listed = await window.modbit.listRecentRepos();
+      if (listed.ok && listed.recentRepos) setRepos(listed.recentRepos.repos);
+    } catch {
+      // Repo listing is advisory; the composer stays usable without it.
+    }
+  }, []);
+
   // Event-driven updates (docs/30 § SubscribeEvents): one initial snapshot,
   // then the forwarded Core event stream drives refreshes — the 1.5s poll
   // is gone. Any task event implies fleet state may have changed.
   useEffect(() => {
     void refresh();
+    void refreshRepos();
     return window.modbit.onCoreEvent(() => void refresh());
-  }, [refresh]);
+  }, [refresh, refreshRepos]);
 
   const submit = useCallback(async () => {
     if (!title.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const response = await window.modbit.createTask(title.trim(), prompt.trim());
+      const response = await window.modbit.createTask(
+        title.trim(),
+        prompt.trim(),
+        selectedRepo,
+        baseBranch.trim(),
+      );
       if (!response.ok) {
         setError(response.error ?? "task creation failed");
       } else {
@@ -51,7 +76,25 @@ export default function App() {
     } finally {
       setSubmitting(false);
     }
-  }, [title, prompt, submitting, refresh]);
+  }, [title, prompt, selectedRepo, baseBranch, submitting, refresh]);
+
+  const registerRepo = useCallback(async () => {
+    if (!repoPath.trim() && !cloneUrl.trim()) return;
+    setSubmitting(true);
+    try {
+      const response = await window.modbit.registerRepo(repoPath.trim(), cloneUrl.trim());
+      if (!response.ok) {
+        setError(response.error ?? "repo registration failed");
+      } else {
+        setRepoPath("");
+        setCloneUrl("");
+        await refreshRepos();
+        if (response.repo) setSelectedRepo(response.repo.repoId);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }, [repoPath, cloneUrl, refreshRepos]);
 
   const grouped = groupFleet(tasks);
   const summary = statusSummary(tasks);
@@ -81,6 +124,38 @@ export default function App() {
         )}
       </section>
       {error ? <p role="alert">Core error: {error}</p> : null}
+      <section aria-label="Repository">
+        <h2>Repository</h2>
+        <select
+          aria-label="Recent repositories"
+          value={selectedRepo}
+          onChange={(e) => setSelectedRepo(e.target.value)}
+        >
+          <option value="">Default repository (MODBIT_REPO_ROOT)</option>
+          {repos.map((r) => (
+            <option key={r.repoId} value={r.repoId}>
+              {r.path || r.cloneUrl} ({r.defaultBranch || "?"})
+            </option>
+          ))}
+        </select>
+        <input
+          placeholder="Register a local repo: /path/to/repo"
+          value={repoPath}
+          onChange={(e) => setRepoPath(e.target.value)}
+        />
+        <input
+          placeholder="…or clone by URL: https://host/org/repo.git"
+          value={cloneUrl}
+          onChange={(e) => setCloneUrl(e.target.value)}
+        />
+        <button
+          type="button"
+          disabled={submitting || (!repoPath.trim() && !cloneUrl.trim())}
+          onClick={() => void registerRepo()}
+        >
+          Register repository
+        </button>
+      </section>
       <section aria-label="New task">
         <input
           placeholder="Task title"
@@ -91,6 +166,11 @@ export default function App() {
           placeholder="What should the agent do?"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+        />
+        <input
+          placeholder="Base branch (optional; default = repo default)"
+          value={baseBranch}
+          onChange={(e) => setBaseBranch(e.target.value)}
         />
         <button type="button" disabled={submitting || !title.trim()} onClick={() => void submit()}>
           {submitting ? "Creating…" : "New task"}

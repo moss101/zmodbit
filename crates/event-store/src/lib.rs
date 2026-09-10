@@ -13,6 +13,7 @@ pub mod index_store;
 pub mod leases;
 pub mod migrations;
 pub mod projections;
+pub mod repos;
 pub mod runtime;
 pub mod store;
 

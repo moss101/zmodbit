@@ -269,7 +269,8 @@ fn ungrounded_edit_proposal_is_refused_until_the_file_is_retrieved() {
             session_id: String::new(),
             title: "edit carefully".into(),
             prompt: "Do it.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;

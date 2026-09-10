@@ -94,7 +94,8 @@ fn core_serves_fleet_and_new_task_surface_requests() {
                 session_id: String::new(),
                 title: "E2E fleet task".into(),
                 prompt: "Prove the M1.4 vertical slice.".into(),
-            },
+                ..Default::default()
+},
         )),
     };
     conn.send(&request.encode_to_vec())

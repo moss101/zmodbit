@@ -185,7 +185,8 @@ fn sse_cursor_journal_resumes_exactly_across_restart() {
             session_id: String::new(),
             title: "journal me".into(),
             prompt: "nothing".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
 
@@ -222,7 +223,8 @@ fn sse_cursor_journal_resumes_exactly_across_restart() {
             session_id: String::new(),
             title: "after restart".into(),
             prompt: "nothing".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created2.ok, "{}", created2.error);
 

@@ -399,7 +399,8 @@ fn run_read_task(daemon: &str) -> String {
             session_id: String::new(),
             title: "read the notes".into(),
             prompt: "Read notes.txt and summarize it.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
@@ -565,7 +566,8 @@ fn core_spawns_its_own_execd_when_none_is_configured() {
             session_id: String::new(),
             title: "shell without exported broker".into(),
             prompt: "Run the echo command.".into(),
-        }),
+            ..Default::default()
+}),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
