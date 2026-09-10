@@ -116,7 +116,6 @@ fn main() {
                 let lines: Vec<&str> = text.lines().collect();
                 let word = lines
                     .get(line)
-                    .and_then(|l| l.get(..l.len().min(usize::MAX)))
                     .and_then(|l| {
                         let bytes = l.as_bytes();
                         let mut start = line_char_to_byte(l, params.pointer("/position/character").and_then(|c| c.as_u64()).unwrap_or(0) as usize);
