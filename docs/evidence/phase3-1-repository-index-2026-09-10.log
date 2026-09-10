@@ -1,0 +1,121 @@
+Phase 3.1 — incremental Merkle repository index wired into the run plane
+========================================================================
+Node: IMP-EV-0004 (Incremental Merkle repository indexing)
+Requirement: REQ-EV-0004 (ADAPT, owner subsystem context-engine, owner
+label "Repository Index"); qualification gate QUAL-EV-0004
+Phase context: Future-tasks Phase 3 item 1
+Revision: commit 9bfc91a ("Phase 3.1 (IMP-EV-0004): incremental Merkle
+repository index wired into the run plane") on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED (audit class before: IMPLEMENTING-PARTIAL — logic-only,
+modbit-retrieval NOT in the modbit-core dependency closure; the Merkle
+incremental path had a latent root-drift defect and zero production
+callers)
+---------------------------------------------------------------------
+- crates/retrieval/src/walker.rs (new): read-only worktree walk via the
+  `ignore` crate (v0.4.33, default features) — gitignore respect
+  (global/per-repo/per-dir/excludes, nested + negation, require_git off
+  so the policy is location-independent), hidden entries skipped,
+  symlinks never followed, committed generated/vendor dirs policy-tagged
+  and pruned (target/, node_modules/, dist/, vendor*) per docs/18,
+  binary sniff (NUL in first 8 KiB), 256 KiB per-file cap (matches the
+  search tool bound). WalkStats makes every skip class countable.
+- crates/retrieval/src/task_index.rs (new): TaskIndex = MerkleIndex +
+  RepositoryIndex + indexed_workspace_revision. build_at() walks the
+  real worktree; apply_delta() folds IndexChange batches (latest state
+  per path wins) incrementally, re-reading only changed paths from the
+  worktree, evicting paths that are gone/unreadable/no-longer-indexable,
+  and returning the only-affected-segments Recomputed evidence.
+- crates/retrieval/src/merkle.rs (fix): apply_changes now PRUNES
+  directories emptied by deletions (deepest-first, with evidence) —
+  previously a stale empty-dir digest made the incremental root drift
+  from a full rebuild. The existing unit test never caught it because it
+  never compared roots after a dir-emptying deletion; it does now.
+- crates/domain: IndexUpdated run-aggregate event (reason,
+  workspace_revision, file_count, root_digest, recomputed[], bounded at
+  128 entries with recomputed_truncated). docs/30 § Workspace/execution
+  row added (additive).
+- crates/core-runtime: TaskIndexWriter rides the run plane (store +
+  session + RunPlaneShared + Mutex<TaskIndex>). Built ONCE at task start
+  over the worktree; the build evidence is queued (RunPlaneShared
+  pending queue) and drained onto the run aggregate immediately after
+  RunStarted, preserving order. refresh_from_journal() drains the
+  workspace change journal (the canonical FS delta source) for events
+  after the indexed revision — wired at (a) change.apply, right after
+  the journaled write, reason "change_apply"; (b) the turn boundary via
+  the run observer, reason "turn_boundary" (a no-op when the journal has
+  nothing new). A journal with no fresh events emits nothing.
+- Closure: modbit-retrieval is now a path dependency of modbit-core-runtime
+  (16 of 26 modbit-* crates in the product binary closure; was 15) —
+  this resolves the module-outside-closure ground for the 2026-09-05
+  premature-COMPLETE reset.
+- Known boundary (documented, deferred by design): shell-spawned writes
+  (shell.run producing files directly) carry no change-journal events,
+  so they are not folded in by this wiring; the M3.2 query tool will
+  reconcile the walk delta before serving any indexed answer (docs/18
+  freshness rule: changed files covered by exact overlay or escalated).
+
+PROOFS (always-on; full workspace suite exit 0, 481 Rust tests green,
+2026-09-10)
+---------------------------------------------------------------------
+Unit/integration (crates/retrieval, 22 tests):
+  walker_respects_gitignore_hidden_policy_binary_and_cap ... ok
+    (root+nested .gitignore, negation, .modbit/.hidden skipped,
+    committed node_modules pruned, binary sniffed, oversized skipped;
+    exactly 4 of 14 written files indexed)
+  incremental_delta_matches_full_rebuild_on_real_tree ... ok
+  large_repo_edit_touches_only_the_affected_chain ... ok
+    (60x60 = 3600-file tree + 3: one edit -> evidence is exactly
+    ["pkg7/mod11", "pkg7"] + the leaf, nothing else recomputed)
+  unindexable_and_missing_paths_are_evicted ... ok
+  incremental_edit_updates_only_affected_segments ... ok (now also
+    locks empty-dir pruning + post-deletion root equality)
+Daemon E2E crates/core-runtime/tests/daemon_index_e2e.rs — the REAL
+daemon + scheduler + git worktree + change engine + scripted model:
+  daemon_builds_and_incrementally_refreshes_the_repository_index ... ok
+  - index_updated events: exactly 2, in order: task_start (rev 0,
+    file_count 2, root digest) then change_apply (rev 2 = adopt+replace,
+    recomputed contains leaf:src/greet.js + dir:src, contains NO docs
+    segment, truncated=false)
+  - incremental root digest EQUALS a cold MerkleIndex::build over the
+    final real worktree (walk_worktree stats.indexed == 2) and differs
+    from the pre-edit root
+  - the on-disk file really changed through the daemon
+  refused_edit_leaves_the_index_untouched ... ok
+  - an apply refused by the edit gate ("old_text must occur exactly
+    once") writes nothing: exactly ONE index_updated event (task_start),
+    revision still 0, and TaskIndex::build_at over the final worktree
+    reproduces the recorded root digest exactly (fail-closed freshness)
+
+MUTATION CHECKS (docs/55), 2026-09-10, against commit 9bfc91a
+---------------------------------------------------------------------
+  Mutation A (freshness control): refresh_from_journal forced to a
+  no-op -> daemon_builds_and_incrementally_refreshes_the_repository_index
+  FAILED with "task_start + change_apply evidence: [(\"task_start\", 0,
+  2, 8f328def..., [])]" — the missing-refresh case is detected. REVERTED
+  (git checkout of the committed file).
+  Mutation B (prune control): empty-dir pruning disabled ->
+  3 tests FAILED (merkle incremental_edit_updates_only_affected_segments,
+  task_index incremental_delta_matches_full_rebuild_on_real_tree,
+  task_index unindexable_and_missing_paths_are_evicted) — the stale-
+  empty-dir root drift is detected everywhere it can occur. REVERTED.
+  Post-revert verification: retrieval 22 ok, daemon_index_e2e 2 ok,
+  domain 21 ok; sources contain no mutation remnants (grep verified).
+
+TOOLCHAIN / LINTS
+---------------------------------------------------------------------
+- python3 tools/architecture-lint/lint.py ... OK (31 members, 0
+  forbidden edges, 28 COMPLETE tasks reachable — IMP-EV-0004's owner
+  crate is now product-reachable)
+- python3 tools/build_manifest.py && build_graph.py && check_dossier.py
+  ... OK (70 docs, 291 REQ, 265 IMP, 291 QUAL; graph consistent)
+- cargo clippy -p modbit-retrieval -p modbit-domain -p modbit-core-runtime
+  --all-targets ... clean after fixing one needless-borrow warning
+
+REMAINING GAPS
+---------------------------------------------------------------------
+None for IMP-EV-0004/QUAL-EV-0004 as scoped. M3 items 2-4 (context.query
+over BM25+symbols, context pack + retrieve-before-edit gate, benchmark
+gate) remain per Future-tasks §4; shell-write reconciliation lands with
+the M3.2 query path.
