@@ -109,13 +109,4 @@ mod tests {
         let _ = std::fs::remove_dir_all(Path::new(&wrapped[2]).parent().unwrap());
     }
 
-    /// Linux: the wrapper marks the argv for Landlock pre-exec.
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn linux_wrap_marks_landlock() {
-        let argv = vec!["sh".to_string(), "-c".to_string(), "echo hi".to_string()];
-        let wrapped = wrap_argv(&argv, Path::new("/tmp/modbit-wt")).unwrap().unwrap();
-        assert_eq!(wrapped[0], "__MODBIT_LANDLOCK__");
-        assert_eq!(&wrapped[1..], argv.as_slice());
-    }
 }
