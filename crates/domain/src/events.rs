@@ -112,6 +112,14 @@ pub enum DomainEvent {
     TaskSteered {
         steer_note: String,
     },
+    /// Review-surface decision on one hunk (Phase 5 item 4): the audit
+    /// record of accept/reject; reject also inverse-applied the hunk in
+    /// the task worktree before this event was written.
+    ReviewHunkResolved {
+        path: String,
+        new_start: usize,
+        accepted: bool,
+    },
     RunStarted {
         task_id: TaskId,
         attempt: u32,
@@ -329,6 +337,7 @@ impl EventEnvelope {
             DomainEvent::TaskFailed { .. } => "task_failed",
             DomainEvent::TaskCancelled { .. } => "task_cancelled",
             DomainEvent::TaskSteered { .. } => "task_steered",
+            DomainEvent::ReviewHunkResolved { .. } => "review_hunk_resolved",
             DomainEvent::RunStarted { .. } => "run_started",
             DomainEvent::RunCompleted => "run_completed",
             DomainEvent::RunFailed { .. } => "run_failed",

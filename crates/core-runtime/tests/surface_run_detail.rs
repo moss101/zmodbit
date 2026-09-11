@@ -45,11 +45,18 @@ impl modbit_core_runtime::scheduler::WorktreeSource for TestSource {
 }
 
 fn setup(tag: &str) -> (PathBuf, PathBuf, Arc<EventStore>, CoreServices, String) {
+    setup_with_base(tag, "one\n")
+}
+
+fn setup_with_base(
+    tag: &str,
+    base_content: &str,
+) -> (PathBuf, PathBuf, Arc<EventStore>, CoreServices, String) {
     let repo_root = tempdir(tag);
     let repo = GitRepo::init(&repo_root).unwrap();
     repo.set_config("user.email", "t@modbit.test").unwrap();
     repo.set_config("user.name", "T").unwrap();
-    std::fs::write(repo_root.join("f.txt"), "one\n").unwrap();
+    std::fs::write(repo_root.join("f.txt"), base_content).unwrap();
     repo.commit_all("base").unwrap();
 
     let db = tempdir(&format!("{tag}-db"));
@@ -273,4 +280,111 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
         "committed work stays in the diff: {:?}",
         diff.files
     );
+}
+
+#[test]
+fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
+    // A 5-line base so two separated edits produce two independent hunks.
+    let (_repo, worktree_root, store, services, tid) =
+        setup_with_base("hunks", "line1\nline2\nline3\nline4\nline5\n");
+    let worktree = worktree_root.join(&tid);
+    std::fs::write(
+        worktree.join("f.txt"),
+        "line1\nline2-EDIT\nline3\nline4-EDIT\nline5\n",
+    )
+    .unwrap();
+
+    // The review surface sees both hunks keyed by their new-file start.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::GetDiffHunks(pb::GetDiffHunksRequest {
+            task_id: tid.clone(),
+        }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    let view = resp.diff_hunks.expect("diff_hunks view");
+    assert_eq!(view.task_id, tid);
+    let hunks: Vec<(String, u64)> = view
+        .hunks
+        .iter()
+        .map(|h| (h.path.clone(), h.new_start))
+        .collect();
+    assert_eq!(hunks, vec![("f.txt".to_string(), 2), ("f.txt".to_string(), 4)]);
+    let hunk2 = view
+        .hunks
+        .iter()
+        .find(|h| h.new_start == 2)
+        .expect("hunk at line 2");
+    assert!(
+        hunk2.lines.contains(&"-line2".to_string())
+            && hunk2.lines.contains(&"+line2-EDIT".to_string()),
+        "hunk body carries the raw -/+ lines: {:?}",
+        hunk2.lines
+    );
+
+    // Reject the FIRST hunk: only line 2 reverts; line 4 keeps its edit.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::ResolveReviewHunk(pb::ResolveReviewHunkCommand {
+            task_id: tid.clone(),
+            path: "f.txt".into(),
+            new_start: 2,
+            accepted: false,
+        }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    let after_reject =
+        std::fs::read_to_string(worktree.join("f.txt")).unwrap();
+    assert_eq!(after_reject, "line1\nline2\nline3\nline4-EDIT\nline5\n");
+
+    // Accept the second hunk: decision recorded, worktree untouched.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::ResolveReviewHunk(pb::ResolveReviewHunkCommand {
+            task_id: tid.clone(),
+            path: "f.txt".into(),
+            new_start: 4,
+            accepted: true,
+        }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    assert_eq!(
+        std::fs::read_to_string(worktree.join("f.txt")).unwrap(),
+        after_reject
+    );
+
+    // Both decisions are durable events on the task aggregate with the
+    // decision payload inline.
+    let (count, rejected, accepted) = store
+        .with_conn(|conn| {
+            let count: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM events WHERE event_type='review_hunk_resolved'",
+                    [],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            let rejected = conn
+                .query_row(
+                    "SELECT payload_inline FROM events
+                     WHERE event_type='review_hunk_resolved' AND payload_inline LIKE '%\"accepted\":false%'
+                     ORDER BY rowid LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .unwrap();
+            let accepted = conn
+                .query_row(
+                    "SELECT payload_inline FROM events
+                     WHERE event_type='review_hunk_resolved' AND payload_inline LIKE '%\"accepted\":true%'
+                     ORDER BY rowid LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .unwrap();
+            (count, rejected, accepted)
+        });
+    assert_eq!(count, 2, "both decisions durable");
+    assert!(rejected.contains("\"path\":\"f.txt\""), "{rejected}");
+    assert!(accepted.contains("\"new_start\":4"), "{accepted}");
 }

@@ -748,6 +748,23 @@ impl Scheduler {
             }
             Ok(run) => match run.final_state {
                 modbit_domain::turn::TurnState::Completed => {
+                    // Phase 5 item 4: export the run's cost ledger via
+                    // OTLP/JSON when an endpoint is configured. Best-effort:
+                    // export failures never fail the task.
+                    if let Ok(endpoint) = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT") {
+                        if !endpoint.trim().is_empty() {
+                            let snapshot = cost_tracker.snapshot();
+                            if let Err(e) = modbit_observability::otlp::export_otlp_logs(
+                                &endpoint,
+                                &snapshot,
+                                &task_id.to_string(),
+                            ) {
+                                eprintln!(
+                                    "modbit scheduler: OTLP cost export failed: {e}"
+                                );
+                            }
+                        }
+                    }
                     execute(
                         &processor,
                         task_id,

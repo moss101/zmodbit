@@ -111,6 +111,15 @@ pub fn apply_task_event(
             | TaskState::ReadyForReview => Ok(state),
             _ => Err(reject("task_input_queued")),
         },
+        // Hunk review decisions are state-neutral audit records: accept
+        // keeps the worktree, reject already inverse-applied the hunk.
+        DomainEvent::ReviewHunkResolved { .. } => match state {
+            TaskState::Running
+            | TaskState::Waiting(_)
+            | TaskState::ReadyForReview
+            | TaskState::Completed => Ok(state),
+            _ => Err(reject("review_hunk_resolved")),
+        },
         // Creation events do not transition an existing aggregate.
         DomainEvent::TaskCreated { .. } => match state {
             TaskState::Created => Ok(TaskState::Created),

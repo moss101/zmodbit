@@ -99,6 +99,15 @@ pub enum CommandPayload {
         question: String,
         context_event_count: u64,
     },
+    /// Review-surface decision on ONE hunk (Phase 5 item 4): accept keeps
+    /// the change, reject inverse-applies it in the task worktree. The
+    /// durable `ReviewHunkResolved` event is the audit record either way.
+    ResolveReviewHunk {
+        task_id: TaskId,
+        path: String,
+        new_start: usize,
+        accepted: bool,
+    },
 }
 
 impl CommandPayload {
@@ -118,7 +127,10 @@ impl CommandPayload {
             CommandPayload::ForkSession { source_session, .. } => Some(source_session.to_string()),
             CommandPayload::RewindSession { session_id, .. } => Some(session_id.to_string()),
             CommandPayload::QueueTaskInput { task_id, .. }
-            | CommandPayload::SetGoal { task_id, .. } => Some(task_id.to_string()),
+            | CommandPayload::SetGoal { task_id, .. }
+            | CommandPayload::ResolveReviewHunk { task_id, .. } => {
+                Some(task_id.to_string())
+            }
             CommandPayload::AskSideQuestion { session_id, .. } => Some(session_id.to_string()),
             CommandPayload::CreateSession { .. } | CommandPayload::CreateTask { .. } => None,
         }
@@ -141,6 +153,7 @@ impl CommandPayload {
             CommandPayload::FailTask { .. } => "fail_task",
             CommandPayload::CancelTask { .. } => "cancel_task",
             CommandPayload::SteerTask { .. } => "steer_task",
+            CommandPayload::ResolveReviewHunk { .. } => "resolve_review_hunk",
         }
     }
 }

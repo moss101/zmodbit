@@ -22,7 +22,7 @@ modbit-checkpoint = { path = "../checkpoint" }
 modbit-retrieval = { path = "../retrieval" }
 modbit-context = { path = "../context" }
 modbit-diagnostics = { path = "../diagnostics" }
-modbit-observability = { path = "../observability" }
+modbit-observability = { path = "../observability", features = ["otel"] }
 modbit-mcp = { path = "../mcp" }
 tokio = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }

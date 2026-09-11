@@ -38,6 +38,11 @@ message SurfaceRequest {
     // approval (docs/13 Waiting(Approval), docs/23).
     ApproveEffectCommand approve_effect = 20;
     DenyEffectCommand deny_effect = 21;
+    // Phase 5 item 4: hunk-level review — enumerate the changed hunks of
+    // the task worktree and record an accept/reject decision per hunk
+    // (reject inverse-applies the hunk; both write ReviewHunkResolved).
+    GetDiffHunksRequest get_diff_hunks = 22;
+    ResolveReviewHunkCommand resolve_review_hunk = 23;
   }
 }
 
@@ -174,6 +179,7 @@ message SurfaceResponse {
   RecentRepoList recent_repos = 11;
   RecentRepoView repo = 12;
   SettingsView settings = 13;
+  DiffHunksView diff_hunks = 14;
 }
 
 // Paginated read of a stored tool-output reference (Phase 2.6): the full
@@ -262,4 +268,33 @@ message DiffView {
   string branch = 2;
   string base_revision = 3;
   repeated DiffFileView files = 4;
+}
+
+message GetDiffHunksRequest {
+  string task_id = 1;
+}
+
+// Hunk-level diff content for the review surface: one entry per changed
+// range with its new-file start line (the hunk id used by review RPCs).
+message DiffHunkView {
+  string path = 1;
+  uint64 new_start = 2;
+  repeated string lines = 3;
+}
+
+message DiffHunksView {
+  string task_id = 1;
+  string branch = 2;
+  string base_revision = 3;
+  repeated DiffHunkView hunks = 4;
+}
+
+// Accept/reject decision on ONE hunk of the task worktree. Reject
+// inverse-applies only that hunk; accept leaves the worktree untouched.
+// Both outcomes append a durable ReviewHunkResolved event.
+message ResolveReviewHunkCommand {
+  string task_id = 1;
+  string path = 2;
+  uint64 new_start = 3;
+  bool accepted = 4;
 }

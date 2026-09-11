@@ -9,3 +9,12 @@ serde_json = { workspace = true }
 
 [lints]
 workspace = true
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["blocking", "json", "rustls-tls"]
+optional = true
+
+[features]
+otel = ["dep:reqwest"]

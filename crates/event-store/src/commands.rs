@@ -538,6 +538,16 @@ fn lifecycle_event(payload: &CommandPayload) -> DomainEvent {
         },
         CommandPayload::CancelTask { reason, .. } => DomainEvent::TaskCancelled { reason },
         CommandPayload::SteerTask { steer_note, .. } => DomainEvent::TaskSteered { steer_note },
+        CommandPayload::ResolveReviewHunk {
+            path,
+            new_start,
+            accepted,
+            ..
+        } => DomainEvent::ReviewHunkResolved {
+            path,
+            new_start,
+            accepted,
+        },
         other => unreachable!("creation commands are handled separately: {other:?}"),
     }
 }

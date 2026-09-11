@@ -1378,6 +1378,7 @@ version = "0.1.0"
 name = "modbit-observability"
 version = "0.1.0"
 dependencies = [
+ "reqwest",
  "serde",
  "serde_json",
 ]

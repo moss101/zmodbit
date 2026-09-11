@@ -11,7 +11,8 @@
 
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::io::Write as _;
+use std::process::{Child, Command, Output};
 
 pub mod snapshot;
 pub use snapshot::{SnapshotHandle, SnapshotProvenance, SNAPSHOT_NAMESPACE};
@@ -53,6 +54,25 @@ impl std::error::Error for GitError {}
 
 pub struct GitRepo {
     root: PathBuf,
+}
+
+/// One review hunk from a `-U0` diff (Phase 5 item 5).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DiffHunk {
+    pub path: String,
+    /// 1-based start line in the NEW file.
+    pub new_start: usize,
+    /// Raw +/- content lines of the hunk (header excluded).
+    pub lines: Vec<String>,
+}
+
+/// Extracts the new-file start line from a hunk header. `-U0` headers
+/// carry no count (`@@ -2 +2 @@ context`), so the number is the digit run
+/// immediately after `+`, before the optional `,count`.
+fn hunk_new_start(header: &str) -> Option<usize> {
+    let plus = header.split('+').nth(1)?;
+    let digits: String = plus.chars().take_while(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok()
 }
 
 impl GitRepo {
@@ -131,6 +151,176 @@ impl GitRepo {
     pub fn merge_base(&self, a: &str, b: &str) -> Result<String, GitError> {
         let out = self.git("merge-base", &[a, b])?;
         Ok(Self::stdout_text(&out))
+    }
+
+    /// Parses `git diff -U0` into review hunks (Phase 5 item 5): one entry
+    /// per changed range with the raw +/- content lines. `base` selects the
+    /// comparison revision (task review uses the worktree base, not HEAD —
+    /// agents may commit on their branch).
+    pub fn diff_hunks_from(&self, base: &str) -> Result<Vec<DiffHunk>, GitError> {
+        let out = self.git("diff", &["-U0", base])?;
+        Ok(Self::parse_hunks(&Self::stdout_text(&out)))
+    }
+
+    /// Working-tree hunks against HEAD.
+    pub fn diff_hunks_unrated(&self) -> Result<Vec<DiffHunk>, GitError> {
+        self.diff_hunks_from("HEAD")
+    }
+
+    /// Parses a unified diff with no context lines into hunks.
+    pub fn parse_hunks(diff_text: &str) -> Vec<DiffHunk> {
+        let mut hunks: Vec<DiffHunk> = Vec::new();
+        let mut path = String::new();
+        let mut new_start = 0usize;
+        let mut lines: Vec<String> = Vec::new();
+        let mut in_hunk = false;
+        for line in diff_text.lines() {
+            if line.starts_with("diff --git ") {
+                if in_hunk && !path.is_empty() && !lines.is_empty() {
+                    hunks.push(DiffHunk {
+                        path: path.clone(),
+                        new_start,
+                        lines: std::mem::take(&mut lines),
+                    });
+                }
+                in_hunk = false;
+                path.clear();
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("+++ b/") {
+                path = rest.to_string();
+                continue;
+            }
+            if line.starts_with("@@ -") {
+                if in_hunk && !path.is_empty() && !lines.is_empty() {
+                    hunks.push(DiffHunk {
+                        path: path.clone(),
+                        new_start,
+                        lines: std::mem::take(&mut lines),
+                    });
+                }
+                new_start = hunk_new_start(line).unwrap_or(0);
+                in_hunk = true;
+                continue;
+            }
+            if in_hunk && (line.starts_with('+') || line.starts_with('-')) {
+                lines.push(line.to_string());
+            }
+        }
+        if in_hunk && !path.is_empty() && !lines.is_empty() {
+            hunks.push(DiffHunk {
+                path: path.clone(),
+                new_start,
+                lines,
+            });
+        }
+        hunks
+    }
+
+    /// Hunk-level reject (Phase 5 item 5): captures the raw `-U0` diff,
+    /// selects the hunk whose new-file start is `new_start`, and applies
+    /// only that hunk in reverse. The file header + hunk header are
+    /// reused verbatim from git's own output, so the constructed patch
+    /// always applies.
+    pub fn reject_hunk(&self, path: &str, new_start: usize, base: &str) -> Result<(), GitError> {
+        let diff = self.git("diff", &["-U0", base, "--", path])?;
+        let text = Self::stdout_text(&diff);
+        if text.is_empty() {
+            return Ok(());
+        }
+        let mut file_header = String::new();
+        let mut blocks: Vec<(String, Vec<String>)> = Vec::new();
+        for line in text.lines() {
+            if line.starts_with("diff --git ")
+                || line.starts_with("index ")
+                || line.starts_with("--- ")
+                || line.starts_with("+++ ")
+            {
+                if blocks.is_empty() {
+                    file_header.push_str(line);
+                    file_header.push('\n');
+                }
+                continue;
+            }
+            if line.starts_with("@@") {
+                blocks.push((line.to_string(), Vec::new()));
+                continue;
+            }
+            if let Some((_, body)) = blocks.last_mut() {
+                body.push(line.to_string());
+            }
+        }
+        let selected = blocks.iter().find(|(h, _)| hunk_new_start(h) == Some(new_start));
+        let Some((hunk_header, body)) = selected else {
+            return Err(GitError::Git {
+                operation: "apply --reverse".into(),
+                message: format!("no hunk starts at line {new_start} in {path}"),
+            });
+        };
+        let patch = format!("{file_header}{hunk_header}\n{}\n", body.join("\n"));
+        let mut child = Command::new("git")
+            .arg("-C")
+            .arg(&self.root)
+            .args(["apply", "--reverse", "--unidiff-zero", "-"])
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .map_err(GitError::Io)?;
+        {
+            let stdin = child.stdin.as_mut().expect("stdin piped");
+            stdin
+                .write_all(patch.as_bytes())
+                .map_err(|e| GitError::Git {
+                    operation: "apply --reverse".into(),
+                    message: e.to_string(),
+                })?;
+        }
+        let out = child.wait_with_output().map_err(GitError::Io)?;
+        if !out.status.success() {
+            return Err(GitError::Git {
+                operation: "apply --reverse".into(),
+                message: String::from_utf8_lossy(&out.stderr).trim().to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Rejects the worktree changes for one path (Phase 5 item 5): the
+    /// diff against HEAD is captured and applied IN REVERSE, restoring
+    /// the reviewed-hunk file to its committed state byte-exactly.
+    pub fn reject_worktree_changes(&self, path: &str) -> Result<(), GitError> {
+        let diff = self.git("diff", &["HEAD", "--", path])?;
+        if diff.stdout.is_empty() {
+            return Ok(()); // nothing to reject
+        }
+        let mut apply = Command::new("git");
+        apply
+            .arg("-C")
+            .arg(&self.root)
+            .args(["apply", "--reverse", "--unidiff-zero", "-"])
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped());
+        let mut child = apply.spawn().map_err(GitError::Io)?;
+        {
+            let stdin = child.stdin.as_mut().expect("stdin piped");
+            stdin
+                .write_all(&diff.stdout)
+                .map_err(|e| GitError::Git {
+                    operation: "apply --reverse".into(),
+                    message: e.to_string(),
+                })?;
+        }
+        let out = child.wait_with_output().map_err(GitError::Io)?;
+        if out.status.success() {
+            Ok(())
+        } else {
+            Err(GitError::Git {
+                operation: "apply --reverse".into(),
+                message: String::from_utf8_lossy(&out.stderr).trim().to_string(),
+            })
+        }
     }
 
     /// Sets a repo-local config value (e.g. core.autocrlf for byte-exact
@@ -388,5 +578,129 @@ impl GitRepo {
 
     fn abort_merge(&self) {
         let _ = self.git("merge", &["--abort"]);
+    }
+}
+
+#[cfg(test)]
+mod hunk_tests {
+    use super::*;
+
+    fn repo_with(path: &str, content: &str) -> GitRepo {
+        let dir = std::env::temp_dir().join(format!(
+            "git-hunks-{}-{}",
+            std::process::id(),
+            uuid::Uuid::now_v7().simple()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let repo = GitRepo::init(&dir).unwrap();
+        repo.set_config("user.email", "t@t").unwrap();
+        repo.set_config("user.name", "T").unwrap();
+        repo.set_config("core.autocrlf", "false").unwrap();
+        let full = dir.join("greet.js");
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, content).unwrap();
+        repo.stage_path("greet.js").unwrap();
+        repo.commit_all("base").unwrap();
+        let _ = path;
+        repo
+    }
+
+    /// diff_hunks_unrated parses a -U0 diff into per-path hunks.
+    #[test]
+    fn diff_hunks_parse() {
+        let dir = std::env::temp_dir().join(format!(
+            "git-hunks-parse-{}",
+            uuid::Uuid::now_v7().simple()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let diff_text = "\
+diff --git a/greet.js b/greet.js
+--- a/greet.js
++++ b/greet.js
+@@ -1,3 +1,3 @@
+ function greet() {
+-  return 'hi';
++  return 'howdy';
+ }
+";
+        let hunks = GitRepo::parse_hunks(diff_text);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].path, "greet.js");
+        assert_eq!(hunks[0].new_start, 1);
+        assert_eq!(hunks[0].lines.len(), 2);
+        let _ = dir;
+    }
+
+    /// Hunk-level reject: only the selected hunk is reversed.
+    #[test]
+    fn reject_hunk_reverses_only_the_selected_hunk() {
+        let root = std::env::temp_dir().join(format!(
+            "git-hunk-rej-{}-{}",
+            std::process::id(),
+            uuid::Uuid::now_v7().simple()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let repo = GitRepo::init(&root).unwrap();
+        repo.set_config("user.email", "t@t").unwrap();
+        repo.set_config("user.name", "T").unwrap();
+        repo.set_config("core.autocrlf", "false").unwrap();
+        let file = root.join("multi.js");
+        std::fs::write(&file, "line1\nline2\nline3\nline4\nline5\n").unwrap();
+        repo.stage_path("multi.js").unwrap();
+        repo.commit_all("base").unwrap();
+
+        // Two separated single-line edits: lines 2 and 4.
+        std::fs::write(&file, "line1\nline2-EDIT\nline3\nline4-EDIT\nline5\n").unwrap();
+
+        // Hunk 1 starts at line 2 (new file coords).
+        repo.reject_hunk("multi.js", 2, "HEAD").expect("hunk reject");
+
+        let after = std::fs::read_to_string(&file).unwrap();
+        // Line 2 reverted, line 4 edit preserved.
+        assert!(
+            after.contains("line2") && after.contains("line4-EDIT"),
+            "after reject: {after:?}"
+        );
+        assert!(!after.contains("line2-EDIT"), "the selected hunk was reversed");
+        assert!(after.contains("line4-EDIT"), "the other hunk is untouched");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// Phase 5 item 5: reject = inverse-apply through git apply. A REAL
+    /// repo edit is reverted byte-exactly by feeding the inverse hunk.
+    #[test]
+    fn reject_applies_the_inverse_patch() {
+        let root = std::env::temp_dir().join(format!(
+            "git-hunks-rej-{}-{}",
+            std::process::id(),
+            uuid::Uuid::now_v7().simple()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let repo = GitRepo::init(&root).unwrap();
+        repo.set_config("user.email", "t@t").unwrap();
+        repo.set_config("user.name", "T").unwrap();
+        repo.set_config("core.autocrlf", "false").unwrap();
+        let file = root.join("greet.js");
+        std::fs::write(&file, "function greet() {\n  return 'hi';\n}\n").unwrap();
+        repo.stage_path("greet.js").unwrap();
+        repo.commit_all("base").unwrap();
+
+        // The agent edits the file (worktree change, not committed).
+        std::fs::write(&file, "function greet() {\n  return 'howdy';\n}\n").unwrap();
+
+        // The hunk the reviewer sees (parsed from a -U0 diff).
+        let hunks = repo.diff_hunks_unrated().unwrap();
+        assert_eq!(hunks.len(), 1, "{hunks:?}");
+        let hunk = &hunks[0];
+        assert_eq!(hunk.path, "greet.js");
+
+        // Reject: the diff against HEAD is applied in reverse.
+        repo.reject_worktree_changes("greet.js").expect("reverse apply");
+        let after = std::fs::read_to_string(&file).unwrap();
+        assert_eq!(
+            after, "function greet() {\n  return 'hi';\n}\n",
+            "the rejected edit is reverted byte-exactly"
+        );
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

@@ -700,6 +700,34 @@ impl CoreServices {
                     ..Default::default()
                 },
             },
+            // Phase 5 item 4: hunk-level review surface.
+            Some(pb::surface_request::Request::GetDiffHunks(get)) => {
+                match self.diff_hunks(&get.task_id) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        diff_hunks: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::ResolveReviewHunk(resolve)) => {
+                match self.resolve_review_hunk(&resolve) {
+                    Ok(()) => pb::SurfaceResponse {
+                        ok: true,
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             // Phase 2.6: paginated read of a stored tool-output reference.
             Some(pb::surface_request::Request::ReadOutputRef(read)) => {
                 match self.read_output_ref(&read.output_ref_id, read.offset, read.max_bytes) {
@@ -1127,6 +1155,77 @@ impl CoreServices {
                 })
                 .collect(),
         })
+    }
+
+    /// Shared worktree resolution for the review surface (Phase 5 item 4):
+    /// the task's layout plus its worktree opened as a git repository.
+    fn review_repo(
+        &self,
+        task_id: &str,
+    ) -> Result<(crate::scheduler::WorktreeLayout, modbit_git::GitRepo), String> {
+        let source = self.task_worktrees.as_ref().ok_or_else(|| {
+            "task worktrees not configured on this core (host must attach the layout)".to_string()
+        })?;
+        let config = source
+            .layout(task_id)
+            .ok_or_else(|| "no repository configured for task worktrees".to_string())?;
+        if !config.worktree.exists() {
+            return Err(format!("task {task_id} has no allocated worktree"));
+        }
+        let repo = modbit_git::GitRepo::open(&config.worktree).map_err(|e| e.to_string())?;
+        Ok((config, repo))
+    }
+
+    /// Hunk-level diff content (Phase 5 item 4): the changed ranges of the
+    /// task worktree against its base revision, with the new-file start
+    /// line each review decision is keyed on.
+    fn diff_hunks(&self, task_id: &str) -> Result<pb::DiffHunksView, String> {
+        let (config, repo) = self.review_repo(task_id)?;
+        let hunks = repo
+            .diff_hunks_from(&config.base_revision)
+            .map_err(|e| e.to_string())?;
+        Ok(pb::DiffHunksView {
+            task_id: task_id.to_string(),
+            branch: config.branch,
+            base_revision: config.base_revision,
+            hunks: hunks
+                .into_iter()
+                .map(|h| pb::DiffHunkView {
+                    path: h.path,
+                    new_start: h.new_start as u64,
+                    lines: h.lines,
+                })
+                .collect(),
+        })
+    }
+
+    /// Records one hunk review decision (Phase 5 item 4). Reject first
+    /// inverse-applies ONLY that hunk in the task worktree (the durable
+    /// event must record an effect that already happened); accept leaves
+    /// the worktree untouched. Both append `ReviewHunkResolved`.
+    fn resolve_review_hunk(&self, resolve: &pb::ResolveReviewHunkCommand) -> Result<(), String> {
+        let (config, repo) = self.review_repo(&resolve.task_id)?;
+        if !resolve.accepted {
+            repo.reject_hunk(
+                &resolve.path,
+                resolve.new_start as usize,
+                &config.base_revision,
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        let task_id =
+            modbit_domain::TaskId::parse(&resolve.task_id).map_err(|e| e.to_string())?;
+        self.execute(Command {
+            command_id: new_command_id(),
+            actor: actor(),
+            payload: CommandPayload::ResolveReviewHunk {
+                task_id,
+                path: resolve.path.clone(),
+                new_start: resolve.new_start as usize,
+                accepted: resolve.accepted,
+            },
+        })
+        .map(|_| ())
     }
 
     fn task_view(&self, task_id: &str) -> Option<pb::TaskView> {

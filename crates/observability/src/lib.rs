@@ -9,6 +9,8 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
+pub mod otlp;
+
 /// Per-model USD pricing per 1k tokens (input, output).
 fn price_table() -> BTreeMap<String, (f64, f64)> {
     let mut t = BTreeMap::new();
