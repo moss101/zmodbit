@@ -106,7 +106,22 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
             // (Seatbelt on macOS, Landlock on Linux).
             let cwd = get_str("cwd").map(std::path::PathBuf::from);
             let sandbox = parsed.get("sandbox").and_then(|v| v.as_bool()).unwrap_or(false);
-            let result = if sandbox {
+            let result = if sandbox && cfg!(target_os = "linux") {
+                // Route through the sbx-launcher helper (Landlock applied
+                // by the launcher before exec'ing the target).
+                let launcher = std::env::current_exe()
+                    .ok()
+                    .and_then(|exe| exe.parent().map(|d| d.join("sbx-launcher")))
+                    .unwrap_or_else(|| std::path::PathBuf::from("sbx-launcher"));
+                let mut wrapped = vec![launcher.display().to_string()];
+                if let Some(cwd) = &cwd {
+                    wrapped.push("--cwd".to_string());
+                    wrapped.push(cwd.display().to_string());
+                }
+                wrapped.push("--".to_string());
+                wrapped.extend(argv.iter().cloned());
+                broker.spawn_full(&id, &wrapped, None, &[])
+            } else if sandbox {
                 broker.spawn_full_sandboxed(&id, &argv, cwd.as_deref(), &[], true)
             } else {
                 broker.spawn_full(&id, &argv, cwd.as_deref(), &[])

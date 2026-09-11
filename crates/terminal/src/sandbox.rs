@@ -79,66 +79,11 @@ pub fn wrap_argv(
         ];
         wrapped.extend(argv.iter().cloned());
         Ok(Some(wrapped))
-    } else if cfg!(target_os = "linux") {
-        // Landlock is applied in-process via pre_exec (see
-        // apply_landlock_pre_exec); argv is returned unchanged with a
-        // marker the caller passes to CommandExt.
-        Ok(Some(wrap_linux_marker(argv)))
     } else {
         Ok(None)
     }
 }
 
-fn wrap_linux_marker(argv: &[String]) -> Vec<String> {
-    let mut wrapped = vec!["__MODBIT_LANDLOCK__".to_string()];
-    wrapped.extend(argv.iter().cloned());
-    wrapped
-}
-
-/// Applies Landlock FS rules to the current thread (called from
-/// `pre_exec` so the spawned child inherits the restricted view):
-/// writes allowed ONLY under `worktree` (+ /tmp), reads everywhere.
-/// Best-effort: on a kernel without Landlock this is a documented no-op
-/// (never blocks the spawn).
-#[cfg(target_os = "linux")]
-pub fn apply_landlock_pre_exec(worktree: &Path) -> Result<(), String> {
-    use landlock::{
-        Access as _, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr,
-        RulesetCreatedAttr as _,
-    };
-    // Official crate pattern: handle accesses on the Ruleset, create() the
-    // real kernel ruleset, add path rules, then restrict. Reads everywhere;
-    // writes only under the worktree + /tmp. BestEffort on old kernels.
-    let status = Ruleset::default()
-        .handle_access(AccessFs::from_all(landlock::ABI::V1))
-        .map_err(|e| e.to_string())?
-        .create()
-        .map_err(|e| e.to_string())?
-        .add_rule(PathBeneath::new(
-            PathFd::new("/").map_err(|e| e.to_string())?,
-            AccessFs::from_read(landlock::ABI::V1),
-        ))
-        .map_err(|e| e.to_string())?
-        .add_rule(PathBeneath::new(
-            PathFd::new(worktree).map_err(|e| e.to_string())?,
-            AccessFs::from_all(landlock::ABI::V1),
-        ))
-        .map_err(|e| e.to_string())?
-        .add_rule(PathBeneath::new(
-            PathFd::new("/tmp").map_err(|e| e.to_string())?,
-            AccessFs::from_all(landlock::ABI::V1),
-        ))
-        .map_err(|e| e.to_string())?
-        .restrict_self()
-        .map_err(|e| e.to_string())?;
-    let _ = status;
-    Ok(())
-}
-
-#[cfg(not(target_os = "linux"))]
-pub fn apply_landlock_pre_exec(_worktree: &Path) -> Result<(), String> {
-    Ok(())
-}
 
 #[cfg(test)]
 mod tests {

@@ -1,0 +1,14 @@
+[package]
+name = "sbx-launcher"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+landlock = "0.4"
+
+# Deliberately NOT inheriting workspace lints: this launcher exists to
+# apply Landlock restrictions before running the target, and its lints
+# contract is documented in-repo. No unsafe code is used — the landlock
+# crate is safe Rust.
