@@ -170,19 +170,10 @@ impl ExecBroker {
         for (k, v) in env {
             command.env(k, v);
         }
-        #[cfg(target_os = "linux")]
-        if sandbox {
-            if let Some(wt) = worktree.as_deref() {
-                use std::os::unix::process::CommandExt as _;
-                let wt = wt.to_path_buf();
-                unsafe {
-                    command.pre_exec(move || {
-                        crate::sandbox::apply_landlock_pre_exec(&wt)
-                            .map_err(std::io::Error::other)
-                    });
-                }
-            }
-        }
+        // Linux sandbox: the argv is wrapped with the `sbx-launcher`
+        // helper binary by the execd spawn op (workspace forbids unsafe,
+        // so no in-process pre_exec hook); the launcher applies the
+        // identical Landlock ruleset to itself before exec'ing the target.
         let _ = &argv0;
         let child = command
             .stdout(Stdio::from(log))
