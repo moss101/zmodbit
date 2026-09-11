@@ -79,6 +79,15 @@ pub struct AgentNode {
     pub context_refs: Vec<String>,
     pub capsule: AgentExecutionCapsule,
     pub idempotency_key: Option<String>,
+    /// Phase 7 item 1: the child task this agent owns — the agent runs
+    /// THROUGH the scheduler as that task (WorkGraph ownership, docs/14
+    /// admission step 7). Serde default keeps pre-Phase-7 nodes readable.
+    #[serde(default)]
+    pub task_id: String,
+    /// Declared write scope (advisory conflict declaration, docs/14
+    /// admission step 3). Empty = undeclared.
+    #[serde(default)]
+    pub write_scope: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -211,6 +220,8 @@ impl AgentFleet {
             context_refs: Vec::new(),
             capsule,
             idempotency_key: idempotency_key.map(|k| k.to_string()),
+            task_id: String::new(),
+            write_scope: Vec::new(),
         };
         if let Some(key) = idempotency_key {
             self.idempotency
@@ -219,6 +230,76 @@ impl AgentFleet {
         self.persist_node(&node).map_err(FleetError::Persistence)?;
         self.nodes.insert(agent_id.to_string(), node.clone());
         Ok(node)
+    }
+
+    /// Phase 7 item 1: an ADMITTED child agent bound to the scheduler task
+    /// it owns (docs/14 admission step 7: AgentGraph node + WorkGraph
+    /// ownership persisted together). Idempotent re-attach on replay.
+    pub fn spawn_child(
+        &mut self,
+        parent_agent: Option<&str>,
+        agent_id: &str,
+        task_id: &str,
+        task: &str,
+        write_scope: Vec<String>,
+        idempotency_key: Option<&str>,
+    ) -> Result<AgentNode, FleetError> {
+        if let Some(key) = idempotency_key {
+            if let Some(existing) = self.idempotency.get(key) {
+                return Ok(self.nodes[existing].clone());
+            }
+        }
+        let root = match parent_agent {
+            Some(pid) => self
+                .nodes
+                .get(pid)
+                .ok_or_else(|| FleetError::UnknownAgent(pid.to_string()))?
+                .root
+                .clone(),
+            None => agent_id.to_string(),
+        };
+        let node = AgentNode {
+            agent_id: agent_id.to_string(),
+            parent: parent_agent.map(|p| p.to_string()),
+            root,
+            task: task.to_string(),
+            status: AgentStatus::Foreground,
+            tool_cursor: 0,
+            context_refs: Vec::new(),
+            capsule: AgentExecutionCapsule::default(),
+            idempotency_key: idempotency_key.map(|k| k.to_string()),
+            task_id: task_id.to_string(),
+            write_scope,
+        };
+        if let Some(key) = idempotency_key {
+            self.idempotency
+                .insert(key.to_string(), agent_id.to_string());
+        }
+        self.persist_node(&node).map_err(FleetError::Persistence)?;
+        self.nodes.insert(agent_id.to_string(), node.clone());
+        Ok(node)
+    }
+
+    /// Re-attach lookup for a replayed spawn (same idempotency key).
+    pub fn find_by_idempotency_key(&self, key: &str) -> Option<&AgentNode> {
+        self.idempotency.get(key).and_then(|id| self.nodes.get(id))
+    }
+
+    /// Declared write scopes of LIVE siblings in a lineage (docs/14
+    /// admission step 3): non-terminal, with a non-empty declaration.
+    pub fn active_write_scopes(&self, root: &str) -> Vec<(String, Vec<String>)> {
+        self.nodes
+            .values()
+            .filter(|n| n.root == root)
+            .filter(|n| {
+                matches!(
+                    n.status,
+                    AgentStatus::Foreground | AgentStatus::Background | AgentStatus::Parked
+                )
+            })
+            .filter(|n| !n.write_scope.is_empty())
+            .map(|n| (n.agent_id.clone(), n.write_scope.clone()))
+            .collect()
     }
 
     /// FOREGROUND ↔ BACKGROUND (REQ-EV-0008): identity, task, and tool

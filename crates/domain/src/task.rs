@@ -172,7 +172,9 @@ mod tests {
                 prompt: "p".into(),
                 repo_id: None,
             base_branch: None,
-        }),
+        
+                parent_task_id: None,
+            }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskWaiting {
@@ -196,7 +198,9 @@ mod tests {
                 prompt: "p".into(),
                 repo_id: None,
             base_branch: None,
-        }),
+        
+                parent_task_id: None,
+            }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskWaiting {
@@ -215,6 +219,8 @@ mod tests {
             prompt: "p".into(),
             repo_id: None,
             base_branch: None,
+        
+            parent_task_id: None,
         })];
         // Created → Completed directly is illegal (must pass ReadyForReview).
         let mut events = created.clone();
@@ -231,7 +237,9 @@ mod tests {
                 prompt: "p".into(),
                 repo_id: None,
             base_branch: None,
-        }),
+        
+                parent_task_id: None,
+            }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskReadyForReview,
@@ -254,7 +262,9 @@ mod tests {
                 prompt: "p".into(),
                 repo_id: None,
             base_branch: None,
-        }),
+        
+                parent_task_id: None,
+            }),
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskSteered {
@@ -283,7 +293,9 @@ mod state_independence_tests {
                 prompt: "p".into(),
                 repo_id: None,
             base_branch: None,
-        },
+        
+                parent_task_id: None,
+            },
             DomainEvent::TaskQueued,
         ];
         events.push(DomainEvent::TaskStarted);
@@ -326,7 +338,9 @@ mod state_independence_tests {
                 prompt: "p".into(),
                 repo_id: None,
             base_branch: None,
-        },
+        
+                parent_task_id: None,
+            },
             DomainEvent::TaskQueued,
             DomainEvent::TaskStarted,
             DomainEvent::TaskWaiting {

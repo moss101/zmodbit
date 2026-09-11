@@ -23,6 +23,9 @@ pub struct CoreServices {
     /// Task-worktree layout for GetDiff (explicit; no process-env reads
     /// inside dispatch). Set by the host binary at construction.
     task_worktrees: Option<std::sync::Arc<dyn crate::scheduler::WorktreeSource>>,
+    /// Phase 7 item 1: the agent fleet journal (AgentGraph ownership);
+    /// admitted children are persisted here and survive restarts.
+    agent_fleet: Option<std::sync::Arc<std::sync::Mutex<crate::agent_fleet::AgentFleet>>>,
     /// Live run-control signals (Phase 2.3): Stop/Pause/Steer reach the
     /// in-flight run through the scheduler's registry.
     run_controls: Option<std::sync::Arc<crate::scheduler::RunControls>>,
@@ -76,6 +79,7 @@ impl CoreServices {
             store,
             workspace: None,
             task_worktrees: None,
+            agent_fleet: None,
             run_controls: None,
         }
     }
@@ -99,6 +103,19 @@ impl CoreServices {
     ) -> Self {
         self.task_worktrees = Some(source);
         self
+    }
+
+    /// Attaches the agent-fleet journal (Phase 7 item 1): the daemon passes
+    /// a path next to the durable store so admitted children survive
+    /// restarts. Tests can pass a journal under their temp dir.
+    pub fn with_agent_fleet(
+        mut self,
+        journal: std::path::PathBuf,
+    ) -> std::io::Result<Self> {
+        self.agent_fleet = Some(std::sync::Arc::new(std::sync::Mutex::new(
+            crate::agent_fleet::AgentFleet::load(&journal)?,
+        )));
+        Ok(self)
     }
 
     /// The broker name a provider's key is stored under (the same names
@@ -372,6 +389,8 @@ impl CoreServices {
                         repo_id: (!create.repo_id.is_empty()).then_some(create.repo_id),
                         base_branch: (!create.base_branch.is_empty())
                             .then_some(create.base_branch),
+                        parent_task_id: (!create.parent_task_id.is_empty())
+                            .then_some(create.parent_task_id),
                     },
                 });
                 match outcome {
@@ -728,6 +747,63 @@ impl CoreServices {
                     },
                 }
             }
+            // Phase 7 item 1: children through the scheduler.
+            Some(pb::surface_request::Request::SpawnAgent(spawn)) => {
+                match self.spawn_agent(&spawn) {
+                    Ok(task) => pb::SurfaceResponse {
+                        ok: true,
+                        task,
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::ParkAgent(park)) => {
+                match self.park_agent(&park) {
+                    Ok(task) => pb::SurfaceResponse {
+                        ok: true,
+                        task,
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::ResumeAgent(resume)) => {
+                match self.resume_agent(&resume) {
+                    Ok(task) => pb::SurfaceResponse {
+                        ok: true,
+                        task,
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::AgentResult(req)) => {
+                match self.agent_result(&req) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        agent_result: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             // Phase 2.6: paginated read of a stored tool-output reference.
             Some(pb::surface_request::Request::ReadOutputRef(read)) => {
                 match self.read_output_ref(&read.output_ref_id, read.offset, read.max_bytes) {
@@ -910,7 +986,7 @@ impl CoreServices {
         let tasks = self.store.with_conn(|conn| {
             let mut stmt = conn
                 .prepare(
-                    "SELECT task_id, session_id, goal_text, state, generation, created_at
+                    "SELECT task_id, session_id, goal_text, state, generation, created_at, parent_task_id
                      FROM tasks ORDER BY created_at DESC, task_id",
                 )
                 .map_err(|e| e.to_string())?;
@@ -923,6 +999,7 @@ impl CoreServices {
                         r.get::<_, String>(3)?,
                         r.get::<_, i64>(4)?,
                         r.get::<_, String>(5)?,
+                        r.get::<_, Option<String>>(6)?,
                     ))
                 })
                 .map_err(|e| e.to_string())?
@@ -933,13 +1010,14 @@ impl CoreServices {
         let tasks = tasks
             .into_iter()
             .map(
-                |(task_id, session_id, goal_text, state, generation, created_at): (
+                |(task_id, session_id, goal_text, state, generation, created_at, parent_task_id): (
                     String,
                     String,
                     String,
                     String,
                     i64,
                     String,
+                    Option<String>,
                 )| pb::TaskView {
                     task_id,
                     session_id,
@@ -947,6 +1025,7 @@ impl CoreServices {
                     state: map_state(&state),
                     created_at,
                     generation: generation as u64,
+                    parent_task_id: parent_task_id.unwrap_or_default(),
                 },
             )
             .collect();
@@ -1228,10 +1307,352 @@ impl CoreServices {
         .map(|_| ())
     }
 
+    /// Phase 7 item 1 — transactional subagent admission (docs/14): the
+    /// checks run in order and only when ALL pass does a real child task
+    /// enter the scheduler (CreateTask → QueueTask → StartTask with its
+    /// own isolated worktree). Any failure refuses admission with no
+    /// partial reservation; a failure after task creation compensates by
+    /// cancelling the minted child.
+    fn spawn_agent(
+        &self,
+        spawn: &pb::SpawnAgentCommand,
+    ) -> Result<Option<pb::TaskView>, String> {
+        if spawn.parent_task_id.is_empty() {
+            return Err("spawn_agent requires parent_task_id".into());
+        }
+
+        // Idempotent re-attach BEFORE any admission step (REQ-EV-0007):
+        // a replayed spawn returns the already-admitted child.
+        if !spawn.idempotency_key.is_empty() {
+            if let Some(fleet) = &self.agent_fleet {
+                let fleet = fleet.lock().map_err(|_| "agent fleet poisoned".to_string())?;
+                if let Some(node) = fleet.find_by_idempotency_key(&spawn.idempotency_key) {
+                    let task_id = node.task_id.clone();
+                    drop(fleet);
+                    return Ok(self.task_view(&task_id));
+                }
+            }
+        }
+
+        // (a) parent active at the expected generation (WorkGraph truth).
+        let (parent_state, parent_gen, parent_session) = self.store.with_conn(|conn| {
+            conn.query_row(
+                "SELECT state, generation, session_id FROM tasks WHERE task_id = ?1",
+                [&spawn.parent_task_id],
+                |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, i64>(1)?,
+                        r.get::<_, String>(2)?,
+                    ))
+                },
+            )
+            .map_err(|_| format!("parent task {} does not exist", spawn.parent_task_id))
+        })?;
+        if matches!(
+            parent_state.as_str(),
+            "completed" | "failed" | "cancelled"
+        ) {
+            return Err(format!(
+                "parent task {} is not active (state {parent_state})",
+                spawn.parent_task_id
+            ));
+        }
+        if spawn.parent_generation != 0 && spawn.parent_generation != parent_gen as u64 {
+            return Err(format!(
+                "parent generation fenced: parent is at {parent_gen}, request expected {}",
+                spawn.parent_generation
+            ));
+        }
+
+        // (b) capacity ticket: bounded concurrent children per lineage
+        // (first element of the typed capacity vector, docs/14 § tickets;
+        // lease expiry is the terminal state, generation fencing above).
+        let max_children: usize = std::env::var("MODBIT_MAX_CHILD_AGENTS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(4);
+        let active_children: i64 = self.store.with_conn(|conn| {
+            conn.query_row(
+                "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1
+                 AND (state IN ('queued','running','ready_for_review') OR state LIKE 'waiting_%')",
+                [&spawn.parent_task_id],
+                |r| r.get(0),
+            )
+            .map_err(|e| e.to_string())
+        })?;
+        if active_children as usize >= max_children {
+            return Err(format!(
+                "capacity ticket exhausted: {active_children} active children (max {max_children})"
+            ));
+        }
+
+        // (c) declared write-scope conflict with live siblings (docs/14
+        // admission step 3). A declared path conflicts on exact match or
+        // directory containment in either direction.
+        let requested: Vec<String> = spawn
+            .write_scope
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        fn trim_sep(p: &str) -> &str {
+            p.trim_end_matches('/')
+        }
+        let covers = |a: &str, b: &str| {
+            let (a, b) = (trim_sep(a), trim_sep(b));
+            a == b || b.starts_with(&format!("{a}/"))
+        };
+        if let Some(fleet) = &self.agent_fleet {
+            let mut fleet = fleet.lock().map_err(|_| "agent fleet poisoned".to_string())?;
+            // The parent runs as a task too: its first child registers it
+            // as the lineage-root agent so siblings share one AgentGraph
+            // root (docs/14: AgentGraph nodes own WorkGraph nodes).
+            if fleet.node(&spawn.parent_task_id).is_none() {
+                let goal: String = self
+                    .store
+                    .with_conn(|conn| {
+                        conn.query_row(
+                            "SELECT goal_text FROM tasks WHERE task_id = ?1",
+                            [&spawn.parent_task_id],
+                            |r| r.get::<_, String>(0),
+                        )
+                        .unwrap_or_default()
+                    });
+                fleet
+                    .spawn_child(
+                        None,
+                        &spawn.parent_task_id,
+                        &spawn.parent_task_id,
+                        &goal,
+                        Vec::new(),
+                        None,
+                    )
+                    .map_err(|e| e.to_string())?;
+            }
+            let root = fleet
+                .node(&spawn.parent_task_id)
+                .map(|n| n.root.clone())
+                .unwrap_or_else(|| spawn.parent_task_id.clone());
+            for (sibling, scope) in fleet.active_write_scopes(&root) {
+                let conflict: Vec<String> = requested
+                    .iter()
+                    .filter(|p| scope.iter().any(|s| covers(s, p) || covers(p, s)))
+                    .cloned()
+                    .collect();
+                if !conflict.is_empty() {
+                    return Err(format!(
+                        "write-set conflict with sibling {sibling}: {}",
+                        conflict.join(", ")
+                    ));
+                }
+            }
+        }
+
+        // (7) AgentGraph node + WorkGraph ownership persisted; the child
+        // runs through THE scheduler like any other task.
+        let session_id =
+            SessionId::parse(&parent_session).map_err(|e| format!("bad parent session: {e}"))?;
+        let child_id = self
+            .execute(Command {
+                command_id: new_command_id(),
+                actor: actor(),
+                payload: CommandPayload::CreateTask {
+                    session_id,
+                    title: spawn
+                        .objective
+                        .lines()
+                        .next()
+                        .unwrap_or("child agent")
+                        .to_string(),
+                    prompt: spawn.objective.clone(),
+                    repo_id: None,
+                    base_branch: None,
+                    parent_task_id: Some(spawn.parent_task_id.clone()),
+                },
+            })?
+            .ok_or_else(|| "child task creation produced no event".to_string())?;
+
+        // Compensation: a failure after task creation cancels the minted
+        // child so no partial reservation leaks.
+        fn compensate(svc: &CoreServices, child_id: &str, err: String) -> String {
+            if let Ok(task_id) = modbit_domain::TaskId::parse(child_id) {
+                let _ = svc.execute(Command {
+                    command_id: new_command_id(),
+                    actor: actor(),
+                    payload: CommandPayload::CancelTask {
+                        task_id,
+                        reason: "admission failed after task creation".into(),
+                    },
+                });
+            }
+            err
+        }
+
+        if let Some(fleet) = &self.agent_fleet {
+            let mut fleet = fleet
+                .lock()
+                .map_err(|e| compensate(self, &child_id, format!("agent fleet poisoned: {e}")))?;
+            let parent_agent = fleet.node(&spawn.parent_task_id).map(|n| n.agent_id.clone());
+            fleet
+                .spawn_child(
+                    parent_agent.as_deref(),
+                    &child_id,
+                    &child_id,
+                    &spawn.objective,
+                    requested,
+                    (!spawn.idempotency_key.is_empty())
+                        .then_some(spawn.idempotency_key.as_str()),
+                )
+                .map_err(|e| {
+                    compensate(
+                        self,
+                        &child_id,
+                        format!("agent node persist failed: {e}"),
+                    )
+                })?;
+        }
+
+        self.execute(Command {
+            command_id: new_command_id(),
+            actor: actor(),
+            payload: CommandPayload::QueueTask {
+                task_id: parse_task_id(&child_id),
+            },
+        })
+        .map_err(|e| compensate(self, &child_id, e))?;
+        self.execute(Command {
+            command_id: new_command_id(),
+            actor: actor(),
+            payload: CommandPayload::StartTask {
+                task_id: parse_task_id(&child_id),
+            },
+        })
+        .map_err(|e| compensate(self, &child_id, e))?;
+
+        Ok(self.task_view(&child_id))
+    }
+
+    /// Parks a child agent (docs/14 § steering): the in-flight run parks
+    /// at the next turn boundary, the durable state moves to
+    /// Waiting(UserInput), and the fleet node records Parked.
+    fn park_agent(&self, park: &pb::ParkAgentCommand) -> Result<Option<pb::TaskView>, String> {
+        if let Some(controls) = &self.run_controls {
+            controls.pause(&park.task_id);
+        }
+        if let Some(fleet) = &self.agent_fleet {
+            fleet
+                .lock()
+                .map_err(|_| "agent fleet poisoned".to_string())?
+                .park(&park.task_id)
+                .map_err(|e| e.to_string())?;
+        }
+        self.execute(Command {
+            command_id: new_command_id(),
+            actor: actor(),
+            payload: CommandPayload::TaskWaiting {
+                task_id: parse_task_id(&park.task_id),
+                reason: modbit_domain::events::WaitingReason::UserInput,
+            },
+        })?;
+        Ok(self.task_view(&park.task_id))
+    }
+
+    /// Resumes a parked child agent: fleet status returns to Foreground
+    /// and the task re-enters the scheduler via StartTask.
+    fn resume_agent(
+        &self,
+        resume: &pb::ResumeAgentCommand,
+    ) -> Result<Option<pb::TaskView>, String> {
+        if let Some(fleet) = &self.agent_fleet {
+            fleet
+                .lock()
+                .map_err(|_| "agent fleet poisoned".to_string())?
+                .resume(&resume.task_id)
+                .map_err(|e| e.to_string())?;
+        }
+        self.execute(Command {
+            command_id: new_command_id(),
+            actor: actor(),
+            payload: CommandPayload::StartTask {
+                task_id: parse_task_id(&resume.task_id),
+            },
+        })?;
+        Ok(self.task_view(&resume.task_id))
+    }
+
+    /// Bounded wait for a child agent's terminal state, then its
+    /// SubagentResult view (docs/14 § agent communication). A timeout
+    /// returns the CURRENT state — the caller decides whether to keep
+    /// waiting; nothing is fabricated.
+    fn agent_result(&self, req: &pb::AgentResultRequest) -> Result<pb::AgentResultView, String> {
+        let deadline = std::time::Instant::now()
+            + std::time::Duration::from_millis(req.timeout_ms.min(120_000));
+        let (mut state, mut parent) = (String::new(), String::new());
+        loop {
+            let row = self.store.with_conn(|conn| {
+                conn.query_row(
+                    "SELECT state, COALESCE(parent_task_id,'') FROM tasks WHERE task_id = ?1",
+                    [&req.task_id],
+                    |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+                )
+                .map_err(|_| format!("task {} does not exist", req.task_id))
+            })?;
+            state = row.0;
+            parent = row.1;
+            if matches!(state.as_str(), "completed" | "failed" | "cancelled")
+                || std::time::Instant::now() >= deadline
+            {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(250));
+        }
+        let (summary, failure_code) = self.store.with_conn(|conn| {
+            let summary = conn
+                .query_row(
+                    "SELECT payload_inline FROM events
+                     WHERE aggregate_id = ?1 AND event_type = 'task_completed'
+                     ORDER BY rowid DESC LIMIT 1",
+                    [&req.task_id],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok()
+                .and_then(|payload| {
+                    serde_json::from_str::<serde_json::Value>(&payload)
+                        .ok()
+                        .and_then(|v| v["summary"].as_str().map(str::to_string))
+                })
+                .unwrap_or_default();
+            let failure_code = conn
+                .query_row(
+                    "SELECT payload_inline FROM events
+                     WHERE aggregate_id = ?1 AND event_type = 'task_failed'
+                     ORDER BY rowid DESC LIMIT 1",
+                    [&req.task_id],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok()
+                .and_then(|payload| {
+                    serde_json::from_str::<serde_json::Value>(&payload)
+                        .ok()
+                        .and_then(|v| v["failure_code"].as_str().map(str::to_string))
+                })
+                .unwrap_or_default();
+            Ok::<_, String>((summary, failure_code))
+        })?;
+        Ok(pb::AgentResultView {
+            task_id: req.task_id.clone(),
+            parent_task_id: parent,
+            state,
+            summary,
+            failure_code,
+        })
+    }
+
     fn task_view(&self, task_id: &str) -> Option<pb::TaskView> {
         self.store.with_conn(|conn| {
             conn.query_row(
-                "SELECT task_id, session_id, goal_text, state, generation, created_at
+                "SELECT task_id, session_id, goal_text, state, generation, created_at, parent_task_id
                  FROM tasks WHERE task_id = ?1",
                 [task_id],
                 |r| {
@@ -1242,18 +1663,20 @@ impl CoreServices {
                         r.get::<_, String>(3)?,
                         r.get::<_, i64>(4)?,
                         r.get::<_, String>(5)?,
+                        r.get::<_, Option<String>>(6)?,
                     ))
                 },
             )
             .ok()
             .map(
-                |(task_id, session_id, goal_text, state, generation, created_at): (
+                |(task_id, session_id, goal_text, state, generation, created_at, parent_task_id): (
                     String,
                     String,
                     String,
                     String,
                     i64,
                     String,
+                    Option<String>,
                 )| pb::TaskView {
                     task_id,
                     session_id,
@@ -1261,6 +1684,7 @@ impl CoreServices {
                     state: map_state(&state),
                     created_at,
                     generation: generation as u64,
+                    parent_task_id: parent_task_id.unwrap_or_default(),
                 },
             )
         })

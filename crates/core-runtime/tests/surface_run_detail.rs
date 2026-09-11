@@ -91,6 +91,7 @@ fn setup_with_base(
                 prompt: "prompt".into(),
                 repo_id: None,
     base_branch: None,
+    parent_task_id: None,
 },
         })
         .unwrap();

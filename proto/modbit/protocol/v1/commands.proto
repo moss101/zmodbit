@@ -33,6 +33,9 @@ message CreateTaskCommand {
   // branch (empty = the daemon's default repo source).
   string repo_id = 4;
   string base_branch = 5;
+  // Phase 7 item 1: parent task when this task is a spawned child agent
+  // (parent-child fleet linkage).
+  string parent_task_id = 6;
 }
 
 message CancelTaskCommand {

@@ -167,7 +167,9 @@ fn create_task(processor: &CommandProcessor, store: &EventStore) -> (String, Str
                 prompt: "Read NOTES.md and summarize the validation rule.".into(),
                 repo_id: None,
     base_branch: None,
-},
+
+                parent_task_id: None,
+            },
         })
         .unwrap();
     let tid: String = store

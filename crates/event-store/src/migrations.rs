@@ -51,7 +51,15 @@ pub const MIGRATIONS: &[Migration] = &[
     (6, SQL_V6_RECENT_REPOS),
     (7, SQL_V7_APP_SETTINGS),
     (8, SQL_V8_APPROVALS),
+    (9, SQL_V9_TASK_PARENT),
 ];
+
+/// Phase 7 item 1: parent-child agent linkage — a child task records the
+/// parent task it was spawned by (AgentGraph node owning a WorkGraph node).
+pub const SQL_V9_TASK_PARENT: &str = "
+    ALTER TABLE tasks ADD COLUMN parent_task_id TEXT;
+    CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_task_id);
+";
 
 /// Projection tables (docs/31 § Core tables): derived read models, always
 /// rebuildable from `events` via `projections::rebuild`.
@@ -196,6 +204,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 8, "latest migration version");
+        assert_eq!(v, 9, "latest migration version");
     }
 }

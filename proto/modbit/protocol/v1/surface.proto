@@ -43,6 +43,13 @@ message SurfaceRequest {
     // (reject inverse-applies the hunk; both write ReviewHunkResolved).
     GetDiffHunksRequest get_diff_hunks = 22;
     ResolveReviewHunkCommand resolve_review_hunk = 23;
+    // Phase 7 item 1: children through the scheduler — transactional
+    // subagent admission (docs/14) spawning a real child task with its
+    // own isolated worktree; park/resume wait for the parent's flow.
+    SpawnAgentCommand spawn_agent = 24;
+    ParkAgentCommand park_agent = 25;
+    ResumeAgentCommand resume_agent = 26;
+    AgentResultRequest agent_result = 27;
   }
 }
 
@@ -156,6 +163,9 @@ message TaskView {
   TaskStatus state = 4;
   string created_at = 5;
   uint64 generation = 6;
+  // Phase 7 item 1: non-empty when this task is a spawned child agent;
+  // the fleet view groups children under their parent.
+  string parent_task_id = 7;
 }
 
 message Fleet {
@@ -180,6 +190,7 @@ message SurfaceResponse {
   RecentRepoView repo = 12;
   SettingsView settings = 13;
   DiffHunksView diff_hunks = 14;
+  AgentResultView agent_result = 15;
 }
 
 // Paginated read of a stored tool-output reference (Phase 2.6): the full
@@ -297,4 +308,48 @@ message ResolveReviewHunkCommand {
   string path = 2;
   uint64 new_start = 3;
   bool accepted = 4;
+}
+
+// Phase 7 item 1 — transactional subagent admission (docs/14): all-or-
+// nothing. Capacity ticket (max concurrent children of the root), parent
+// active at the expected generation, declared write-scope conflict check
+// against active siblings, then a real child task through the scheduler
+// with its own isolated worktree. Any failure refuses admission with no
+// partial reservation.
+message SpawnAgentCommand {
+  string parent_task_id = 1;
+  string objective = 2;
+  // Comma-separated paths this child may write (advisory conflict
+  // declaration checked against active siblings).
+  string write_scope = 3;
+  // Idempotent re-attach: a replayed spawn with the same key returns the
+  // already-admitted child instead of spawning a second one.
+  string idempotency_key = 4;
+  // Generation fencing: admission requires the parent still at this
+  // generation (0 = no fence).
+  uint64 parent_generation = 5;
+}
+
+message ParkAgentCommand {
+  string task_id = 1;
+  string reason = 2;
+}
+
+message ResumeAgentCommand {
+  string task_id = 1;
+}
+
+// Bounded wait for a child agent to reach a terminal state, then its
+// SubagentResult view (summary + outcome, docs/14 § agent communication).
+message AgentResultRequest {
+  string task_id = 1;
+  uint64 timeout_ms = 2;
+}
+
+message AgentResultView {
+  string task_id = 1;
+  string parent_task_id = 2;
+  string state = 3;
+  string summary = 4;
+  string failure_code = 5;
 }

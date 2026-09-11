@@ -36,16 +36,19 @@ fn project_task(
     e: &modbit_domain::EventEnvelope,
 ) -> Result<(), rusqlite::Error> {
     match &e.payload {
-        DomainEvent::TaskCreated { title, prompt, .. } => {
+        DomainEvent::TaskCreated {
+            title, prompt, parent_task_id, ..
+        } => {
             conn.execute(
-                "INSERT INTO tasks (task_id, session_id, goal_text, state, generation, created_at)
-                 VALUES (?1, ?2, ?3, 'created', ?4, ?5)",
+                "INSERT INTO tasks (task_id, session_id, goal_text, state, generation, created_at, parent_task_id)
+                 VALUES (?1, ?2, ?3, 'created', ?4, ?5, ?6)",
                 params![
                     e.aggregate_id,
                     e.session_id.to_string(),
                     format!("{title}\n{prompt}"),
                     e.sequence,
                     e.occurred_at,
+                    parent_task_id,
                 ],
             )?;
         }

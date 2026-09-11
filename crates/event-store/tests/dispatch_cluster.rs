@@ -74,7 +74,9 @@ fn running_task(proc: &CommandProcessor) -> (modbit_domain::SessionId, TaskId) {
                 prompt: "p".into(),
                 repo_id: None,
     base_branch: None,
-},
+
+                parent_task_id: None,
+            },
         })
         .unwrap();
     assert!(create.applied_ok());

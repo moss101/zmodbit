@@ -1189,6 +1189,7 @@ fn read_task_brief(
             prompt,
             repo_id,
             base_branch,
+            ..
         } = &e.payload
         {
             return Ok(TaskBrief {

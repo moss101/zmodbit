@@ -303,6 +303,8 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
             prompt: "Do it.".into(),
             repo_id: repo_a_id.clone(),
             base_branch: "feature/edge".into(),
+        
+            parent_task_id: String::new(),
         }),
     );
     assert!(created.ok, "create: {}", created.error);
@@ -372,6 +374,8 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
             prompt: "Do it.".into(),
             repo_id: "repo-does-not-exist".into(),
             base_branch: String::new(),
+        
+            parent_task_id: String::new(),
         }),
     );
     assert!(

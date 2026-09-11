@@ -74,6 +74,16 @@ eprintln!("boot: worktree source attached");
     // Phase 2.3: the surface signals in-flight runs (Stop/Pause/Steer)
     // through the scheduler's live control registry.
     services = services.with_run_controls(scheduler.controls());
+    // Phase 7 item 1: admitted child agents persist in the fleet journal
+    // next to the durable store (AgentGraph ownership survives restarts).
+    let fleet_journal = std::path::PathBuf::from(&db).with_file_name("agent-fleet.jsonl");
+    services = match services.with_agent_fleet(fleet_journal) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("modbit-core: agent fleet journal: {e}");
+            std::process::exit(1);
+        }
+    };
     let services = Arc::new(services);
 
 eprintln!("boot: scheduler spawned");

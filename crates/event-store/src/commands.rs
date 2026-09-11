@@ -137,6 +137,7 @@ impl CommandProcessor {
                 prompt,
                 repo_id,
                 base_branch,
+                parent_task_id,
             } => {
                 if !session_exists(session_id)? {
                     return Err(format!("session {session_id} does not exist"));
@@ -152,6 +153,7 @@ impl CommandProcessor {
                         prompt: prompt.clone(),
                         repo_id: repo_id.clone(),
                         base_branch: base_branch.clone(),
+                        parent_task_id: parent_task_id.clone(),
                     },
                 );
                 e.task_id = Some(task_id);

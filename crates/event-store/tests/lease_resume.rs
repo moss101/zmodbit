@@ -159,7 +159,9 @@ fn stale_lease_cannot_append_but_current_lease_can() {
                 prompt: "p".into(),
                 repo_id: None,
     base_branch: None,
-},
+
+                parent_task_id: None,
+            },
         );
         e.task_id = Some(task_a);
         e.sequence = 1;

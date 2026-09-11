@@ -88,7 +88,9 @@ fn resume_after_crash_reproduces_pending_state_exactly() -> Result<(), Box<dyn s
                 prompt: "p".into(),
                 repo_id: None,
     base_branch: None,
-},
+
+                parent_task_id: None,
+            },
         };
         assert!(proc.execute(create).unwrap().applied_ok());
         let task_id: String = store.with_conn(|conn| {

@@ -92,6 +92,11 @@ pub enum DomainEvent {
         /// Phase 4.1: per-task base branch selection.
         #[serde(default)]
         base_branch: Option<String>,
+        /// Phase 7 item 1: parent task when this task is a spawned child
+        /// agent (AgentGraph linkage; serde default keeps older events
+        /// deserializable).
+        #[serde(default)]
+        parent_task_id: Option<String>,
     },
     TaskQueued,
     TaskStarted,
@@ -418,7 +423,9 @@ mod tests {
                 prompt: "p".into(),
                 repo_id: None,
             base_branch: None,
-        },
+        
+                parent_task_id: None,
+            },
             payload_object_hash: None,
             integrity_hash: String::new(),
         };

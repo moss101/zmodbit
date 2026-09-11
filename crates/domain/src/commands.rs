@@ -29,6 +29,10 @@ pub enum CommandPayload {
         repo_id: Option<String>,
         /// Phase 4.1: per-task base branch (absent = the repo's default).
         base_branch: Option<String>,
+        /// Phase 7 item 1: set when the task is a spawned child agent;
+        /// recorded on TaskCreated for parent-child event linkage.
+        #[serde(default)]
+        parent_task_id: Option<String>,
     },
     QueueTask {
         task_id: TaskId,

@@ -72,7 +72,9 @@ fn model_claim_without_host_acceptance_leaves_the_run_incomplete() {
                 prompt: "p".into(),
                 repo_id: None,
     base_branch: None,
-},
+
+                parent_task_id: None,
+            },
         })
         .unwrap();
     assert!(create_task.applied_ok());

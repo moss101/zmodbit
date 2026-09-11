@@ -65,7 +65,9 @@ fn commands_append_events_in_per_aggregate_sequence_order() {
                     prompt: "p".into(),
                     repo_id: None,
     base_branch: None,
-},
+
+                    parent_task_id: None,
+                },
             })
             .unwrap();
         let ids = outcome.applied().expect("task creation applies");
@@ -126,7 +128,9 @@ fn idempotent_retry_appends_once_and_replays() {
             prompt: "p".into(),
             repo_id: None,
     base_branch: None,
-},
+
+            parent_task_id: None,
+        },
     };
 
     let first = proc.execute(cmd.clone()).unwrap();
@@ -265,7 +269,9 @@ fn create_task_against_missing_session_is_rejected() {
             prompt: "p".into(),
             repo_id: None,
     base_branch: None,
-},
+
+            parent_task_id: None,
+        },
     });
     assert!(matches!(outcome.unwrap(), Outcome::Rejected { .. }));
 }
@@ -298,7 +304,9 @@ fn new_task(proc: &CommandProcessor, session_id: SessionId) -> TaskId {
                 prompt: "p".into(),
                 repo_id: None,
     base_branch: None,
-},
+
+                parent_task_id: None,
+            },
         })
         .unwrap();
     let ids = outcome.applied().expect("task creation applies");
