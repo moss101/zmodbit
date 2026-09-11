@@ -106,24 +106,26 @@ pub fn apply_landlock_pre_exec(worktree: &Path) -> Result<(), String> {
         Access as _, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr,
         RulesetCreatedAttr as _,
     };
-    let abi = landlock::ABI::V4;
-    let no_exec = AccessFs::from_all(abi)
-        .remove(AccessFs::Execute)
-        .remove(AccessFs::WriteFile);
-    let status = Ruleset::create()
-        .handle_access(AccessFs::from_all(abi))?
-        // Reads everywhere; writes only under the worktree and /tmp.
+    // Official pattern (crate example): handle accesses on the Ruleset,
+    // then create() the real kernel ruleset, then add path rules, then
+    // restrict. Reads everywhere; writes only under the worktree + /tmp.
+    let mut write_access = AccessFs::from_all(landlock::ABI::V1);
+    write_access.remove(AccessFs::Execute);
+
+    let status = Ruleset::default()
+        .handle_access(AccessFs::from_all(landlock::ABI::V1))?
+        .create()?
         .add_rule(PathBeneath::new(
             PathFd::new("/")?,
-            AccessFs::from_read(abi),
+            AccessFs::from_read(landlock::ABI::V1),
         ))?
         .add_rule(PathBeneath::new(
             PathFd::new(worktree)?,
-            no_exec & AccessFs::from_all(abi),
+            write_access,
         ))?
         .add_rule(PathBeneath::new(
             PathFd::new("/tmp")?,
-            AccessFs::from_all(abi),
+            AccessFs::from_all(landlock::ABI::V1),
         ))?
         .restrict_self()
         .map_err(|e| e.to_string())?;
