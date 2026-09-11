@@ -2773,10 +2773,12 @@
    "milestone": "M7",
    "order": 0,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "log:docs/evidence/phase7-3-cdp-bridge-2026-09-11.log",
+    "test:cdp_e2e::cdp_bridge_drives_a_real_chromium_end_to_end"
    ],
    "notes": [
     {
@@ -2786,7 +2788,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-11T23:53:07Z"
   },
   {
    "id": "M7.2",

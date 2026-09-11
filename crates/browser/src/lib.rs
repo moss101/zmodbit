@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fmt;
 
+pub mod cdp;
 pub mod computer_safety;
 pub mod session_control;
 

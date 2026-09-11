@@ -4,8 +4,11 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+base64 = "0.22"
 serde = { workspace = true }
+serde_json = { workspace = true }
 sha2 = { workspace = true }
+tungstenite = "0.30"
 
 [dev-dependencies]
 uuid = { workspace = true }

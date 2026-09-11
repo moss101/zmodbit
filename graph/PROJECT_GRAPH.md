@@ -286,7 +286,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M7.1` | IMPLEMENTING | local sandboxed WebContents session + CDP bridge |  |
+| `M7.1` | E2E_PROVEN | local sandboxed WebContents session + CDP bridge |  |
 | `M7.2` | IMPLEMENTING | AX/DOM/layout semantic entities and stable IDs |  |
 | `M7.3` | IMPLEMENTING | state fingerprints + delta stream |  |
 | `M7.4` | IMPLEMENTING | semantic actions and postconditions |  |

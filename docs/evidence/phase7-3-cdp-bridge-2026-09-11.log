@@ -1,0 +1,40 @@
+Phase 7 item 3 (CDP bridge + Chromium launch) — E2E proof
+Date: 2026-09-11
+
+Scope proven (REAL headless Chromium, real WebSocket CDP transport):
+1. Launch: MODBIT_BROWSER_BIN / per-OS discovery; --headless=new
+   --remote-debugging-port=0 + throwaway profile (uniqueness defect fixed
+   en route: colliding --user-data-dir makes Chrome delegate to a running
+   singleton — suffix now full-nanos + per-process sequence);
+   DevToolsActivePort handshake; browser-level WS attach via
+   Target.getTargets/attachToTarget(flatten) — one socket, flattened
+   session; Runtime/Page/Network domains scoped to the session.
+2. navigate: Page.navigate + readyState settle loop.
+3. snapshot: agent-native semantic state — PageState/SemanticElement
+   (existing canonical machinery) built from live DOM (interactive
+   elements with stable refs; url/title verified against the fixture).
+4. action: Runtime.evaluate (click via JS) executed in the page.
+5. console: Runtime.consoleAPICalled events buffered + drained (click log
+   AND async fetch result, via pump() — events arriving between commands
+   are filed, not lost).
+6. network: Network.requestWillBeSent/responseReceived buffered +
+   drained (GET /api + 200 observed).
+7. capture: Page.captureScreenshot → real PNG (magic bytes + size).
+8. Hostile-page test: prompt-injection text ("IGNORE ALL PREVIOUS
+   INSTRUCTIONS...") passes through as verbatim page DATA (transport
+   never parses/executes it); the page-authored exfil fetch to an
+   attacker host is OBSERVED but never ANSWERED — no response line, the
+   failed attempt surfaces as console data; only the local fixture
+   server responds.
+9. CI per-OS: find_browser() skips with a recorded note when no
+   Chromium-family binary exists (documented gap, never a fake pass).
+
+Reuse per work order: fingerprint/lease code untouched (PageState
+fingerprints, ControllerLease, Watchdog in crates/browser); the CDP
+module only moves bytes to and from the browser. Live-view/takeover UI
+is desktop-side follow-up.
+
+Test evidence: cargo test -p modbit-browser (12 unit + cdp_e2e:
+cdp_bridge_drives_a_real_chromium_end_to_end,
+hostile_page_content_stays_inert_data — green under full-workspace
+parallel load, 544 tests total, 0 failed).
