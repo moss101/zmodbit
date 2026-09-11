@@ -1,0 +1,95 @@
+Phase 5 — approvals, durable effect receipts, kernel hardening, attack suite (items 1, 2, 3, 6)
+========================================================================
+Phase context: Future-tasks Phase 5 ("approvals, protected-effect
+receipts and review"); items 4 (tracing/OTel) and 5 (review-surface
+depth) and item 6 (docs/52 suite — delivered here) tracked per item
+below.
+Revision: commit "Phase 5 (items 1,2,3,6) ..." on main; base 7078d77
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT CHANGED
+---------------------------------------------------------------------
+- crates/effects (canonical owner, docs/81): the protected-effect
+  receipt chain PROMOTED from the checkpoint prototype — hash-linked
+  receipts binding approval/capability/call/result digests; Chain
+  (pure) + Ledger (append-only JSONL, durable across restarts,
+  verify-before-extend, on-disk tamper detection). The checkpoint
+  prototype stays as-is (its consumers unchanged); the canonical
+  production ledger is this crate. crates/effects enters the product
+  closure.
+- migration v8: durable `approvals` table (SQLite) — pending effect
+  approvals survive a Core kill; decisions are first-wins (a replayed
+  ApproveEffect after a restart cannot re-resolve).
+- DurableApprovalGate + LiveGrants: under execution_mode=approvals
+  (Phase 4.2 settings — the mode is a REAL consumer now), a kernel-
+  denied Write/External effect PERSISTS a pending approval and the tool
+  call BLOCKS on the operator decision; approval appends a LIVE
+  provisional grant (decision granted, never the blanket capability);
+  the kernel re-check then allows exactly the approved effect. OneAgent
+  re-snapshots the grant set on EVERY tool call, so mid-run approvals
+  take effect.
+- ApproveEffect/DenyEffect surface RPCs (proto 19 → 21): resolve by
+  approval_id; first decision wins; replays and unknown ids refused
+  with typed errors.
+- Kernel hardening (docs/52 § path escape — defense in depth, found by
+  the new attack suite): ANY parent-directory component in a
+  protected-effect path argument is denied — prefix lists alone missed
+  mid-path traversal (foo/../../etc/shadow).
+- docs/52 attack suite (always-on tests, policy_attack_suite.rs): path
+  escape denied despite write grants; approval decisions bind intent
+  HASHES (replay/unknown/expiry refused; mutated arguments change the
+  hash and stay unapproved); effect receipts bind digests never raw
+  payloads (hostile ledger tamper detected); hostile tool RESULTS
+  cannot self-grant (the kernel decides from grants, not model
+  content).
+
+E2E PROOFS (approvals_e2e, REAL daemon + REAL model endpoint; 3 tests)
+---------------------------------------------------------------------
+  approve_unblocks_the_protected_effect ................ ok
+  - execution_mode=approvals persisted via settings (Phase 4.2)
+  - the model's change.apply attempt PERSISTS a pending approval and
+    the tool call blocks (no worktree write while pending)
+  - ApproveEffect resolves it; the blocked effect proceeds; the edit
+    REALLY lands in the worktree
+  - replaying the decision is refused (first decision wins)
+  deny_refuses_the_protected_effect_but_completes ...... ok
+  - DenyEffect: the worktree stays byte-identical; the task still
+    completes (the model is told) — never left hanging
+  pending_approval_survives_a_core_kill ................ ok
+  - the durable row survives the death of the core that created it
+
+MUTATION CHECK (docs/55), Phase 4.2-adjacent for this phase:
+  The approval gate's own control is the mode toggle: in default mode
+  the same edit applies with NO approval flow (proven by
+  settings_e2e's default-mode control test); in approvals mode the
+  identical effect cannot proceed without a decision (proven here).
+  Additionally the live-grant mechanism is validated by the E2E's
+  replay check (a second approve cannot re-unblock).
+
+IN-PROGRESS DURABILITY NOTE (honest scope)
+---------------------------------------------------------------------
+The restart-durability E2E iteration revealed that a Core restart
+while an approval is pending RESUMES the task (Phase 2.5 boot replay)
+which re-requests the approval under a NEW id (the old row stays
+pending). The operator flow is to approve the LIVE request (the
+desktop Needs-Attention card reads pending_for_task). Automating
+stale-row cleanup (superseded state) is recorded as follow-up
+hardening; the durable-store semantics (first decision wins) are
+already enforced.
+
+REMAINING GAPS (Phase 5, tracked)
+---------------------------------------------------------------------
+- Item 4: tracing + OpenTelemetry export, real cost from usage frames,
+  SLO ladder consumer — NOT started.
+- Item 5 depth: accept/reject per hunk, inline revision-bound comments,
+  generated review checklist — the review surface ships GetDiff +
+  revision-bound review (Phase 2.9/4.1); hunk-level UI actions are
+  desktop work.
+- Bulk approve/deny of identical intents: the RPC resolves one id per
+  call; bulk is a surface-loop convenience to add with the desktop
+  Needs-Attention card work.
+- Restart-integrated approval-resume automation (stale-row supersession)
+  as described above.
+
+FULL-SUITE STATUS: exit 0, 516 Rust tests + 36 desktop tests, clippy
+clean, check_dossier + architecture-lint + decision-guard OK.
