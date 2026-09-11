@@ -186,6 +186,9 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         >
           <option value="default">default — full tool grants</option>
           <option value="readonly">readonly — read-only tools only</option>
+          <option value="approvals">
+            approvals — writes wait for operator approval
+          </option>
         </select>
         <p className="empty">
           readonly tasks refuse edits and shell execution at the capability

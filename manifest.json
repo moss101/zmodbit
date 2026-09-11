@@ -2,11 +2,11 @@
   "product": "Modbit",
   "edition": "V3.1",
   "authority_date": "2026-09-03",
-  "generated_on": "2026-09-10",
+  "generated_on": "2026-09-11",
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 85,
+    "root_and_tooling": 86,
     "docs_bytes": 513371
   },
   "sections": [
@@ -771,8 +771,8 @@
     },
     {
       "path": "apps/desktop/electron/bridge-schema.cjs",
-      "bytes": 10580,
-      "sha256": "e8617cb7574d76cdd246af7a2c4c9e06297990a21c5d3cd4b80d29dd4e5261f2"
+      "bytes": 10604,
+      "sha256": "b3469fe5406cc874ba6ded7f099993348730b271e0a5309cbe328b2de8973e4b"
     },
     {
       "path": "apps/desktop/electron/event-stream.cjs",
@@ -876,8 +876,8 @@
     },
     {
       "path": "apps/desktop/src/settings/SettingsScreen.tsx",
-      "bytes": 7519,
-      "sha256": "7cea4b5e0cb2c177d211b269993c4eb69c334568d339e7fc820f22f57d95ac84"
+      "bytes": 7636,
+      "sha256": "2b665450103eab2048d19710fca76724c6d2cbd186a9cc4ba053063e2b0e09b8"
     },
     {
       "path": "apps/desktop/src/status-center/status.test.ts",
@@ -1006,8 +1006,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 108583,
-      "sha256": "e75d76d64fcec39db536e466d6b608497e12938d8556cfc443fdc32c1c58ca70"
+      "bytes": 115574,
+      "sha256": "bc147582a05ddf97483046f60fb4158cd49eb384b8701d730d447b5d0005856a"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",
@@ -1108,6 +1108,11 @@
       "path": "tools/examples_runner.py",
       "bytes": 3505,
       "sha256": "3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4"
+    },
+    {
+      "path": "tools/release/operator-signing.md",
+      "bytes": 1770,
+      "sha256": "0c433db5861d0184cbb4c1d9fc5eacb922e47254a1fb8bdd7f78edaa0cee6509"
     }
   ],
   "renames_v3_to_v3_1": {

@@ -48,7 +48,26 @@ export interface SurfaceRequest {
    * (provider/model/base URL/max turns/execution mode).
    */
   getSettings?: GetSettingsRequest | undefined;
-  updateSettings?: UpdateSettingsCommand | undefined;
+  updateSettings?:
+    | UpdateSettingsCommand
+    | undefined;
+  /**
+   * Phase 5: the approval loop — resolve a pending protected-effect
+   * approval (docs/13 Waiting(Approval), docs/23).
+   */
+  approveEffect?: ApproveEffectCommand | undefined;
+  denyEffect?: DenyEffectCommand | undefined;
+}
+
+export interface ApproveEffectCommand {
+  approvalId: string;
+  resolvedBy: string;
+}
+
+export interface DenyEffectCommand {
+  approvalId: string;
+  reason: string;
+  resolvedBy: string;
 }
 
 export interface GetSettingsRequest {
@@ -327,6 +346,8 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     listRecentRepos: undefined,
     getSettings: undefined,
     updateSettings: undefined,
+    approveEffect: undefined,
+    denyEffect: undefined,
   };
 }
 
@@ -388,6 +409,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.updateSettings !== undefined) {
       UpdateSettingsCommand.encode(message.updateSettings, writer.uint32(154).fork()).join();
+    }
+    if (message.approveEffect !== undefined) {
+      ApproveEffectCommand.encode(message.approveEffect, writer.uint32(162).fork()).join();
+    }
+    if (message.denyEffect !== undefined) {
+      DenyEffectCommand.encode(message.denyEffect, writer.uint32(170).fork()).join();
     }
     return writer;
   },
@@ -551,6 +578,22 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.updateSettings = UpdateSettingsCommand.decode(reader, reader.uint32());
           continue;
         }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.approveEffect = ApproveEffectCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.denyEffect = DenyEffectCommand.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -585,6 +628,8 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
         : undefined,
       getSettings: isSet(object.getSettings) ? GetSettingsRequest.fromJSON(object.getSettings) : undefined,
       updateSettings: isSet(object.updateSettings) ? UpdateSettingsCommand.fromJSON(object.updateSettings) : undefined,
+      approveEffect: isSet(object.approveEffect) ? ApproveEffectCommand.fromJSON(object.approveEffect) : undefined,
+      denyEffect: isSet(object.denyEffect) ? DenyEffectCommand.fromJSON(object.denyEffect) : undefined,
     };
   },
 
@@ -646,6 +691,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.updateSettings !== undefined) {
       obj.updateSettings = UpdateSettingsCommand.toJSON(message.updateSettings);
+    }
+    if (message.approveEffect !== undefined) {
+      obj.approveEffect = ApproveEffectCommand.toJSON(message.approveEffect);
+    }
+    if (message.denyEffect !== undefined) {
+      obj.denyEffect = DenyEffectCommand.toJSON(message.denyEffect);
     }
     return obj;
   },
@@ -712,6 +763,180 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     message.updateSettings = (object.updateSettings !== undefined && object.updateSettings !== null)
       ? UpdateSettingsCommand.fromPartial(object.updateSettings)
       : undefined;
+    message.approveEffect = (object.approveEffect !== undefined && object.approveEffect !== null)
+      ? ApproveEffectCommand.fromPartial(object.approveEffect)
+      : undefined;
+    message.denyEffect = (object.denyEffect !== undefined && object.denyEffect !== null)
+      ? DenyEffectCommand.fromPartial(object.denyEffect)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseApproveEffectCommand(): ApproveEffectCommand {
+  return { approvalId: "", resolvedBy: "" };
+}
+
+export const ApproveEffectCommand: MessageFns<ApproveEffectCommand> = {
+  encode(message: ApproveEffectCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.approvalId !== "") {
+      writer.uint32(10).string(message.approvalId);
+    }
+    if (message.resolvedBy !== "") {
+      writer.uint32(18).string(message.resolvedBy);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ApproveEffectCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseApproveEffectCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.approvalId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.resolvedBy = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ApproveEffectCommand {
+    return {
+      approvalId: isSet(object.approvalId) ? globalThis.String(object.approvalId) : "",
+      resolvedBy: isSet(object.resolvedBy) ? globalThis.String(object.resolvedBy) : "",
+    };
+  },
+
+  toJSON(message: ApproveEffectCommand): unknown {
+    const obj: any = {};
+    if (message.approvalId !== "") {
+      obj.approvalId = message.approvalId;
+    }
+    if (message.resolvedBy !== "") {
+      obj.resolvedBy = message.resolvedBy;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ApproveEffectCommand>, I>>(base?: I): ApproveEffectCommand {
+    return ApproveEffectCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ApproveEffectCommand>, I>>(object: I): ApproveEffectCommand {
+    const message = createBaseApproveEffectCommand();
+    message.approvalId = object.approvalId ?? "";
+    message.resolvedBy = object.resolvedBy ?? "";
+    return message;
+  },
+};
+
+function createBaseDenyEffectCommand(): DenyEffectCommand {
+  return { approvalId: "", reason: "", resolvedBy: "" };
+}
+
+export const DenyEffectCommand: MessageFns<DenyEffectCommand> = {
+  encode(message: DenyEffectCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.approvalId !== "") {
+      writer.uint32(10).string(message.approvalId);
+    }
+    if (message.reason !== "") {
+      writer.uint32(18).string(message.reason);
+    }
+    if (message.resolvedBy !== "") {
+      writer.uint32(26).string(message.resolvedBy);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DenyEffectCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDenyEffectCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.approvalId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.reason = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.resolvedBy = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DenyEffectCommand {
+    return {
+      approvalId: isSet(object.approvalId) ? globalThis.String(object.approvalId) : "",
+      reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
+      resolvedBy: isSet(object.resolvedBy) ? globalThis.String(object.resolvedBy) : "",
+    };
+  },
+
+  toJSON(message: DenyEffectCommand): unknown {
+    const obj: any = {};
+    if (message.approvalId !== "") {
+      obj.approvalId = message.approvalId;
+    }
+    if (message.reason !== "") {
+      obj.reason = message.reason;
+    }
+    if (message.resolvedBy !== "") {
+      obj.resolvedBy = message.resolvedBy;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DenyEffectCommand>, I>>(base?: I): DenyEffectCommand {
+    return DenyEffectCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DenyEffectCommand>, I>>(object: I): DenyEffectCommand {
+    const message = createBaseDenyEffectCommand();
+    message.approvalId = object.approvalId ?? "";
+    message.reason = object.reason ?? "";
+    message.resolvedBy = object.resolvedBy ?? "";
     return message;
   },
 };

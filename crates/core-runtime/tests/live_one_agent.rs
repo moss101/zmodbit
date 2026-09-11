@@ -136,13 +136,15 @@ fn live_one_agent_loop_reaches_completed() {
     let key = std::env::var(provider.credential_env()).unwrap();
     let transport = LiveTransport { provider, key };
 
+    let live = modbit_core_runtime::scheduler::LiveGrants(std::sync::Mutex::new(Vec::new()));
     let registry = ToolRegistry::new();
     let kernel = PolicyKernel::new(vec![]);
     let rt = OneAgentRuntime {
         transport: &transport,
         registry: &registry,
         kernel: &kernel,
-        grants: &[],
+        grants: &live,
+        approval_gate: None,
         max_turns: 2,
         observer: None,
         control: None,

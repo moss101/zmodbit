@@ -12,6 +12,7 @@ modbit-workspace = { path = "../workspace" }
 modbit-policy = { path = "../policy" }
 modbit-tools = { path = "../tools" }
 modbit-providers = { path = "../providers" }
+modbit-effects = { path = "../effects" }
 modbit-prompt-compiler = { path = "../prompt-compiler" }
 modbit-git = { path = "../git" }
 modbit-verification = { path = "../verification" }

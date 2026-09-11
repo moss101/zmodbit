@@ -216,8 +216,9 @@ pub struct OneAgentRuntime<'a> {
     pub transport: &'a dyn ModelTransport,
     pub registry: &'a ToolRegistry,
     pub kernel: &'a PolicyKernel,
-    /// Capability grants the agent's tool calls ride on.
-    pub grants: &'a [modbit_policy::CapabilityGrant],
+    /// The LIVE grant set: re-snapshotted on every tool call so an
+    /// approval granted mid-run takes effect (Phase 5).
+    pub grants: &'a crate::scheduler::LiveGrants,
     pub max_turns: u32,
     /// Durable-run observer (the scheduler); None in unit tests.
     pub observer: Option<&'a dyn RunObserver>,
@@ -233,6 +234,22 @@ pub struct OneAgentRuntime<'a> {
     /// boundary applies the plan only if the conversation revision is
     /// unchanged (stale plans are discarded and recomputed inline).
     pub async_compaction: bool,
+    /// Phase 5 approval gate (docs/13 Waiting(Approval)): when a kernel
+    /// DENY for a Write/External effect should become a PERSISTED
+    /// approval request instead of a flat refusal, the runtime blocks
+    /// the tool call on this gate until the operator approves/denies.
+    /// None = ungranted effects are flatly refused (legacy behavior).
+    pub approval_gate: Option<&'a dyn ApprovalGate>,
+}
+
+/// The decision callback the runtime consults for a kernel-denied
+/// protected effect. Implementations PERSIST the request and BLOCK on
+/// the operator decision (docs/23: the approval binds the normalized
+/// intent hash).
+pub trait ApprovalGate: Send + Sync {
+    /// Returns Some("approved") once the operator approves, Some("denied")
+    /// when refused, or None on wait timeout/shutdown.
+    fn await_decision(&self, intent_hash: &str, tool: &str, arguments: &serde_json::Value) -> Option<String>;
 }
 
 impl<'a> OneAgentRuntime<'a> {
@@ -701,7 +718,34 @@ impl<'a> OneAgentRuntime<'a> {
                 };
                 // Step 5 (cont.): the kernel decision is consumed by the
                 // fail-closed registry — denial means NO side effect.
-                let decision = self.kernel.check(&request, self.grants);
+                // Phase 5: a DENIED Write/External effect under the
+                // approval gate becomes a PERSISTED approval request; the
+                // call blocks on the operator decision. A still-ungranted
+                // effect after approval is still refused (the gate grants
+                // the decision, never the capability).
+                let mut decision =
+                    self.kernel.check(&request, &self.grants.snapshot());
+                if let (Some(gate), PolicyDecision::Deny { .. }) =
+                    (self.approval_gate, &decision)
+                {
+                    let class_protected =
+                        request.effect_class != modbit_policy::EffectClass::ReadOnly;
+                    if class_protected {
+                        let intent = modbit_policy::approvals::intent_hash(&request);
+                        if gate.await_decision(&intent, &request.tool, &request.arguments)
+                            .as_deref()
+                            == Some("approved")
+                        {
+                            // The gate granted the DECISION only: the
+                            // effect re-runs through the kernel with an
+                            // ad-hoc approval grant scoped to this intent
+                            // (done by the gate implementor appending a
+                            // live grant), so a still-ungranted effect
+                            // stays refused.
+                            decision = PolicyDecision::Allow;
+                        }
+                    }
+                }
                 let outcome = match &decision {
                     PolicyDecision::Deny { reason } => ToolOutcome {
                         call_id,
@@ -813,19 +857,24 @@ mod tests {
         transport: &'a StubTransport,
         registry: &'a ToolRegistry,
         kernel: &'a PolicyKernel,
-        grants: &'a [CapabilityGrant],
+        grants: &'a crate::scheduler::LiveGrants,
     ) -> OneAgentRuntime<'a> {
         OneAgentRuntime {
             transport,
             registry,
             kernel,
             grants,
+            approval_gate: None,
             max_turns: 4,
             observer: None,
             control: None,
             resume_conversation: None,
             async_compaction: false,
         }
+    }
+
+    fn live_grants(values: &[CapabilityGrant]) -> crate::scheduler::LiveGrants {
+        crate::scheduler::LiveGrants(std::sync::Mutex::new(values.to_vec()))
     }
 
     fn task() -> AgentTask {
@@ -855,7 +904,8 @@ mod tests {
         ]]);
         let registry = ToolRegistry::new();
         let kernel = PolicyKernel::new(vec![]);
-        let rt = runtime(&transport, &registry, &kernel, &[]);
+        let live = live_grants(&[]);
+        let rt = runtime(&transport, &registry, &kernel, &live);
 
         let result = rt.run(&task()).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -904,7 +954,8 @@ mod tests {
             tool: "modbit.file.read".into(),
             effect_class: EffectClass::ReadOnly,
         }];
-        let rt = runtime(&transport, &registry, &kernel, &grants);
+        let live = live_grants(&grants);
+        let rt = runtime(&transport, &registry, &kernel, &live);
 
         let result = rt.run(&task()).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -966,7 +1017,8 @@ mod tests {
             tool: "modbit.file.read".into(),
             effect_class: EffectClass::ReadOnly,
         }];
-        let rt = runtime(&transport, &registry, &kernel, &grants);
+        let live = live_grants(&grants);
+        let rt = runtime(&transport, &registry, &kernel, &live);
 
         let result = rt.run(&task()).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -1037,7 +1089,8 @@ mod tests {
             tool: "modbit.file.read".into(),
             effect_class: EffectClass::ReadOnly,
         }];
-        let rt = runtime(&transport, &registry, &kernel, &grants);
+        let live = live_grants(&grants);
+        let rt = runtime(&transport, &registry, &kernel, &live);
 
         let result = rt.run(&task()).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -1084,7 +1137,8 @@ mod tests {
             )
             .unwrap();
         let kernel = PolicyKernel::new(vec![]);
-        let rt = runtime(&transport, &registry, &kernel, &[]); // NO grants
+        let live = live_grants(&[]);
+        let rt = runtime(&transport, &registry, &kernel, &live); // NO grants
 
         let result = rt.run(&task()).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -1134,7 +1188,8 @@ mod tests {
             tool: "modbit.file.read".into(),
             effect_class: EffectClass::ReadOnly,
         }];
-        let rt = runtime(&transport, &registry, &kernel, &grants);
+        let live = live_grants(&grants);
+        let rt = runtime(&transport, &registry, &kernel, &live);
 
         let result = rt.run(&task()).unwrap();
         assert_eq!(result.final_state, TurnState::Completed);
@@ -1178,7 +1233,8 @@ mod tests {
             )
             .unwrap();
         let kernel = PolicyKernel::new(vec![]);
-        let rt = runtime(&transport, &registry, &kernel, &[]); // NO grants
+        let live = live_grants(&[]);
+        let rt = runtime(&transport, &registry, &kernel, &live); // NO grants
 
         let result = rt.run(&task()).unwrap();
         assert_eq!(invoked.load(Ordering::SeqCst), 0, "denied tool never runs");
@@ -1224,7 +1280,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 3,
             observer: None,
             control: None,
@@ -1308,7 +1365,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 4,
             observer: Some(&observer),
             control: None,
@@ -1366,7 +1424,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 4,
             observer: None,
             control: None,
@@ -1470,7 +1529,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 8,
             observer: None,
             control: Some(&control),
@@ -1518,7 +1578,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 8,
             observer: None,
             control: Some(&control),
@@ -1561,7 +1622,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &[],
+            grants: &live_grants(&[]),
+            approval_gate: None,
             max_turns: 4,
             observer: None,
             control: None,
@@ -1634,7 +1696,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 4,
             observer: None,
             control: None,
@@ -1730,7 +1793,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 4,
             observer: None,
             control: Some(&control),
@@ -1807,7 +1871,8 @@ mod tests {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: &live_grants(&grants),
+            approval_gate: None,
             max_turns: 8,
             observer: None,
             control: Some(&*control),

@@ -144,8 +144,8 @@ const CHANNELS = {
             }
             if (payload.executionMode !== undefined) {
                 const m = requireString(payload, "executionMode", 40).toLowerCase();
-                if (!["default", "readonly"].includes(m)) {
-                    throw new Rejected("executionMode must be default or readonly");
+                if (!["default", "readonly", "approvals"].includes(m)) {
+                    throw new Rejected("executionMode must be default, readonly or approvals");
                 }
                 patch.executionMode = m;
             }

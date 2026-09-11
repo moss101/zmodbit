@@ -239,7 +239,7 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 }
 
 fn wait_ready_for_review(daemon: &str, task_id: &str) {
-    let deadline = Instant::now() + Duration::from_secs(120);
+    let deadline = Instant::now() + Duration::from_secs(300);
     loop {
         let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
             .fleet

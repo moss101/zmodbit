@@ -560,6 +560,74 @@ impl CoreServices {
                     },
                 }
             }
+            Some(pb::surface_request::Request::ApproveEffect(approve)) => {
+                // Phase 5: resolve the pending approval. First decision
+                // wins (replays after a Core restart cannot re-resolve);
+                // on approval the blocked run's gate appends the live
+                // grant and the effect proceeds.
+                let outcome = self.store.with_conn(|conn| {
+                    modbit_event_store::approvals::resolve(
+                        conn,
+                        &approve.approval_id,
+                        "approved",
+                        if approve.resolved_by.is_empty() {
+                            "operator"
+                        } else {
+                            &approve.resolved_by
+                        },
+                        &crate::scheduler::rfc3339_now(),
+                    )
+                    .map_err(|e| e.to_string())
+                });
+                match outcome {
+                    Ok(true) => pb::SurfaceResponse {
+                        ok: true,
+                        ..Default::default()
+                    },
+                    Ok(false) => pb::SurfaceResponse {
+                        ok: false,
+                        error: format!("approval {} is not pending", approve.approval_id),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::DenyEffect(deny)) => {
+                let outcome = self.store.with_conn(|conn| {
+                    modbit_event_store::approvals::resolve(
+                        conn,
+                        &deny.approval_id,
+                        "denied",
+                        if deny.resolved_by.is_empty() {
+                            "operator"
+                        } else {
+                            &deny.resolved_by
+                        },
+                        &crate::scheduler::rfc3339_now(),
+                    )
+                    .map_err(|e| e.to_string())
+                });
+                match outcome {
+                    Ok(true) => pb::SurfaceResponse {
+                        ok: true,
+                        ..Default::default()
+                    },
+                    Ok(false) => pb::SurfaceResponse {
+                        ok: false,
+                        error: format!("approval {} is not pending", deny.approval_id),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             Some(pb::surface_request::Request::SteerTask(steer)) => {
                 // Phase 2.3: queue the note for the in-flight run (injected
                 // as a user message on the next turn), then record the

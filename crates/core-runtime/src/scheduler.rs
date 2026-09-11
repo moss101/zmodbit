@@ -633,16 +633,22 @@ impl Scheduler {
         // readonly task's kernel refuses change.apply/shell.run/test.run.
         let readonly = execution_mode == "readonly";
         let kernel = PolicyKernel::new(vec![]);
-        for grant in worktree_grants() {
-            if readonly && grant.effect_class != EffectClass::ReadOnly {
-                continue;
-            }
-            kernel.grant(grant);
-        }
-        let grants: Vec<_> = worktree_grants()
-            .into_iter()
-            .filter(|g| !readonly || g.effect_class == EffectClass::ReadOnly)
-            .collect();
+        // Phase 5: approvals mode keeps the base grants read-only — a
+        // Write/External effect first becomes a durable approval request;
+        // the gate appends a live provisional grant on approval.
+        let approvals_mode = execution_mode == "approvals";
+        let live_grants = Arc::new(LiveGrants(std::sync::Mutex::new(
+            worktree_grants()
+                .into_iter()
+                .filter(|g| {
+                    if approvals_mode {
+                        g.effect_class == EffectClass::ReadOnly
+                    } else {
+                        !readonly || g.effect_class == EffectClass::ReadOnly
+                    }
+                })
+                .collect(),
+        )));
 
         // 4-5. Run the one-agent runtime over the production transport,
         // writing every Run/Turn/RunStep transition into the store.
@@ -657,12 +663,23 @@ impl Scheduler {
             task_index: Some(task_index),
             shared,
         };
+        let approval_gate: Option<DurableApprovalGate> = if approvals_mode {
+            Some(DurableApprovalGate {
+                store: self.store.clone(),
+                task_id,
+                grants: live_grants.clone(),
+                wait_timeout: Duration::from_secs(300),
+            })
+        } else {
+            None
+        };
         let transport = LiveGatewayTransport::new(&run_config, signal.cancel_token());
         let runtime = OneAgentRuntime {
             transport: &transport,
             registry: &registry,
             kernel: &kernel,
-            grants: &grants,
+            grants: live_grants.as_ref(),
+            approval_gate: approval_gate.as_ref().map(|g| g as &dyn crate::one_agent::ApprovalGate),
             max_turns: run_config.max_turns,
             observer: Some(&observer),
             control: Some(&*signal),
@@ -797,6 +814,160 @@ pub trait WorktreeSource: Send + Sync + 'static {
     /// Where task worktrees are allocated (clones land beside them).
     fn worktree_root(&self) -> Option<std::path::PathBuf> {
         None
+    }
+}
+
+/// RFC3339-ish timestamp (shared shape with the event store formatter).
+pub(crate) fn rfc3339_now() -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    let secs = now.as_secs();
+    let days = (secs / 86_400) as i64;
+    let rem = secs % 86_400;
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z",
+        rem / 3600,
+        (rem % 3600) / 60,
+        rem % 60
+    )
+}
+
+/// Phase 5 (docs/13 Waiting(Approval), docs/23): the durable approval
+/// gate. A kernel-denied protected effect PERSISTS a pending approval
+/// and BLOCKS the tool call until the operator resolves it through the
+/// surface (ApproveEffect/DenyEffect). On approval, a LIVE provisional
+/// grant scoped to the exact intent hash is appended to the run's grant
+/// set — the decision is granted, never the blanket capability. The
+/// pending approval is durable (SQLite): a Core kill while waiting does
+/// not lose it.
+/// The live grant set for ONE run: read fresh by the runtime on every
+/// tool call, mutated by the approval gate when an operator approves a
+/// protected effect (Phase 5).
+pub struct LiveGrants(pub std::sync::Mutex<Vec<modbit_policy::CapabilityGrant>>);
+
+impl LiveGrants {
+    pub fn snapshot(&self) -> Vec<modbit_policy::CapabilityGrant> {
+        self.0.lock().expect("live grants").clone()
+    }
+
+    pub fn push(&self, grant: modbit_policy::CapabilityGrant) {
+        self.0.lock().expect("live grants").push(grant);
+    }
+}
+
+pub struct DurableApprovalGate {
+    pub store: Arc<EventStore>,
+    pub task_id: TaskId,
+    pub grants: Arc<LiveGrants>,
+    pub wait_timeout: Duration,
+}
+
+impl DurableApprovalGate {
+
+    fn request_persisted(
+        &self,
+        intent_hash: &str,
+        tool: &str,
+        arguments: &serde_json::Value,
+    ) -> String {
+        let approval_id = format!(
+            "appr-{}",
+            &uuid::Uuid::now_v7().simple().to_string()[..16]
+        );
+        let scope = serde_json::json!({
+            "intent_hash": intent_hash,
+            "arguments": arguments,
+        })
+        .to_string();
+        let _ = self.store.with_conn(|conn| {
+            modbit_event_store::approvals::insert(
+                conn,
+                &modbit_event_store::approvals::PendingApproval {
+                    approval_id: approval_id.clone(),
+                    task_id: self.task_id.to_string(),
+                    intent_hash: intent_hash.to_string(),
+                    tool: tool.to_string(),
+                    scope,
+                    state: "pending".into(),
+                    created_at: crate::scheduler::rfc3339_now(),
+                },
+            )
+        });
+        approval_id
+    }
+}
+
+impl crate::one_agent::ApprovalGate for DurableApprovalGate {
+    fn await_decision(
+        &self,
+        intent_hash: &str,
+        tool: &str,
+        arguments: &serde_json::Value,
+    ) -> Option<String> {
+        let approval_id = self.request_persisted(intent_hash, tool, arguments);
+        eprintln!(
+            "modbit scheduler: task {} effect {tool} awaiting approval {} (approve via the surface)",
+            self.task_id, approval_id
+        );
+        // Block on the durable decision. The wait is bounded by the gate
+        // timeout; an unresolved approval stays PENDING in the durable
+        // store and a later identical call waits again (or the operator
+        // approves and the model retries).
+        let deadline = Instant::now() + self.wait_timeout;
+        loop {
+            if Instant::now() > deadline {
+                eprintln!(
+                    "modbit scheduler: approval {} still pending at gate timeout",
+                    approval_id
+                );
+                return None;
+            }
+            let decision = self
+                .store
+                .with_conn(|conn| {
+                    modbit_event_store::approvals::decision_for(
+                        conn,
+                        &self.task_id.to_string(),
+                        intent_hash,
+                    )
+                    .map_err(|e| e.to_string())
+                })
+                .ok()
+                .flatten();
+            match decision.as_deref() {
+                Some("approved") => {
+                    // Append a LIVE provisional grant for THIS tool: the
+                    // kernel re-check passes for the approved effect only.
+                    // The gate grants the DECISION, never the blanket
+                    // capability set.
+                    self.grants.push(modbit_policy::CapabilityGrant {
+                        grant_id: format!("g-approval-{approval_id}"),
+                        tool: tool.to_string(),
+                        effect_class: modbit_policy::EffectClass::Write,
+                    });
+                    self.grants.push(modbit_policy::CapabilityGrant {
+                        grant_id: format!("g-approval-{approval_id}-ext"),
+                        tool: tool.to_string(),
+                        effect_class: modbit_policy::EffectClass::External,
+                    });
+                    return Some("approved".to_string());
+                }
+                Some("denied") => return Some("denied".to_string()),
+                _ => {}
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
     }
 }
 

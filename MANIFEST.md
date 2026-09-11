@@ -1,7 +1,7 @@
 # Modbit Dossier Manifest — V3.1
 
 > **Authority date:** 2026-09-03  
-> **Generated:** 2026-09-10 by `tools/build_manifest.py`  
+> **Generated:** 2026-09-11 by `tools/build_manifest.py`  
 > **Scope:** every specification file in `docs/` plus the root governing files and tooling. The previous `99_MANIFEST.md` covered only 39 Part 2 files; this manifest covers all 70 docs.
 > **Machine-readable twin:** `manifest.json` (same content, same hashes).
 
@@ -119,7 +119,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/dist/assets/index-BngEqeZV.js` |  | 146638 | `e2e0c547a033d2e8e1cbef8e576bbf394c5f488745d80c2bf376906fce067f61` |
 | `apps/desktop/dist/assets/index-DrM0Ho-V.css` |  | 664 | `e0f5b17ca79348d107ea783cbc7cf8118ecae0a838287dbc82973ee6e5bfffc4` |
 | `apps/desktop/dist/index.html` |  | 448 | `5a322bc5abed3f7d0a907a96f4a5015bfe135d17db2d4d3eaebe8bfbdc2e02e1` |
-| `apps/desktop/electron/bridge-schema.cjs` |  | 10580 | `e8617cb7574d76cdd246af7a2c4c9e06297990a21c5d3cd4b80d29dd4e5261f2` |
+| `apps/desktop/electron/bridge-schema.cjs` |  | 10604 | `b3469fe5406cc874ba6ded7f099993348730b271e0a5309cbe328b2de8973e4b` |
 | `apps/desktop/electron/event-stream.cjs` |  | 2901 | `e32366e9970eecf2325129f9dff40f427107d0e864d2d24ea5db5552b2001a65` |
 | `apps/desktop/electron/main.cjs` |  | 9113 | `e8e3616cee43647c5202baed130562d0725e86dde342d9ec1f0ba4b9912cc9f1` |
 | `apps/desktop/electron/preload.cjs` |  | 2259 | `a0280998ede308f6b9896bf7acc5006a67f063abd07cd9a206204faf57406b91` |
@@ -140,7 +140,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `apps/desktop/src/global.d.ts` |  | 2656 | `99a1885fbe492a4310ba507a627d019521478f5392c488140effe2307af1f1e6` |
 | `apps/desktop/src/main.ts` |  | 188 | `e89ba26ebd97598e96598c91df30513d3608b4053551390a917b73dadbae1d42` |
 | `apps/desktop/src/main.tsx` |  | 232 | `ccbefe7be6c69706a1bb01c4c3f20492eb002435af6ba7e5a6d45f7c6aa3a140` |
-| `apps/desktop/src/settings/SettingsScreen.tsx` |  | 7519 | `7cea4b5e0cb2c177d211b269993c4eb69c334568d339e7fc820f22f57d95ac84` |
+| `apps/desktop/src/settings/SettingsScreen.tsx` |  | 7636 | `2b665450103eab2048d19710fca76724c6d2cbd186a9cc4ba053063e2b0e09b8` |
 | `apps/desktop/src/status-center/status.test.ts` |  | 1210 | `21829549ac56b4673383e5f91af4f9fd61bf875816d55eb877813f3d7b7d1005` |
 | `apps/desktop/src/status-center/status.ts` |  | 1251 | `b5bac21314e4e4a7d79ad2d05626714e24057e35eb6591ff29ec744ab2e37b3d` |
 | `apps/desktop/src/styles.css` |  | 4024 | `ebb7b83f7347d098ec019701e4acb02779b024d9d93db302aa46154c4d1d1dbc` |
@@ -166,7 +166,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3659 | `47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2886 | `eab432c06eb3fc6480a201930f869418ed42236bf040e85dace4e00c50e59f8b` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23242 | `f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 108583 | `e75d76d64fcec39db536e466d6b608497e12938d8556cfc443fdc32c1c58ca70` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 115574 | `bc147582a05ddf97483046f60fb4158cd49eb384b8701d730d447b5d0005856a` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts` |  | 11854 | `c1eb6739e86a75a80872a57916f9526bcd90607a3096efff3067b100e18b3133` |
 | `packages/surface-protocol/src/index.ts` |  | 1023 | `76a5c4953423dd885c4c33be4796e33a3c429d235e6047f9d257be091bd22d38` |
 | `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |
@@ -187,6 +187,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `tools/coverage-guard.py` |  | 13187 | `05bf43a96ca03c9f537ebb6045497443e499a4aa4f3b52aaf85eb967ee00d68f` |
 | `tools/evidence.py` |  | 4366 | `58d7bb6c1c679208e9abb4cdb9c1346b321b108ae4aa175fc752f73f118e7c47` |
 | `tools/examples_runner.py` |  | 3505 | `3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4` |
+| `tools/release/operator-signing.md` |  | 1770 | `0c433db5861d0184cbb4c1d9fc5eacb922e47254a1fb8bdd7f78edaa0cee6509` |
 
 ## Rename map (V3 flat numbering → V3.1 `docs/`)
 

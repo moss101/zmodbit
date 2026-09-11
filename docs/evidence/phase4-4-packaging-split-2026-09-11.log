@@ -1,0 +1,67 @@
+Phase 4.4 — packaging split: implementation+verification vs operator-gated signing
+========================================================================
+Phase context: Future-tasks Phase 4 item 4, SPLIT per operator directive
+(2026-09-10): (1) packaging implementation and verification with
+unsigned/development artifacts — complete now; (2) production
+signing/notarization = BLOCKED_EXTERNAL_CREDENTIAL / RELEASE_GATE — an
+OPERATOR step on an operator-controlled machine. No Apple Developer
+private credentials, notarization secrets, or Windows signing private
+keys may ever enter the agent runtime, this repository, or CI.
+Revision: the Phase 4.4 commit on main (after 7078d77)
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT WAS BUILT
+---------------------------------------------------------------------
+- tools/release/package.sh: deterministic bundle assembly —
+  build (debug or release) → dist/modbit-<version>-<target>/ layout
+  (bin/{modbit,modbit-core,modbit-execd}) → SBOM (cargo-cyclonedx when
+  present, else a deterministic Cargo.lock-derived fallback JSON) →
+  provenance.json (git rev, profile, target, rustc commit, built_at,
+  signed:false, signing_state BLOCKED_EXTERNAL_CREDENTIAL/RELEASE_GATE)
+  → SHA256SUMS over every file (sorted).
+- tools/release/verify-bundle.sh: hash verification of every file →
+  provenance completeness → binary smoke (with stray-process guards) →
+  signature STATE check. The state check requires a REAL Developer ID
+  authority (macOS) / Authenticode (Windows): an AD-HOC local signature
+  (present on all dev builds) is reported as "AD-HOC signed
+  (development build)" and does NOT count as production signing.
+- tools/release/operator-signing.md: the operator contract — the exact
+  credential-bearing commands (codesign --options runtime --timestamp
+  --sign "Developer ID Application: …", notarytool submit + stapler;
+  Windows signtool /fd SHA256 with timestamping) to run on an operator
+  machine, plus the release flow:
+  build → test → package → SBOM/hash/provenance → operator signing →
+  notarization/signature verification → release receipt.
+- tools/release/release-receipt.sh: the flow's final artifact — a JSON
+  receipt with bundle hash, provenance, signature_verified (Developer
+  ID/Authenticode only) and release_gate (PRODUCTION_OK vs
+  BLOCKED_EXTERNAL_CREDENTIAL).
+
+VERIFICATION (live, this machine)
+---------------------------------------------------------------------
+- package.sh --dev → dist/modbit-0.1.0-aarch64-apple-darwin/ with
+  bin/{modbit,modbit-core,modbit-execd}, SBOM fallback JSON (valid),
+  provenance.json, SHA256SUMS.
+- verify-bundle.sh → hashes OK, provenance complete, binaries execute,
+  signature state "AD-HOC signed (development build)" (correct: no
+  Developer ID here).
+- release-receipt.sh → signature_verified:false,
+  release_gate:BLOCKED_EXTERNAL_CREDENTIAL (correct for a dev bundle).
+- Script fixes recorded: repo-root cd via git rev-parse; binary smoke
+  with stray-process guards; the authority-based signature check (an
+  ad-hoc signature verifies trivially and must not count as production
+  signing).
+
+SECURITY BOUNDARIES (per operator directive)
+---------------------------------------------------------------------
+- No Apple/Windows private credentials were requested, stored, exposed,
+  imported, or handled in the agent runtime, repository, or CI.
+- Signing blocks ONLY the production release gate — implementation and
+  verification of the packaging flow are complete and reproducible
+  without credentials.
+
+REMAINING (gated)
+---------------------------------------------------------------------
+The operator performs the credential-bearing signing + notarization on
+an operator machine, runs verify-bundle.sh (must report SIGNED), and
+generates the release receipt with release_gate=PRODUCTION_OK.

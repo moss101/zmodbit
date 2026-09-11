@@ -124,6 +124,17 @@ impl PolicyKernel {
         // are denied regardless of grants.
         if !matches!(request.effect_class, EffectClass::ReadOnly) {
             if let Some(path) = request.arguments.get("path").and_then(|v| v.as_str()) {
+                // docs/52 § path escape: ANY parent-directory component in
+                // a protected-effect path is denied — prefix lists alone
+                // miss mid-path traversal (foo/../../etc/shadow).
+                if path
+                    .split(['/', '\\'])
+                    .any(|component| component == "..")
+                {
+                    return PolicyDecision::Deny {
+                        reason: format!("path {path:?} escapes the workspace (parent component)"),
+                    };
+                }
                 if self.is_protected(path) {
                     return PolicyDecision::Deny {
                         reason: format!("path {path:?} is protected"),

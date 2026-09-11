@@ -50,6 +50,7 @@ pub const MIGRATIONS: &[Migration] = &[
     (5, SQL_V5_FORK_LINEAGE),
     (6, SQL_V6_RECENT_REPOS),
     (7, SQL_V7_APP_SETTINGS),
+    (8, SQL_V8_APPROVALS),
 ];
 
 /// Projection tables (docs/31 § Core tables): derived read models, always
@@ -139,6 +140,21 @@ pub const SQL_V5_FORK_LINEAGE: &str = "
     ALTER TABLE sessions ADD COLUMN forked_at_sequence INTEGER;
 ";
 
+pub const SQL_V8_APPROVALS: &str = "
+    CREATE TABLE IF NOT EXISTS approvals (
+        approval_id  TEXT PRIMARY KEY,
+        task_id      TEXT NOT NULL,
+        intent_hash  TEXT NOT NULL,
+        tool         TEXT NOT NULL,
+        scope        TEXT NOT NULL,
+        state        TEXT NOT NULL,
+        created_at   TEXT NOT NULL,
+        resolved_at  TEXT NOT NULL DEFAULT '',
+        resolved_by  TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_approvals_task ON approvals(task_id, state);
+";
+
 pub const SQL_V7_APP_SETTINGS: &str = "
     CREATE TABLE IF NOT EXISTS app_settings (
         id   INTEGER PRIMARY KEY CHECK (id = 1),
@@ -180,6 +196,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 7, "latest migration version");
+        assert_eq!(v, 8, "latest migration version");
     }
 }

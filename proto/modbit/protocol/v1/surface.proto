@@ -34,7 +34,21 @@ message SurfaceRequest {
     // (provider/model/base URL/max turns/execution mode).
     GetSettingsRequest get_settings = 18;
     UpdateSettingsCommand update_settings = 19;
+    // Phase 5: the approval loop — resolve a pending protected-effect
+    // approval (docs/13 Waiting(Approval), docs/23).
+    ApproveEffectCommand approve_effect = 20;
+    DenyEffectCommand deny_effect = 21;
   }
+}
+
+message ApproveEffectCommand {
+  string approval_id = 1;
+  string resolved_by = 2;
+}
+message DenyEffectCommand {
+  string approval_id = 1;
+  string reason = 2;
+  string resolved_by = 3;
 }
 
 message GetSettingsRequest {}
