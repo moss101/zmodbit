@@ -96,7 +96,7 @@ fn write_via_sandbox(bench: &Bench, id: &str, target: &Path, content: &str) -> s
 }
 
 #[test]
-#[cfg(not(target_os = "windows"))]
+#[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
 fn sandboxed_writes_outside_the_worktree_fail_inside_succeed() {
     let bench = bench("sbx");
     let inside = bench.worktree.join("inside.txt");
@@ -125,3 +125,40 @@ fn sandboxed_writes_outside_the_worktree_fail_inside_succeed() {
 // assertion hung in CI (DNS resolution inside the sandbox can block
 // rather than fail fast on some networks) and was moved to a manual
 // check.
+
+/// Windows: the sandbox flag is accepted and the command runs (restricted
+/// token enforcement is a recorded follow-up, docs/21).
+#[test]
+#[cfg(target_os = "windows")]
+fn sandbox_flag_accepted_on_windows() {
+    let bench = bench("sbx");
+    let id = "win";
+    let target = bench.worktree.join("win.txt");
+    let code = write_via_sandbox(&bench, id, &target, "win-ok").expect("sandboxed run");
+    assert_eq!(code, 0, "the command must run on windows (unsandboxed today)");
+    assert!(target.exists());
+}
+
+/// macOS: the seatbelt FS rules bite (this is the platform the profile
+/// syntax targets).
+#[test]
+#[cfg(target_os = "macos")]
+fn macos_seatbelt_fs_scoping() {
+    let bench = bench("mac");
+    let inside = bench.worktree.join("inside.txt");
+    let outside_dir = std::env::temp_dir().join(format!(
+        "sbx-mac-outside-{}",
+        uuid::Uuid::now_v7().simple()
+    ));
+    std::fs::create_dir_all(&outside_dir).unwrap();
+    let outside = outside_dir.join("outside.txt");
+
+    let code = write_via_sandbox(&bench, "in", &inside, "inside-ok").expect("inside run");
+    assert_eq!(code, 0);
+    assert!(inside.exists());
+
+    let code = write_via_sandbox(&bench, "out", &outside, "outside-evil").unwrap_or(-1);
+    assert_ne!(code, 0, "outside write must fail under seatbelt");
+    assert!(!outside.exists());
+    let _ = std::fs::remove_dir_all(&outside_dir);
+}

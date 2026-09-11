@@ -106,12 +106,6 @@ pub fn apply_landlock_pre_exec(worktree: &Path) -> Result<(), String> {
         Access as _, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr,
         RulesetCreatedAttr as _,
     };
-    let no_exec_write = {
-        let mut a = AccessFs::from_all(landlock::ABI::V1);
-        a.remove(AccessFs::Execute);
-        a.remove(AccessFs::WriteFile);
-        a
-    };
     // Official crate pattern: handle accesses on the Ruleset, create() the
     // real kernel ruleset, add path rules, then restrict. Reads everywhere;
     // writes only under the worktree + /tmp. BestEffort on old kernels.
