@@ -103,35 +103,30 @@ fn wrap_linux_marker(argv: &[String]) -> Vec<String> {
 #[cfg(target_os = "linux")]
 pub fn apply_landlock_pre_exec(worktree: &Path) -> Result<(), String> {
     use landlock::{
-        Access, AccessFs, Compatible, LandlockStatus, PathBeneath, PathFd, Ruleset,
-        RulesetAttr, RulesetCreatedAttr as _,
+        Access as _, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr,
+        RulesetCreatedAttr as _,
     };
     let abi = landlock::ABI::V4;
-    let mut rs = Ruleset::create()
-        .set_compatibility(landlock::CompatLevel::BestEffort)
-        .map_err(|e| e.to_string())?;
-    rs = rs
-        .handle_access(AccessFs::from_all(abi))
-        .map_err(|e| e.to_string())?;
-    // Read-only access to everything (add a no-op rule for "/" with read
-    // access, then restrict writes to the worktree via handled accesses
-    // minus read rules).
-    rs = rs
-        .add_rule(PathBeneath::new(PathFd::new("/").map_err(|e| e.to_string())?, AccessFs::from_read(abi)))
-        .map_err(|e| e.to_string())?;
-    rs = rs
+    let no_exec = AccessFs::from_all(abi)
+        .remove(AccessFs::Execute)
+        .remove(AccessFs::WriteFile);
+    let status = Ruleset::create()
+        .handle_access(AccessFs::from_all(abi))?
+        // Reads everywhere; writes only under the worktree and /tmp.
         .add_rule(PathBeneath::new(
-            PathFd::new(worktree).map_err(|e| e.to_string())?,
-            AccessFs::from_all(abi),
-        ))
-        .map_err(|e| e.to_string())?;
-    rs = rs
+            PathFd::new("/")?,
+            AccessFs::from_read(abi),
+        ))?
         .add_rule(PathBeneath::new(
-            PathFd::new("/tmp").map_err(|e| e.to_string())?,
+            PathFd::new(worktree)?,
+            no_exec & AccessFs::from_all(abi),
+        ))?
+        .add_rule(PathBeneath::new(
+            PathFd::new("/tmp")?,
             AccessFs::from_all(abi),
-        ))
+        ))?
+        .restrict_self()
         .map_err(|e| e.to_string())?;
-    let status = rs.restrict_self().map_err(|e| e.to_string())?;
     let _ = status; // BestEffort: no Landlock -> no-op (recorded gap)
     Ok(())
 }
