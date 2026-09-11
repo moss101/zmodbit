@@ -210,10 +210,16 @@ mod tests {
             return;
         }
 
-        // Write a command into the interactive shell's stdin.
+        // Write a command into the interactive shell's stdin. cmd.exe
+        // does not expand arithmetic, so the marker is literal there.
+        let (command, marker) = if cfg!(windows) {
+            (b"echo pty-marker-2\r\n".as_slice(), "pty-marker-2")
+        } else {
+            (b"echo pty-marker-$((1+1))\n".as_slice(), "pty-marker-2")
+        };
         let mut wrote = false;
         for _ in 0..20 {
-            if pty.write("s1", b"echo pty-marker-$((1+1))\n").is_ok() {
+            if pty.write("s1", command).is_ok() {
                 wrote = true;
                 break;
             }
@@ -228,12 +234,12 @@ mod tests {
         while std::time::Instant::now() < deadline {
             let (bytes, _) = pty.read("s1", 0, 64 * 1024).unwrap();
             seen = String::from_utf8_lossy(&bytes).to_string();
-            if seen.contains("pty-marker-2") {
+            if seen.contains(marker) {
                 break;
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
-        assert!(seen.contains("pty-marker-2"), "marker missing from: {seen}");
+        assert!(seen.contains(marker), "marker missing from: {seen}");
 
         // Kill: the session is gone.
         pty.kill("s1").unwrap();
