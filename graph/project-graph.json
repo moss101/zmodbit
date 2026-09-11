@@ -3,7 +3,7 @@
  "product": "Modbit",
  "edition": "V3.1",
  "authority_date": "2026-09-03",
- "generated_on": "2026-09-11",
+ "generated_on": "2026-09-12",
  "generator": "tools/build_graph.py",
  "status_vocabulary": [
   "NOT_STARTED",
@@ -8800,10 +8800,13 @@
    "milestone": "M2",
    "qual": "QUAL-EV-0036",
    "source": "docs/41",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33866288627",
-    "commit:4557599"
+    "commit:4557599",
+    "commit:dd1057d",
+    "test:surface_run_detail::hunk_review_lists_hunks_rejects_one_and_records_decisions",
+    "reject inverse-applies only the selected hunk in the real task worktree; accept/reject durable as review_hunk_resolved events"
    ],
    "notes": [
     {
@@ -8826,7 +8829,7 @@
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-06T04:35:43Z"
+   "status_changed_on": "2026-09-11T22:34:18Z"
   },
   {
    "id": "IMP-EV-0037",
