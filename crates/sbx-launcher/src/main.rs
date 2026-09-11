@@ -22,7 +22,7 @@ fn apply(cwd: Option<&std::path::Path>, writes: &[std::path::PathBuf]) -> Result
         // Reads everywhere.
         created = created
             .add_rule(PathBeneath::new(
-                PathFd::new("/")?,
+                PathFd::new("/").map_err(|e| e.to_string())?,
                 AccessFs::from_read(abi),
             ))
             .map_err(|e| e.to_string())?;
