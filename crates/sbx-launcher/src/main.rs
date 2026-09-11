@@ -30,14 +30,14 @@ fn apply(cwd: Option<&std::path::Path>, writes: &[std::path::PathBuf]) -> Result
         if let Some(dir) = cwd {
             created = created
                 .add_rule(PathBeneath::new(
-                    PathFd::new(dir)?,
+                    PathFd::new(dir).map_err(|e| e.to_string())?,
                     AccessFs::from_all(abi),
                 ))
                 .map_err(|e| e.to_string())?;
         }
         for w in writes {
             created = created
-                .add_rule(PathBeneath::new(PathFd::new(w)?, AccessFs::from_all(abi)))
+                .add_rule(PathBeneath::new(PathFd::new(w).map_err(|e| e.to_string())?, AccessFs::from_all(abi)))
                 .map_err(|e| e.to_string())?;
         }
         created
