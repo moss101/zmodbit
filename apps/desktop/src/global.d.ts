@@ -30,6 +30,12 @@ declare global {
         repoId?: string,
         baseBranch?: string,
       ): Promise<{ ok: boolean; error?: string; task?: TaskView }>;
+      runVariants(
+        objective: string,
+        count: number,
+        repoId?: string,
+        baseBranch?: string,
+      ): Promise<{ ok: boolean; error?: string; task?: TaskView }>;
       listRecentRepos(): Promise<{
         ok: boolean;
         error?: string;

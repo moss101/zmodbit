@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("modbit", {
   fleetSnapshot: () => ipcRenderer.invoke("fleet:snapshot"),
   createTask: (title, prompt, repoId = "", baseBranch = "") =>
     ipcRenderer.invoke("task:create", { title, prompt, repoId, baseBranch }),
+  runVariants: (objective, count, repoId = "", baseBranch = "") =>
+    ipcRenderer.invoke("fleet:runVariants", { objective, count, repoId, baseBranch }),
   listRecentRepos: () => ipcRenderer.invoke("repo:list"),
   registerRepo: (path, cloneUrl) =>
     ipcRenderer.invoke("repo:register", { path: path || "", cloneUrl: cloneUrl || "" }),

@@ -122,6 +122,12 @@ async function createTask({ title, prompt, repoId = "", baseBranch = "" }) {
   );
 }
 
+async function runVariants({ objective, count, repoId = "", baseBranch = "" }) {
+  return withRetry((s) =>
+    s.request({ runVariants: { objective, count, repoId, baseBranch } })
+  );
+}
+
 async function listRecentRepos() {
   return withRetry((s) => s.request({ listRecentRepos: {} }));
 }
@@ -164,6 +170,10 @@ function registerIpc() {
   guarded("task:create", (request) => {
     if (request.kind !== "createTask") return { ok: false, error: "wrong request kind" };
     return createTask(request);
+  });
+  guarded("fleet:runVariants", (request) => {
+    if (request.kind !== "runVariants") return { ok: false, error: "wrong request kind" };
+    return runVariants(request);
   });
   guarded("repo:register", (request) => {
     if (request.kind !== "registerRepo") return { ok: false, error: "wrong request kind" };

@@ -386,7 +386,8 @@ impl CoreServices {
                         },
                         title: create.title,
                         prompt: create.prompt,
-                        repo_id: (!create.repo_id.is_empty()).then_some(create.repo_id),
+                        repo_id: (!create.repo_id.is_empty())
+                            .then(|| create.repo_id.clone()),
                         base_branch: (!create.base_branch.is_empty())
                             .then_some(create.base_branch),
                         parent_task_id: (!create.parent_task_id.is_empty())
@@ -397,6 +398,58 @@ impl CoreServices {
                     // The processor minted the task id; the created event's
                     // aggregate id IS the authoritative task id.
                     Ok(Some(aggregate_id)) => {
+                        // Phase 7 item 2 (REQ-EV-0150): acquire the declared
+                        // write scope; denial cancels the minted task —
+                        // admission stays all-or-nothing.
+                        let repo_key = (!create.repo_id.is_empty())
+                            .then(|| create.repo_id.clone())
+                            .unwrap_or_else(|| "default".into());
+                        let acquired = self.store.with_conn(|conn| {
+                            modbit_event_store::write_scopes::acquire(
+                                conn,
+                                &aggregate_id,
+                                &repo_key,
+                                &create.write_scope,
+                            )
+                        });
+                        if let Err(e) = acquired {
+                            let _ = self.execute(Command {
+                                command_id: new_command_id(),
+                                actor: actor(),
+                                payload: CommandPayload::CancelTask {
+                                    task_id: modbit_domain::TaskId::parse(&aggregate_id)
+                                        .expect("minted task id"),
+                                    reason: "write-scope acquisition failed".into(),
+                                },
+                            });
+                            return pb::SurfaceResponse {
+                                ok: false,
+                                error: e,
+                                ..Default::default()
+                            };
+                        }
+                        if let modbit_event_store::write_scopes::AcquireOutcome::Denied {
+                            holder_task_id,
+                            path,
+                        } = acquired.unwrap()
+                        {
+                            let _ = self.execute(Command {
+                                command_id: new_command_id(),
+                                actor: actor(),
+                                payload: CommandPayload::CancelTask {
+                                    task_id: modbit_domain::TaskId::parse(&aggregate_id)
+                                        .expect("minted task id"),
+                                    reason: "write-scope denied".into(),
+                                },
+                            });
+                            return pb::SurfaceResponse {
+                                ok: false,
+                                error: format!(
+                                    "write-set conflict with {holder_task_id}: {path}"
+                                ),
+                                ..Default::default()
+                            };
+                        }
                         let task = self.task_view(&aggregate_id);
                         pb::SurfaceResponse {
                             ok: true,
@@ -795,6 +848,20 @@ impl CoreServices {
                     Ok(view) => pb::SurfaceResponse {
                         ok: true,
                         agent_result: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::RunVariants(variants)) => {
+                match self.run_variants(&variants) {
+                    Ok(task) => pb::SurfaceResponse {
+                        ok: true,
+                        task,
                         ..Default::default()
                     },
                     Err(e) => pb::SurfaceResponse {
@@ -1387,67 +1454,10 @@ impl CoreServices {
             ));
         }
 
-        // (c) declared write-scope conflict with live siblings (docs/14
-        // admission step 3). A declared path conflicts on exact match or
-        // directory containment in either direction.
-        let requested: Vec<String> = spawn
-            .write_scope
-            .split(',')
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .collect();
-        fn trim_sep(p: &str) -> &str {
-            p.trim_end_matches('/')
-        }
-        let covers = |a: &str, b: &str| {
-            let (a, b) = (trim_sep(a), trim_sep(b));
-            a == b || b.starts_with(&format!("{a}/"))
-        };
-        if let Some(fleet) = &self.agent_fleet {
-            let mut fleet = fleet.lock().map_err(|_| "agent fleet poisoned".to_string())?;
-            // The parent runs as a task too: its first child registers it
-            // as the lineage-root agent so siblings share one AgentGraph
-            // root (docs/14: AgentGraph nodes own WorkGraph nodes).
-            if fleet.node(&spawn.parent_task_id).is_none() {
-                let goal: String = self
-                    .store
-                    .with_conn(|conn| {
-                        conn.query_row(
-                            "SELECT goal_text FROM tasks WHERE task_id = ?1",
-                            [&spawn.parent_task_id],
-                            |r| r.get::<_, String>(0),
-                        )
-                        .unwrap_or_default()
-                    });
-                fleet
-                    .spawn_child(
-                        None,
-                        &spawn.parent_task_id,
-                        &spawn.parent_task_id,
-                        &goal,
-                        Vec::new(),
-                        None,
-                    )
-                    .map_err(|e| e.to_string())?;
-            }
-            let root = fleet
-                .node(&spawn.parent_task_id)
-                .map(|n| n.root.clone())
-                .unwrap_or_else(|| spawn.parent_task_id.clone());
-            for (sibling, scope) in fleet.active_write_scopes(&root) {
-                let conflict: Vec<String> = requested
-                    .iter()
-                    .filter(|p| scope.iter().any(|s| covers(s, p) || covers(p, s)))
-                    .cloned()
-                    .collect();
-                if !conflict.is_empty() {
-                    return Err(format!(
-                        "write-set conflict with sibling {sibling}: {}",
-                        conflict.join(", ")
-                    ));
-                }
-            }
-        }
+        // (c) declared write-scope conflict is checked by the durable
+        // write coordinator (REQ-EV-0150) AFTER the child task is minted,
+        // with compensation on denial — see acquire below. Undeclared
+        // children acquire nothing (merge verification still applies).
 
         // (7) AgentGraph node + WorkGraph ownership persisted; the child
         // runs through THE scheduler like any other task.
@@ -1476,6 +1486,9 @@ impl CoreServices {
         // Compensation: a failure after task creation cancels the minted
         // child so no partial reservation leaks.
         fn compensate(svc: &CoreServices, child_id: &str, err: String) -> String {
+            let _ = svc.store.with_conn(|conn| {
+                modbit_event_store::write_scopes::release(conn, child_id)
+            });
             if let Ok(task_id) = modbit_domain::TaskId::parse(child_id) {
                 let _ = svc.execute(Command {
                     command_id: new_command_id(),
@@ -1500,7 +1513,12 @@ impl CoreServices {
                     &child_id,
                     &child_id,
                     &spawn.objective,
-                    requested,
+                    spawn
+                        .write_scope
+                        .split(',')
+                        .map(|p| p.trim().to_string())
+                        .filter(|p| !p.is_empty())
+                        .collect(),
                     (!spawn.idempotency_key.is_empty())
                         .then_some(spawn.idempotency_key.as_str()),
                 )
@@ -1511,6 +1529,30 @@ impl CoreServices {
                         format!("agent node persist failed: {e}"),
                     )
                 })?;
+        }
+
+        // (c, continued) durable write-scope acquisition (REQ-EV-0150):
+        // overlapping declarations are denied BEFORE the child starts.
+        let repo_key = self.parent_repo_key(&spawn.parent_task_id);
+        match self.store.with_conn(|conn| {
+            modbit_event_store::write_scopes::acquire(
+                conn,
+                &child_id,
+                &repo_key,
+                &spawn.write_scope,
+            )
+        })? {
+            modbit_event_store::write_scopes::AcquireOutcome::Acquired => {}
+            modbit_event_store::write_scopes::AcquireOutcome::Denied {
+                holder_task_id,
+                path,
+            } => {
+                return Err(compensate(
+                    self,
+                    &child_id,
+                    format!("write-set conflict with {holder_task_id}: {path}"),
+                ));
+            }
         }
 
         self.execute(Command {
@@ -1531,6 +1573,30 @@ impl CoreServices {
         .map_err(|e| compensate(self, &child_id, e))?;
 
         Ok(self.task_view(&child_id))
+    }
+
+    /// Repo key for write-scope coordination: the registered repo the
+    /// lineage runs against, or the daemon default bucket.
+    fn parent_repo_key(&self, task_id: &str) -> String {
+        self.store
+            .with_conn(|conn| {
+                conn.query_row(
+                    "SELECT payload_inline FROM events
+                     WHERE aggregate_id = ?1 AND event_type = 'task_created'
+                     ORDER BY rowid LIMIT 1",
+                    [task_id],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok()
+                .and_then(|payload| serde_json::from_str::<serde_json::Value>(&payload).ok())
+                .and_then(|v| {
+                    v["repo_id"]
+                        .as_str()
+                        .filter(|s| !s.is_empty())
+                        .map(str::to_string)
+                })
+            })
+            .unwrap_or_else(|| "default".to_string())
     }
 
     /// Parks a child agent (docs/14 § steering): the in-flight run parks
@@ -1647,6 +1713,60 @@ impl CoreServices {
             summary,
             failure_code,
         })
+    }
+
+    /// Phase 7 item 2 — "run N variants" from New Task: one umbrella task
+    /// plus N admitted children running the same objective in parallel,
+    /// each in its own isolated worktree. Variants are alternatives, not
+    /// parallel builders: they declare no write scope (merge verification
+    /// decides what survives — see the Phase 7 item 1 conflict proof).
+    fn run_variants(&self, cmd: &pb::RunVariantsCommand) -> Result<Option<pb::TaskView>, String> {
+        if cmd.objective.trim().is_empty() {
+            return Err("run_variants requires an objective".into());
+        }
+        if cmd.count < 2 || cmd.count > 4 {
+            return Err("run_variants count must be between 2 and 4".into());
+        }
+        let umbrella_id = self
+            .execute(Command {
+                command_id: new_command_id(),
+                actor: actor(),
+                payload: CommandPayload::CreateTask {
+                    session_id: SessionId::parse(&self.ensure_default_session()?)
+                        .map_err(|e| format!("bad default session: {e}"))?,
+                    title: format!(
+                        "variants ×{}: {}",
+                        cmd.count,
+                        cmd.objective.lines().next().unwrap_or("objective")
+                    ),
+                    prompt: cmd.objective.clone(),
+                    repo_id: (!cmd.repo_id.is_empty()).then_some(cmd.repo_id.clone()),
+                    base_branch: (!cmd.base_branch.is_empty())
+                        .then_some(cmd.base_branch.clone()),
+                    parent_task_id: None,
+                },
+            })?
+            .ok_or_else(|| "umbrella task creation produced no event".to_string())?;
+
+        // Idempotency keys derive from the umbrella: a replayed run_variants
+        // re-attaches the already-admitted variants instead of doubling.
+        for i in 0..cmd.count {
+            let spawn = pb::SpawnAgentCommand {
+                parent_task_id: umbrella_id.clone(),
+                objective: format!(
+                    "variant {}/{} of: {}",
+                    i + 1,
+                    cmd.count,
+                    cmd.objective
+                ),
+                write_scope: String::new(),
+                idempotency_key: format!("variant-{umbrella_id}-{i}"),
+                parent_generation: 0,
+            };
+            self.spawn_agent(&spawn)
+                .map_err(|e| format!("variant {} refused: {e}", i + 1))?;
+        }
+        Ok(self.task_view(&umbrella_id))
     }
 
     fn task_view(&self, task_id: &str) -> Option<pb::TaskView> {

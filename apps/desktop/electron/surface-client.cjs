@@ -109,6 +109,15 @@ function encodeGetDiff(taskId) {
   return encodeLenField(14, str(1, taskId));
 }
 
+function encodeRunVariants(objective, count, repoId = "", baseBranch = "") {
+  const parts = [encodeLenField(1, Buffer.from(objective, "utf8"))];
+  if (count) parts.push(encodeVarintField(2, count));
+  if (repoId) parts.push(encodeLenField(3, Buffer.from(repoId, "utf8")));
+  if (baseBranch) parts.push(encodeLenField(4, Buffer.from(baseBranch, "utf8")));
+  const inner = Buffer.concat(parts);
+  return encodeLenField(28, inner);
+}
+
 function encodeSurfaceRequest(request) {
   if (request.createSession !== undefined) return encodeCreateSession(request.createSession);
   if (request.createTask !== undefined) {
@@ -121,6 +130,10 @@ function encodeSurfaceRequest(request) {
     if (r.path) parts.push(encodeLenField(1, Buffer.from(r.path, "utf8")));
     if (r.cloneUrl) parts.push(encodeLenField(2, Buffer.from(r.cloneUrl, "utf8")));
     return encodeLenField(16, Buffer.concat(parts));
+  }
+  if (request.runVariants !== undefined) {
+    const v = request.runVariants;
+    return encodeRunVariants(v.objective, v.count, v.repoId, v.baseBranch);
   }
   if (request.listRecentRepos !== undefined) {
     return encodeLenField(17, Buffer.alloc(0));

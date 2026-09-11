@@ -52,7 +52,20 @@ pub const MIGRATIONS: &[Migration] = &[
     (7, SQL_V7_APP_SETTINGS),
     (8, SQL_V8_APPROVALS),
     (9, SQL_V9_TASK_PARENT),
+    (10, SQL_V10_WRITE_SCOPES),
 ];
+
+/// Phase 7 item 2 (REQ-EV-0150): declared write scopes of active tasks —
+/// the durable registry the write coordinator checks BEFORE a task runs.
+pub const SQL_V10_WRITE_SCOPES: &str = "
+    CREATE TABLE IF NOT EXISTS task_write_scopes (
+        task_id  TEXT NOT NULL,
+        repo_key TEXT NOT NULL,
+        path     TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_tws_task ON task_write_scopes(task_id);
+    CREATE INDEX IF NOT EXISTS idx_tws_repo ON task_write_scopes(repo_key);
+";
 
 /// Phase 7 item 1: parent-child agent linkage — a child task records the
 /// parent task it was spawned by (AgentGraph node owning a WorkGraph node).
@@ -204,6 +217,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 9, "latest migration version");
+        assert_eq!(v, 10, "latest migration version");
     }
 }

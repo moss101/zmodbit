@@ -276,6 +276,8 @@ fn run_task(
         repo_id: String::new(),
         base_branch: run.branch.clone().unwrap_or_default(),
         parent_task_id: String::new(),
+    
+        write_scope: String::new(),
     }))
     .unwrap_or_else(|| finish_unreachable(spawned_core));
     if !created.ok {

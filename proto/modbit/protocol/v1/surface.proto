@@ -50,6 +50,8 @@ message SurfaceRequest {
     ParkAgentCommand park_agent = 25;
     ResumeAgentCommand resume_agent = 26;
     AgentResultRequest agent_result = 27;
+    // Phase 7 item 2: run N variants of one objective in parallel.
+    RunVariantsCommand run_variants = 28;
   }
 }
 

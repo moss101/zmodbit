@@ -181,17 +181,29 @@ fn admission_refuses_without_partial_reservation() {
     assert!(!resp.ok, "5th child must exceed the ticket");
     assert!(resp.error.contains("capacity"), "{}", resp.error);
 
-    // Refusals mint no tasks: only the 4 admitted children exist.
-    let count: i64 = _store
+    // Refusals leave no ACTIVE reservation: the 4 admitted children run;
+    // the write-scope-denied child was minted then compensated to
+    // cancelled (its scope was released), never started.
+    let (running, cancelled): (i64, i64) = _store
         .with_conn(|conn| {
-            conn.query_row(
-                "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1",
-                [&parent],
-                |r| r.get(0),
-            )
-        })
-        .unwrap();
-    assert_eq!(count, 4, "refused admissions leave no reservation");
+            let running: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1 AND state = 'running'",
+                    [&parent],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            let cancelled: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1 AND state = 'cancelled'",
+                    [&parent],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            (running, cancelled)
+        });
+    assert_eq!(running, 4, "admitted children all run");
+    assert_eq!(cancelled, 1, "the denied child was compensated, nothing active");
 }
 
 #[test]
@@ -363,4 +375,132 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
     let tx = modbit_workspace::merge_transaction::commit(&repo).unwrap();
     assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Committed);
     let _ = store;
+}
+
+#[test]
+fn write_coordinator_denies_overlapping_parallel_tasks_before_execution() {
+    // REQ-EV-0150 / QUAL-EV-0150: two INDEPENDENT tasks on the same repo
+    // with declared write scopes — the overlapping start is denied BEFORE
+    // it runs, and the holder is named.
+    let (store, services, _parent) = setup("writecoord");
+
+    let mk_create = |title: &str, scope: &str| {
+        pb::surface_request::Request::CreateTask(pb::CreateTaskCommand {
+            session_id: String::new(),
+            title: title.into(),
+            prompt: title.into(),
+            repo_id: String::new(),
+            base_branch: String::new(),
+            parent_task_id: String::new(),
+            write_scope: scope.into(),
+        })
+    };
+
+    let resp = roundtrip(&services, mk_create("editor a", "src/api.rs"));
+    assert!(resp.ok, "{:?}", resp.error);
+    let holder = resp.task.unwrap();
+
+    // Overlap on the same path, same repo — denied, holder named.
+    let resp = roundtrip(&services, mk_create("editor b", "src/"));
+    assert!(!resp.ok, "overlapping parallel task must be denied");
+    assert!(
+        resp.error.contains("write-set conflict") && resp.error.contains(&holder.task_id),
+        "{}",
+        resp.error
+    );
+
+    // Disjoint scope — admitted in parallel.
+    let resp = roundtrip(&services, mk_create("editor c", "docs/"));
+    assert!(resp.ok, "disjoint scope must be admitted: {:?}", resp.error);
+
+    // The denial left NO task behind (all-or-nothing).
+    let cancelled: i64 = store
+        .with_conn(|conn| {
+            conn.query_row(
+                "SELECT COUNT(*) FROM tasks WHERE goal_text LIKE 'editor b%' AND state = 'cancelled'",
+                [],
+                |r| r.get(0),
+            )
+        })
+        .unwrap();
+    assert_eq!(cancelled, 1, "denied task was compensated to cancelled");
+}
+
+#[test]
+fn run_variants_creates_umbrella_with_admitted_children() {
+    let (_store, services, _parent) = setup("variants");
+
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::RunVariants(pb::RunVariantsCommand {
+            objective: "fix the flaky test three ways".into(),
+            count: 3,
+            repo_id: String::new(),
+            base_branch: String::new(),
+        }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    let umbrella = resp.task.expect("umbrella task view");
+
+    // Three children linked to the umbrella, all running.
+    let children: Vec<(String, String)> = _store
+        .with_conn(|conn| {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT task_id, state FROM tasks
+                     WHERE parent_task_id = ?1 ORDER BY task_id",
+                )
+                .map_err(|e| e.to_string())?;
+            let rows = stmt
+                .query_map([&umbrella.task_id], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                })
+                .map_err(|e| e.to_string())?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| e.to_string())?;
+            Ok::<_, String>(rows)
+        })
+        .unwrap();
+    assert_eq!(children.len(), 3, "three variants admitted");
+    assert!(
+        children.iter().all(|(_, s)| s == "running"),
+        "all variants started: {children:?}"
+    );
+
+    // Idempotent replay: same umbrella, same variant count — no doubling.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::RunVariants(pb::RunVariantsCommand {
+            objective: "fix the flaky test three ways".into(),
+            count: 3,
+            repo_id: String::new(),
+            base_branch: String::new(),
+        }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    let replay_children: i64 = _store
+        .with_conn(|conn| {
+            conn.query_row(
+                "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1",
+                [&umbrella.task_id],
+                |r| r.get(0),
+            )
+        })
+        .unwrap();
+    assert_eq!(replay_children, 3, "replay re-attaches, never doubles");
+
+    // Count bounds: 1 or 5 variants are refused before anything is minted.
+    for bad in [1u32, 5] {
+        let resp = roundtrip(
+            &services,
+            pb::surface_request::Request::RunVariants(pb::RunVariantsCommand {
+                objective: "x".into(),
+                count: bad,
+                repo_id: String::new(),
+                base_branch: String::new(),
+            }),
+        );
+        assert!(!resp.ok, "count {bad} must refuse");
+        assert!(resp.error.contains("count"), "{}", resp.error);
+    }
 }

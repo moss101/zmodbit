@@ -89,6 +89,20 @@ const CHANNELS = {
             return { kind: "createTask", title, prompt, repoId, baseBranch };
         },
     },
+    "fleet:runVariants": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["objective", "count", "repoId", "baseBranch"]);
+            const objective = requireString(payload, "objective", MAX_PROMPT);
+            const count = payload.count;
+            if (!Number.isInteger(count) || count < 2 || count > 4) {
+                throw new Rejected("count must be an integer between 2 and 4");
+            }
+            const repoId = optionalString(payload, "repoId", 64);
+            const baseBranch = optionalString(payload, "baseBranch", 200);
+            return { kind: "runVariants", objective, count, repoId, baseBranch };
+        },
+    },
     "repo:register": {
         validate(payload) {
             if (!isPlainObject(payload)) throw new Rejected("payload must be an object");

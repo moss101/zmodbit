@@ -36,6 +36,21 @@ message CreateTaskCommand {
   // Phase 7 item 1: parent task when this task is a spawned child agent
   // (parent-child fleet linkage).
   string parent_task_id = 6;
+  // Phase 7 item 2 (REQ-EV-0150): comma-separated write declaration. The
+  // write coordinator denies acquisition that overlaps an ACTIVE task on
+  // the same repo BEFORE the task runs. Empty = undeclared (merge
+  // verification still applies).
+  string write_scope = 7;
+}
+
+// Phase 7 item 2: "run N variants" from New Task — one umbrella task with
+// N child agents running the same objective in parallel, each in its own
+// isolated worktree; compare results and merge the winner.
+message RunVariantsCommand {
+  string objective = 1;
+  uint32 count = 2; // 2..=4 (capacity ticket bounds the lineage)
+  string repo_id = 3;
+  string base_branch = 4;
 }
 
 message CancelTaskCommand {

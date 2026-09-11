@@ -240,7 +240,7 @@ fn v1_database_migrates_to_v2_preserving_events() {
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
         assert_eq!(
-            v, 9,
+            v, 10,
             "migration applied through repo registry + app settings + approvals"
         );
     });

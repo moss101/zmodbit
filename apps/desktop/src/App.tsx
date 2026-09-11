@@ -17,6 +17,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
+  // Phase 7 item 2: "run N variants" — 1 means a single normal task.
+  const [variantCount, setVariantCount] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [screen, setScreen] = useState<"fleet" | "settings">("fleet");
@@ -62,23 +64,36 @@ export default function App() {
     if (!title.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const response = await window.modbit.createTask(
-        title.trim(),
-        prompt.trim(),
-        selectedRepo,
-        baseBranch.trim(),
-      );
+      const objective = prompt.trim();
+      // Phase 7 item 2: N > 1 runs the objective as parallel variants —
+      // one umbrella task with N admitted children, each in its own
+      // worktree; compare and merge the winner.
+      const response =
+        variantCount > 1
+          ? await window.modbit.runVariants(
+              objective || title.trim(),
+              variantCount,
+              selectedRepo,
+              baseBranch.trim(),
+            )
+          : await window.modbit.createTask(
+              title.trim(),
+              objective,
+              selectedRepo,
+              baseBranch.trim(),
+            );
       if (!response.ok) {
         setError(response.error ?? "task creation failed");
       } else {
         setTitle("");
         setPrompt("");
+        setVariantCount(1);
         await refresh();
       }
     } finally {
       setSubmitting(false);
     }
-  }, [title, prompt, selectedRepo, baseBranch, submitting, refresh]);
+  }, [title, prompt, variantCount, selectedRepo, baseBranch, submitting, refresh]);
 
   const registerRepo = useCallback(async () => {
     if (!repoPath.trim() && !cloneUrl.trim()) return;
@@ -208,8 +223,22 @@ export default function App() {
           value={baseBranch}
           onChange={(e) => setBaseBranch(e.target.value)}
         />
+        <label>
+          Variants{" "}
+          <select
+            aria-label="Variant count"
+            value={variantCount}
+            onChange={(e) => setVariantCount(Number(e.target.value))}
+          >
+            {[1, 2, 3, 4].map((n) => (
+              <option key={n} value={n}>
+                {n === 1 ? "1" : `run ${n} variants`}
+              </option>
+            ))}
+          </select>
+        </label>
         <button type="button" disabled={submitting || !title.trim()} onClick={() => void submit()}>
-          {submitting ? "Creating…" : "New task"}
+          {submitting ? "Creating…" : variantCount > 1 ? `New task ×${variantCount}` : "New task"}
         </button>
       </section>
       {FLEET_VIEW_ORDER.map((view) => {

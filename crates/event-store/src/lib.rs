@@ -18,6 +18,7 @@ pub mod repos;
 pub mod runtime;
 pub mod settings;
 pub mod store;
+pub mod write_scopes;
 
 pub use commands::{CommandProcessor, Outcome};
 pub use projections::rebuild;

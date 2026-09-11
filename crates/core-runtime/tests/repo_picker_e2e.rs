@@ -305,6 +305,8 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
             base_branch: "feature/edge".into(),
         
             parent_task_id: String::new(),
+        
+            write_scope: String::new(),
         }),
     );
     assert!(created.ok, "create: {}", created.error);
@@ -376,6 +378,8 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
             base_branch: String::new(),
         
             parent_task_id: String::new(),
+        
+            write_scope: String::new(),
         }),
     );
     assert!(
