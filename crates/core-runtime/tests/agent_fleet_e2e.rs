@@ -16,6 +16,7 @@ use modbit_core_runtime::CoreServices;
 use modbit_domain::events::{Actor, ActorType};
 use modbit_domain::{Command, CommandPayload};
 use modbit_event_store::{CommandProcessor, EventStore};
+use modbit_git::GitRepo;
 use modbit_protocol::modbit::protocol::v1 as pb;
 
 fn tempdir(tag: &str) -> PathBuf {
@@ -290,4 +291,76 @@ fn terminal_parents_refuse_new_children() {
     let resp = roundtrip(&services, spawn_req(&parent, "orphan", "", "t-1", 0));
     assert!(!resp.ok, "terminal parent must refuse children");
     assert!(resp.error.contains("not active"), "{}", resp.error);
+}
+
+#[test]
+fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
+    // Two admitted children build in their own branches (the scheduler's
+    // `modbit/<task>` worktree layout); when their work overlaps, the merge
+    // back to the parent branch produces TYPED conflict evidence through
+    // the canonical merge transaction — never silent corruption.
+    let repo_root = tempdir("conflict-repo");
+    let repo = GitRepo::init(&repo_root).unwrap();
+    repo.set_config("user.email", "e2e@modbit.test").unwrap();
+    repo.set_config("user.name", "E2E").unwrap();
+    repo.set_config("core.autocrlf", "false").unwrap();
+    std::fs::write(repo_root.join("shared.txt"), "line one\n").unwrap();
+    repo.commit_all("base").unwrap();
+
+    let (store, services, _parent) = setup("conflict");
+
+    let resp = roundtrip(&services, spawn_req(&_parent, "child A edits shared", "", "mc-1", 0));
+    assert!(resp.ok, "{:?}", resp.error);
+    let child_a = resp.task.unwrap().task_id;
+    let resp = roundtrip(&services, spawn_req(&_parent, "child B edits shared", "", "mc-2", 0));
+    assert!(resp.ok, "{:?}", resp.error);
+    let child_b = resp.task.unwrap().task_id;
+
+    // The scheduler allocates each child an isolated worktree on branch
+    // `modbit/<task>`; both children edit the SAME line and commit.
+    let branch_of = |id: &str| format!("modbit/{id}");
+    let wt_root = tempdir("conflict-wt");
+    for (id, line) in [(&child_a, "line one EDITED BY A\n"), (&child_b, "line one EDITED BY B\n")] {
+        let wt = repo
+            .worktree_add(&wt_root.join(id), &branch_of(id))
+            .unwrap();
+        std::fs::write(wt_root.join(id).join("shared.txt"), line).unwrap();
+        wt.commit_all(&format!("child work {id}")).unwrap();
+    }
+
+    // Child A merges clean: open → Merged → Validating → Committed.
+    let (tx, outcome) =
+        modbit_workspace::merge_transaction::open_and_merge(&repo, "tx-a", &branch_of(&child_a), "main")
+            .unwrap();
+    assert!(matches!(outcome, modbit_git::MergeOutcome::Merged), "{outcome:?}");
+    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Validating);
+    let tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
+    let tx = modbit_workspace::merge_transaction::commit(&repo).unwrap();
+    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Committed);
+
+    // Child B edits the same line: the transaction stays OPEN on conflict
+    // with the file as typed evidence, recoverable (inspect after crash).
+    let (tx, outcome) =
+        modbit_workspace::merge_transaction::open_and_merge(&repo, "tx-b", &branch_of(&child_b), "main")
+            .unwrap();
+    assert!(
+        matches!(&outcome, modbit_git::MergeOutcome::Conflict { conflicted_files }
+            if conflicted_files == &vec!["shared.txt".to_string()]),
+        "{outcome:?}"
+    );
+    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Conflicted);
+    assert_eq!(tx.conflicts, vec!["shared.txt".to_string()]);
+
+    // The conflict is inspectable and recoverable: record the resolution,
+    // the transaction concludes the merge commit and re-enters validation.
+    std::fs::write(repo_root.join("shared.txt"), "line one resolved\n").unwrap();
+    let tx = modbit_workspace::merge_transaction::record_resolution(&repo, "shared.txt", "manual")
+        .unwrap();
+    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Validating);
+    assert!(tx.conflicts.is_empty());
+    assert!(tx.resolutions.iter().any(|r| r.path == "shared.txt" && r.strategy == "manual"));
+    let tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
+    let tx = modbit_workspace::merge_transaction::commit(&repo).unwrap();
+    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Committed);
+    let _ = store;
 }

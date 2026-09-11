@@ -348,7 +348,7 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
         .output()
         .expect("branch probe");
     let branch = String::from_utf8_lossy(&branch_out.stdout).trim().to_string();
-    assert_eq!(branch, format!("modbit/{}", &task_id[..12.min(task_id.len())]));
+    assert_eq!(branch, format!("modbit/{task_id}"));
 
     // 5) Durability: the registry survives a core restart on the same DB.
     core.kill().ok();

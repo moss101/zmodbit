@@ -193,6 +193,11 @@ export interface TaskView {
   state: TaskStatus;
   createdAt: string;
   generation: string;
+  /**
+   * Phase 7 item 1: non-empty when this task is a spawned child agent;
+   * the fleet view groups children under their parent.
+   */
+  parentTaskId: string;
 }
 
 export interface Fleet {
@@ -2193,7 +2198,15 @@ export const CompleteTaskCommand: MessageFns<CompleteTaskCommand> = {
 };
 
 function createBaseTaskView(): TaskView {
-  return { taskId: "", sessionId: "", title: "", state: 0, createdAt: "", generation: "0" };
+  return {
+    taskId: "",
+    sessionId: "",
+    title: "",
+    state: 0,
+    createdAt: "",
+    generation: "0",
+    parentTaskId: "",
+  };
 }
 
 export const TaskView: MessageFns<TaskView> = {
@@ -2215,6 +2228,9 @@ export const TaskView: MessageFns<TaskView> = {
     }
     if (message.generation !== "0") {
       writer.uint32(48).uint64(message.generation);
+    }
+    if (message.parentTaskId !== "") {
+      writer.uint32(58).string(message.parentTaskId);
     }
     return writer;
   },
@@ -2291,6 +2307,7 @@ export const TaskView: MessageFns<TaskView> = {
       state: isSet(object.state) ? taskStatusFromJSON(object.state) : 0,
       createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : "",
       generation: isSet(object.generation) ? globalThis.String(object.generation) : "0",
+      parentTaskId: isSet(object.parentTaskId) ? globalThis.String(object.parentTaskId) : "",
     };
   },
 
@@ -2313,6 +2330,9 @@ export const TaskView: MessageFns<TaskView> = {
     }
     if (message.generation !== "0") {
       obj.generation = message.generation;
+    }
+    if (message.parentTaskId !== "") {
+      obj.parentTaskId = message.parentTaskId;
     }
     return obj;
   },

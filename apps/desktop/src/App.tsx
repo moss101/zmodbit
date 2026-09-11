@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RecentRepoView } from "@modbit/surface-protocol";
-import { groupFleet, FLEET_VIEW_ORDER, FLEET_VIEW_LABELS, TASK_STATUS, type TaskCard } from "./fleet/grouping";
+import { groupFleet, nestChildren, FLEET_VIEW_ORDER, FLEET_VIEW_LABELS, TASK_STATUS, type FleetCard, type TaskCard } from "./fleet/grouping";
 import { superviseFleet } from "./fleet/supervision";
 import { statusSummary } from "./status-center/status";
 import { TaskWorkspace } from "./task-workspace/TaskWorkspace";
@@ -98,7 +98,34 @@ export default function App() {
     }
   }, [repoPath, cloneUrl, refreshRepos]);
 
+  // Phase 7 item 1: children render nested under their parent's card.
   const grouped = groupFleet(tasks);
+  const nested: Record<string, FleetCard[]> = {};
+  for (const [view, cards] of Object.entries(grouped)) {
+    nested[view] = nestChildren(cards);
+  }
+  const renderCard = (t: FleetCard, depth = 0) => (
+    <article
+      key={t.taskId}
+      className={selectedTask === t.taskId ? "task-card selected" : "task-card"}
+      tabIndex={0}
+      role="button"
+      style={depth > 0 ? { marginLeft: depth * 16 } : undefined}
+      onClick={() => setSelectedTask(t.taskId)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") setSelectedTask(t.taskId);
+      }}
+    >
+      <strong>{t.title}</strong>
+      <span> {t.taskId}</span>
+      {t.children.length > 0 ? (
+        <span className="count" aria-label="child agents">
+          {" "}
+          {t.children.length} agent{t.children.length === 1 ? "" : "s"}
+        </span>
+      ) : null}
+    </article>
+  );
   const summary = statusSummary(tasks);
   const supervised = superviseFleet(tasks);
   const workspaceTask = tasks.find((t) => t.taskId === selectedTask) ?? null;
@@ -185,32 +212,26 @@ export default function App() {
           {submitting ? "Creating…" : "New task"}
         </button>
       </section>
-      {FLEET_VIEW_ORDER.map((view) => (
+      {FLEET_VIEW_ORDER.map((view) => {
+        const cards = nested[view] ?? [];
+        return (
         <section key={view} aria-label={FLEET_VIEW_LABELS[view]}>
           <h2>
-            {FLEET_VIEW_LABELS[view]} <span className="count">{grouped[view].length}</span>
+            {FLEET_VIEW_LABELS[view]} <span className="count">{cards.length}</span>
           </h2>
-          {grouped[view].length === 0 ? (
+          {cards.length === 0 ? (
             <p className="empty">none</p>
           ) : (
-            grouped[view].map((t) => (
-              <article
-                key={t.taskId}
-                className={selectedTask === t.taskId ? "task-card selected" : "task-card"}
-                tabIndex={0}
-                role="button"
-                onClick={() => setSelectedTask(t.taskId)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") setSelectedTask(t.taskId);
-                }}
-              >
-                <strong>{t.title}</strong>
-                <span> {t.taskId}</span>
-              </article>
+            cards.map((t) => (
+              <div key={t.taskId}>
+                {renderCard(t)}
+                {t.children.map((c) => renderCard(c as FleetCard, 1))}
+              </div>
             ))
           )}
         </section>
-      ))}
+        );
+      })}
       {workspaceTask ? (
         <TaskWorkspace task={workspaceTask} onClose={() => setSelectedTask(null)} />
       ) : null}

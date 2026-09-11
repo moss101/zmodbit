@@ -22,6 +22,36 @@ export interface TaskCard {
   state: number;
   createdAt: string;
   generation: string;
+  /** Phase 7 item 1: parent task when this card is a spawned child agent. */
+  parentTaskId?: string;
+}
+
+/**
+ * Phase 7 item 1: children under parents. A card with a parentTaskId is
+ * NESTED under its parent instead of occupying its own fleet row — the
+ * parent's row carries the live children so supervision reads as one unit.
+ * Children with no visible parent (eventually-consistent snapshots) stay
+ * top-level rather than disappearing.
+ */
+export interface FleetCard extends TaskCard {
+  children: TaskCard[];
+}
+
+export function nestChildren(tasks: TaskCard[]): FleetCard[] {
+  const byId = new Map<string, FleetCard>();
+  for (const task of tasks) {
+    byId.set(task.taskId, { ...task, children: [] });
+  }
+  const roots: FleetCard[] = [];
+  for (const card of byId.values()) {
+    const parent = card.parentTaskId ? byId.get(card.parentTaskId) : undefined;
+    if (parent && parent !== card) {
+      parent.children.push(card);
+    } else {
+      roots.push(card);
+    }
+  }
+  return roots;
 }
 
 export type FleetViewName =

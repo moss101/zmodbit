@@ -263,6 +263,7 @@ function decodeTaskView(buf) {
     state: 0,
     createdAt: "",
     generation: "0",
+    parentTaskId: "",
   };
   for (const [fieldNo, value] of decodeFields(buf)) {
     if (fieldNo === 1) view.taskId = value.toString("utf8");
@@ -271,6 +272,7 @@ function decodeTaskView(buf) {
     else if (fieldNo === 4) view.state = Number(value);
     else if (fieldNo === 5) view.createdAt = value.toString("utf8");
     else if (fieldNo === 6) view.generation = value.toString();
+    else if (fieldNo === 7) view.parentTaskId = value.toString("utf8");
   }
   return view;
 }

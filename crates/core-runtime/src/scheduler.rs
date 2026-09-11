@@ -1079,7 +1079,10 @@ pub struct RegisteredRepoSource {
 
 impl WorktreeSource for RegisteredRepoSource {
     fn layout(&self, task_id: &str) -> Option<WorktreeLayout> {
-        let branch = format!("modbit/{}", &task_id[..12.min(task_id.len())]);
+        // UUIDv7's first 12 hex chars are the millisecond timestamp — two tasks
+        // minted in the same millisecond collided on one branch name, so
+        // the FULL task id names the branch.
+        let branch = format!("modbit/{task_id}");
         Some(WorktreeLayout {
             worktree: self.worktree_root.join(task_id),
             branch,
@@ -1141,7 +1144,10 @@ impl EnvWorktreeSource {
 
 impl WorktreeSource for EnvWorktreeSource {
     fn layout(&self, task_id: &str) -> Option<WorktreeLayout> {
-        let branch = format!("modbit/{}", &task_id[..12.min(task_id.len())]);
+        // UUIDv7's first 12 hex chars are the millisecond timestamp — two tasks
+        // minted in the same millisecond collided on one branch name, so
+        // the FULL task id names the branch.
+        let branch = format!("modbit/{task_id}");
         Some(WorktreeLayout {
             worktree: self.worktree_root.join(task_id),
             branch,
