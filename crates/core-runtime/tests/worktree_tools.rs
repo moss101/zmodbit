@@ -44,6 +44,8 @@ fn registry_for(worktree: &std::path::Path, execd: Option<&ExecdClient>) -> Tool
         None,
         None,
         None,
+        None,
+        None,
     )
 }
 

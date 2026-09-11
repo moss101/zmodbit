@@ -23,6 +23,7 @@ modbit-retrieval = { path = "../retrieval" }
 modbit-context = { path = "../context" }
 modbit-diagnostics = { path = "../diagnostics" }
 modbit-observability = { path = "../observability" }
+modbit-mcp = { path = "../mcp" }
 tokio = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 serde = { workspace = true }
@@ -45,7 +46,6 @@ path = "src/bin/modbit.rs"
 reqwest = { workspace = true, features = ["blocking"] }
 rusqlite = { workspace = true }
 uuid = { workspace = true }
-modbit-workspace = { path = "../workspace" }
 tokio = { workspace = true }
 futures = { workspace = true }
 

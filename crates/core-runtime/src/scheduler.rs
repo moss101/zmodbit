@@ -619,6 +619,24 @@ impl Scheduler {
             self.config.max_input_tokens,
         );
         task_index.record_evidence(packed_files);
+        // Phase 6 item 3: the run's effects receipt ledger (hash-chained,
+        // durable across restarts) + the MCP pool for external tools.
+        // Ledger path: MODBIT_EFFECTS_LEDGER or temp/modbit-effects.jsonl.
+        let ledger_path = std::env::var("MODBIT_EFFECTS_LEDGER")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                std::env::temp_dir().join("modbit-effects.jsonl")
+            });
+        let effects_ledger = Arc::new(std::sync::Mutex::new(
+            modbit_effects::Ledger::open(&ledger_path).unwrap_or_else(|_| {
+                eprintln!("modbit scheduler: effects ledger open failed; receipts disabled for this run");
+                modbit_effects::Ledger::open(&ledger_path.with_extension("fallback.jsonl"))
+                    .expect("fallback ledger")
+            }),
+        ));
+        let mcp_pool: Arc<std::sync::Mutex<modbit_mcp::McpPool>> = Arc::new(std::sync::Mutex::new(
+            modbit_mcp::McpPool::new(external_servers_from_env()),
+        ));
         let registry = build_worktree_registry(
             &ws,
             &worktree_path,
@@ -627,11 +645,16 @@ impl Scheduler {
             Some(output_sink),
             Some(worktree_journal),
             Some(task_index.clone()),
+            Some(effects_ledger.clone()),
+            Some(mcp_pool.clone()),
         );
         // Phase 4.2: execution_mode "readonly" drops effect-class grants
         // (write/external) — a REAL consumer of the persisted setting: a
         // readonly task's kernel refuses change.apply/shell.run/test.run.
         let readonly = execution_mode == "readonly";
+        // Phase 6 item 3: external MCP tools behind policy + receipts.
+        // The tool registry exposes external.list/external.call; every
+        // call binds a receipt into the run's effects ledger.
         let kernel = PolicyKernel::new(vec![]);
         // Phase 5: approvals mode keeps the base grants read-only — a
         // Write/External effect first becomes a durable approval request;
@@ -819,6 +842,37 @@ pub trait WorktreeSource: Send + Sync + 'static {
     fn worktree_root(&self) -> Option<std::path::PathBuf> {
         None
     }
+}
+
+/// Phase 6 item 3: external MCP servers from the environment. Names are
+/// uppercased-and-underscored command env vars:
+///   MODBIT_MCP_<NAME> = "<command with args>"
+/// e.g. MODBIT_MCP_GITHUB="mcp-server-github --stdio".
+fn external_servers_from_env() -> std::collections::BTreeMap<String, modbit_mcp::ExternalServer> {
+    let mut out = std::collections::BTreeMap::new();
+    for (key, value) in std::env::vars() {
+        let Some(rest) = key.strip_prefix("MODBIT_MCP_") else {
+            continue;
+        };
+        if rest == "SERVICE" {
+            continue;
+        }
+        let name = rest.to_lowercase();
+        if value.trim().is_empty() {
+            continue;
+        }
+        let mut parts = value.split_whitespace();
+        let command = parts.next().unwrap_or_default().to_string();
+        let args: Vec<String> = parts.map(String::from).collect();
+        if command.is_empty() {
+            continue;
+        }
+        out.insert(
+            name.clone(),
+            modbit_mcp::ExternalServer { name, command, args },
+        );
+    }
+    out
 }
 
 /// RFC3339-ish timestamp (shared shape with the event store formatter).
@@ -1487,6 +1541,7 @@ fn param(spec: ParamType, required: bool, description: &str) -> ParamSpec {
 /// runners. Every effector is the canonical owner crate — no local
 /// reimplementation.
 #[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_arguments)]
 pub fn build_worktree_registry(
     ws: &Arc<WorkspaceFileService>,
     worktree: &std::path::Path,
@@ -1495,6 +1550,8 @@ pub fn build_worktree_registry(
     output_sink: Option<Arc<dyn ToolOutputSink>>,
     worktree_journal: Option<Arc<WorktreeJournalWriter>>,
     task_index: Option<Arc<TaskIndexWriter>>,
+    effects_ledger: Option<Arc<std::sync::Mutex<modbit_effects::Ledger>>>,
+    mcp_pool: Option<Arc<std::sync::Mutex<modbit_mcp::McpPool>>>,
 ) -> ToolRegistry {
     let registry = ToolRegistry::new();
 
@@ -2068,6 +2125,98 @@ pub fn build_worktree_registry(
         )
         .expect("register test.run");
 
+    // ---- Phase 6 item 3: external MCP tools (policy + receipts) ------
+    if let Some(pool) = mcp_pool.clone() {
+        let mut params = std::collections::BTreeMap::new();
+        params.insert("server".into(), param(ParamType::Str, false, "Filter: only this MCP server"));
+        registry
+            .register_with_schema(
+                "external.list",
+                "1.0.0",
+                EffectClass::ReadOnly,
+                "List configured external MCP servers and their tools",
+                Some(ToolSchema { aliases: Default::default(), parameters: params }),
+                {
+                    let pool = pool.clone();
+                    Arc::new(move |args| {
+                        let filter = args.get("server").and_then(|v| v.as_str()).map(String::from);
+                        let mut pool = pool.lock().expect("mcp pool");
+                        let mut servers = serde_json::Map::new();
+                        for (name, result) in modbit_mcp::McpPool::list_all(&mut pool) {
+                            if let Some(f) = &filter {
+                                if f.as_str() != name.as_str() {
+                                    continue;
+                                }
+                            }
+                            match result {
+                                Ok(tools) => {
+                                    servers.insert(
+                                        name.clone(),
+                                        serde_json::json!(tools
+                                            .iter()
+                                            .map(|t| serde_json::json!({
+                                                "name": t.name,
+                                                "description": t.description,
+                                            }))
+                                            .collect::<Vec<_>>()),
+                                    );
+                                }
+                                Err(e) => {
+                                    servers.insert(name.clone(), serde_json::json!({ "error": e }));
+                                }
+                            }
+                        }
+                        Ok(serde_json::Value::Object(servers))
+                    })
+                },
+            )
+            .expect("register external.list");
+
+    // external.call: invokes a tool on a named MCP server. Policy-gated
+    // (External effect class → operator approval under approvals mode)
+    // and receipt-bound (the call digest rides the effects ledger).
+    let mut ec_params = std::collections::BTreeMap::new();
+    ec_params.insert("server".into(), param(ParamType::Str, true, "MCP server name"));
+    ec_params.insert("tool".into(), param(ParamType::Str, true, "Tool name on that server"));
+    ec_params.insert("arguments".into(), param(ParamType::Str, true, "JSON object of tool arguments"));
+    registry
+        .register_with_schema(
+            "external.call",
+            "1.0.0",
+            EffectClass::External,
+            "Call a tool on an external MCP server (stdio transport). Receipt-bound: the call digest rides the effects ledger.",
+            Some(ToolSchema { aliases: Default::default(), parameters: ec_params }),
+            {
+                let pool = pool.clone();
+                let effects = effects_ledger.clone();
+                Arc::new(move |args| {
+                    let server = args.get("server").and_then(|v| v.as_str()).ok_or("missing server")?;
+                    let tool = args.get("tool").and_then(|v| v.as_str()).ok_or("missing tool")?;
+                    let arguments = args.get("arguments").cloned().unwrap_or(serde_json::json!({}));
+                    let call_digest = {
+                        use sha2::Digest as _;
+                        let mut h = sha2::Sha256::new();
+                        h.update(server.as_bytes());
+                        h.update(tool.as_bytes());
+                        h.update(arguments.to_string().as_bytes());
+                        format!("{:x}", h.finalize())
+                    };
+                    let mut pool = pool.lock().expect("mcp pool");
+                    let text = pool
+                        .client(server)
+                        .and_then(|c| c.call_tool(tool, &arguments))
+                        .map_err(|e| e.to_string())?;
+                    if let Some(ledger) = effects.as_ref() {
+                        let mut ledger = ledger.lock().expect("effects ledger");
+                        let _ = ledger.append("no-approval", "cap-external", &call_digest, "external-call");
+                    }
+                    Ok(serde_json::json!({ "server": server, "tool": tool, "text": text }))
+                })
+            },
+        )
+        .expect("register external.call");
+    }
+
     registry
 }
 
@@ -2100,6 +2249,8 @@ pub fn worktree_grants() -> Vec<CapabilityGrant> {
         CapabilityGrant { grant_id: "g-grep".into(), tool: "search.grep".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-context-query".into(), tool: "context.query".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-search-symbol".into(), tool: "search.symbol".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-external-list".into(), tool: "external.list".into(), effect_class: EffectClass::ReadOnly },
+        CapabilityGrant { grant_id: "g-external-call".into(), tool: "external.call".into(), effect_class: EffectClass::External },
         CapabilityGrant { grant_id: "g-git-status".into(), tool: "git.status".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-git-diff".into(), tool: "git.diff".into(), effect_class: EffectClass::ReadOnly },
         CapabilityGrant { grant_id: "g-change-propose".into(), tool: "change.propose".into(), effect_class: EffectClass::ReadOnly },

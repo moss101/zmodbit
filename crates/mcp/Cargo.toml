@@ -1,0 +1,21 @@
+[package]
+name = "modbit-mcp"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+uuid = { workspace = true }
+
+[[bin]]
+name = "mcp-fixture-server"
+path = "src/bin/mcp-fixture-server.rs"
+
+# The pool API takes `&mut self` for lazy spawn; the E2E uses it directly.
+
+
+[lints]
+workspace = true

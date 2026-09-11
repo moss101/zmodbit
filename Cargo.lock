@@ -1275,6 +1275,7 @@ dependencies = [
  "modbit-effects",
  "modbit-event-store",
  "modbit-git",
+ "modbit-mcp",
  "modbit-observability",
  "modbit-policy",
  "modbit-prompt-compiler",
@@ -1359,6 +1360,15 @@ dependencies = [
 [[package]]
 name = "modbit-guest"
 version = "0.1.0"
+
+[[package]]
+name = "modbit-mcp"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-memory"
