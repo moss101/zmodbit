@@ -8806,7 +8806,8 @@
     "commit:4557599",
     "commit:dd1057d",
     "test:surface_run_detail::hunk_review_lists_hunks_rejects_one_and_records_decisions",
-    "reject inverse-applies only the selected hunk in the real task worktree; accept/reject durable as review_hunk_resolved events"
+    "reject inverse-applies only the selected hunk in the real task worktree; accept/reject durable as review_hunk_resolved events",
+    "log:docs/evidence/phase5-hunk-review-2026-09-11.log"
    ],
    "notes": [
     {
@@ -8829,7 +8830,7 @@
     }
    ],
    "owner_agent": "zcode",
-   "status_changed_on": "2026-09-11T22:34:18Z"
+   "status_changed_on": "2026-09-11T22:34:49Z"
   },
   {
    "id": "IMP-EV-0037",

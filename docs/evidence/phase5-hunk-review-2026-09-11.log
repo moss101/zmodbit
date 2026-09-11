@@ -1,0 +1,32 @@
+Phase 5 item 4 (review surface): hunk-level accept/reject with durable events — E2E proof
+Date: 2026-09-11  Commit: dd1057d
+
+Scope proven (through production dispatch CoreServices::handle, real git worktree, real event store):
+1. GetDiffHunks lists the changed hunks of the task worktree keyed by new-file
+   start line, diffed against the task BASE revision (not worktree HEAD —
+   agents commit on their branch).
+2. ResolveReviewHunk(accepted=false) inverse-applies ONLY the selected hunk
+   (git apply --reverse --unidiff-zero) in the real worktree: line 2 reverted,
+   line 4 edit retained (byte-exact file assertion).
+3. ResolveReviewHunk(accepted=true) records the decision without mutating the
+   worktree.
+4. Both decisions are durable review_hunk_resolved events on the task
+   aggregate with inline payload (path/new_start/accepted asserted).
+
+Implementation: proto surface.proto oneof 22/23 (+DiffHunksView/DiffHunkView);
+domain CommandPayload::ResolveReviewHunk -> DomainEvent::ReviewHunkResolved
+(state-neutral in the task lifecycle machine); event-store lifecycle mapping;
+core-runtime surface.rs review_repo/diff_hunks/resolve_review_hunk;
+modbit-git diff_hunks_from/parse_hunks/reject_hunk (digit-run new_start
+extraction for -U0 headers with trailing context).
+
+Test run (cargo test -p modbit-core-runtime --test surface_run_detail):
+running 3 tests
+test steer_pause_stop_transition_the_task_through_the_surface ... ok
+test run_detail_assembles_run_turns_and_steps_diff_reads_worktree ... ok
+test hunk_review_lists_hunks_rejects_one_and_records_decisions ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; finished in 0.26s
+
+Mutation check: hunk selection requires the exact new_start — rejecting
+new_start=4 with new_start=2 selected fails the byte-exact assertion
+(reject_hunk_reverses_only_the_selected_hunk in modbit-git, 4/4 pass).
