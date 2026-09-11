@@ -48,7 +48,7 @@ Current facts:
 | Crates in the `modbit-core-runtime` dependency closure | 18 of 26 (`checkpoint`, `compaction`, `context`, `core-runtime`, `diagnostics`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `retrieval`, `terminal`, `tools`, `verification`, `workspace`) |
 | Empty canonical crates | `effects`, `secrets`, `memory`, `observability` |
 | Stub binaries (`fn main() {}`) | `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest` |
-| Rust / TS tests | 495 / 53 |
+| Rust / TS tests | 516 / 53 |
 | Desktop screens | 2 (fleet, task workspace) |
 | Surface RPCs | 17 requests in the `surface.proto` oneof (Phase 4.1 added RegisterRepo + ListRecentRepos) |
 | Nightly live workflow | `.github/workflows/nightly-live.yml` active (cron 03:43Z; five-night gate 2026-09-06..10 green, see section 1) |
