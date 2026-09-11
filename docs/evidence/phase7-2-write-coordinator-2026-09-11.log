@@ -1,0 +1,34 @@
+Phase 7 item 2 (write coordinator + run-N-variants) — E2E proof
+Date: 2026-09-11  Commits: 3faa07c (item 1 conflict proof foundation), 50e5c61 (coordinator + variants)
+
+Scope proven (through production dispatch CoreServices::handle, real SQLite store with v10 schema):
+1. REQ-EV-0150 / QUAL-EV-0150 — overlapping writes denied BEFORE execution:
+   task A acquires scope "src/api.rs" on the default repo; task B declaring
+   "src/" is denied with the holder named ("write-set conflict with
+   <task>: src/api.rs") and compensated to cancelled — no active
+   reservation leaks. A disjoint declaration ("docs/") is admitted in
+   parallel. Terminal holders free their ticket (release-on-acquire sweep
+   + explicit release).
+2. Coordinator is the single canonical live registry: spawn_agent
+   admission (docs/14 step 3) now checks the same durable table; AgentFleet
+   nodes carry the declaration as AgentGraph metadata only.
+3. RunVariants (28): umbrella task + 3 admitted children all running,
+   linked via parent_task_id; idempotent replay re-attaches (never
+   doubles); count bounds (1,5) refuse before any task is minted.
+4. Desktop composer: Variants selector (1-4) wired through the full
+   bridge (encoder field 28 + varint count, handler, schema validation,
+   preload, renderer).
+
+Test evidence (cargo test, current tree):
+- modbit-event-store::write_scopes — denies_overlapping_scope_before_
+  execution_then_releases_on_terminal; empty_declaration_acquires_nothing
+- modbit-core-runtime::agent_fleet_e2e — write_coordinator_denies_
+  overlapping_parallel_tasks_before_execution; run_variants_creates_
+  umbrella_with_admitted_children (+5 earlier fleet tests, all green)
+
+Mutation check: the overlap predicate is direction-symmetric and
+trailing-separator normalized — flipping either side of `covers` or
+removing the normalization fails
+write_coordinator_denies_overlapping_parallel_tasks_before_execution
+(observed during development: "src/" vs "src/api.rs" only denied after
+the separator fix).
