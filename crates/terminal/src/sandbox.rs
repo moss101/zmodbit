@@ -127,7 +127,7 @@ pub fn apply_landlock_pre_exec(worktree: &Path) -> Result<(), String> {
         .map_err(|e| e.to_string())?
         .add_rule(PathBeneath::new(
             PathFd::new(worktree)?,
-            write_access,
+            AccessFs::from_all(landlock::ABI::V1),
         ))
         .map_err(|e| e.to_string())?
         .add_rule(PathBeneath::new(
