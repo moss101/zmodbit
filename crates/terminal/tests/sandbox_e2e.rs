@@ -65,13 +65,14 @@ fn write_via_sandbox(bench: &Bench, id: &str, target: &Path, content: &str) -> s
         )
     };
     let shell = if cfg!(windows) { "cmd" } else { "sh" };
+    let shell_flag = if cfg!(windows) { "/C" } else { "-c" };
     // cwd = the worktree: the sandbox scopes writes to the caller's cwd
     // (canonicalized by the wrapper). This is the production contract.
     bench
         .client
         .spawn_sandboxed(
             id,
-            &[shell.to_string(), "-c".to_string(), script.clone()],
+            &[shell.to_string(), shell_flag.to_string(), script.clone()],
             Some(&bench.worktree),
         )
         .map_err(std::io::Error::other)?;
