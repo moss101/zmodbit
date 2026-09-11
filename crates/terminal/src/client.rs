@@ -102,6 +102,110 @@ impl ExecdClient {
         Ok((bytes, new_offset))
     }
 
+    // ---- Phase 6 item 1: PTY sessions (shell.attach/input/cancel) ----
+
+    /// Spawns an interactive PTY session (shell.attach).
+    pub fn pty_spawn(
+        &self,
+        id: &str,
+        argv: &[String],
+        cwd: Option<&str>,
+        rows: u16,
+        cols: u16,
+    ) -> Result<(), TerminalError> {
+        let argv_json: Vec<serde_json::Value> = argv
+            .iter()
+            .map(|a| serde_json::Value::String(a.clone()))
+            .collect();
+        let mut request = serde_json::json!({
+            "op": "pty_spawn",
+            "id": id,
+            "argv": argv_json,
+            "rows": rows,
+            "cols": cols,
+        });
+        if let Some(cwd) = cwd {
+            request["cwd"] = serde_json::Value::String(cwd.to_string());
+        }
+        let response = self.call(&request)?;
+        if response.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+            return Err(TerminalError::UnknownRun(
+                response
+                    .get("error")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("pty_spawn failed")
+                    .to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Writes bytes to the session's stdin (shell.input).
+    pub fn pty_write(&self, id: &str, bytes: &[u8]) -> Result<(), TerminalError> {
+        use base64::Engine as _;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
+        let response = self.call(&serde_json::json!({
+            "op": "pty_write", "id": id, "data": encoded
+        }))?;
+        if response.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+            return Err(TerminalError::UnknownRun(
+                response
+                    .get("error")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("pty_write failed")
+                    .to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Reads accumulated PTY output from `offset` (terminal streaming).
+    pub fn pty_read(
+        &self,
+        id: &str,
+        offset: usize,
+        max: usize,
+    ) -> Result<(Vec<u8>, usize), TerminalError> {
+        let response = self.call(&serde_json::json!({
+            "op": "pty_read", "id": id, "offset": offset, "max": max
+        }))?;
+        if response.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+            return Err(TerminalError::UnknownRun(
+                response
+                    .get("error")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("pty_read failed")
+                    .to_string(),
+            ));
+        }
+        use base64::Engine as _;
+        let data = response
+            .get("data")
+            .and_then(|v| v.as_str())
+            .and_then(|s| base64::engine::general_purpose::STANDARD.decode(s).ok())
+            .unwrap_or_default();
+        let next = response
+            .get("offset")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0) as usize;
+        Ok((data, next))
+    }
+
+    /// Cancels a PTY session (shell.cancel).
+    pub fn pty_cancel(&self, id: &str) -> Result<(), TerminalError> {
+        let response = self.call(&serde_json::json!({ "op": "pty_cancel", "id": id }))?;
+        if response.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+            return Err(TerminalError::UnknownRun(
+                response
+                    .get("error")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("pty_cancel failed")
+                    .to_string(),
+            ));
+        }
+        Ok(())
+    }
+
     pub fn stop(&self, run_id: &str) -> Result<(), TerminalError> {
         self.expect_ok(&serde_json::json!({ "op": "stop", "id": run_id }))
     }

@@ -18,7 +18,14 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::sync::Arc;
 
+use modbit_terminal::pty::PtyBroker;
 use modbit_terminal::{ExecBroker, TerminalError};
+use std::sync::OnceLock;
+
+fn pty_broker() -> &'static PtyBroker {
+    static PTY: OnceLock<PtyBroker> = OnceLock::new();
+    PTY.get_or_init(PtyBroker::new)
+}
 
 fn main() {
     let runs_dir = std::env::var("MODBIT_EXECD_RUNS").unwrap_or_else(|_| {
@@ -143,6 +150,55 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
             Ok(runs) => serde_json::json!({ "ok": true, "runs": runs }).to_string(),
             Err(e) => error_response(&e),
         },
+        // Phase 6 item 1: interactive PTY sessions (shell.attach/input/
+        // cancel). Sessions live in the execd process; output accumulates
+        // and is read by offset like the exec broker's capture.
+        "pty_spawn" => {
+            let id = get_str("id").unwrap_or_default();
+            let argv: Vec<String> = parsed
+                .get("argv")
+                .and_then(|v| v.as_array())
+                .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect())
+                .unwrap_or_default();
+            let cwd = get_str("cwd").map(std::path::PathBuf::from);
+            let rows = parsed.get("rows").and_then(|v| v.as_u64()).unwrap_or(24) as u16;
+            let cols = parsed.get("cols").and_then(|v| v.as_u64()).unwrap_or(80) as u16;
+            match pty_broker().spawn(&id, &argv, cwd.as_deref(), rows, cols) {
+                Ok(()) => serde_json::json!({ "ok": true }).to_string(),
+                Err(e) => serde_json::json!({ "ok": false, "error": e.to_string() }).to_string(),
+            }
+        }
+        "pty_write" => {
+            let id = get_str("id").unwrap_or_default();
+            use base64::Engine as _;
+            let bytes = parsed
+                .get("data")
+                .and_then(|v| v.as_str())
+                .and_then(|s| base64::engine::general_purpose::STANDARD.decode(s).ok())
+                .unwrap_or_default();
+            match pty_broker().write(&id, &bytes) {
+                Ok(()) => serde_json::json!({ "ok": true }).to_string(),
+                Err(e) => serde_json::json!({ "ok": false, "error": e.to_string() }).to_string(),
+            }
+        }
+        "pty_read" => {
+            let id = get_str("id").unwrap_or_default();
+            let offset = get_num("offset").unwrap_or(0) as usize;
+            let max = get_num("max").unwrap_or(512 * 1024) as usize;
+            match pty_broker().read(&id, offset, max) {
+                Ok((bytes, next)) => {
+                    use base64::Engine as _;
+                    let encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                    serde_json::json!({ "ok": true, "data": encoded, "offset": next }).to_string()
+                }
+                Err(e) => serde_json::json!({ "ok": false, "error": e.to_string() }).to_string(),
+            }
+        }
+        "pty_cancel" => match pty_broker().kill(&get_str("id").unwrap_or_default()) {
+            Ok(()) => serde_json::json!({ "ok": true }).to_string(),
+            Err(e) => serde_json::json!({ "ok": false, "error": e.to_string() }).to_string(),
+        },
+        "pty_list" => serde_json::json!({ "ok": true, "sessions": pty_broker().list() }).to_string(),
         other => {
             serde_json::json!({ "ok": false, "error": format!("unknown op {other:?}") }).to_string()
         }
