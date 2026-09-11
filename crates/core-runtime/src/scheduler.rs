@@ -673,6 +673,9 @@ impl Scheduler {
         } else {
             None
         };
+        // Phase 5 item 4: the run's cost ledger (real usage-frame
+        // accounting) shares the run plane and is printed at completion.
+        let cost_tracker = Arc::new(modbit_observability::CostTracker::new(&run_config.model));
         let transport = LiveGatewayTransport::new(&run_config, signal.cancel_token());
         let runtime = OneAgentRuntime {
             transport: &transport,
@@ -680,6 +683,7 @@ impl Scheduler {
             kernel: &kernel,
             grants: live_grants.as_ref(),
             approval_gate: approval_gate.as_ref().map(|g| g as &dyn crate::one_agent::ApprovalGate),
+            cost_tracker: Some(cost_tracker.as_ref()),
             max_turns: run_config.max_turns,
             observer: Some(&observer),
             control: Some(&*signal),

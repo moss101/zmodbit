@@ -7,7 +7,7 @@
   "counts": {
     "docs": 70,
     "root_and_tooling": 86,
-    "docs_bytes": 513371
+    "docs_bytes": 513963
   },
   "sections": [
     {
@@ -292,8 +292,8 @@
       "section": "implementation",
       "section_title": "Implementation specifications",
       "title": "Observability, Cost, and Operations Data",
-      "bytes": 2849,
-      "sha256": "0be1a2c47a758c70b75e1678efcadd06fdb27994beb5a1ed6769611792064243"
+      "bytes": 3441,
+      "sha256": "bae36b6cf041f67c0d15d455e18a07dbaaac2d60ceb53b4d38a24cae358cabd5"
     },
     {
       "path": "docs/35_DEPENDENCY_AND_BINDING_DECISIONS.md",

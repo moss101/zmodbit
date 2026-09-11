@@ -15,13 +15,13 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 |---|---|---:|---:|
 | Authority and orientation | 00–09 | 5 | 26678 |
 | Architecture and subsystems | 10–29 | 17 | 79393 |
-| Implementation specifications | 30–39 | 8 | 32306 |
+| Implementation specifications | 30–39 | 8 | 32898 |
 | Requirements, tasks and traceability | 40–49 | 9 | 292645 |
 | Verification and testing | 50–69 | 11 | 39710 |
 | Delivery and operations | 70–79 | 5 | 15036 |
 | Agent process and governance | 80–97 | 14 | 25221 |
 | Live state | 98–99 | 1 | 2382 |
-| **Total docs** | | **70** | **513371** |
+| **Total docs** | | **70** | **513963** |
 
 ## Specification files (`docs/`)
 
@@ -53,7 +53,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | 31 | `docs/31_DATABASE_AND_STORAGE_SCHEMA.md` | Database and Storage Schema | implementation | 5822 | `37dc7e124730f9e380d9b2c09a8573d2cc0f0b4d482bd563cb8a7ccd32f945b9` |
 | 32 | `docs/32_DESKTOP_FRONTEND_IMPLEMENTATION.md` | Desktop Frontend Implementation | implementation | 4673 | `50fe1b57e02572182f37fb16df067b40323dbae9001db2c3dc090022ac826ee5` |
 | 33 | `docs/33_CORE_AND_CLOUD_BACKEND_IMPLEMENTATION.md` | Core and Cloud Backend Implementation | implementation | 4169 | `ccf8a07c3afc5ec451b6dac6a7464bc83566f630f0a68f303acfef6a05163635` |
-| 34 | `docs/34_OBSERVABILITY_COST_AND_OPERATIONS_DATA.md` | Observability, Cost, and Operations Data | implementation | 2849 | `0be1a2c47a758c70b75e1678efcadd06fdb27994beb5a1ed6769611792064243` |
+| 34 | `docs/34_OBSERVABILITY_COST_AND_OPERATIONS_DATA.md` | Observability, Cost, and Operations Data | implementation | 3441 | `bae36b6cf041f67c0d15d455e18a07dbaaac2d60ceb53b4d38a24cae358cabd5` |
 | 35 | `docs/35_DEPENDENCY_AND_BINDING_DECISIONS.md` | Dependency and Binding Decisions | implementation | 2471 | `b6c6dd7c6dbc7dc6bfd63660e1f0dc58ed7861463902d48b1b391093af9b8783` |
 | 36 | `docs/36_BUILD_BUY_DEPENDENCY_AND_LICENSE_POLICY.md` | Build / Buy / Dependency / License Decisions | implementation | 3363 | `538f768996bec4254231f7671517e68bea6cf529f51b60588a5b2dd91007071a` |
 | 37 | `docs/37_EXISTING_CODE_DONOR_AND_REUSE_POLICY.md` | Existing-Code Donor and Reuse Policy | implementation | 2968 | `3b694bd3111e152492f2973edaf293f3d0afa40d1e87b1362deda9e31f7e91b6` |

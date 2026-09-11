@@ -70,3 +70,15 @@ Initial targets:
 - 99.9% successful resume for crash tests from supported durable states;
 - 100% protected external effects either have receipt or explicit `UnknownOutcome` reconciliation record;
 - zero cross-tenant resource access in security suite.
+
+## Run-cost accounting (Phase 5 item 4)
+
+Real cost is computed from PROVIDER USAGE FRAMES (`TokenUsage`), never
+estimated from message counts. `crates/observability` owns the pricing
+table (per-model USD per 1k tokens, overridable via
+`MODBIT_PRICE_<MODEL>` = "input_per_1k,output_per_1k") and the
+`CostTracker` the run plane consults per invocation. Unknown models are
+reported as `priced: false` with $0 — never a fabricated number. The
+per-run ledger (invocations, tokens, USD) is the SLO-ladder cost
+consumer; OpenTelemetry export of the same counters lands with the
+tracing pipeline.

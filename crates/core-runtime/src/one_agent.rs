@@ -219,6 +219,10 @@ pub struct OneAgentRuntime<'a> {
     /// The LIVE grant set: re-snapshotted on every tool call so an
     /// approval granted mid-run takes effect (Phase 5).
     pub grants: &'a crate::scheduler::LiveGrants,
+    /// Phase 5 item 4: REAL cost accounting from provider usage frames
+    /// (crates/observability). Optional; the run-plane ledger accumulates
+    /// per-invocation cost with per-model pricing.
+    pub cost_tracker: Option<&'a modbit_observability::CostTracker>,
     pub max_turns: u32,
     /// Durable-run observer (the scheduler); None in unit tests.
     pub observer: Option<&'a dyn RunObserver>,
@@ -594,6 +598,13 @@ impl<'a> OneAgentRuntime<'a> {
                     }
                     StreamEvent::Usage(usage) => {
                         last_usage = Some(usage);
+                        if let Some(tracker) = self.cost_tracker {
+                            tracker.record(&modbit_observability::invocation_cost(
+                                &task.model,
+                                usage.input_tokens,
+                                usage.output_tokens,
+                            ));
+                        }
                     }
                     StreamEvent::Completed {
                         stop_reason: reason,
@@ -865,12 +876,65 @@ mod tests {
             kernel,
             grants,
             approval_gate: None,
+            cost_tracker: None,
             max_turns: 4,
             observer: None,
             control: None,
             resume_conversation: None,
             async_compaction: false,
         }
+    }
+
+    /// Phase 5 item 4: usage frames flow into the observability cost
+    /// tracker — REAL cost accounting from the provider stream.
+    #[test]
+    fn cost_tracker_accumulates_usage_frames() {
+        let transport = StubTransport {
+            script: vec![vec![
+                StreamEvent::Delta("hello".into()),
+                StreamEvent::Usage(modbit_providers::TokenUsage {
+                    input_tokens: 1_000,
+                    output_tokens: 500,
+                }),
+            ]],
+            calls: std::sync::atomic::AtomicUsize::new(0),
+            seen: std::sync::Mutex::new(Vec::new()),
+        };
+        let registry = ToolRegistry::new();
+        let kernel = PolicyKernel::new(vec![]);
+        let live = live_grants(&[]);
+        let costs = std::sync::Arc::new(modbit_observability::CostTracker::new("gpt-4o-mini"));
+        let rt = OneAgentRuntime {
+            transport: &transport,
+            registry: &registry,
+            kernel: &kernel,
+            grants: &live,
+            approval_gate: None,
+            cost_tracker: Some(&costs),
+            max_turns: 2,
+            observer: None,
+            control: None,
+            resume_conversation: None,
+            async_compaction: false,
+        };
+        let task = AgentTask {
+            task_id: "t".into(),
+            objective: "o".into(),
+            model: "gpt-4o-mini".into(),
+            provider: "openai".into(),
+            system_policy: String::new(),
+            workspace_rules: String::new(),
+            context_pack: String::new(),
+            model_settings: Default::default(),
+            max_input_tokens: DEFAULT_MAX_INPUT_TOKENS,
+        };
+        let _ = rt.run(&task);
+        let snap = costs.snapshot();
+        assert_eq!(snap.invocations, 1, "{snap:?}");
+        assert_eq!(snap.input_tokens, 1_000);
+        assert_eq!(snap.output_tokens, 500);
+        // gpt-4o-mini: $0.00015/1k in + $0.0006/1k out.
+        assert!((snap.cost_usd - (0.00015 + 0.0006 * 0.5)).abs() < 1e-9, "{snap:?}");
     }
 
     fn live_grants(values: &[CapabilityGrant]) -> crate::scheduler::LiveGrants {
@@ -1287,6 +1351,7 @@ mod tests {
             control: None,
             resume_conversation: None,
             async_compaction: false,
+                    cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1367,6 +1432,7 @@ mod tests {
             kernel: &kernel,
             grants: &live_grants(&grants),
             approval_gate: None,
+            cost_tracker: None,
             max_turns: 4,
             observer: Some(&observer),
             control: None,
@@ -1426,6 +1492,7 @@ mod tests {
             kernel: &kernel,
             grants: &live_grants(&grants),
             approval_gate: None,
+            cost_tracker: None,
             max_turns: 4,
             observer: None,
             control: None,
@@ -1536,6 +1603,7 @@ mod tests {
             control: Some(&control),
             resume_conversation: None,
             async_compaction: false,
+                    cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1585,6 +1653,7 @@ mod tests {
             control: Some(&control),
             resume_conversation: None,
             async_compaction: false,
+                    cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1629,6 +1698,7 @@ mod tests {
             control: None,
             resume_conversation: Some(checkpoint),
             async_compaction: false,
+                    cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1698,6 +1768,7 @@ mod tests {
             kernel: &kernel,
             grants: &live_grants(&grants),
             approval_gate: None,
+            cost_tracker: None,
             max_turns: 4,
             observer: None,
             control: None,
@@ -1795,6 +1866,7 @@ mod tests {
             kernel: &kernel,
             grants: &live_grants(&grants),
             approval_gate: None,
+            cost_tracker: None,
             max_turns: 4,
             observer: None,
             control: Some(&control),
@@ -1878,6 +1950,7 @@ mod tests {
             control: Some(&*control),
             resume_conversation: None,
             async_compaction: false,
+                    cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();

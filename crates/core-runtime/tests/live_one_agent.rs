@@ -145,6 +145,7 @@ fn live_one_agent_loop_reaches_completed() {
         kernel: &kernel,
         grants: &live,
         approval_gate: None,
+        cost_tracker: None,
         max_turns: 2,
         observer: None,
         control: None,

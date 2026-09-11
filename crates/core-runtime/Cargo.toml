@@ -22,6 +22,7 @@ modbit-checkpoint = { path = "../checkpoint" }
 modbit-retrieval = { path = "../retrieval" }
 modbit-context = { path = "../context" }
 modbit-diagnostics = { path = "../diagnostics" }
+modbit-observability = { path = "../observability" }
 tokio = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 serde = { workspace = true }
