@@ -59,11 +59,21 @@ fn pty_session_over_the_broker_round_trips() {
         .pty_spawn("e2e-pty", &[shell.to_string()], None, 24, 80)
         .expect("pty_spawn over the broker");
 
-    // shell.input: write a command into the session's stdin.
+    // shell.input: write a command into the session's stdin. No shell
+    // arithmetic (cmd.exe has none) — the typed line itself is echoed by
+    // the pty, so the literal marker is the cross-platform signal.
+    let (command, marker) = if cfg!(windows) {
+        (b"echo pty-broker-marker\r\n".as_slice(), "pty-broker-marker")
+    } else {
+        (
+            b"echo pty-broker-marker-$((6*7))\n".as_slice(),
+            "pty-broker-marker-42",
+        )
+    };
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
     let mut wrote = false;
     while std::time::Instant::now() < deadline {
-        if client.pty_write("e2e-pty", b"echo pty-broker-marker-$((6*7))\n").is_ok() {
+        if client.pty_write("e2e-pty", command).is_ok() {
             wrote = true;
             break;
         }
@@ -77,13 +87,13 @@ fn pty_session_over_the_broker_round_trips() {
     while std::time::Instant::now() < deadline {
         let (bytes, _) = client.pty_read("e2e-pty", 0, 64 * 1024).expect("pty_read");
         seen = String::from_utf8_lossy(&bytes).to_string();
-        if seen.contains("pty-broker-marker-42") {
+        if seen.contains(marker) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
     assert!(
-        seen.contains("pty-broker-marker-42"),
+        seen.contains(marker),
         "output must stream from the broker's pty session: {seen}"
     );
 
