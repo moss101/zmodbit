@@ -81,20 +81,45 @@ fn pty_session_over_the_broker_round_trips() {
     }
     assert!(wrote, "stdin write failed");
 
-    // Terminal-panel streaming: poll the accumulated output.
+    // Terminal-panel streaming: poll the accumulated output. ConPTY
+    // interleaves VT cursor sequences between visible characters, so the
+    // search runs over a VT-stripped projection (exactly what the
+    // terminal panel's renderer does).
+    let strip_vt = |text: &str| -> String {
+        let mut out = String::with_capacity(text.len());
+        let mut chars = text.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '\u{1b}' {
+                // Skip ESC + '[' + parameter bytes until a final byte (@-~).
+                if chars.peek() == Some(&'[') {
+                    chars.next();
+                    while let Some(&c2) = chars.peek() {
+                        chars.next();
+                        if ('@'..='~').contains(&c2) {
+                            break;
+                        }
+                    }
+                }
+                continue;
+            }
+            out.push(c);
+        }
+        out
+    };
+
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    let mut seen = String::new();
+    let mut visible = String::new();
     while std::time::Instant::now() < deadline {
         let (bytes, _) = client.pty_read("e2e-pty", 0, 64 * 1024).expect("pty_read");
-        seen = String::from_utf8_lossy(&bytes).to_string();
-        if seen.contains(marker) {
+        visible = strip_vt(&String::from_utf8_lossy(&bytes));
+        if visible.contains(marker) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
     assert!(
-        seen.contains(marker),
-        "output must stream from the broker's pty session: {seen}"
+        visible.contains(marker),
+        "output must stream from the broker's pty session: {visible}"
     );
 
     // shell.cancel: kill the session.
