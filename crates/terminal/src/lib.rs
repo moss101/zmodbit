@@ -20,6 +20,7 @@ pub mod client;
 pub mod command_contract;
 pub mod pty;
 pub mod replay;
+pub mod sandbox;
 
 use serde::{Deserialize, Serialize};
 
@@ -124,9 +125,35 @@ impl ExecBroker {
         cwd: Option<&Path>,
         env: &[(String, String)],
     ) -> Result<(), TerminalError> {
+        self.spawn_full_sandboxed(run_id, argv, cwd, env, false)
+    }
+
+    /// Spawn with an optional OS sandbox (Phase 6 item 2): macOS wraps
+    /// the argv with a Seatbelt profile (network deny-by-default, writes
+    /// scoped to the worktree); Linux applies Landlock FS rules in
+    /// pre_exec; Windows is a recorded follow-up (restricted token).
+    pub fn spawn_full_sandboxed(
+        &self,
+        run_id: &str,
+        argv: &[String],
+        cwd: Option<&Path>,
+        env: &[(String, String)],
+        sandbox: bool,
+    ) -> Result<(), TerminalError> {
         if argv.is_empty() {
             return Err(TerminalError::EmptyArgv);
         }
+        let worktree = cwd.map(|p| p.to_path_buf());
+        let argv: Vec<String> = if sandbox {
+            match crate::sandbox::wrap_argv(argv, worktree.as_deref().unwrap_or(Path::new(".")))
+                .map_err(|e| TerminalError::UnknownRun(e.to_string()))?
+            {
+                Some(wrapped) => wrapped,
+                None => argv.to_vec(),
+            }
+        } else {
+            argv.to_vec()
+        };
         let dir = self.run_dir(run_id);
         fs::create_dir_all(&dir)?;
         let log = fs::OpenOptions::new()
@@ -134,7 +161,8 @@ impl ExecBroker {
             .append(true)
             .open(dir.join("output.log"))?;
         let log_err = log.try_clone()?;
-        let mut command = Command::new(&argv[0]);
+        let argv0 = argv[0].clone();
+        let mut command = Command::new(&argv0);
         command.args(&argv[1..]);
         if let Some(dir_path) = cwd {
             command.current_dir(dir_path);
@@ -142,6 +170,20 @@ impl ExecBroker {
         for (k, v) in env {
             command.env(k, v);
         }
+        #[cfg(target_os = "linux")]
+        if sandbox {
+            if let Some(wt) = worktree.as_deref() {
+                use std::os::unix::process::CommandExt as _;
+                let wt = wt.to_path_buf();
+                unsafe {
+                    command.pre_exec(move || {
+                        crate::sandbox::apply_landlock_pre_exec(&wt)
+                            .map_err(std::io::Error::other)
+                    });
+                }
+            }
+        }
+        let _ = &argv0;
         let child = command
             .stdout(Stdio::from(log))
             .stderr(Stdio::from(log_err))

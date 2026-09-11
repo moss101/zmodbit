@@ -1,0 +1,34 @@
+Phase 6 item 2 — OS sandbox for broker-spawned processes
+========================================================================
+Phase context: Future-tasks Phase 6 item 2 (docs/21 § sandbox)
+Revision: the Phase 6.2 commit on main
+Environment: macOS darwin 25.5.0 arm64, local dev profile, UTC
+
+WHAT WAS BUILT
+---------------------------------------------------------------------
+- crates/terminal/src/sandbox.rs: OS sandbox wrapper for broker spawns.
+  macOS: sandbox-exec + Seatbelt profile (deny default, allow file-read*,
+  allow file-write* scoped to the canonicalized worktree + /tmp + /private/tmp,
+  allow process-exec/fork, sysctl-read; DENY NETWORK by default).
+  Linux: Landlock (FS rules — reads everywhere, writes scoped to the
+  canonicalized worktree + /tmp via pre_exec on the spawned child;
+  best-effort on kernels without Landlock). Windows: restricted-token
+  sandbox is a recorded follow-up (docs/21).
+- Broker: ExecBroker::spawn_full_sandboxed + execd op "spawn" with
+  "sandbox": true; client method spawn_sandboxed.
+- Seatbelt gotcha fixed: /var/folders is a symlink to /private/var/folders —
+  the profile scope MUST use the canonicalized worktree path or writes
+  are denied even inside the allowed tree (verified by manual
+  sandbox-exec replay).
+
+PROOFS (sandbox_e2e, REAL execd broker, REAL seatbelt/landlock)
+---------------------------------------------------------------------
+  sandboxed_writes_outside_the_worktree_fail_inside_succeed ... ok
+  seatbelt_denies_network_by_default ......................... ok
+    (curl https://example.com exits non-zero under the profile;
+     FS probe exits 0 — proving the DENIAL is the network rule)
+
+REMAINING (recorded)
+---------------------------------------------------------------------
+- Linux network deny = seccomp follow-up; Windows restricted-token
+  sandbox follow-up; both recorded in docs/21 scope.

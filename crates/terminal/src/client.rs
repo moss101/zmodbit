@@ -55,6 +55,24 @@ impl ExecdClient {
         self.expect_ok(&request)
     }
 
+    /// Spawns a run inside the OS sandbox (Phase 6 item 2): Seatbelt on
+    /// macOS (network deny-by-default, writes scoped to the worktree),
+    /// Landlock FS rules on Linux.
+    pub fn spawn_sandboxed(
+        &self,
+        run_id: &str,
+        argv: &[String],
+        cwd: Option<&Path>,
+    ) -> Result<(), TerminalError> {
+        let mut request = serde_json::json!({
+            "op": "spawn", "id": run_id, "argv": argv, "sandbox": true
+        });
+        if let Some(cwd) = cwd {
+            request["cwd"] = Value::String(cwd.display().to_string());
+        }
+        self.expect_ok(&request)
+    }
+
     pub fn status(&self, run_id: &str) -> Result<SpawnStatus, TerminalError> {
         let response = self.call(&serde_json::json!({ "op": "status", "id": run_id }))?;
         if !response.get("ok").and_then(|v| v.as_bool()).unwrap_or(false) {

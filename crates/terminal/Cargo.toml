@@ -16,3 +16,8 @@ uuid = { workspace = true }
 
 [lints]
 workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Phase 6 item 2 (docs/36 admission): Landlock LSM bindings (MIT-OR-Apache-2.0)
+# for the Linux FS sandbox; pure Rust, no system libs.
+landlock = "0.4"

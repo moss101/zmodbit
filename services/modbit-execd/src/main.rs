@@ -102,8 +102,16 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
                 .unwrap_or_default();
             // Optional cwd pins the run's working directory exactly
             // (REQ-EV-0100 contract; absent means the broker's own cwd).
+            // Phase 6: sandbox=true wraps the spawn in the OS sandbox
+            // (Seatbelt on macOS, Landlock on Linux).
             let cwd = get_str("cwd").map(std::path::PathBuf::from);
-            match broker.spawn_full(&id, &argv, cwd.as_deref(), &[]) {
+            let sandbox = parsed.get("sandbox").and_then(|v| v.as_bool()).unwrap_or(false);
+            let result = if sandbox {
+                broker.spawn_full_sandboxed(&id, &argv, cwd.as_deref(), &[], true)
+            } else {
+                broker.spawn_full(&id, &argv, cwd.as_deref(), &[])
+            };
+            match result {
                 Ok(()) => serde_json::json!({ "ok": true }).to_string(),
                 Err(e) => error_response(&e),
             }
