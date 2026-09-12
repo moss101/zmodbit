@@ -36,7 +36,13 @@ struct Boot {
 fn bin(name: &str) -> std::path::PathBuf {
     let exe = std::env::current_exe().expect("current_exe");
     let dir = exe.parent().expect("deps dir").parent().expect("profile dir");
-    dir.join(name)
+    let candidate = dir.join(name);
+    // Windows: sibling bins carry the .exe suffix.
+    if candidate.exists() || !cfg!(target_os = "windows") {
+        candidate
+    } else {
+        dir.join(format!("{name}.exe"))
+    }
 }
 
 impl Drop for Boot {
@@ -67,15 +73,27 @@ fn boot_gateway(tag: &str) -> Boot {
 }
 
 fn spawn_worker(boot: &Boot, tenant: &str, db: &std::path::Path) -> Child {
-    Command::new(bin("modbit-cloud-worker"))
-        .env("MODBIT_GATEWAY_ADDR", &boot.addr)
-        .env("MODBIT_GATEWAY_SECRET", &boot.secret)
-        .env("MODBIT_WORKER_TENANT", tenant)
-        .env("MODBIT_CORE_DB", db)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .expect("spawn worker")
+    // Windows CI can transiently fail exe spawns (AV scan locks); retry
+    // once with the OS error surfaced.
+    let spawn = |db: &std::path::Path| {
+        Command::new(bin("modbit-cloud-worker"))
+            .env("MODBIT_GATEWAY_ADDR", &boot.addr)
+            .env("MODBIT_GATEWAY_SECRET", &boot.secret)
+            .env("MODBIT_WORKER_TENANT", tenant)
+            .env("MODBIT_CORE_DB", db)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+    };
+    match spawn(db) {
+        Ok(child) => child,
+        Err(first) => match spawn(db) {
+            Ok(child) => child,
+            Err(second) => panic!(
+                "spawn worker failed twice: first={first} second={second}"
+            ),
+        },
+    }
 }
 
 fn connect_guest(boot: &Boot, tenant: &str) -> Connection<std::net::TcpStream> {
@@ -127,8 +145,26 @@ fn gateway_relays_real_core_work_and_enforces_tenant_isolation() {
     let boot = boot_gateway("main");
     let db = tempdir("db").join("cloud.db");
     let mut worker = spawn_worker(&boot, "tenant-1", &db);
-    // Give the worker a moment to lease.
-    std::thread::sleep(std::time::Duration::from_millis(400));
+    // Wait for the lease: poll a cheap read until the worker is serving
+    // (fixed sleeps race slow CI process startup).
+    let mut guest_probe = connect_guest(&boot, "tenant-1");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+    loop {
+        use pb::surface_request::Request;
+        match request(
+            &mut guest_probe,
+            "tenant-1",
+            Request::GetFleet(pb::GetFleetRequest {}),
+        ) {
+            Ok(r) if r.ok => break,
+            Ok(_) | Err(_) => {}
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "worker never leased within 20s"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
 
     // Tenant-1 guest: create a task THROUGH the gateway — the worker
     // dispatches it through THE Core runtime against the real store.
@@ -201,13 +237,21 @@ fn gateway_relays_real_core_work_and_enforces_tenant_isolation() {
     );
 
     let mut worker2 = spawn_worker(&boot, "tenant-1", &db);
-    std::thread::sleep(std::time::Duration::from_millis(400));
-    let resp = request(
-        &mut guest,
-        "tenant-1",
-        pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
-    )
-    .expect("recovered worker serves");
+    let recover_deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+    let resp = loop {
+        match request(
+            &mut guest,
+            "tenant-1",
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        ) {
+            Ok(r) if r.ok => break r,
+            _ if std::time::Instant::now() < recover_deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(200))
+            }
+            Ok(r) => panic!("recovered worker never served: {:?}", r.error),
+            Err(e) => panic!("recovered worker never served: {e}"),
+        }
+    };
     assert!(resp.ok, "{:?}", resp.error);
     let fleet = resp.fleet.expect("fleet");
     assert!(

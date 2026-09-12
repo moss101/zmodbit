@@ -22,11 +22,14 @@ fn tempdir(tag: &str) -> std::path::PathBuf {
 
 fn bin(name: &str) -> std::path::PathBuf {
     let exe = std::env::current_exe().expect("current_exe");
-    exe.parent()
-        .expect("deps")
-        .parent()
-        .expect("profile")
-        .join(name)
+    let dir = exe.parent().expect("deps dir").parent().expect("profile dir");
+    let candidate = dir.join(name);
+    // Windows: sibling bins carry the .exe suffix.
+    if candidate.exists() || !cfg!(target_os = "windows") {
+        candidate
+    } else {
+        dir.join(format!("{name}.exe"))
+    }
 }
 
 struct Proc(Child);
