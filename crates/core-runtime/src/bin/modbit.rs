@@ -20,7 +20,7 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  modbit run <repo> \"<task>\" [--json] [--branch <name>] [--db <path>] [--timeout <secs>]\n  modbit settings [--provider <p>] [--model <m>] [--base-url <u>] [--max-turns <n>] [--execution-mode <m>] [--api-key <k>] [--json] [--db <path>]"
+        "usage:\n  modbit run <repo> \"<task>\" [--json] [--branch <name>] [--db <path>] [--timeout <secs>]\n  modbit settings [--provider <p>] [--model <m>] [--base-url <u>] [--max-turns <n>] [--execution-mode <m>] [--api-key <k>] [--json] [--db <path>]\n  modbit diagnostics [--db <path>] [--out <dir>]\n  modbit report \"<problem description>\" [--db <path>] [--out <dir>]  (report a problem: diagnostics bundle + PROBLEM.md)"
     );
     std::process::exit(1);
 }
@@ -47,6 +47,13 @@ struct SettingsPatch {
 enum CliCommand {
     Run(RunArgs),
     Settings(SettingsPatch),
+    /// Phase 9: diagnostics export / report-a-problem — reads the local
+    /// store directly, no daemon needed.
+    Diagnostics {
+        db: Option<PathBuf>,
+        out: Option<PathBuf>,
+        problem: Option<String>,
+    },
 }
 
 fn parse_args() -> CliCommand {
@@ -117,8 +124,44 @@ fn parse_args() -> CliCommand {
             }
             CliCommand::Settings(patch)
         }
+        Some(sub @ ("diagnostics" | "report")) => {
+            let is_report = sub == "report";
+            // Collect the remainder ONCE, then split description from
+            // flags — `take_while` would swallow the first flag.
+            let rest: Vec<String> = args.collect();
+            let flag_pos = rest
+                .iter()
+                .position(|a| a.starts_with("--"))
+                .unwrap_or(rest.len());
+            let problem = if is_report {
+                let desc = rest[..flag_pos].join(" ");
+                (!desc.is_empty()).then_some(desc)
+            } else {
+                None
+            };
+            let mut flags = rest[flag_pos..].iter();
+            let mut db = None;
+            let mut out = None;
+            while let Some(arg) = flags.next() {
+                match arg.as_str() {
+                    "--db" => db = Some(PathBuf::from(flags.next().unwrap_or_else(|| usage()))),
+                    "--out" => out = Some(PathBuf::from(flags.next().unwrap_or_else(|| usage()))),
+                    _ => usage(),
+                }
+            }
+            CliCommand::Diagnostics { db, out, problem }
+        }
         _ => usage(),
     }
+}
+
+/// `modbit report` vs `modbit diagnostics` — captured before the arg
+/// iterator is consumed.
+fn args_next_is_report() -> bool {
+    std::env::args()
+        .nth(1)
+        .map(|a| a == "report")
+        .unwrap_or(false)
 }
 
 /// Boots a core daemon bound to `repo` (drain threads for its stdout/
@@ -185,6 +228,45 @@ fn wait_for_daemon(child: &mut Child) -> Option<String> {
 
 fn main() {
     let command = parse_args();
+
+    // Phase 9: diagnostics/report work on the local store directly —
+    // no daemon lifecycle.
+    if let CliCommand::Diagnostics { db, out, problem } = &command {
+        let db = db.clone().unwrap_or_else(|| PathBuf::from("core.db"));
+        let store = match modbit_event_store::EventStore::open(&db) {
+            Ok(s) => std::sync::Arc::new(s),
+            Err(e) => {
+                eprintln!("modbit: cannot open store {}: {e}", db.display());
+                std::process::exit(1);
+            }
+        };
+        let out_dir = out
+            .clone()
+            .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+        let bundle = match problem {
+            Some(description) => {
+                modbit_core_runtime::diagnostics::report_a_problem(&store, &out_dir, description)
+            }
+            None => modbit_core_runtime::diagnostics::collect(&store, &out_dir),
+        };
+        match bundle {
+            Ok(b) => {
+                println!(
+                    "{}",
+                    json!({
+                        "bundle": b.dir.display().to_string(),
+                        "sha256": b.sha256,
+                    })
+                );
+            }
+            Err(e) => {
+                eprintln!("modbit: diagnostics export failed: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+
     let mut spawned_core: Option<Child> = None;
     let daemon_addr;
 
@@ -209,6 +291,9 @@ fn main() {
                         .unwrap_or_else(|| run.repo.join(".modbit").join("cli.db")),
                 )
             }
+            // Diagnostics never reaches the daemon lifecycle (handled
+            // before, directly against the local store).
+            CliCommand::Diagnostics { .. } => unreachable!(),
             CliCommand::Settings(_) => (
                 std::env::var("MODBIT_REPO_ROOT")
                     .map(PathBuf::from)
@@ -261,6 +346,8 @@ fn main() {
     match &command {
         CliCommand::Run(run) => run_task(&request, run, &mut spawned_core),
         CliCommand::Settings(patch) => run_settings(&request, patch),
+        // Diagnostics exits before the daemon lifecycle; never reached.
+        CliCommand::Diagnostics { .. } => unreachable!(),
     }
 }
 

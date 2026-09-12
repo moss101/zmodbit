@@ -24,6 +24,45 @@ target/debug/modbit run /path/to/your/repo "Fix the failing test in foo.rs" --js
 task reaches `ReadyForReview`. The same daemon powers the desktop app;
 settings and recent repositories are shared.
 
+### Diagnostics and report-a-problem
+
+```bash
+# Assemble a REDACTED diagnostics bundle (settings, recent durable events,
+# effects-ledger tail) — never secrets; key-shaped fields are scrubbed.
+target/debug/modbit diagnostics --db .modbit/cli.db --out /tmp
+
+# Report a problem: the bundle plus PROBLEM.md carrying your description
+# and the bundle hash — attach the directory to an issue as-is.
+target/debug/modbit report "the fleet view froze after restart" --db .modbit/cli.db --out /tmp
+```
+
+### What the system can do today
+
+- **Fleet of agents** (`agent.spawn/park/resume/result`): bounded,
+  transactional admission — capacity tickets, generation fencing and
+  write-scope conflict checks run BEFORE a child starts; every child is a
+  real task with its own isolated git worktree; the desktop fleet view
+  nests children under their parent.
+- **Parallel variants**: submit one objective as 2–4 parallel variants
+  (New Task composer or the surface) — each runs in its own worktree;
+  merge conflicts between child branches surface as typed evidence
+  through the merge transaction, never silent corruption.
+- **Review surface**: per-file diff plus per-hunk accept/reject
+  (`GetDiffHunks`/`ResolveReviewHunk`); reject inverse-applies exactly
+  the selected hunk; both outcomes are durable `ReviewHunkResolved`
+  events.
+- **Approvals**: protected effects block on durable pending approvals,
+  survive renderer AND Core restarts, resolve through
+  ApproveEffect/DenyEffect, and write tamper-evident receipts.
+- **Live browser**: real Chromium via CDP — navigate, semantic snapshot,
+  actions, console/network capture, screenshots; hostile-page content
+  stays inert data.
+- **Automations**: cron or event-triggered task creation on the daemon
+  (exactly-once per cron boundary / event watermark, restart-safe).
+- **Terminal/sandbox/tools**: PTY-backed terminal via the execd broker,
+  OS-sandboxed execution (Seatbelt on macOS, Landlock via a helper
+  launcher on Linux), MCP external tool servers.
+
 ### Building the desktop app
 
 ```bash

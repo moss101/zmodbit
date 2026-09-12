@@ -9,6 +9,7 @@
 
 pub mod agent_fleet;
 pub mod automation;
+pub mod diagnostics;
 pub mod agent_profiles_plans;
 pub mod agent_runtime_batch2;
 pub mod agent_runtime_batch3;
