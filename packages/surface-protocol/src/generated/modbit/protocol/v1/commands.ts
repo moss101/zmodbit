@@ -43,11 +43,56 @@ export interface CreateTaskCommand {
    */
   repoId: string;
   baseBranch: string;
+  /**
+   * Phase 7 item 1: parent task when this task is a spawned child agent
+   * (parent-child fleet linkage).
+   */
+  parentTaskId: string;
+  /**
+   * Phase 7 item 2 (REQ-EV-0150): comma-separated write declaration. The
+   * write coordinator denies acquisition that overlaps an ACTIVE task on
+   * the same repo BEFORE the task runs. Empty = undeclared (merge
+   * verification still applies).
+   */
+  writeScope: string;
+}
+
+/**
+ * Phase 7 item 2: "run N variants" from New Task — one umbrella task with
+ * N child agents running the same objective in parallel, each in its own
+ * isolated worktree; compare results and merge the winner.
+ */
+export interface RunVariantsCommand {
+  objective: string;
+  /** 2..=4 (capacity ticket bounds the lineage) */
+  count: number;
+  repoId: string;
+  baseBranch: string;
 }
 
 export interface CancelTaskCommand {
   taskId: string;
   reason: string;
+}
+
+/**
+ * Phase 7 item 4: scheduled (cron) or event-triggered task automation.
+ * Exactly one trigger must be non-empty.
+ */
+export interface CreateAutomationCommand {
+  name: string;
+  /** 5-field cron (minute hour day-of-month month day-of-week, UTC). */
+  cron: string;
+  /**
+   * Durable event type to react to (e.g. "task_completed"); empty when
+   * the trigger is cron.
+   */
+  eventPattern: string;
+  /** The follow-up task objective. */
+  objective: string;
+}
+
+export interface ListAutomationsRequest {
 }
 
 function createBaseCommandEnvelope(): CommandEnvelope {
@@ -326,7 +371,7 @@ export const CreateSessionCommand: MessageFns<CreateSessionCommand> = {
 };
 
 function createBaseCreateTaskCommand(): CreateTaskCommand {
-  return { sessionId: "", title: "", prompt: "", repoId: "", baseBranch: "" };
+  return { sessionId: "", title: "", prompt: "", repoId: "", baseBranch: "", parentTaskId: "", writeScope: "" };
 }
 
 export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
@@ -345,6 +390,12 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
     }
     if (message.baseBranch !== "") {
       writer.uint32(42).string(message.baseBranch);
+    }
+    if (message.parentTaskId !== "") {
+      writer.uint32(50).string(message.parentTaskId);
+    }
+    if (message.writeScope !== "") {
+      writer.uint32(58).string(message.writeScope);
     }
     return writer;
   },
@@ -396,6 +447,22 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
           message.baseBranch = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.parentTaskId = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.writeScope = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -412,6 +479,8 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
       prompt: isSet(object.prompt) ? globalThis.String(object.prompt) : "",
       repoId: isSet(object.repoId) ? globalThis.String(object.repoId) : "",
       baseBranch: isSet(object.baseBranch) ? globalThis.String(object.baseBranch) : "",
+      parentTaskId: isSet(object.parentTaskId) ? globalThis.String(object.parentTaskId) : "",
+      writeScope: isSet(object.writeScope) ? globalThis.String(object.writeScope) : "",
     };
   },
 
@@ -432,6 +501,12 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
     if (message.baseBranch !== "") {
       obj.baseBranch = message.baseBranch;
     }
+    if (message.parentTaskId !== "") {
+      obj.parentTaskId = message.parentTaskId;
+    }
+    if (message.writeScope !== "") {
+      obj.writeScope = message.writeScope;
+    }
     return obj;
   },
 
@@ -443,6 +518,116 @@ export const CreateTaskCommand: MessageFns<CreateTaskCommand> = {
     message.sessionId = object.sessionId ?? "";
     message.title = object.title ?? "";
     message.prompt = object.prompt ?? "";
+    message.repoId = object.repoId ?? "";
+    message.baseBranch = object.baseBranch ?? "";
+    message.parentTaskId = object.parentTaskId ?? "";
+    message.writeScope = object.writeScope ?? "";
+    return message;
+  },
+};
+
+function createBaseRunVariantsCommand(): RunVariantsCommand {
+  return { objective: "", count: 0, repoId: "", baseBranch: "" };
+}
+
+export const RunVariantsCommand: MessageFns<RunVariantsCommand> = {
+  encode(message: RunVariantsCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.objective !== "") {
+      writer.uint32(10).string(message.objective);
+    }
+    if (message.count !== 0) {
+      writer.uint32(16).uint32(message.count);
+    }
+    if (message.repoId !== "") {
+      writer.uint32(26).string(message.repoId);
+    }
+    if (message.baseBranch !== "") {
+      writer.uint32(34).string(message.baseBranch);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RunVariantsCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRunVariantsCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.objective = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.uint32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.repoId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.baseBranch = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RunVariantsCommand {
+    return {
+      objective: isSet(object.objective) ? globalThis.String(object.objective) : "",
+      count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+      repoId: isSet(object.repoId) ? globalThis.String(object.repoId) : "",
+      baseBranch: isSet(object.baseBranch) ? globalThis.String(object.baseBranch) : "",
+    };
+  },
+
+  toJSON(message: RunVariantsCommand): unknown {
+    const obj: any = {};
+    if (message.objective !== "") {
+      obj.objective = message.objective;
+    }
+    if (message.count !== 0) {
+      obj.count = Math.round(message.count);
+    }
+    if (message.repoId !== "") {
+      obj.repoId = message.repoId;
+    }
+    if (message.baseBranch !== "") {
+      obj.baseBranch = message.baseBranch;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RunVariantsCommand>, I>>(base?: I): RunVariantsCommand {
+    return RunVariantsCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RunVariantsCommand>, I>>(object: I): RunVariantsCommand {
+    const message = createBaseRunVariantsCommand();
+    message.objective = object.objective ?? "";
+    message.count = object.count ?? 0;
     message.repoId = object.repoId ?? "";
     message.baseBranch = object.baseBranch ?? "";
     return message;
@@ -521,6 +706,157 @@ export const CancelTaskCommand: MessageFns<CancelTaskCommand> = {
     const message = createBaseCancelTaskCommand();
     message.taskId = object.taskId ?? "";
     message.reason = object.reason ?? "";
+    return message;
+  },
+};
+
+function createBaseCreateAutomationCommand(): CreateAutomationCommand {
+  return { name: "", cron: "", eventPattern: "", objective: "" };
+}
+
+export const CreateAutomationCommand: MessageFns<CreateAutomationCommand> = {
+  encode(message: CreateAutomationCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.cron !== "") {
+      writer.uint32(18).string(message.cron);
+    }
+    if (message.eventPattern !== "") {
+      writer.uint32(26).string(message.eventPattern);
+    }
+    if (message.objective !== "") {
+      writer.uint32(34).string(message.objective);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateAutomationCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateAutomationCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.cron = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.eventPattern = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.objective = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateAutomationCommand {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      cron: isSet(object.cron) ? globalThis.String(object.cron) : "",
+      eventPattern: isSet(object.eventPattern) ? globalThis.String(object.eventPattern) : "",
+      objective: isSet(object.objective) ? globalThis.String(object.objective) : "",
+    };
+  },
+
+  toJSON(message: CreateAutomationCommand): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.cron !== "") {
+      obj.cron = message.cron;
+    }
+    if (message.eventPattern !== "") {
+      obj.eventPattern = message.eventPattern;
+    }
+    if (message.objective !== "") {
+      obj.objective = message.objective;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateAutomationCommand>, I>>(base?: I): CreateAutomationCommand {
+    return CreateAutomationCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateAutomationCommand>, I>>(object: I): CreateAutomationCommand {
+    const message = createBaseCreateAutomationCommand();
+    message.name = object.name ?? "";
+    message.cron = object.cron ?? "";
+    message.eventPattern = object.eventPattern ?? "";
+    message.objective = object.objective ?? "";
+    return message;
+  },
+};
+
+function createBaseListAutomationsRequest(): ListAutomationsRequest {
+  return {};
+}
+
+export const ListAutomationsRequest: MessageFns<ListAutomationsRequest> = {
+  encode(_: ListAutomationsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListAutomationsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListAutomationsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListAutomationsRequest {
+    return {};
+  },
+
+  toJSON(_: ListAutomationsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ListAutomationsRequest>, I>>(base?: I): ListAutomationsRequest {
+    return ListAutomationsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ListAutomationsRequest>, I>>(_: I): ListAutomationsRequest {
+    const message = createBaseListAutomationsRequest();
     return message;
   },
 };

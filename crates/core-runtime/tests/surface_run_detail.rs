@@ -56,6 +56,9 @@ fn setup_with_base(
     let repo = GitRepo::init(&repo_root).unwrap();
     repo.set_config("user.email", "t@modbit.test").unwrap();
     repo.set_config("user.name", "T").unwrap();
+    // Byte-exact hunk assertions: the runner's global autocrlf must not
+    // rewrite worktree files when git apply touches them (Windows CI).
+    repo.set_config("core.autocrlf", "false").unwrap();
     std::fs::write(repo_root.join("f.txt"), base_content).unwrap();
     repo.commit_all("base").unwrap();
 

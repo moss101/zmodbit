@@ -6,7 +6,13 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { CreateSessionCommand, CreateTaskCommand } from "./commands";
+import {
+  CreateAutomationCommand,
+  CreateSessionCommand,
+  CreateTaskCommand,
+  ListAutomationsRequest,
+  RunVariantsCommand,
+} from "./commands";
 import { TaskStatus, taskStatusFromJSON, taskStatusToJSON } from "./domain";
 import { EventEnvelope } from "./events";
 
@@ -56,7 +62,36 @@ export interface SurfaceRequest {
    * approval (docs/13 Waiting(Approval), docs/23).
    */
   approveEffect?: ApproveEffectCommand | undefined;
-  denyEffect?: DenyEffectCommand | undefined;
+  denyEffect?:
+    | DenyEffectCommand
+    | undefined;
+  /**
+   * Phase 5 item 4: hunk-level review — enumerate the changed hunks of
+   * the task worktree and record an accept/reject decision per hunk
+   * (reject inverse-applies the hunk; both write ReviewHunkResolved).
+   */
+  getDiffHunks?: GetDiffHunksRequest | undefined;
+  resolveReviewHunk?:
+    | ResolveReviewHunkCommand
+    | undefined;
+  /**
+   * Phase 7 item 1: children through the scheduler — transactional
+   * subagent admission (docs/14) spawning a real child task with its
+   * own isolated worktree; park/resume wait for the parent's flow.
+   */
+  spawnAgent?: SpawnAgentCommand | undefined;
+  parkAgent?: ParkAgentCommand | undefined;
+  resumeAgent?: ResumeAgentCommand | undefined;
+  agentResult?:
+    | AgentResultRequest
+    | undefined;
+  /** Phase 7 item 2: run N variants of one objective in parallel. */
+  runVariants?:
+    | RunVariantsCommand
+    | undefined;
+  /** Phase 7 item 4: automations on the daemon. */
+  createAutomation?: CreateAutomationCommand | undefined;
+  listAutomations?: ListAutomationsRequest | undefined;
 }
 
 export interface ApproveEffectCommand {
@@ -223,6 +258,27 @@ export interface SurfaceResponse {
   recentRepos: RecentRepoList | undefined;
   repo: RecentRepoView | undefined;
   settings: SettingsView | undefined;
+  diffHunks: DiffHunksView | undefined;
+  agentResult: AgentResultView | undefined;
+  automations: AutomationList | undefined;
+}
+
+/**
+ * AutomationView: the durable spec plus its fire state (the engine
+ * records the last fired cron boundary / consumed event rowid).
+ */
+export interface AutomationView {
+  automationId: string;
+  name: string;
+  cron: string;
+  eventPattern: string;
+  objective: string;
+  enabled: boolean;
+  lastFireKey: string;
+}
+
+export interface AutomationList {
+  automations: AutomationView[];
 }
 
 /**
@@ -330,6 +386,93 @@ export interface DiffView {
   files: DiffFileView[];
 }
 
+export interface GetDiffHunksRequest {
+  taskId: string;
+}
+
+/**
+ * Hunk-level diff content for the review surface: one entry per changed
+ * range with its new-file start line (the hunk id used by review RPCs).
+ */
+export interface DiffHunkView {
+  path: string;
+  newStart: string;
+  lines: string[];
+}
+
+export interface DiffHunksView {
+  taskId: string;
+  branch: string;
+  baseRevision: string;
+  hunks: DiffHunkView[];
+}
+
+/**
+ * Accept/reject decision on ONE hunk of the task worktree. Reject
+ * inverse-applies only that hunk; accept leaves the worktree untouched.
+ * Both outcomes append a durable ReviewHunkResolved event.
+ */
+export interface ResolveReviewHunkCommand {
+  taskId: string;
+  path: string;
+  newStart: string;
+  accepted: boolean;
+}
+
+/**
+ * Phase 7 item 1 — transactional subagent admission (docs/14): all-or-
+ * nothing. Capacity ticket (max concurrent children of the root), parent
+ * active at the expected generation, declared write-scope conflict check
+ * against active siblings, then a real child task through the scheduler
+ * with its own isolated worktree. Any failure refuses admission with no
+ * partial reservation.
+ */
+export interface SpawnAgentCommand {
+  parentTaskId: string;
+  objective: string;
+  /**
+   * Comma-separated paths this child may write (advisory conflict
+   * declaration checked against active siblings).
+   */
+  writeScope: string;
+  /**
+   * Idempotent re-attach: a replayed spawn with the same key returns the
+   * already-admitted child instead of spawning a second one.
+   */
+  idempotencyKey: string;
+  /**
+   * Generation fencing: admission requires the parent still at this
+   * generation (0 = no fence).
+   */
+  parentGeneration: string;
+}
+
+export interface ParkAgentCommand {
+  taskId: string;
+  reason: string;
+}
+
+export interface ResumeAgentCommand {
+  taskId: string;
+}
+
+/**
+ * Bounded wait for a child agent to reach a terminal state, then its
+ * SubagentResult view (summary + outcome, docs/14 § agent communication).
+ */
+export interface AgentResultRequest {
+  taskId: string;
+  timeoutMs: string;
+}
+
+export interface AgentResultView {
+  taskId: string;
+  parentTaskId: string;
+  state: string;
+  summary: string;
+  failureCode: string;
+}
+
 function createBaseSurfaceRequest(): SurfaceRequest {
   return {
     createSession: undefined,
@@ -353,6 +496,15 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     updateSettings: undefined,
     approveEffect: undefined,
     denyEffect: undefined,
+    getDiffHunks: undefined,
+    resolveReviewHunk: undefined,
+    spawnAgent: undefined,
+    parkAgent: undefined,
+    resumeAgent: undefined,
+    agentResult: undefined,
+    runVariants: undefined,
+    createAutomation: undefined,
+    listAutomations: undefined,
   };
 }
 
@@ -420,6 +572,33 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.denyEffect !== undefined) {
       DenyEffectCommand.encode(message.denyEffect, writer.uint32(170).fork()).join();
+    }
+    if (message.getDiffHunks !== undefined) {
+      GetDiffHunksRequest.encode(message.getDiffHunks, writer.uint32(178).fork()).join();
+    }
+    if (message.resolveReviewHunk !== undefined) {
+      ResolveReviewHunkCommand.encode(message.resolveReviewHunk, writer.uint32(186).fork()).join();
+    }
+    if (message.spawnAgent !== undefined) {
+      SpawnAgentCommand.encode(message.spawnAgent, writer.uint32(194).fork()).join();
+    }
+    if (message.parkAgent !== undefined) {
+      ParkAgentCommand.encode(message.parkAgent, writer.uint32(202).fork()).join();
+    }
+    if (message.resumeAgent !== undefined) {
+      ResumeAgentCommand.encode(message.resumeAgent, writer.uint32(210).fork()).join();
+    }
+    if (message.agentResult !== undefined) {
+      AgentResultRequest.encode(message.agentResult, writer.uint32(218).fork()).join();
+    }
+    if (message.runVariants !== undefined) {
+      RunVariantsCommand.encode(message.runVariants, writer.uint32(226).fork()).join();
+    }
+    if (message.createAutomation !== undefined) {
+      CreateAutomationCommand.encode(message.createAutomation, writer.uint32(234).fork()).join();
+    }
+    if (message.listAutomations !== undefined) {
+      ListAutomationsRequest.encode(message.listAutomations, writer.uint32(242).fork()).join();
     }
     return writer;
   },
@@ -599,6 +778,78 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.denyEffect = DenyEffectCommand.decode(reader, reader.uint32());
           continue;
         }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.getDiffHunks = GetDiffHunksRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 23: {
+          if (tag !== 186) {
+            break;
+          }
+
+          message.resolveReviewHunk = ResolveReviewHunkCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 24: {
+          if (tag !== 194) {
+            break;
+          }
+
+          message.spawnAgent = SpawnAgentCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 25: {
+          if (tag !== 202) {
+            break;
+          }
+
+          message.parkAgent = ParkAgentCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 26: {
+          if (tag !== 210) {
+            break;
+          }
+
+          message.resumeAgent = ResumeAgentCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 27: {
+          if (tag !== 218) {
+            break;
+          }
+
+          message.agentResult = AgentResultRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 28: {
+          if (tag !== 226) {
+            break;
+          }
+
+          message.runVariants = RunVariantsCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 29: {
+          if (tag !== 234) {
+            break;
+          }
+
+          message.createAutomation = CreateAutomationCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 30: {
+          if (tag !== 242) {
+            break;
+          }
+
+          message.listAutomations = ListAutomationsRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -635,6 +886,21 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       updateSettings: isSet(object.updateSettings) ? UpdateSettingsCommand.fromJSON(object.updateSettings) : undefined,
       approveEffect: isSet(object.approveEffect) ? ApproveEffectCommand.fromJSON(object.approveEffect) : undefined,
       denyEffect: isSet(object.denyEffect) ? DenyEffectCommand.fromJSON(object.denyEffect) : undefined,
+      getDiffHunks: isSet(object.getDiffHunks) ? GetDiffHunksRequest.fromJSON(object.getDiffHunks) : undefined,
+      resolveReviewHunk: isSet(object.resolveReviewHunk)
+        ? ResolveReviewHunkCommand.fromJSON(object.resolveReviewHunk)
+        : undefined,
+      spawnAgent: isSet(object.spawnAgent) ? SpawnAgentCommand.fromJSON(object.spawnAgent) : undefined,
+      parkAgent: isSet(object.parkAgent) ? ParkAgentCommand.fromJSON(object.parkAgent) : undefined,
+      resumeAgent: isSet(object.resumeAgent) ? ResumeAgentCommand.fromJSON(object.resumeAgent) : undefined,
+      agentResult: isSet(object.agentResult) ? AgentResultRequest.fromJSON(object.agentResult) : undefined,
+      runVariants: isSet(object.runVariants) ? RunVariantsCommand.fromJSON(object.runVariants) : undefined,
+      createAutomation: isSet(object.createAutomation)
+        ? CreateAutomationCommand.fromJSON(object.createAutomation)
+        : undefined,
+      listAutomations: isSet(object.listAutomations)
+        ? ListAutomationsRequest.fromJSON(object.listAutomations)
+        : undefined,
     };
   },
 
@@ -702,6 +968,33 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.denyEffect !== undefined) {
       obj.denyEffect = DenyEffectCommand.toJSON(message.denyEffect);
+    }
+    if (message.getDiffHunks !== undefined) {
+      obj.getDiffHunks = GetDiffHunksRequest.toJSON(message.getDiffHunks);
+    }
+    if (message.resolveReviewHunk !== undefined) {
+      obj.resolveReviewHunk = ResolveReviewHunkCommand.toJSON(message.resolveReviewHunk);
+    }
+    if (message.spawnAgent !== undefined) {
+      obj.spawnAgent = SpawnAgentCommand.toJSON(message.spawnAgent);
+    }
+    if (message.parkAgent !== undefined) {
+      obj.parkAgent = ParkAgentCommand.toJSON(message.parkAgent);
+    }
+    if (message.resumeAgent !== undefined) {
+      obj.resumeAgent = ResumeAgentCommand.toJSON(message.resumeAgent);
+    }
+    if (message.agentResult !== undefined) {
+      obj.agentResult = AgentResultRequest.toJSON(message.agentResult);
+    }
+    if (message.runVariants !== undefined) {
+      obj.runVariants = RunVariantsCommand.toJSON(message.runVariants);
+    }
+    if (message.createAutomation !== undefined) {
+      obj.createAutomation = CreateAutomationCommand.toJSON(message.createAutomation);
+    }
+    if (message.listAutomations !== undefined) {
+      obj.listAutomations = ListAutomationsRequest.toJSON(message.listAutomations);
     }
     return obj;
   },
@@ -773,6 +1066,33 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.denyEffect = (object.denyEffect !== undefined && object.denyEffect !== null)
       ? DenyEffectCommand.fromPartial(object.denyEffect)
+      : undefined;
+    message.getDiffHunks = (object.getDiffHunks !== undefined && object.getDiffHunks !== null)
+      ? GetDiffHunksRequest.fromPartial(object.getDiffHunks)
+      : undefined;
+    message.resolveReviewHunk = (object.resolveReviewHunk !== undefined && object.resolveReviewHunk !== null)
+      ? ResolveReviewHunkCommand.fromPartial(object.resolveReviewHunk)
+      : undefined;
+    message.spawnAgent = (object.spawnAgent !== undefined && object.spawnAgent !== null)
+      ? SpawnAgentCommand.fromPartial(object.spawnAgent)
+      : undefined;
+    message.parkAgent = (object.parkAgent !== undefined && object.parkAgent !== null)
+      ? ParkAgentCommand.fromPartial(object.parkAgent)
+      : undefined;
+    message.resumeAgent = (object.resumeAgent !== undefined && object.resumeAgent !== null)
+      ? ResumeAgentCommand.fromPartial(object.resumeAgent)
+      : undefined;
+    message.agentResult = (object.agentResult !== undefined && object.agentResult !== null)
+      ? AgentResultRequest.fromPartial(object.agentResult)
+      : undefined;
+    message.runVariants = (object.runVariants !== undefined && object.runVariants !== null)
+      ? RunVariantsCommand.fromPartial(object.runVariants)
+      : undefined;
+    message.createAutomation = (object.createAutomation !== undefined && object.createAutomation !== null)
+      ? CreateAutomationCommand.fromPartial(object.createAutomation)
+      : undefined;
+    message.listAutomations = (object.listAutomations !== undefined && object.listAutomations !== null)
+      ? ListAutomationsRequest.fromPartial(object.listAutomations)
       : undefined;
     return message;
   },
@@ -2198,15 +2518,7 @@ export const CompleteTaskCommand: MessageFns<CompleteTaskCommand> = {
 };
 
 function createBaseTaskView(): TaskView {
-  return {
-    taskId: "",
-    sessionId: "",
-    title: "",
-    state: 0,
-    createdAt: "",
-    generation: "0",
-    parentTaskId: "",
-  };
+  return { taskId: "", sessionId: "", title: "", state: 0, createdAt: "", generation: "0", parentTaskId: "" };
 }
 
 export const TaskView: MessageFns<TaskView> = {
@@ -2290,6 +2602,14 @@ export const TaskView: MessageFns<TaskView> = {
           message.generation = reader.uint64().toString();
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.parentTaskId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2348,6 +2668,7 @@ export const TaskView: MessageFns<TaskView> = {
     message.state = object.state ?? 0;
     message.createdAt = object.createdAt ?? "";
     message.generation = object.generation ?? "0";
+    message.parentTaskId = object.parentTaskId ?? "";
     return message;
   },
 };
@@ -2443,6 +2764,9 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     recentRepos: undefined,
     repo: undefined,
     settings: undefined,
+    diffHunks: undefined,
+    agentResult: undefined,
+    automations: undefined,
   };
 }
 
@@ -2486,6 +2810,15 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.settings !== undefined) {
       SettingsView.encode(message.settings, writer.uint32(106).fork()).join();
+    }
+    if (message.diffHunks !== undefined) {
+      DiffHunksView.encode(message.diffHunks, writer.uint32(114).fork()).join();
+    }
+    if (message.agentResult !== undefined) {
+      AgentResultView.encode(message.agentResult, writer.uint32(122).fork()).join();
+    }
+    if (message.automations !== undefined) {
+      AutomationList.encode(message.automations, writer.uint32(130).fork()).join();
     }
     return writer;
   },
@@ -2601,6 +2934,30 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.settings = SettingsView.decode(reader, reader.uint32());
           continue;
         }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.diffHunks = DiffHunksView.decode(reader, reader.uint32());
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.agentResult = AgentResultView.decode(reader, reader.uint32());
+          continue;
+        }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.automations = AutomationList.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2625,6 +2982,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       recentRepos: isSet(object.recentRepos) ? RecentRepoList.fromJSON(object.recentRepos) : undefined,
       repo: isSet(object.repo) ? RecentRepoView.fromJSON(object.repo) : undefined,
       settings: isSet(object.settings) ? SettingsView.fromJSON(object.settings) : undefined,
+      diffHunks: isSet(object.diffHunks) ? DiffHunksView.fromJSON(object.diffHunks) : undefined,
+      agentResult: isSet(object.agentResult) ? AgentResultView.fromJSON(object.agentResult) : undefined,
+      automations: isSet(object.automations) ? AutomationList.fromJSON(object.automations) : undefined,
     };
   },
 
@@ -2669,6 +3029,15 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.settings !== undefined) {
       obj.settings = SettingsView.toJSON(message.settings);
     }
+    if (message.diffHunks !== undefined) {
+      obj.diffHunks = DiffHunksView.toJSON(message.diffHunks);
+    }
+    if (message.agentResult !== undefined) {
+      obj.agentResult = AgentResultView.toJSON(message.agentResult);
+    }
+    if (message.automations !== undefined) {
+      obj.automations = AutomationList.toJSON(message.automations);
+    }
     return obj;
   },
 
@@ -2704,6 +3073,233 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     message.settings = (object.settings !== undefined && object.settings !== null)
       ? SettingsView.fromPartial(object.settings)
       : undefined;
+    message.diffHunks = (object.diffHunks !== undefined && object.diffHunks !== null)
+      ? DiffHunksView.fromPartial(object.diffHunks)
+      : undefined;
+    message.agentResult = (object.agentResult !== undefined && object.agentResult !== null)
+      ? AgentResultView.fromPartial(object.agentResult)
+      : undefined;
+    message.automations = (object.automations !== undefined && object.automations !== null)
+      ? AutomationList.fromPartial(object.automations)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseAutomationView(): AutomationView {
+  return { automationId: "", name: "", cron: "", eventPattern: "", objective: "", enabled: false, lastFireKey: "" };
+}
+
+export const AutomationView: MessageFns<AutomationView> = {
+  encode(message: AutomationView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.automationId !== "") {
+      writer.uint32(10).string(message.automationId);
+    }
+    if (message.name !== "") {
+      writer.uint32(18).string(message.name);
+    }
+    if (message.cron !== "") {
+      writer.uint32(26).string(message.cron);
+    }
+    if (message.eventPattern !== "") {
+      writer.uint32(34).string(message.eventPattern);
+    }
+    if (message.objective !== "") {
+      writer.uint32(42).string(message.objective);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(48).bool(message.enabled);
+    }
+    if (message.lastFireKey !== "") {
+      writer.uint32(58).string(message.lastFireKey);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AutomationView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAutomationView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.automationId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.cron = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.eventPattern = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.objective = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.lastFireKey = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AutomationView {
+    return {
+      automationId: isSet(object.automationId) ? globalThis.String(object.automationId) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      cron: isSet(object.cron) ? globalThis.String(object.cron) : "",
+      eventPattern: isSet(object.eventPattern) ? globalThis.String(object.eventPattern) : "",
+      objective: isSet(object.objective) ? globalThis.String(object.objective) : "",
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+      lastFireKey: isSet(object.lastFireKey) ? globalThis.String(object.lastFireKey) : "",
+    };
+  },
+
+  toJSON(message: AutomationView): unknown {
+    const obj: any = {};
+    if (message.automationId !== "") {
+      obj.automationId = message.automationId;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.cron !== "") {
+      obj.cron = message.cron;
+    }
+    if (message.eventPattern !== "") {
+      obj.eventPattern = message.eventPattern;
+    }
+    if (message.objective !== "") {
+      obj.objective = message.objective;
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    if (message.lastFireKey !== "") {
+      obj.lastFireKey = message.lastFireKey;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AutomationView>, I>>(base?: I): AutomationView {
+    return AutomationView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AutomationView>, I>>(object: I): AutomationView {
+    const message = createBaseAutomationView();
+    message.automationId = object.automationId ?? "";
+    message.name = object.name ?? "";
+    message.cron = object.cron ?? "";
+    message.eventPattern = object.eventPattern ?? "";
+    message.objective = object.objective ?? "";
+    message.enabled = object.enabled ?? false;
+    message.lastFireKey = object.lastFireKey ?? "";
+    return message;
+  },
+};
+
+function createBaseAutomationList(): AutomationList {
+  return { automations: [] };
+}
+
+export const AutomationList: MessageFns<AutomationList> = {
+  encode(message: AutomationList, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.automations) {
+      AutomationView.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AutomationList {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAutomationList();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.automations.push(AutomationView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AutomationList {
+    return {
+      automations: globalThis.Array.isArray(object?.automations)
+        ? object.automations.map((e: any) => AutomationView.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: AutomationList): unknown {
+    const obj: any = {};
+    if (message.automations?.length) {
+      obj.automations = message.automations.map((e) => AutomationView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AutomationList>, I>>(base?: I): AutomationList {
+    return AutomationList.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AutomationList>, I>>(object: I): AutomationList {
+    const message = createBaseAutomationList();
+    message.automations = object.automations?.map((e) => AutomationView.fromPartial(e)) || [];
     return message;
   },
 };
@@ -3754,6 +4350,830 @@ export const DiffView: MessageFns<DiffView> = {
     message.branch = object.branch ?? "";
     message.baseRevision = object.baseRevision ?? "";
     message.files = object.files?.map((e) => DiffFileView.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetDiffHunksRequest(): GetDiffHunksRequest {
+  return { taskId: "" };
+}
+
+export const GetDiffHunksRequest: MessageFns<GetDiffHunksRequest> = {
+  encode(message: GetDiffHunksRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetDiffHunksRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDiffHunksRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDiffHunksRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: GetDiffHunksRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetDiffHunksRequest>, I>>(base?: I): GetDiffHunksRequest {
+    return GetDiffHunksRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetDiffHunksRequest>, I>>(object: I): GetDiffHunksRequest {
+    const message = createBaseGetDiffHunksRequest();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseDiffHunkView(): DiffHunkView {
+  return { path: "", newStart: "0", lines: [] };
+}
+
+export const DiffHunkView: MessageFns<DiffHunkView> = {
+  encode(message: DiffHunkView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.path !== "") {
+      writer.uint32(10).string(message.path);
+    }
+    if (message.newStart !== "0") {
+      writer.uint32(16).uint64(message.newStart);
+    }
+    for (const v of message.lines) {
+      writer.uint32(26).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DiffHunkView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDiffHunkView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.newStart = reader.uint64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.lines.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DiffHunkView {
+    return {
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      newStart: isSet(object.newStart) ? globalThis.String(object.newStart) : "0",
+      lines: globalThis.Array.isArray(object?.lines) ? object.lines.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: DiffHunkView): unknown {
+    const obj: any = {};
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.newStart !== "0") {
+      obj.newStart = message.newStart;
+    }
+    if (message.lines?.length) {
+      obj.lines = message.lines;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DiffHunkView>, I>>(base?: I): DiffHunkView {
+    return DiffHunkView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DiffHunkView>, I>>(object: I): DiffHunkView {
+    const message = createBaseDiffHunkView();
+    message.path = object.path ?? "";
+    message.newStart = object.newStart ?? "0";
+    message.lines = object.lines?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseDiffHunksView(): DiffHunksView {
+  return { taskId: "", branch: "", baseRevision: "", hunks: [] };
+}
+
+export const DiffHunksView: MessageFns<DiffHunksView> = {
+  encode(message: DiffHunksView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.branch !== "") {
+      writer.uint32(18).string(message.branch);
+    }
+    if (message.baseRevision !== "") {
+      writer.uint32(26).string(message.baseRevision);
+    }
+    for (const v of message.hunks) {
+      DiffHunkView.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DiffHunksView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDiffHunksView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.branch = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.baseRevision = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.hunks.push(DiffHunkView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DiffHunksView {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      branch: isSet(object.branch) ? globalThis.String(object.branch) : "",
+      baseRevision: isSet(object.baseRevision) ? globalThis.String(object.baseRevision) : "",
+      hunks: globalThis.Array.isArray(object?.hunks) ? object.hunks.map((e: any) => DiffHunkView.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: DiffHunksView): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.branch !== "") {
+      obj.branch = message.branch;
+    }
+    if (message.baseRevision !== "") {
+      obj.baseRevision = message.baseRevision;
+    }
+    if (message.hunks?.length) {
+      obj.hunks = message.hunks.map((e) => DiffHunkView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DiffHunksView>, I>>(base?: I): DiffHunksView {
+    return DiffHunksView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DiffHunksView>, I>>(object: I): DiffHunksView {
+    const message = createBaseDiffHunksView();
+    message.taskId = object.taskId ?? "";
+    message.branch = object.branch ?? "";
+    message.baseRevision = object.baseRevision ?? "";
+    message.hunks = object.hunks?.map((e) => DiffHunkView.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseResolveReviewHunkCommand(): ResolveReviewHunkCommand {
+  return { taskId: "", path: "", newStart: "0", accepted: false };
+}
+
+export const ResolveReviewHunkCommand: MessageFns<ResolveReviewHunkCommand> = {
+  encode(message: ResolveReviewHunkCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.path !== "") {
+      writer.uint32(18).string(message.path);
+    }
+    if (message.newStart !== "0") {
+      writer.uint32(24).uint64(message.newStart);
+    }
+    if (message.accepted !== false) {
+      writer.uint32(32).bool(message.accepted);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ResolveReviewHunkCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResolveReviewHunkCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.newStart = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.accepted = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResolveReviewHunkCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      newStart: isSet(object.newStart) ? globalThis.String(object.newStart) : "0",
+      accepted: isSet(object.accepted) ? globalThis.Boolean(object.accepted) : false,
+    };
+  },
+
+  toJSON(message: ResolveReviewHunkCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.newStart !== "0") {
+      obj.newStart = message.newStart;
+    }
+    if (message.accepted !== false) {
+      obj.accepted = message.accepted;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResolveReviewHunkCommand>, I>>(base?: I): ResolveReviewHunkCommand {
+    return ResolveReviewHunkCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResolveReviewHunkCommand>, I>>(object: I): ResolveReviewHunkCommand {
+    const message = createBaseResolveReviewHunkCommand();
+    message.taskId = object.taskId ?? "";
+    message.path = object.path ?? "";
+    message.newStart = object.newStart ?? "0";
+    message.accepted = object.accepted ?? false;
+    return message;
+  },
+};
+
+function createBaseSpawnAgentCommand(): SpawnAgentCommand {
+  return { parentTaskId: "", objective: "", writeScope: "", idempotencyKey: "", parentGeneration: "0" };
+}
+
+export const SpawnAgentCommand: MessageFns<SpawnAgentCommand> = {
+  encode(message: SpawnAgentCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.parentTaskId !== "") {
+      writer.uint32(10).string(message.parentTaskId);
+    }
+    if (message.objective !== "") {
+      writer.uint32(18).string(message.objective);
+    }
+    if (message.writeScope !== "") {
+      writer.uint32(26).string(message.writeScope);
+    }
+    if (message.idempotencyKey !== "") {
+      writer.uint32(34).string(message.idempotencyKey);
+    }
+    if (message.parentGeneration !== "0") {
+      writer.uint32(40).uint64(message.parentGeneration);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SpawnAgentCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSpawnAgentCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parentTaskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.objective = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.writeScope = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.parentGeneration = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SpawnAgentCommand {
+    return {
+      parentTaskId: isSet(object.parentTaskId) ? globalThis.String(object.parentTaskId) : "",
+      objective: isSet(object.objective) ? globalThis.String(object.objective) : "",
+      writeScope: isSet(object.writeScope) ? globalThis.String(object.writeScope) : "",
+      idempotencyKey: isSet(object.idempotencyKey) ? globalThis.String(object.idempotencyKey) : "",
+      parentGeneration: isSet(object.parentGeneration) ? globalThis.String(object.parentGeneration) : "0",
+    };
+  },
+
+  toJSON(message: SpawnAgentCommand): unknown {
+    const obj: any = {};
+    if (message.parentTaskId !== "") {
+      obj.parentTaskId = message.parentTaskId;
+    }
+    if (message.objective !== "") {
+      obj.objective = message.objective;
+    }
+    if (message.writeScope !== "") {
+      obj.writeScope = message.writeScope;
+    }
+    if (message.idempotencyKey !== "") {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
+    if (message.parentGeneration !== "0") {
+      obj.parentGeneration = message.parentGeneration;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SpawnAgentCommand>, I>>(base?: I): SpawnAgentCommand {
+    return SpawnAgentCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SpawnAgentCommand>, I>>(object: I): SpawnAgentCommand {
+    const message = createBaseSpawnAgentCommand();
+    message.parentTaskId = object.parentTaskId ?? "";
+    message.objective = object.objective ?? "";
+    message.writeScope = object.writeScope ?? "";
+    message.idempotencyKey = object.idempotencyKey ?? "";
+    message.parentGeneration = object.parentGeneration ?? "0";
+    return message;
+  },
+};
+
+function createBaseParkAgentCommand(): ParkAgentCommand {
+  return { taskId: "", reason: "" };
+}
+
+export const ParkAgentCommand: MessageFns<ParkAgentCommand> = {
+  encode(message: ParkAgentCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.reason !== "") {
+      writer.uint32(18).string(message.reason);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ParkAgentCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseParkAgentCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.reason = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ParkAgentCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
+    };
+  },
+
+  toJSON(message: ParkAgentCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.reason !== "") {
+      obj.reason = message.reason;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ParkAgentCommand>, I>>(base?: I): ParkAgentCommand {
+    return ParkAgentCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ParkAgentCommand>, I>>(object: I): ParkAgentCommand {
+    const message = createBaseParkAgentCommand();
+    message.taskId = object.taskId ?? "";
+    message.reason = object.reason ?? "";
+    return message;
+  },
+};
+
+function createBaseResumeAgentCommand(): ResumeAgentCommand {
+  return { taskId: "" };
+}
+
+export const ResumeAgentCommand: MessageFns<ResumeAgentCommand> = {
+  encode(message: ResumeAgentCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ResumeAgentCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResumeAgentCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResumeAgentCommand {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: ResumeAgentCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResumeAgentCommand>, I>>(base?: I): ResumeAgentCommand {
+    return ResumeAgentCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResumeAgentCommand>, I>>(object: I): ResumeAgentCommand {
+    const message = createBaseResumeAgentCommand();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseAgentResultRequest(): AgentResultRequest {
+  return { taskId: "", timeoutMs: "0" };
+}
+
+export const AgentResultRequest: MessageFns<AgentResultRequest> = {
+  encode(message: AgentResultRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.timeoutMs !== "0") {
+      writer.uint32(16).uint64(message.timeoutMs);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AgentResultRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAgentResultRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.timeoutMs = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AgentResultRequest {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      timeoutMs: isSet(object.timeoutMs) ? globalThis.String(object.timeoutMs) : "0",
+    };
+  },
+
+  toJSON(message: AgentResultRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.timeoutMs !== "0") {
+      obj.timeoutMs = message.timeoutMs;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AgentResultRequest>, I>>(base?: I): AgentResultRequest {
+    return AgentResultRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AgentResultRequest>, I>>(object: I): AgentResultRequest {
+    const message = createBaseAgentResultRequest();
+    message.taskId = object.taskId ?? "";
+    message.timeoutMs = object.timeoutMs ?? "0";
+    return message;
+  },
+};
+
+function createBaseAgentResultView(): AgentResultView {
+  return { taskId: "", parentTaskId: "", state: "", summary: "", failureCode: "" };
+}
+
+export const AgentResultView: MessageFns<AgentResultView> = {
+  encode(message: AgentResultView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.parentTaskId !== "") {
+      writer.uint32(18).string(message.parentTaskId);
+    }
+    if (message.state !== "") {
+      writer.uint32(26).string(message.state);
+    }
+    if (message.summary !== "") {
+      writer.uint32(34).string(message.summary);
+    }
+    if (message.failureCode !== "") {
+      writer.uint32(42).string(message.failureCode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AgentResultView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAgentResultView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.parentTaskId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.state = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.summary = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.failureCode = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AgentResultView {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      parentTaskId: isSet(object.parentTaskId) ? globalThis.String(object.parentTaskId) : "",
+      state: isSet(object.state) ? globalThis.String(object.state) : "",
+      summary: isSet(object.summary) ? globalThis.String(object.summary) : "",
+      failureCode: isSet(object.failureCode) ? globalThis.String(object.failureCode) : "",
+    };
+  },
+
+  toJSON(message: AgentResultView): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.parentTaskId !== "") {
+      obj.parentTaskId = message.parentTaskId;
+    }
+    if (message.state !== "") {
+      obj.state = message.state;
+    }
+    if (message.summary !== "") {
+      obj.summary = message.summary;
+    }
+    if (message.failureCode !== "") {
+      obj.failureCode = message.failureCode;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AgentResultView>, I>>(base?: I): AgentResultView {
+    return AgentResultView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AgentResultView>, I>>(object: I): AgentResultView {
+    const message = createBaseAgentResultView();
+    message.taskId = object.taskId ?? "";
+    message.parentTaskId = object.parentTaskId ?? "";
+    message.state = object.state ?? "";
+    message.summary = object.summary ?? "";
+    message.failureCode = object.failureCode ?? "";
     return message;
   },
 };
