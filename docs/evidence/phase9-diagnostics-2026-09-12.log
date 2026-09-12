@@ -1,0 +1,22 @@
+Phase 9 / M10.5 — diagnostics export + report-a-problem — E2E proof
+Date: 2026-09-12  Commit: c7695dc
+
+Proven through a REAL store (durable settings/session/task/events):
+1. collect(): report.json carries version/os/arch, real task+event counts,
+   the last durable events with REDACTED payloads, os fields asserted.
+2. report_a_problem(): PROBLEM.md carries the caller description AND the
+   bundle sha256 (matches the SHA256SUMS sidecar).
+3. SECURITY PROPERTY: a planted key-shaped secret ("sk-PLANTED-SECRET-
+   VALUE") in BOTH the app_settings document and an event payload appears
+   in NO bundle file, while "[REDACTED]" proves the settings were exported
+   and scrubbed — the bundle is safe to attach to an issue.
+4. CLI: `modbit diagnostics --db <p> --out <d>` and `modbit report
+   "<description>" --db <p> --out <d>` work directly against the local
+   store (no daemon), emitting the bundle path + sha256 as JSON.
+
+Test evidence (cargo test -p modbit-core-runtime --test diagnostics_e2e):
+test diagnostics_bundle_is_complete_and_secret_free ... ok
+test result: ok. 1 passed; 0 failed
+
+Also part of M10.5: README end-user docs (capabilities, diagnostics
+usage, refreshed milestone table) — same commit.
