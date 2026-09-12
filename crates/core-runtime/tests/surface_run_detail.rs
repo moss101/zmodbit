@@ -334,6 +334,8 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
             path: "f.txt".into(),
             new_start: 2,
             accepted: false,
+        
+            revision: String::new(),
         }),
     );
     assert!(resp.ok, "{:?}", resp.error);
@@ -349,6 +351,8 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
             path: "f.txt".into(),
             new_start: 4,
             accepted: true,
+        
+            revision: String::new(),
         }),
     );
     assert!(resp.ok, "{:?}", resp.error);
@@ -391,4 +395,78 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
     assert_eq!(count, 2, "both decisions durable");
     assert!(rejected.contains("\"path\":\"f.txt\""), "{rejected}");
     assert!(accepted.contains("\"new_start\":4"), "{accepted}");
+
+    // ---- Phase 5 residual: inline revision-bound comments + checklist.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::AddReviewComment(pb::AddReviewCommentCommand {
+            task_id: tid.clone(),
+            path: "f.txt".into(),
+            new_start: 4,
+            body: "keep this change — matches the intent".into(),
+        }),
+    );
+    assert!(resp.ok, "comment: {:?}", resp.error);
+
+    // Empty comment bodies are refused (the durable stream is not a log
+    // for noise).
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::AddReviewComment(pb::AddReviewCommentCommand {
+            task_id: tid.clone(),
+            path: "f.txt".into(),
+            new_start: 4,
+            body: "   ".into(),
+        }),
+    );
+    assert!(!resp.ok, "empty comment must refuse");
+
+    // GetDiffHunks: after rejecting hunk @2 only hunk @4 remains, and
+    // the comment surfaces BOUND to the current base revision.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::GetDiffHunks(pb::GetDiffHunksRequest {
+            task_id: tid.clone(),
+        }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    let view = resp.diff_hunks.expect("diff hunks");
+    assert_eq!(view.hunks.len(), 1, "rejected hunk left the diff");
+    assert_eq!(view.hunks[0].new_start, 4);
+    assert_eq!(view.comments.len(), 1, "{:?}", view.comments);
+    assert_eq!(view.comments[0].new_start, 4);
+    assert!(view.comments[0].body.contains("keep this change"));
+    assert_eq!(view.comments[0].revision, view.base_revision, "bound to the live revision");
+
+    // The generated checklist: deterministic, revision-bound, and the
+    // commented hunk no longer nags for review.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::GetReviewChecklist(pb::GetReviewChecklistRequest {
+            task_id: tid.clone(),
+        }),
+    );
+    assert!(resp.ok, "{:?}", resp.error);
+    let checklist = resp.review_checklist.expect("checklist");
+    assert_eq!(checklist.revision, view.base_revision);
+    let texts: Vec<&str> = checklist.items.iter().map(|i| i.text.as_str()).collect();
+    assert!(
+        texts.iter().any(|t| t.contains("Review f.txt (1 hunk)")),
+        "{texts:?}"
+    );
+    assert!(
+        !texts.iter().any(|t| t.contains("Comment or accept/reject f.txt @4")),
+        "the commented hunk must not nag: {texts:?}"
+    );
+    assert!(texts.iter().any(|t| *t == "Run the project test suite"));
+
+    // Checklist is DETERMINISTIC: two calls agree.
+    let resp = roundtrip(
+        &services,
+        pb::surface_request::Request::GetReviewChecklist(pb::GetReviewChecklistRequest {
+            task_id: tid.clone(),
+        }),
+    );
+    let checklist2 = resp.review_checklist.expect("checklist 2");
+    assert_eq!(checklist, checklist2);
 }

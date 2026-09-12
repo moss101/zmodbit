@@ -124,6 +124,19 @@ pub enum DomainEvent {
         path: String,
         new_start: usize,
         accepted: bool,
+        /// Base revision the decision was made against (serde default
+        /// keeps pre-stamping events readable).
+        #[serde(default)]
+        revision: String,
+    },
+    /// Inline review comment bound to one hunk at a specific revision
+    /// (Phase 5 residual): comments surface only while the task's base
+    /// revision still matches.
+    ReviewCommentAdded {
+        path: String,
+        new_start: usize,
+        body: String,
+        revision: String,
     },
     RunStarted {
         task_id: TaskId,
@@ -343,6 +356,7 @@ impl EventEnvelope {
             DomainEvent::TaskCancelled { .. } => "task_cancelled",
             DomainEvent::TaskSteered { .. } => "task_steered",
             DomainEvent::ReviewHunkResolved { .. } => "review_hunk_resolved",
+            DomainEvent::ReviewCommentAdded { .. } => "review_comment_added",
             DomainEvent::RunStarted { .. } => "run_started",
             DomainEvent::RunCompleted => "run_completed",
             DomainEvent::RunFailed { .. } => "run_failed",

@@ -986,8 +986,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts",
-      "bytes": 18017,
-      "sha256": "725bfa8832ab96e2fd2d0fbd14428f490081d5c5a4eaffb1a1326b6a7a64e846"
+      "bytes": 28034,
+      "sha256": "f61df935e8f7e3644606442c633b67bc74471213fd350ba663fcc02571a5b2ae"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts",
@@ -1006,8 +1006,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 116072,
-      "sha256": "2e123d6d766eafbdcc71c832c6c0e3b3b77a976491a7e2e55251548fbe68544f"
+      "bytes": 179362,
+      "sha256": "59ecbe16d0369f80e8b39f91efd67a352e289cef3a30fdf0bef15f3e8299a863"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",

@@ -886,6 +886,33 @@ impl CoreServices {
                     },
                 }
             }
+            Some(pb::surface_request::Request::AddReviewComment(add)) => {
+                match self.add_review_comment(&add) {
+                    Ok(()) => pb::SurfaceResponse {
+                        ok: true,
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::GetReviewChecklist(get)) => {
+                match self.review_checklist(&get.task_id) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        review_checklist: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             Some(pb::surface_request::Request::ListAutomations(_)) => {
                 match self
                     .store
@@ -1375,10 +1402,14 @@ impl CoreServices {
         let hunks = repo
             .diff_hunks_from(&config.base_revision)
             .map_err(|e| e.to_string())?;
+        // Comments are REVISION-BOUND: only those stamped with the
+        // current base revision surface (stale comments stay durable but
+        // invisible).
+        let comments = self.review_comments(task_id, &config.base_revision)?;
         Ok(pb::DiffHunksView {
             task_id: task_id.to_string(),
             branch: config.branch,
-            base_revision: config.base_revision,
+            base_revision: config.base_revision.clone(),
             hunks: hunks
                 .into_iter()
                 .map(|h| pb::DiffHunkView {
@@ -1387,7 +1418,51 @@ impl CoreServices {
                     lines: h.lines,
                 })
                 .collect(),
+            comments,
         })
+    }
+
+    /// Durable inline comments for a task at one revision.
+    fn review_comments(
+        &self,
+        task_id: &str,
+        revision: &str,
+    ) -> Result<Vec<pb::ReviewCommentView>, String> {
+        let rows: Vec<(String, String)> = self.store.with_conn(|conn| {
+            let Ok(mut stmt) = conn.prepare(
+                "SELECT payload_inline, occurred_at FROM events
+                 WHERE aggregate_id = ?1 AND event_type = 'review_comment_added'
+                 ORDER BY rowid",
+            ) else {
+                return Vec::new();
+            };
+            let Ok(rows) = stmt
+                .query_map([task_id], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                })
+                .map(|rows| rows.collect::<Result<Vec<_>, _>>())
+            else {
+                return Vec::new();
+            };
+            rows.unwrap_or_default()
+        });
+        let mut out = Vec::new();
+        for (payload, occurred_at) in rows {
+            let Ok(v) = serde_json::from_str::<serde_json::Value>(&payload) else {
+                continue;
+            };
+            if v["revision"].as_str() != Some(revision) {
+                continue;
+            }
+            out.push(pb::ReviewCommentView {
+                path: v["path"].as_str().unwrap_or_default().to_string(),
+                new_start: v["new_start"].as_u64().unwrap_or(0),
+                body: v["body"].as_str().unwrap_or_default().to_string(),
+                revision: v["revision"].as_str().unwrap_or_default().to_string(),
+                created_at: occurred_at.to_string(),
+            });
+        }
+        Ok(out)
     }
 
     /// Records one hunk review decision (Phase 5 item 4). Reject first
@@ -1414,6 +1489,7 @@ impl CoreServices {
                 path: resolve.path.clone(),
                 new_start: resolve.new_start as usize,
                 accepted: resolve.accepted,
+                revision: config.base_revision.clone(),
             },
         })
         .map(|_| ())
@@ -1836,6 +1912,97 @@ impl CoreServices {
             )
         })?;
         Ok(())
+    }
+
+    /// Phase 5 residual: records an inline comment bound to one hunk at
+    /// the task's CURRENT base revision (the surface stamps the revision
+    /// — clients cannot bind to an arbitrary revision).
+    fn add_review_comment(&self, add: &pb::AddReviewCommentCommand) -> Result<(), String> {
+        if add.body.trim().is_empty() {
+            return Err("review comment body must not be empty".into());
+        }
+        let (config, _repo) = self.review_repo(&add.task_id)?;
+        let task_id = modbit_domain::TaskId::parse(&add.task_id).map_err(|e| e.to_string())?;
+        self.execute(Command {
+            command_id: new_command_id(),
+            actor: actor(),
+            payload: CommandPayload::AddReviewComment {
+                task_id,
+                path: add.path.clone(),
+                new_start: add.new_start as usize,
+                body: add.body.clone(),
+                revision: config.base_revision.clone(),
+            },
+        })
+        .map(|_| ())
+    }
+
+    /// Phase 5 residual: the generated review checklist — a DETERMINED
+    /// function of the diff and its review state (crate::review), bound
+    /// to the current base revision.
+    fn review_checklist(&self, task_id: &str) -> Result<pb::ReviewChecklistView, String> {
+        let (config, repo) = self.review_repo(task_id)?;
+        let hunks = repo
+            .diff_hunks_from(&config.base_revision)
+            .map_err(|e| e.to_string())?;
+        // Which hunks carry comments / decisions at THIS revision?
+        let comments = self.review_comments(task_id, &config.base_revision)?;
+        let decided_rows: Vec<String> = self.store.with_conn(|conn| {
+            let Ok(mut stmt) = conn.prepare(
+                "SELECT payload_inline FROM events
+                 WHERE aggregate_id = ?1 AND event_type = 'review_hunk_resolved'",
+            ) else {
+                return Vec::new();
+            };
+            let Ok(rows) = stmt
+                .query_map([task_id], |r| r.get::<_, String>(0))
+                .map(|rows| rows.collect::<Result<Vec<_>, _>>())
+            else {
+                return Vec::new();
+            };
+            rows.unwrap_or_default()
+        });
+        let decided: Vec<(String, usize)> = decided_rows
+            .iter()
+            .filter_map(|p| serde_json::from_str::<serde_json::Value>(p).ok())
+            .filter(|v| v["revision"].as_str() == Some(config.base_revision.as_str()))
+            .map(|v| {
+                (
+                    v["path"].as_str().unwrap_or_default().to_string(),
+                    v["new_start"].as_u64().unwrap_or(0) as usize,
+                )
+            })
+            .collect();
+
+        // The durable decisions carry the revision they were made at —
+        // the events store them only if the surface stamped them. Hunk
+        // decisions made before the revision field existed still count
+        // when the payload has no revision field.
+        let inputs: Vec<crate::review::HunkInput> = hunks
+            .iter()
+            .map(|h| crate::review::HunkInput {
+                commented: comments.iter().any(|c| {
+                    c.path == h.path && c.new_start as usize == h.new_start
+                }),
+                decided: decided.iter().any(|(p, s)| p == &h.path && *s == h.new_start),
+                path: h.path.clone(),
+                new_start: h.new_start,
+                lines: h.lines.clone(),
+            })
+            .collect();
+        let items: Vec<pb::ChecklistItemView> = crate::review::generate_checklist(&inputs)
+            .into_iter()
+            .map(|i| pb::ChecklistItemView {
+                id: i.id,
+                text: i.text,
+                done: i.done,
+            })
+            .collect();
+        Ok(pb::ReviewChecklistView {
+            task_id: task_id.to_string(),
+            revision: config.base_revision,
+            items,
+        })
     }
 
     fn task_view(&self, task_id: &str) -> Option<pb::TaskView> {

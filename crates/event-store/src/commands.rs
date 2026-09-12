@@ -544,11 +544,25 @@ fn lifecycle_event(payload: &CommandPayload) -> DomainEvent {
             path,
             new_start,
             accepted,
+            revision,
             ..
         } => DomainEvent::ReviewHunkResolved {
             path,
             new_start,
             accepted,
+            revision,
+        },
+        CommandPayload::AddReviewComment {
+            path,
+            new_start,
+            body,
+            revision,
+            ..
+        } => DomainEvent::ReviewCommentAdded {
+            path,
+            new_start,
+            body,
+            revision,
         },
         other => unreachable!("creation commands are handled separately: {other:?}"),
     }

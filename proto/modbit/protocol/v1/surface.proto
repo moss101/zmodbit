@@ -55,6 +55,10 @@ message SurfaceRequest {
     // Phase 7 item 4: automations on the daemon.
     CreateAutomationCommand create_automation = 29;
     ListAutomationsRequest list_automations = 30;
+    // Phase 5 residual: inline revision-bound comments + generated
+    // review checklist on the review surface.
+    AddReviewCommentCommand add_review_comment = 31;
+    GetReviewChecklistRequest get_review_checklist = 32;
   }
 }
 
@@ -197,6 +201,7 @@ message SurfaceResponse {
   DiffHunksView diff_hunks = 14;
   AgentResultView agent_result = 15;
   AutomationList automations = 16;
+  ReviewChecklistView review_checklist = 17;
 }
 
 // AutomationView: the durable spec plus its fire state (the engine
@@ -320,6 +325,17 @@ message DiffHunksView {
   string branch = 2;
   string base_revision = 3;
   repeated DiffHunkView hunks = 4;
+  // Comments bound to THIS base revision (stale-revision comments do
+  // not surface).
+  repeated ReviewCommentView comments = 5;
+}
+
+message ReviewCommentView {
+  string path = 1;
+  uint64 new_start = 2;
+  string body = 3;
+  string revision = 4;
+  string created_at = 5;
 }
 
 // Accept/reject decision on ONE hunk of the task worktree. Reject
@@ -330,6 +346,9 @@ message ResolveReviewHunkCommand {
   string path = 2;
   uint64 new_start = 3;
   bool accepted = 4;
+  // Ignored: the surface stamps the CURRENT base revision on the
+  // durable decision (clients cannot bind to an arbitrary revision).
+  string revision = 5;
 }
 
 // Phase 7 item 1 — transactional subagent admission (docs/14): all-or-
@@ -374,4 +393,31 @@ message AgentResultView {
   string state = 3;
   string summary = 4;
   string failure_code = 5;
+}
+
+// Phase 5 residual: an inline comment bound to one hunk of the diff at
+// the CURRENT base revision.
+message AddReviewCommentCommand {
+  string task_id = 1;
+  string path = 2;
+  uint64 new_start = 3;
+  string body = 4;
+}
+
+// Deterministically generated from the diff + test status + comment
+// coverage — a derived view, never durable state.
+message GetReviewChecklistRequest {
+  string task_id = 1;
+}
+
+message ChecklistItemView {
+  string id = 1;
+  string text = 2;
+  bool done = 3;
+}
+
+message ReviewChecklistView {
+  string task_id = 1;
+  string revision = 2;
+  repeated ChecklistItemView items = 3;
 }

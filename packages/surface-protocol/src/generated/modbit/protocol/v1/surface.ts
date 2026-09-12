@@ -91,7 +91,15 @@ export interface SurfaceRequest {
     | undefined;
   /** Phase 7 item 4: automations on the daemon. */
   createAutomation?: CreateAutomationCommand | undefined;
-  listAutomations?: ListAutomationsRequest | undefined;
+  listAutomations?:
+    | ListAutomationsRequest
+    | undefined;
+  /**
+   * Phase 5 residual: inline revision-bound comments + generated
+   * review checklist on the review surface.
+   */
+  addReviewComment?: AddReviewCommentCommand | undefined;
+  getReviewChecklist?: GetReviewChecklistRequest | undefined;
 }
 
 export interface ApproveEffectCommand {
@@ -261,6 +269,7 @@ export interface SurfaceResponse {
   diffHunks: DiffHunksView | undefined;
   agentResult: AgentResultView | undefined;
   automations: AutomationList | undefined;
+  reviewChecklist: ReviewChecklistView | undefined;
 }
 
 /**
@@ -405,6 +414,19 @@ export interface DiffHunksView {
   branch: string;
   baseRevision: string;
   hunks: DiffHunkView[];
+  /**
+   * Comments bound to THIS base revision (stale-revision comments do
+   * not surface).
+   */
+  comments: ReviewCommentView[];
+}
+
+export interface ReviewCommentView {
+  path: string;
+  newStart: string;
+  body: string;
+  revision: string;
+  createdAt: string;
 }
 
 /**
@@ -417,6 +439,11 @@ export interface ResolveReviewHunkCommand {
   path: string;
   newStart: string;
   accepted: boolean;
+  /**
+   * Ignored: the surface stamps the CURRENT base revision on the
+   * durable decision (clients cannot bind to an arbitrary revision).
+   */
+  revision: string;
 }
 
 /**
@@ -473,6 +500,37 @@ export interface AgentResultView {
   failureCode: string;
 }
 
+/**
+ * Phase 5 residual: an inline comment bound to one hunk of the diff at
+ * the CURRENT base revision.
+ */
+export interface AddReviewCommentCommand {
+  taskId: string;
+  path: string;
+  newStart: string;
+  body: string;
+}
+
+/**
+ * Deterministically generated from the diff + test status + comment
+ * coverage — a derived view, never durable state.
+ */
+export interface GetReviewChecklistRequest {
+  taskId: string;
+}
+
+export interface ChecklistItemView {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface ReviewChecklistView {
+  taskId: string;
+  revision: string;
+  items: ChecklistItemView[];
+}
+
 function createBaseSurfaceRequest(): SurfaceRequest {
   return {
     createSession: undefined,
@@ -505,6 +563,8 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     runVariants: undefined,
     createAutomation: undefined,
     listAutomations: undefined,
+    addReviewComment: undefined,
+    getReviewChecklist: undefined,
   };
 }
 
@@ -599,6 +659,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.listAutomations !== undefined) {
       ListAutomationsRequest.encode(message.listAutomations, writer.uint32(242).fork()).join();
+    }
+    if (message.addReviewComment !== undefined) {
+      AddReviewCommentCommand.encode(message.addReviewComment, writer.uint32(250).fork()).join();
+    }
+    if (message.getReviewChecklist !== undefined) {
+      GetReviewChecklistRequest.encode(message.getReviewChecklist, writer.uint32(258).fork()).join();
     }
     return writer;
   },
@@ -850,6 +916,22 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.listAutomations = ListAutomationsRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 31: {
+          if (tag !== 250) {
+            break;
+          }
+
+          message.addReviewComment = AddReviewCommentCommand.decode(reader, reader.uint32());
+          continue;
+        }
+        case 32: {
+          if (tag !== 258) {
+            break;
+          }
+
+          message.getReviewChecklist = GetReviewChecklistRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -900,6 +982,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
         : undefined,
       listAutomations: isSet(object.listAutomations)
         ? ListAutomationsRequest.fromJSON(object.listAutomations)
+        : undefined,
+      addReviewComment: isSet(object.addReviewComment)
+        ? AddReviewCommentCommand.fromJSON(object.addReviewComment)
+        : undefined,
+      getReviewChecklist: isSet(object.getReviewChecklist)
+        ? GetReviewChecklistRequest.fromJSON(object.getReviewChecklist)
         : undefined,
     };
   },
@@ -995,6 +1083,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.listAutomations !== undefined) {
       obj.listAutomations = ListAutomationsRequest.toJSON(message.listAutomations);
+    }
+    if (message.addReviewComment !== undefined) {
+      obj.addReviewComment = AddReviewCommentCommand.toJSON(message.addReviewComment);
+    }
+    if (message.getReviewChecklist !== undefined) {
+      obj.getReviewChecklist = GetReviewChecklistRequest.toJSON(message.getReviewChecklist);
     }
     return obj;
   },
@@ -1093,6 +1187,12 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.listAutomations = (object.listAutomations !== undefined && object.listAutomations !== null)
       ? ListAutomationsRequest.fromPartial(object.listAutomations)
+      : undefined;
+    message.addReviewComment = (object.addReviewComment !== undefined && object.addReviewComment !== null)
+      ? AddReviewCommentCommand.fromPartial(object.addReviewComment)
+      : undefined;
+    message.getReviewChecklist = (object.getReviewChecklist !== undefined && object.getReviewChecklist !== null)
+      ? GetReviewChecklistRequest.fromPartial(object.getReviewChecklist)
       : undefined;
     return message;
   },
@@ -2767,6 +2867,7 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     diffHunks: undefined,
     agentResult: undefined,
     automations: undefined,
+    reviewChecklist: undefined,
   };
 }
 
@@ -2819,6 +2920,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.automations !== undefined) {
       AutomationList.encode(message.automations, writer.uint32(130).fork()).join();
+    }
+    if (message.reviewChecklist !== undefined) {
+      ReviewChecklistView.encode(message.reviewChecklist, writer.uint32(138).fork()).join();
     }
     return writer;
   },
@@ -2958,6 +3062,14 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.automations = AutomationList.decode(reader, reader.uint32());
           continue;
         }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.reviewChecklist = ReviewChecklistView.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2985,6 +3097,7 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       diffHunks: isSet(object.diffHunks) ? DiffHunksView.fromJSON(object.diffHunks) : undefined,
       agentResult: isSet(object.agentResult) ? AgentResultView.fromJSON(object.agentResult) : undefined,
       automations: isSet(object.automations) ? AutomationList.fromJSON(object.automations) : undefined,
+      reviewChecklist: isSet(object.reviewChecklist) ? ReviewChecklistView.fromJSON(object.reviewChecklist) : undefined,
     };
   },
 
@@ -3038,6 +3151,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.automations !== undefined) {
       obj.automations = AutomationList.toJSON(message.automations);
     }
+    if (message.reviewChecklist !== undefined) {
+      obj.reviewChecklist = ReviewChecklistView.toJSON(message.reviewChecklist);
+    }
     return obj;
   },
 
@@ -3081,6 +3197,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       : undefined;
     message.automations = (object.automations !== undefined && object.automations !== null)
       ? AutomationList.fromPartial(object.automations)
+      : undefined;
+    message.reviewChecklist = (object.reviewChecklist !== undefined && object.reviewChecklist !== null)
+      ? ReviewChecklistView.fromPartial(object.reviewChecklist)
       : undefined;
     return message;
   },
@@ -4505,7 +4624,7 @@ export const DiffHunkView: MessageFns<DiffHunkView> = {
 };
 
 function createBaseDiffHunksView(): DiffHunksView {
-  return { taskId: "", branch: "", baseRevision: "", hunks: [] };
+  return { taskId: "", branch: "", baseRevision: "", hunks: [], comments: [] };
 }
 
 export const DiffHunksView: MessageFns<DiffHunksView> = {
@@ -4521,6 +4640,9 @@ export const DiffHunksView: MessageFns<DiffHunksView> = {
     }
     for (const v of message.hunks) {
       DiffHunkView.encode(v!, writer.uint32(34).fork()).join();
+    }
+    for (const v of message.comments) {
+      ReviewCommentView.encode(v!, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -4564,6 +4686,14 @@ export const DiffHunksView: MessageFns<DiffHunksView> = {
           message.hunks.push(DiffHunkView.decode(reader, reader.uint32()));
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.comments.push(ReviewCommentView.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4579,6 +4709,9 @@ export const DiffHunksView: MessageFns<DiffHunksView> = {
       branch: isSet(object.branch) ? globalThis.String(object.branch) : "",
       baseRevision: isSet(object.baseRevision) ? globalThis.String(object.baseRevision) : "",
       hunks: globalThis.Array.isArray(object?.hunks) ? object.hunks.map((e: any) => DiffHunkView.fromJSON(e)) : [],
+      comments: globalThis.Array.isArray(object?.comments)
+        ? object.comments.map((e: any) => ReviewCommentView.fromJSON(e))
+        : [],
     };
   },
 
@@ -4596,6 +4729,9 @@ export const DiffHunksView: MessageFns<DiffHunksView> = {
     if (message.hunks?.length) {
       obj.hunks = message.hunks.map((e) => DiffHunkView.toJSON(e));
     }
+    if (message.comments?.length) {
+      obj.comments = message.comments.map((e) => ReviewCommentView.toJSON(e));
+    }
     return obj;
   },
 
@@ -4608,12 +4744,137 @@ export const DiffHunksView: MessageFns<DiffHunksView> = {
     message.branch = object.branch ?? "";
     message.baseRevision = object.baseRevision ?? "";
     message.hunks = object.hunks?.map((e) => DiffHunkView.fromPartial(e)) || [];
+    message.comments = object.comments?.map((e) => ReviewCommentView.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseReviewCommentView(): ReviewCommentView {
+  return { path: "", newStart: "0", body: "", revision: "", createdAt: "" };
+}
+
+export const ReviewCommentView: MessageFns<ReviewCommentView> = {
+  encode(message: ReviewCommentView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.path !== "") {
+      writer.uint32(10).string(message.path);
+    }
+    if (message.newStart !== "0") {
+      writer.uint32(16).uint64(message.newStart);
+    }
+    if (message.body !== "") {
+      writer.uint32(26).string(message.body);
+    }
+    if (message.revision !== "") {
+      writer.uint32(34).string(message.revision);
+    }
+    if (message.createdAt !== "") {
+      writer.uint32(42).string(message.createdAt);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReviewCommentView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReviewCommentView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.newStart = reader.uint64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.body = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.revision = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.createdAt = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReviewCommentView {
+    return {
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      newStart: isSet(object.newStart) ? globalThis.String(object.newStart) : "0",
+      body: isSet(object.body) ? globalThis.String(object.body) : "",
+      revision: isSet(object.revision) ? globalThis.String(object.revision) : "",
+      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : "",
+    };
+  },
+
+  toJSON(message: ReviewCommentView): unknown {
+    const obj: any = {};
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.newStart !== "0") {
+      obj.newStart = message.newStart;
+    }
+    if (message.body !== "") {
+      obj.body = message.body;
+    }
+    if (message.revision !== "") {
+      obj.revision = message.revision;
+    }
+    if (message.createdAt !== "") {
+      obj.createdAt = message.createdAt;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ReviewCommentView>, I>>(base?: I): ReviewCommentView {
+    return ReviewCommentView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ReviewCommentView>, I>>(object: I): ReviewCommentView {
+    const message = createBaseReviewCommentView();
+    message.path = object.path ?? "";
+    message.newStart = object.newStart ?? "0";
+    message.body = object.body ?? "";
+    message.revision = object.revision ?? "";
+    message.createdAt = object.createdAt ?? "";
     return message;
   },
 };
 
 function createBaseResolveReviewHunkCommand(): ResolveReviewHunkCommand {
-  return { taskId: "", path: "", newStart: "0", accepted: false };
+  return { taskId: "", path: "", newStart: "0", accepted: false, revision: "" };
 }
 
 export const ResolveReviewHunkCommand: MessageFns<ResolveReviewHunkCommand> = {
@@ -4629,6 +4890,9 @@ export const ResolveReviewHunkCommand: MessageFns<ResolveReviewHunkCommand> = {
     }
     if (message.accepted !== false) {
       writer.uint32(32).bool(message.accepted);
+    }
+    if (message.revision !== "") {
+      writer.uint32(42).string(message.revision);
     }
     return writer;
   },
@@ -4672,6 +4936,14 @@ export const ResolveReviewHunkCommand: MessageFns<ResolveReviewHunkCommand> = {
           message.accepted = reader.bool();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.revision = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4687,6 +4959,7 @@ export const ResolveReviewHunkCommand: MessageFns<ResolveReviewHunkCommand> = {
       path: isSet(object.path) ? globalThis.String(object.path) : "",
       newStart: isSet(object.newStart) ? globalThis.String(object.newStart) : "0",
       accepted: isSet(object.accepted) ? globalThis.Boolean(object.accepted) : false,
+      revision: isSet(object.revision) ? globalThis.String(object.revision) : "",
     };
   },
 
@@ -4704,6 +4977,9 @@ export const ResolveReviewHunkCommand: MessageFns<ResolveReviewHunkCommand> = {
     if (message.accepted !== false) {
       obj.accepted = message.accepted;
     }
+    if (message.revision !== "") {
+      obj.revision = message.revision;
+    }
     return obj;
   },
 
@@ -4716,6 +4992,7 @@ export const ResolveReviewHunkCommand: MessageFns<ResolveReviewHunkCommand> = {
     message.path = object.path ?? "";
     message.newStart = object.newStart ?? "0";
     message.accepted = object.accepted ?? false;
+    message.revision = object.revision ?? "";
     return message;
   },
 };
@@ -5174,6 +5451,356 @@ export const AgentResultView: MessageFns<AgentResultView> = {
     message.state = object.state ?? "";
     message.summary = object.summary ?? "";
     message.failureCode = object.failureCode ?? "";
+    return message;
+  },
+};
+
+function createBaseAddReviewCommentCommand(): AddReviewCommentCommand {
+  return { taskId: "", path: "", newStart: "0", body: "" };
+}
+
+export const AddReviewCommentCommand: MessageFns<AddReviewCommentCommand> = {
+  encode(message: AddReviewCommentCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.path !== "") {
+      writer.uint32(18).string(message.path);
+    }
+    if (message.newStart !== "0") {
+      writer.uint32(24).uint64(message.newStart);
+    }
+    if (message.body !== "") {
+      writer.uint32(34).string(message.body);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AddReviewCommentCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAddReviewCommentCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.newStart = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.body = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AddReviewCommentCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      newStart: isSet(object.newStart) ? globalThis.String(object.newStart) : "0",
+      body: isSet(object.body) ? globalThis.String(object.body) : "",
+    };
+  },
+
+  toJSON(message: AddReviewCommentCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.newStart !== "0") {
+      obj.newStart = message.newStart;
+    }
+    if (message.body !== "") {
+      obj.body = message.body;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AddReviewCommentCommand>, I>>(base?: I): AddReviewCommentCommand {
+    return AddReviewCommentCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AddReviewCommentCommand>, I>>(object: I): AddReviewCommentCommand {
+    const message = createBaseAddReviewCommentCommand();
+    message.taskId = object.taskId ?? "";
+    message.path = object.path ?? "";
+    message.newStart = object.newStart ?? "0";
+    message.body = object.body ?? "";
+    return message;
+  },
+};
+
+function createBaseGetReviewChecklistRequest(): GetReviewChecklistRequest {
+  return { taskId: "" };
+}
+
+export const GetReviewChecklistRequest: MessageFns<GetReviewChecklistRequest> = {
+  encode(message: GetReviewChecklistRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetReviewChecklistRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetReviewChecklistRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetReviewChecklistRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: GetReviewChecklistRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetReviewChecklistRequest>, I>>(base?: I): GetReviewChecklistRequest {
+    return GetReviewChecklistRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetReviewChecklistRequest>, I>>(object: I): GetReviewChecklistRequest {
+    const message = createBaseGetReviewChecklistRequest();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseChecklistItemView(): ChecklistItemView {
+  return { id: "", text: "", done: false };
+}
+
+export const ChecklistItemView: MessageFns<ChecklistItemView> = {
+  encode(message: ChecklistItemView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.text !== "") {
+      writer.uint32(18).string(message.text);
+    }
+    if (message.done !== false) {
+      writer.uint32(24).bool(message.done);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ChecklistItemView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChecklistItemView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.text = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.done = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChecklistItemView {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      text: isSet(object.text) ? globalThis.String(object.text) : "",
+      done: isSet(object.done) ? globalThis.Boolean(object.done) : false,
+    };
+  },
+
+  toJSON(message: ChecklistItemView): unknown {
+    const obj: any = {};
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.text !== "") {
+      obj.text = message.text;
+    }
+    if (message.done !== false) {
+      obj.done = message.done;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ChecklistItemView>, I>>(base?: I): ChecklistItemView {
+    return ChecklistItemView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ChecklistItemView>, I>>(object: I): ChecklistItemView {
+    const message = createBaseChecklistItemView();
+    message.id = object.id ?? "";
+    message.text = object.text ?? "";
+    message.done = object.done ?? false;
+    return message;
+  },
+};
+
+function createBaseReviewChecklistView(): ReviewChecklistView {
+  return { taskId: "", revision: "", items: [] };
+}
+
+export const ReviewChecklistView: MessageFns<ReviewChecklistView> = {
+  encode(message: ReviewChecklistView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.revision !== "") {
+      writer.uint32(18).string(message.revision);
+    }
+    for (const v of message.items) {
+      ChecklistItemView.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReviewChecklistView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReviewChecklistView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.revision = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.items.push(ChecklistItemView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReviewChecklistView {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      revision: isSet(object.revision) ? globalThis.String(object.revision) : "",
+      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ChecklistItemView.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: ReviewChecklistView): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.revision !== "") {
+      obj.revision = message.revision;
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => ChecklistItemView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ReviewChecklistView>, I>>(base?: I): ReviewChecklistView {
+    return ReviewChecklistView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ReviewChecklistView>, I>>(object: I): ReviewChecklistView {
+    const message = createBaseReviewChecklistView();
+    message.taskId = object.taskId ?? "";
+    message.revision = object.revision ?? "";
+    message.items = object.items?.map((e) => ChecklistItemView.fromPartial(e)) || [];
     return message;
   },
 };

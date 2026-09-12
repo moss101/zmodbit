@@ -162,11 +162,11 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/surface-protocol/package.json` |  | 577 | `7f9a4c0ea8b862692872943f1dd8a3491fd1a6e452dabdd5e98e03b8730f799a` |
 | `packages/surface-protocol/scripts/generate.mjs` |  | 2626 | `c36bf3f4982af8158048f0d8cde5ff230d10d02ecb605776d89770f0cabdabb8` |
 | `packages/surface-protocol/src/generated/google/protobuf/timestamp.ts` |  | 7992 | `41bead303f2e6d23d691fb4f0b00760fe41ac02fe984fcf657274029cdaa1db2` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts` |  | 18017 | `725bfa8832ab96e2fd2d0fbd14428f490081d5c5a4eaffb1a1326b6a7a64e846` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/commands.ts` |  | 28034 | `f61df935e8f7e3644606442c633b67bc74471213fd350ba663fcc02571a5b2ae` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/common.ts` |  | 3659 | `47a603090fc65ee04ddbd940f71fcf151bd23a2ebbba9c001829f3a203f98e61` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/domain.ts` |  | 2886 | `eab432c06eb3fc6480a201930f869418ed42236bf040e85dace4e00c50e59f8b` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/events.ts` |  | 23242 | `f24199327140fa3b9cb39084532b2f2c3bfa807ad19589efdd9197371414c98a` |
-| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 116072 | `2e123d6d766eafbdcc71c832c6c0e3b3b77a976491a7e2e55251548fbe68544f` |
+| `packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts` |  | 179362 | `59ecbe16d0369f80e8b39f91efd67a352e289cef3a30fdf0bef15f3e8299a863` |
 | `packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts` |  | 11854 | `c1eb6739e86a75a80872a57916f9526bcd90607a3096efff3067b100e18b3133` |
 | `packages/surface-protocol/src/index.ts` |  | 1023 | `76a5c4953423dd885c4c33be4796e33a3c429d235e6047f9d257be091bd22d38` |
 | `packages/surface-protocol/test/wire-compat.test.ts` |  | 4021 | `11780e82f2c5bcc4a982a6a7bf8cf04a416913eda099520ea91249e57275b0da` |

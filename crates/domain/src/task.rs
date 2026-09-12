@@ -120,6 +120,14 @@ pub fn apply_task_event(
             | TaskState::Completed => Ok(state),
             _ => Err(reject("review_hunk_resolved")),
         },
+        // Inline comments ride the same state-neutral contract.
+        DomainEvent::ReviewCommentAdded { .. } => match state {
+            TaskState::Running
+            | TaskState::Waiting(_)
+            | TaskState::ReadyForReview
+            | TaskState::Completed => Ok(state),
+            _ => Err(reject("review_comment_added")),
+        },
         // Creation events do not transition an existing aggregate.
         DomainEvent::TaskCreated { .. } => match state {
             TaskState::Created => Ok(TaskState::Created),

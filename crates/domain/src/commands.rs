@@ -111,6 +111,18 @@ pub enum CommandPayload {
         path: String,
         new_start: usize,
         accepted: bool,
+        /// The surface stamps the current base revision (revision-bound
+        /// review state).
+        revision: String,
+    },
+    /// Phase 5 residual: an inline comment bound to one hunk at the
+    /// task's CURRENT base revision (the surface stamps the revision).
+    AddReviewComment {
+        task_id: TaskId,
+        path: String,
+        new_start: usize,
+        body: String,
+        revision: String,
     },
 }
 
@@ -132,7 +144,8 @@ impl CommandPayload {
             CommandPayload::RewindSession { session_id, .. } => Some(session_id.to_string()),
             CommandPayload::QueueTaskInput { task_id, .. }
             | CommandPayload::SetGoal { task_id, .. }
-            | CommandPayload::ResolveReviewHunk { task_id, .. } => {
+            | CommandPayload::ResolveReviewHunk { task_id, .. }
+            | CommandPayload::AddReviewComment { task_id, .. } => {
                 Some(task_id.to_string())
             }
             CommandPayload::AskSideQuestion { session_id, .. } => Some(session_id.to_string()),
@@ -158,6 +171,7 @@ impl CommandPayload {
             CommandPayload::CancelTask { .. } => "cancel_task",
             CommandPayload::SteerTask { .. } => "steer_task",
             CommandPayload::ResolveReviewHunk { .. } => "resolve_review_hunk",
+            CommandPayload::AddReviewComment { .. } => "add_review_comment",
         }
     }
 }
