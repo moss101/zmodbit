@@ -143,6 +143,18 @@ pub enum DomainEvent {
         attempt: u32,
     },
     RunCompleted,
+    /// Durable cost ledger for one completed run attempt (M10.1): the
+    /// measured usage frames priced at the run's model. Self-contained
+    /// payload — run envelopes carry no task id.
+    RunCostRecorded {
+        task_id: String,
+        model: String,
+        invocations: u32,
+        input_tokens: u64,
+        output_tokens: u64,
+        cost_usd: f64,
+        unpriced_invocations: u32,
+    },
     RunFailed {
         failure_code: String,
     },
@@ -359,6 +371,7 @@ impl EventEnvelope {
             DomainEvent::ReviewCommentAdded { .. } => "review_comment_added",
             DomainEvent::RunStarted { .. } => "run_started",
             DomainEvent::RunCompleted => "run_completed",
+            DomainEvent::RunCostRecorded { .. } => "run_cost_recorded",
             DomainEvent::RunFailed { .. } => "run_failed",
             DomainEvent::TurnPrepared { .. } => "turn_prepared",
             DomainEvent::TurnCompleted => "turn_completed",

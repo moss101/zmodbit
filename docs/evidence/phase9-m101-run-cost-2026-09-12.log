@@ -1,0 +1,21 @@
+M10.1 — durable run-cost telemetry (telemetry/cost/SLO) — E2E proof
+Date: 2026-09-12
+
+1. Every completed run attempt now lands its MEASURED cost ledger as a
+   durable RunCostRecorded event on the run aggregate (model, per-run
+   invocation/token totals, priced USD, honestly-unpriced count) —
+   independent of any OTLP endpoint; OTLP export remains the optional
+   push channel on top.
+2. GetRunCost RPC (36): the task's per-run cost ledgers read back from
+   the durable events, filtered to the task's own runs.
+3. E2E END-TO-END through the REAL scheduler: the scripted daemon E2E
+   (E2E-001, real model fixture + real tools + real store) now asserts
+   after ReadyForReview that GetRunCost returns at least one run entry
+   with >= 1 invocation and a non-empty model — the cost path is proven
+   by the same always-on scenario that proves the coding loop.
+4. SLO ladder enforcement is crates/event-store/tests/perf_gate.rs
+   (M10.4): throughput/latency floors always-on in CI.
+
+Test evidence: cargo test -p modbit-core-runtime --test
+daemon_scripted_e2e (2/2, incl. the new cost assertions); full
+workspace 560 tests 0 failed; clippy zero warnings.

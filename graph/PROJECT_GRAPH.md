@@ -324,7 +324,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M10.1` | IMPLEMENTING | telemetry/cost/SLO dashboards |  |
+| `M10.1` | E2E_PROVEN | telemetry/cost/SLO dashboards |  |
 | `M10.2` | IMPLEMENTING | updater/signing/SBOM |  |
 | `M10.3` | E2E_PROVEN | full RC E2E catalog |  |
 | `M10.4` | E2E_PROVEN | performance regression gates |  |

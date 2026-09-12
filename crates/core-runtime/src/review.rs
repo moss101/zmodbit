@@ -73,7 +73,7 @@ pub fn generate_checklist(hunks: &[HunkInput]) -> Vec<ChecklistItem> {
         }
     }
     for path in &seen_files {
-        let count = hunks.iter().filter(|h| &h.path == *path).count();
+        let count = hunks.iter().filter(|h| h.path == *path).count();
         items.push(ChecklistItem {
             id: next_id(),
             text: format!("Review {path} ({count} hunk{})", if count == 1 { "" } else { "s" }),

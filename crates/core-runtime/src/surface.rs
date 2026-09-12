@@ -945,6 +945,20 @@ impl CoreServices {
                     },
                 }
             }
+            Some(pb::surface_request::Request::GetRunCost(get)) => {
+                match self.run_costs(&get.task_id) {
+                    Ok(list) => pb::SurfaceResponse {
+                        ok: true,
+                        run_costs: Some(list),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             Some(pb::surface_request::Request::ListPendingApprovals(_)) => {
                 let rows = self
                     .store
@@ -2098,6 +2112,47 @@ impl CoreServices {
             .set_lease(&set.task_id, owner)
             .map_err(|e| e.to_string())?;
         self.browser_view(&set.task_id)
+    }
+
+    /// M10.1: the task's durable per-run cost ledgers (one entry per
+    /// completed run attempt), read from RunCostRecorded events.
+    fn run_costs(&self, task_id: &str) -> Result<pb::RunCostList, String> {
+        let rows: Vec<(String, String)> = self.store.with_conn(|conn| {
+            let Ok(mut stmt) = conn.prepare(
+                "SELECT aggregate_id, payload_inline FROM events
+                 WHERE event_type = 'run_cost_recorded' ORDER BY rowid",
+            ) else {
+                return Vec::new();
+            };
+            let Ok(rows) = stmt
+                .query_map([], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                })
+                .map(|rows| rows.collect::<Result<Vec<_>, _>>())
+            else {
+                return Vec::new();
+            };
+            rows.unwrap_or_default()
+        });
+        let mut runs = Vec::new();
+        for (run_id, payload) in rows {
+            let Ok(v) = serde_json::from_str::<serde_json::Value>(&payload) else {
+                continue;
+            };
+            if v["task_id"].as_str() != Some(task_id) {
+                continue;
+            }
+            runs.push(pb::RunCostView {
+                run_id,
+                model: v["model"].as_str().unwrap_or_default().to_string(),
+                invocations: v["invocations"].as_u64().unwrap_or(0),
+                input_tokens: v["input_tokens"].as_u64().unwrap_or(0),
+                output_tokens: v["output_tokens"].as_u64().unwrap_or(0),
+                cost_usd: v["cost_usd"].as_f64().unwrap_or(0.0),
+                unpriced_invocations: v["unpriced_invocations"].as_u64().unwrap_or(0),
+            });
+        }
+        Ok(pb::RunCostList { runs })
     }
 
     fn task_view(&self, task_id: &str) -> Option<pb::TaskView> {

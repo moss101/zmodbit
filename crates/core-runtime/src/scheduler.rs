@@ -746,7 +746,16 @@ impl Scheduler {
                 );
                 Ok(())
             }
-            Ok(run) => match run.final_state {
+            Ok(run) => {
+                // M10.1: the measured cost ledger is DURABLE for every
+                // completed run (GetRunCost reads it); OTLP export is the
+                // optional push channel on top.
+                observer.run_cost_recorded(
+                    &run.run_id,
+                    &task_id.to_string(),
+                    &cost_tracker.snapshot(),
+                );
+                match run.final_state {
                 modbit_domain::turn::TurnState::Completed => {
                     // Phase 5 item 4: export the run's cost ledger via
                     // OTLP/JSON when an endpoint is configured. Best-effort:
@@ -780,7 +789,8 @@ impl Scheduler {
                         message: tail(&run.assembled_text, 500),
                     },
                 ),
-            },
+                }
+            }
             // A transport/provider failure is an outage, not a task defect:
             // the task parks in Waiting(Provider) for retry, never silently
             // retried here (docs/15 failover runs before effects only).
@@ -3463,6 +3473,29 @@ impl EventStoreObserver {
 impl EventStoreObserver {
     fn run_of(&self) -> Option<RunId> {
         *self.shared.run.lock().expect("observer mutex")
+    }
+
+    /// M10.1: the run's measured cost ledger lands as a durable event on
+    /// the run aggregate — every completed run, OTLP or not.
+    fn run_cost_recorded(
+        &self,
+        run_id: &str,
+        task_id: &str,
+        snapshot: &modbit_observability::RunCostLedger,
+    ) {
+        self.append(
+            AggregateType::Run,
+            run_id,
+            DomainEvent::RunCostRecorded {
+                task_id: task_id.to_string(),
+                model: snapshot.model.clone(),
+                invocations: snapshot.invocations,
+                input_tokens: snapshot.input_tokens,
+                output_tokens: snapshot.output_tokens,
+                cost_usd: snapshot.cost_usd,
+                unpriced_invocations: snapshot.unpriced_invocations,
+            },
+        );
     }
 }
 

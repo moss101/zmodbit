@@ -3350,10 +3350,12 @@
    "milestone": "M10",
    "order": 0,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "log:docs/evidence/phase9-m101-run-cost-2026-09-12.log",
+    "test:daemon_scripted_e2e::e2e_001_full_loop_read_fix_test_review"
    ],
    "notes": [
     {
@@ -3363,7 +3365,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-12T19:51:15Z"
   },
   {
    "id": "M10.2",

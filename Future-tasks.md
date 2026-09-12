@@ -119,13 +119,15 @@ Exit: `PRODUCTION_OK` receipt on a signed build a new user can open, point at a 
 
 ### Phase 5 residuals: review-surface depth (M2.9 polish)
 
-1. Inline revision-bound comments on hunks (durable, surfaced in review).
-2. Generated review checklist bound to the diff.
-3. Desktop approval-card flow proven through the packaged desktop (the approval LOOP is Core-E2E-proven; the card UX pass remains).
+CLOSED in this pass: inline revision-bound comments (AddReviewComment RPC 31, server-stamped revision binding, comments surface on GetDiffHunks only while the base revision matches), generated review checklist (GetReviewChecklist RPC 32, deterministic generator in `crates/core-runtime::review` — per-file items, test-path items, suspicious-content flags, under-reviewed nags), desktop approval cards (ListPendingApprovals RPC 33 + Approve/Deny cards in the Needs-Attention section through the full bridge).
+
+No residuals remain for Phase 5.
 
 ### Phase 7 residuals: browser takeover UI (M7 polish)
 
-1. Live view + takeover UI in the desktop task workspace over the CDP bridge (the bridge, semantic snapshots, actions and hostile-page proof are Core-E2E-proven).
+CLOSED in this pass: the live browser pane + takeover — BrowserHost (one live Chromium per task, lazy launch, the SAME session the agent and the pane share), GetBrowserView (34, PNG + page + lease) and SetBrowserLease (35, takeover = user / return = agent) RPCs, and the desktop Live browser panel with a 2s poll and Take over/Return buttons. The lease is the boundary agent-side browser actions consult before acting.
+
+No residuals remain for Phase 7.
 
 ### Phase 8: cloud (M8), only after local Release Zero steps 1 to 15 pass
 
@@ -142,11 +144,12 @@ Exit: M8 `E2E_PROVEN` on a real guest with tenant-isolation and loss/recovery te
 
 ### Phase 9 residuals: release hardening (M10)
 
-1. Updater + update channel (electron-builder; signing remains the operator gate).
-2. Performance regression gates beyond the M3.9 retrieval benchmark.
-3. RC E2E catalog + canonical tool/capability conformance harness (M10.3, M10.7).
+CLOSED in this pass: M10.1 (durable run-cost telemetry + GetRunCost — every completed run lands its measured ledger as a durable event, proven by the always-on scripted E2E), M10.3 (RC E2E catalog: all 25 docs/51 scenarios mapped to verified live proofs, `tools/rc_catalog.py` fails on dead mappings), M10.4 (performance regression gates: append throughput, snapshot p95, write-scope admission — always-on), M10.7 (canonical tool/capability conformance harness — exact inventory membership, fail-closed pool conditionality, schema projections).
 
-Exit: M10 `E2E_PROVEN` (Release Zero scenario + diagnostics already proven; M10.1/M10.2/M10.4 remain open as above).
+Remaining:
+1. M10.2 updater + update channel — REQUIRES A SIGNED BUILD to function (macOS auto-update refuses unsigned updates); operator-gated behind the Phase 4 signing gate.
+
+Exit: M10 `E2E_PROVEN` except the signing-gated updater (M10.2 BLOCKED_EXTERNAL_CREDENTIAL).
 
 ## 5. Enhancement backlog (not phase-blocking)
 

@@ -348,6 +348,22 @@ fn e2e_001_full_loop_read_fix_test_review() {
     assert!(worktree.join("quantity.js").exists());
     let fixed = std::fs::read_to_string(worktree.join("quantity.js")).unwrap();
     assert!(fixed.contains("negative"), "fix applied in the worktree: {fixed}");
+
+    // M10.1: the run's measured cost ledger is DURABLE — at least one
+    // model invocation was priced (or honestly unpriced) and landed on
+    // the run aggregate, readable via GetRunCost.
+    let cost_resp = request(
+        &daemon,
+        pb::surface_request::Request::GetRunCost(pb::GetRunCostRequest {
+            task_id: task_id.clone(),
+        }),
+    );
+    assert!(cost_resp.ok, "{}", cost_resp.error);
+    let costs = cost_resp.run_costs.expect("run cost list");
+    assert!(!costs.runs.is_empty(), "at least one run cost recorded");
+    let entry = &costs.runs[0];
+    assert!(entry.invocations >= 1, "{entry:?}");
+    assert!(!entry.model.is_empty());
     let diff = request(
         &daemon,
         pb::surface_request::Request::GetDiff(pb::GetDiffRequest { task_id: task_id.clone() }),

@@ -111,7 +111,11 @@ export interface SurfaceRequest {
    * session the agent uses, viewable and takeable-over by the user.
    */
   getBrowserView?: GetBrowserViewRequest | undefined;
-  setBrowserLease?: SetBrowserLeaseCommand | undefined;
+  setBrowserLease?:
+    | SetBrowserLeaseCommand
+    | undefined;
+  /** M10.1: the durable per-run cost ledger for a task. */
+  getRunCost?: GetRunCostRequest | undefined;
 }
 
 export interface ApproveEffectCommand {
@@ -284,6 +288,7 @@ export interface SurfaceResponse {
   reviewChecklist: ReviewChecklistView | undefined;
   pendingApprovals: PendingApprovalList | undefined;
   browserView: BrowserViewView | undefined;
+  runCosts: RunCostList | undefined;
 }
 
 /**
@@ -580,6 +585,24 @@ export interface SetBrowserLeaseCommand {
   owner: string;
 }
 
+export interface GetRunCostRequest {
+  taskId: string;
+}
+
+export interface RunCostView {
+  runId: string;
+  model: string;
+  invocations: string;
+  inputTokens: string;
+  outputTokens: string;
+  costUsd: number;
+  unpricedInvocations: string;
+}
+
+export interface RunCostList {
+  runs: RunCostView[];
+}
+
 function createBaseSurfaceRequest(): SurfaceRequest {
   return {
     createSession: undefined,
@@ -617,6 +640,7 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     listPendingApprovals: undefined,
     getBrowserView: undefined,
     setBrowserLease: undefined,
+    getRunCost: undefined,
   };
 }
 
@@ -726,6 +750,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.setBrowserLease !== undefined) {
       SetBrowserLeaseCommand.encode(message.setBrowserLease, writer.uint32(282).fork()).join();
+    }
+    if (message.getRunCost !== undefined) {
+      GetRunCostRequest.encode(message.getRunCost, writer.uint32(290).fork()).join();
     }
     return writer;
   },
@@ -1017,6 +1044,14 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.setBrowserLease = SetBrowserLeaseCommand.decode(reader, reader.uint32());
           continue;
         }
+        case 36: {
+          if (tag !== 290) {
+            break;
+          }
+
+          message.getRunCost = GetRunCostRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1081,6 +1116,7 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       setBrowserLease: isSet(object.setBrowserLease)
         ? SetBrowserLeaseCommand.fromJSON(object.setBrowserLease)
         : undefined,
+      getRunCost: isSet(object.getRunCost) ? GetRunCostRequest.fromJSON(object.getRunCost) : undefined,
     };
   },
 
@@ -1190,6 +1226,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.setBrowserLease !== undefined) {
       obj.setBrowserLease = SetBrowserLeaseCommand.toJSON(message.setBrowserLease);
+    }
+    if (message.getRunCost !== undefined) {
+      obj.getRunCost = GetRunCostRequest.toJSON(message.getRunCost);
     }
     return obj;
   },
@@ -1303,6 +1342,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.setBrowserLease = (object.setBrowserLease !== undefined && object.setBrowserLease !== null)
       ? SetBrowserLeaseCommand.fromPartial(object.setBrowserLease)
+      : undefined;
+    message.getRunCost = (object.getRunCost !== undefined && object.getRunCost !== null)
+      ? GetRunCostRequest.fromPartial(object.getRunCost)
       : undefined;
     return message;
   },
@@ -2980,6 +3022,7 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     reviewChecklist: undefined,
     pendingApprovals: undefined,
     browserView: undefined,
+    runCosts: undefined,
   };
 }
 
@@ -3041,6 +3084,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.browserView !== undefined) {
       BrowserViewView.encode(message.browserView, writer.uint32(154).fork()).join();
+    }
+    if (message.runCosts !== undefined) {
+      RunCostList.encode(message.runCosts, writer.uint32(162).fork()).join();
     }
     return writer;
   },
@@ -3204,6 +3250,14 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.browserView = BrowserViewView.decode(reader, reader.uint32());
           continue;
         }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.runCosts = RunCostList.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3236,6 +3290,7 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
         ? PendingApprovalList.fromJSON(object.pendingApprovals)
         : undefined,
       browserView: isSet(object.browserView) ? BrowserViewView.fromJSON(object.browserView) : undefined,
+      runCosts: isSet(object.runCosts) ? RunCostList.fromJSON(object.runCosts) : undefined,
     };
   },
 
@@ -3298,6 +3353,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.browserView !== undefined) {
       obj.browserView = BrowserViewView.toJSON(message.browserView);
     }
+    if (message.runCosts !== undefined) {
+      obj.runCosts = RunCostList.toJSON(message.runCosts);
+    }
     return obj;
   },
 
@@ -3350,6 +3408,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       : undefined;
     message.browserView = (object.browserView !== undefined && object.browserView !== null)
       ? BrowserViewView.fromPartial(object.browserView)
+      : undefined;
+    message.runCosts = (object.runCosts !== undefined && object.runCosts !== null)
+      ? RunCostList.fromPartial(object.runCosts)
       : undefined;
     return message;
   },
@@ -6438,6 +6499,286 @@ export const SetBrowserLeaseCommand: MessageFns<SetBrowserLeaseCommand> = {
     const message = createBaseSetBrowserLeaseCommand();
     message.taskId = object.taskId ?? "";
     message.owner = object.owner ?? "";
+    return message;
+  },
+};
+
+function createBaseGetRunCostRequest(): GetRunCostRequest {
+  return { taskId: "" };
+}
+
+export const GetRunCostRequest: MessageFns<GetRunCostRequest> = {
+  encode(message: GetRunCostRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRunCostRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRunCostRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRunCostRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: GetRunCostRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetRunCostRequest>, I>>(base?: I): GetRunCostRequest {
+    return GetRunCostRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetRunCostRequest>, I>>(object: I): GetRunCostRequest {
+    const message = createBaseGetRunCostRequest();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseRunCostView(): RunCostView {
+  return {
+    runId: "",
+    model: "",
+    invocations: "0",
+    inputTokens: "0",
+    outputTokens: "0",
+    costUsd: 0,
+    unpricedInvocations: "0",
+  };
+}
+
+export const RunCostView: MessageFns<RunCostView> = {
+  encode(message: RunCostView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.runId !== "") {
+      writer.uint32(10).string(message.runId);
+    }
+    if (message.model !== "") {
+      writer.uint32(18).string(message.model);
+    }
+    if (message.invocations !== "0") {
+      writer.uint32(24).uint64(message.invocations);
+    }
+    if (message.inputTokens !== "0") {
+      writer.uint32(32).uint64(message.inputTokens);
+    }
+    if (message.outputTokens !== "0") {
+      writer.uint32(40).uint64(message.outputTokens);
+    }
+    if (message.costUsd !== 0) {
+      writer.uint32(49).double(message.costUsd);
+    }
+    if (message.unpricedInvocations !== "0") {
+      writer.uint32(56).uint64(message.unpricedInvocations);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RunCostView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRunCostView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.runId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.invocations = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.inputTokens = reader.uint64().toString();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.outputTokens = reader.uint64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 49) {
+            break;
+          }
+
+          message.costUsd = reader.double();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.unpricedInvocations = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RunCostView {
+    return {
+      runId: isSet(object.runId) ? globalThis.String(object.runId) : "",
+      model: isSet(object.model) ? globalThis.String(object.model) : "",
+      invocations: isSet(object.invocations) ? globalThis.String(object.invocations) : "0",
+      inputTokens: isSet(object.inputTokens) ? globalThis.String(object.inputTokens) : "0",
+      outputTokens: isSet(object.outputTokens) ? globalThis.String(object.outputTokens) : "0",
+      costUsd: isSet(object.costUsd) ? globalThis.Number(object.costUsd) : 0,
+      unpricedInvocations: isSet(object.unpricedInvocations) ? globalThis.String(object.unpricedInvocations) : "0",
+    };
+  },
+
+  toJSON(message: RunCostView): unknown {
+    const obj: any = {};
+    if (message.runId !== "") {
+      obj.runId = message.runId;
+    }
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    if (message.invocations !== "0") {
+      obj.invocations = message.invocations;
+    }
+    if (message.inputTokens !== "0") {
+      obj.inputTokens = message.inputTokens;
+    }
+    if (message.outputTokens !== "0") {
+      obj.outputTokens = message.outputTokens;
+    }
+    if (message.costUsd !== 0) {
+      obj.costUsd = message.costUsd;
+    }
+    if (message.unpricedInvocations !== "0") {
+      obj.unpricedInvocations = message.unpricedInvocations;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RunCostView>, I>>(base?: I): RunCostView {
+    return RunCostView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RunCostView>, I>>(object: I): RunCostView {
+    const message = createBaseRunCostView();
+    message.runId = object.runId ?? "";
+    message.model = object.model ?? "";
+    message.invocations = object.invocations ?? "0";
+    message.inputTokens = object.inputTokens ?? "0";
+    message.outputTokens = object.outputTokens ?? "0";
+    message.costUsd = object.costUsd ?? 0;
+    message.unpricedInvocations = object.unpricedInvocations ?? "0";
+    return message;
+  },
+};
+
+function createBaseRunCostList(): RunCostList {
+  return { runs: [] };
+}
+
+export const RunCostList: MessageFns<RunCostList> = {
+  encode(message: RunCostList, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.runs) {
+      RunCostView.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RunCostList {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRunCostList();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.runs.push(RunCostView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RunCostList {
+    return { runs: globalThis.Array.isArray(object?.runs) ? object.runs.map((e: any) => RunCostView.fromJSON(e)) : [] };
+  },
+
+  toJSON(message: RunCostList): unknown {
+    const obj: any = {};
+    if (message.runs?.length) {
+      obj.runs = message.runs.map((e) => RunCostView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<RunCostList>, I>>(base?: I): RunCostList {
+    return RunCostList.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<RunCostList>, I>>(object: I): RunCostList {
+    const message = createBaseRunCostList();
+    message.runs = object.runs?.map((e) => RunCostView.fromPartial(e)) || [];
     return message;
   },
 };

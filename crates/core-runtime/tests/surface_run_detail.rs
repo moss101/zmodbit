@@ -458,7 +458,7 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
         !texts.iter().any(|t| t.contains("Comment or accept/reject f.txt @4")),
         "the commented hunk must not nag: {texts:?}"
     );
-    assert!(texts.iter().any(|t| *t == "Run the project test suite"));
+    assert!(texts.contains(&"Run the project test suite"));
 
     // Checklist is DETERMINISTIC: two calls agree.
     let resp = roundtrip(
