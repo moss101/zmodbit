@@ -109,6 +109,39 @@ function encodeGetDiff(taskId) {
   return encodeLenField(14, str(1, taskId));
 }
 
+function encodeApproveEffect(approvalId, resolvedBy = "operator") {
+  const parts = [
+    encodeLenField(1, Buffer.from(approvalId, "utf8")),
+    encodeLenField(2, Buffer.from(resolvedBy, "utf8")),
+  ];
+  return encodeLenField(20, Buffer.concat(parts));
+}
+
+function encodeDenyEffect(approvalId, reason, resolvedBy = "operator") {
+  const parts = [
+    encodeLenField(1, Buffer.from(approvalId, "utf8")),
+    encodeLenField(2, Buffer.from(reason, "utf8")),
+    encodeLenField(3, Buffer.from(resolvedBy, "utf8")),
+  ];
+  return encodeLenField(21, Buffer.concat(parts));
+}
+
+function encodeListPendingApprovals() {
+  return encodeLenField(33, Buffer.alloc(0));
+}
+
+function encodeGetBrowserView(taskId) {
+  return encodeLenField(34, encodeLenField(1, Buffer.from(taskId, "utf8")));
+}
+
+function encodeSetBrowserLease(taskId, owner) {
+  const parts = [
+    encodeLenField(1, Buffer.from(taskId, "utf8")),
+    encodeLenField(2, Buffer.from(owner, "utf8")),
+  ];
+  return encodeLenField(35, Buffer.concat(parts));
+}
+
 function encodeRunVariants(objective, count, repoId = "", baseBranch = "") {
   const parts = [encodeLenField(1, Buffer.from(objective, "utf8"))];
   if (count) parts.push(encodeVarintField(2, count));
@@ -130,6 +163,23 @@ function encodeSurfaceRequest(request) {
     if (r.path) parts.push(encodeLenField(1, Buffer.from(r.path, "utf8")));
     if (r.cloneUrl) parts.push(encodeLenField(2, Buffer.from(r.cloneUrl, "utf8")));
     return encodeLenField(16, Buffer.concat(parts));
+  }
+  if (request.approveEffect !== undefined) {
+    const a = request.approveEffect;
+    return encodeApproveEffect(a.approvalId, a.resolvedBy);
+  }
+  if (request.denyEffect !== undefined) {
+    const d = request.denyEffect;
+    return encodeDenyEffect(d.approvalId, d.reason, d.resolvedBy);
+  }
+  if (request.listPendingApprovals !== undefined) {
+    return encodeListPendingApprovals();
+  }
+  if (request.getBrowserView !== undefined) {
+    return encodeGetBrowserView(request.getBrowserView.taskId);
+  }
+  if (request.setBrowserLease !== undefined) {
+    return encodeSetBrowserLease(request.setBrowserLease.taskId, request.setBrowserLease.owner);
   }
   if (request.runVariants !== undefined) {
     const v = request.runVariants;
@@ -299,6 +349,50 @@ function decodeFleet(buf) {
   return fleet;
 }
 
+function decodeApprovalView(buf) {
+  const view = {
+    approvalId: "",
+    taskId: "",
+    tool: "",
+    scope: "",
+    createdAt: "",
+  };
+  for (const [fieldNo, value] of decodeFields(buf)) {
+    if (fieldNo === 1) view.approvalId = value.toString("utf8");
+    else if (fieldNo === 2) view.taskId = value.toString("utf8");
+    else if (fieldNo === 3) view.tool = value.toString("utf8");
+    else if (fieldNo === 4) view.scope = value.toString("utf8");
+    else if (fieldNo === 5) view.createdAt = value.toString("utf8");
+  }
+  return view;
+}
+
+function decodePendingApprovalList(buf) {
+  const list = { approvals: [] };
+  for (const [fieldNo, value] of decodeFields(buf)) {
+    if (fieldNo === 1) list.approvals.push(decodeApprovalView(value));
+  }
+  return list;
+}
+
+function decodeBrowserView(buf) {
+  const view = {
+    taskId: "",
+    url: "",
+    title: "",
+    pngBase64: "",
+    lease: "",
+  };
+  for (const [fieldNo, value] of decodeFields(buf)) {
+    if (fieldNo === 1) view.taskId = value.toString("utf8");
+    else if (fieldNo === 2) view.url = value.toString("utf8");
+    else if (fieldNo === 3) view.title = value.toString("utf8");
+    else if (fieldNo === 4) view.pngBase64 = value.toString("utf8");
+    else if (fieldNo === 5) view.lease = value.toString("utf8");
+  }
+  return view;
+}
+
 function decodeSettingsView(buf) {
   const settings = {
     provider: "",
@@ -373,6 +467,8 @@ function decodeSurfaceResponse(buf) {
     else if (fieldNo === 11) response.recentRepos = decodeRecentRepoList(value);
     else if (fieldNo === 12) response.repo = decodeRecentRepoView(value);
     else if (fieldNo === 13) response.settings = decodeSettingsView(value);
+    else if (fieldNo === 18) response.pendingApprovals = decodePendingApprovalList(value);
+    else if (fieldNo === 19) response.browserView = decodeBrowserView(value);
   }
   return response;
 }

@@ -12,6 +12,14 @@ contextBridge.exposeInMainWorld("modbit", {
     ipcRenderer.invoke("task:create", { title, prompt, repoId, baseBranch }),
   runVariants: (objective, count, repoId = "", baseBranch = "") =>
     ipcRenderer.invoke("fleet:runVariants", { objective, count, repoId, baseBranch }),
+  approveEffect: (approvalId, resolvedBy = "operator") =>
+    ipcRenderer.invoke("approval:approve", { approvalId, resolvedBy }),
+  denyEffect: (approvalId, reason, resolvedBy = "operator") =>
+    ipcRenderer.invoke("approval:deny", { approvalId, reason, resolvedBy }),
+  listPendingApprovals: () => ipcRenderer.invoke("approval:list"),
+  getBrowserView: (taskId) => ipcRenderer.invoke("browser:view", { taskId }),
+  setBrowserLease: (taskId, owner) =>
+    ipcRenderer.invoke("browser:lease", { taskId, owner }),
   listRecentRepos: () => ipcRenderer.invoke("repo:list"),
   registerRepo: (path, cloneUrl) =>
     ipcRenderer.invoke("repo:register", { path: path || "", cloneUrl: cloneUrl || "" }),

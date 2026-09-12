@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+base64 = "0.22"
+modbit-browser = { path = "../browser" }
 modbit-domain = { path = "../domain" }
 modbit-event-store = { path = "../event-store" }
 modbit-protocol = { path = "../protocol" }

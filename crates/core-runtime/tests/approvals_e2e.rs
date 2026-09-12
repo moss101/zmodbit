@@ -379,6 +379,24 @@ fn approve_unblocks_the_protected_effect() {
     let task_id = start_task(&bench, "edit under approvals");
     let approval_id = wait_pending(&bench, &task_id);
 
+    // The Needs-Attention source: ListPendingApprovals shows the pending
+    // card with its tool + scope BEFORE the decision.
+    let listed = request(
+        &bench.daemon,
+        pb::surface_request::Request::ListPendingApprovals(
+            pb::ListPendingApprovalsRequest {},
+        ),
+    );
+    assert!(listed.ok, "list: {}", listed.error);
+    let pending = listed.pending_approvals.expect("pending list");
+    let card = pending
+        .approvals
+        .iter()
+        .find(|a| a.approval_id == approval_id)
+        .unwrap_or_else(|| panic!("pending approval {} not listed", approval_id));
+    assert!(!card.tool.is_empty(), "card names the tool: {card:?}");
+    assert!(!card.scope.is_empty(), "card names the scope: {card:?}");
+
     let approved = request(
         &bench.daemon,
         pb::surface_request::Request::ApproveEffect(pb::ApproveEffectCommand {
@@ -387,6 +405,22 @@ fn approve_unblocks_the_protected_effect() {
         }),
     );
     assert!(approved.ok, "approve: {}", approved.error);
+
+    // After the decision the card is gone (state no longer pending).
+    let listed = request(
+        &bench.daemon,
+        pb::surface_request::Request::ListPendingApprovals(
+            pb::ListPendingApprovalsRequest {},
+        ),
+    );
+    let pending = listed.pending_approvals.expect("pending list");
+    assert!(
+        !pending
+            .approvals
+            .iter()
+            .any(|a| a.approval_id == approval_id),
+        "approved card must leave the pending list"
+    );
 
     wait_state(&bench.daemon, &task_id, pb::TaskStatus::ReadyForReview as i32);
     let on_disk =

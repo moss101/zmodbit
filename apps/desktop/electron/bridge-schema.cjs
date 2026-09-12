@@ -89,6 +89,52 @@ const CHANNELS = {
             return { kind: "createTask", title, prompt, repoId, baseBranch };
         },
     },
+    "approval:approve": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["approvalId", "resolvedBy"]);
+            const approvalId = requireString(payload, "approvalId", 200);
+            const resolvedBy = optionalString(payload, "resolvedBy", 200);
+            return { kind: "approveEffect", approvalId, resolvedBy };
+        },
+    },
+    "approval:deny": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["approvalId", "reason", "resolvedBy"]);
+            const approvalId = requireString(payload, "approvalId", 200);
+            const reason = optionalString(payload, "reason", 2000);
+            const resolvedBy = optionalString(payload, "resolvedBy", 200);
+            return { kind: "denyEffect", approvalId, reason, resolvedBy };
+        },
+    },
+    "browser:view": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId"]);
+            const taskId = requireString(payload, "taskId", 200);
+            return { kind: "getBrowserView", taskId };
+        },
+    },
+    "browser:lease": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, ["taskId", "owner"]);
+            const taskId = requireString(payload, "taskId", 200);
+            const owner = requireString(payload, "owner", 8);
+            if (owner !== "agent" && owner !== "user") {
+                throw new Rejected("owner must be agent or user");
+            }
+            return { kind: "setBrowserLease", taskId, owner };
+        },
+    },
+    "approval:list": {
+        validate(payload) {
+            if (!isPlainObject(payload)) throw new Rejected("payload must be an object");
+            requireKnownFields(payload, []);
+            return { kind: "listPendingApprovals" };
+        },
+    },
     "fleet:runVariants": {
         validate(payload) {
             if (!isPlainObject(payload)) throw new Rejected("payload must be an object");

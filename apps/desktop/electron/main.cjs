@@ -122,6 +122,26 @@ async function createTask({ title, prompt, repoId = "", baseBranch = "" }) {
   );
 }
 
+async function approveEffect({ approvalId, resolvedBy = "operator" }) {
+  return withRetry((s) => s.request({ approveEffect: { approvalId, resolvedBy } }));
+}
+
+async function denyEffect({ approvalId, reason, resolvedBy = "operator" }) {
+  return withRetry((s) => s.request({ denyEffect: { approvalId, reason, resolvedBy } }));
+}
+
+async function getBrowserView(taskId) {
+  return withRetry((s) => s.request({ getBrowserView: { taskId } }));
+}
+
+async function setBrowserLease(taskId, owner) {
+  return withRetry((s) => s.request({ setBrowserLease: { taskId, owner } }));
+}
+
+async function listPendingApprovals() {
+  return withRetry((s) => s.request({ listPendingApprovals: {} }));
+}
+
 async function runVariants({ objective, count, repoId = "", baseBranch = "" }) {
   return withRetry((s) =>
     s.request({ runVariants: { objective, count, repoId, baseBranch } })
@@ -174,6 +194,23 @@ function registerIpc() {
   guarded("fleet:runVariants", (request) => {
     if (request.kind !== "runVariants") return { ok: false, error: "wrong request kind" };
     return runVariants(request);
+  });
+  guarded("approval:approve", (request) => {
+    if (request.kind !== "approveEffect") return { ok: false, error: "wrong request kind" };
+    return approveEffect(request);
+  });
+  guarded("approval:deny", (request) => {
+    if (request.kind !== "denyEffect") return { ok: false, error: "wrong request kind" };
+    return denyEffect(request);
+  });
+  guarded("approval:list", () => listPendingApprovals());
+  guarded("browser:view", (request) => {
+    if (request.kind !== "getBrowserView") return { ok: false, error: "wrong request kind" };
+    return getBrowserView(request.taskId);
+  });
+  guarded("browser:lease", (request) => {
+    if (request.kind !== "setBrowserLease") return { ok: false, error: "wrong request kind" };
+    return setBrowserLease(request.taskId, request.owner);
   });
   guarded("repo:register", (request) => {
     if (request.kind !== "registerRepo") return { ok: false, error: "wrong request kind" };

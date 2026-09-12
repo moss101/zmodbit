@@ -17,6 +17,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
+  // Phase 5 residual: pending protected-effect approval cards.
+  const [pendingApprovals, setPendingApprovals] = useState<
+    { approvalId: string; taskId: string; tool: string; scope: string }[]
+  >([]);
   // Phase 7 item 2: "run N variants" — 1 means a single normal task.
   const [variantCount, setVariantCount] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -36,6 +40,14 @@ export default function App() {
         setError(null);
       } else {
         setError(snapshot.error ?? "unknown core error");
+      }
+      // Approval cards ride the same refresh (docs/13: approvals are
+      // Needs-Attention work, never silent).
+      const approvals = await window.modbit.listPendingApprovals();
+      if (approvals.ok && approvals.pendingApprovals) {
+        setPendingApprovals(approvals.pendingApprovals.approvals);
+      } else {
+        setPendingApprovals([]);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -59,6 +71,23 @@ export default function App() {
     void refreshRepos();
     return window.modbit.onCoreEvent(() => void refresh());
   }, [refresh, refreshRepos]);
+
+  const decideApproval = useCallback(
+    async (approvalId: string, decision: "approve" | "deny") => {
+      try {
+        const response =
+          decision === "approve"
+            ? await window.modbit.approveEffect(approvalId)
+            : await window.modbit.denyEffect(approvalId, "");
+        if (!response.ok) setError(response.error ?? "decision failed");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        await refresh();
+      }
+    },
+    [refresh],
+  );
 
   const submit = useCallback(async () => {
     if (!title.trim() || submitting) return;
@@ -164,7 +193,20 @@ export default function App() {
       </section>
       <section aria-label="Needs attention supervision">
         <h2>Needs attention — single next action</h2>
-        {supervised.length === 0 ? (
+        {pendingApprovals.length > 0 ? (
+          pendingApprovals.map((a) => (
+            <article key={a.approvalId} className="approval-card">
+              <strong>Protected effect pending</strong> — {a.tool} on {a.scope}{" "}
+              <span>(task {a.taskId})</span>
+              <button type="button" onClick={() => void decideApproval(a.approvalId, "approve")}>
+                Approve
+              </button>
+              <button type="button" onClick={() => void decideApproval(a.approvalId, "deny")}>
+                Deny
+              </button>
+            </article>
+          ))
+        ) : supervised.length === 0 ? (
           <p className="empty">nothing needs attention</p>
         ) : (
           supervised.map(({ task, nextAction }) => (

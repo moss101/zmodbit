@@ -60,6 +60,29 @@ pub fn decision_for(conn: &Connection, task_id: &str, intent_hash: &str) -> Resu
 }
 
 /// Pending approvals for a task (the Needs-Attention card data).
+/// Every PENDING approval across the fleet — the desktop Needs-Attention
+/// source (docs/13: approvals are user-visible work, never silent).
+pub fn list_pending(conn: &Connection) -> Result<Vec<PendingApproval>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT approval_id, task_id, intent_hash, tool, scope, created_at
+         FROM approvals WHERE state = 'pending' ORDER BY created_at, approval_id",
+    )?;
+    let rows = stmt
+        .query_map([], |r| {
+            Ok(PendingApproval {
+                approval_id: r.get(0)?,
+                task_id: r.get(1)?,
+                intent_hash: r.get(2)?,
+                tool: r.get(3)?,
+                scope: r.get(4)?,
+                state: "pending".into(),
+                created_at: r.get(5)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
 pub fn pending_for_task(conn: &Connection, task_id: &str) -> Result<Vec<PendingApproval>, rusqlite::Error> {
     let mut stmt = conn.prepare(
         "SELECT approval_id, task_id, intent_hash, tool, scope, state, created_at

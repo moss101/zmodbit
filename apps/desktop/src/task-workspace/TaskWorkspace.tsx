@@ -53,6 +53,16 @@ export function TaskWorkspace({
   const [diff, setDiff] = useState<Diff | null>(null);
   const [events, setEvents] = useState<TaskEventEnvelope[]>([]);
   const [busy, setBusy] = useState(false);
+  // Phase 7 residual: the live browser pane — the SAME session the agent
+  // uses. null = pane closed (no browser launched for this task).
+  const [browserView, setBrowserView] = useState<{
+    url: string;
+    title: string;
+    pngBase64: string;
+    lease: string;
+  } | null>(null);
+  const [browserError, setBrowserError] = useState<string | null>(null);
+  const [liveView, setLiveView] = useState(false);
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -80,6 +90,38 @@ export function TaskWorkspace({
       if (evt.aggregateId === task.taskId) void reload();
     });
   }, [reload, task.taskId]);
+
+  // Live view poll (2s) while the pane is open; observation only.
+  useEffect(() => {
+    if (!liveView) return;
+    let alive = true;
+    const pull = async () => {
+      const r = await window.modbit.getBrowserView(task.taskId);
+      if (!alive) return;
+      if (r.ok && r.browserView) {
+        setBrowserView(r.browserView);
+        setBrowserError(null);
+      } else {
+        setBrowserError(r.error ?? "browser view unavailable");
+      }
+    };
+    void pull();
+    const timer = setInterval(() => void pull(), 2_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [liveView, task.taskId]);
+
+  const setLease = async (owner: "agent" | "user") => {
+    const r = await window.modbit.setBrowserLease(task.taskId, owner);
+    if (r.ok && r.browserView) {
+      setBrowserView(r.browserView);
+      setBrowserError(null);
+    } else {
+      setBrowserError(r.error ?? "lease change failed");
+    }
+  };
 
   const steer = async (note: string) => {
     await window.modbit.steerTask(task.taskId, note);
@@ -158,6 +200,52 @@ export function TaskWorkspace({
                 : null,
             )}
           />
+        </Panel>
+        <Panel
+          title="Live browser"
+          actions={
+            <span>
+              {browserView ? (
+                <span className="diff-summary">
+                  lease: {browserView.lease} · {browserView.url}
+                </span>
+              ) : null}
+              {browserView && browserView.lease === "agent" ? (
+                <button type="button" onClick={() => void setLease("user")}>
+                  Take over
+                </button>
+              ) : null}
+              {browserView && browserView.lease === "user" ? (
+                <button type="button" onClick={() => void setLease("agent")}>
+                  Return to agent
+                </button>
+              ) : null}
+              <button type="button" onClick={() => setLiveView(!liveView)}>
+                {liveView ? "Close live view" : "Live view"}
+              </button>
+            </span>
+          }
+        >
+          {!liveView ? (
+            <p className="modbit-empty">live view closed</p>
+          ) : browserError ? (
+            <p className="modbit-empty" role="alert">
+              {browserError}
+            </p>
+          ) : browserView ? (
+            <figure>
+              <img
+                alt={`browser at ${browserView.url}`}
+                src={`data:image/png;base64,${browserView.pngBase64}`}
+                style={{ maxWidth: "100%" }}
+              />
+              <figcaption>
+                {browserView.title} — {browserView.lease === "user" ? "YOU hold the lease (agent actions are blocked)" : "agent holds the lease"}
+              </figcaption>
+            </figure>
+          ) : (
+            <p className="modbit-empty">loading…</p>
+          )}
         </Panel>
         <Panel
           title={`Diff vs ${summary.baseRevision.slice(0, 8) || "base"}`}

@@ -26,6 +26,9 @@ pub struct CoreServices {
     /// Phase 7 item 1: the agent fleet journal (AgentGraph ownership);
     /// admitted children are persisted here and survive restarts.
     agent_fleet: Option<std::sync::Arc<std::sync::Mutex<crate::agent_fleet::AgentFleet>>>,
+    /// Phase 7 residual: the live per-task browser sessions (one
+    /// Chromium per task, shared by agent and pane).
+    browser_host: std::sync::Arc<crate::browser_host::BrowserHost>,
     /// Live run-control signals (Phase 2.3): Stop/Pause/Steer reach the
     /// in-flight run through the scheduler's registry.
     run_controls: Option<std::sync::Arc<crate::scheduler::RunControls>>,
@@ -80,6 +83,7 @@ impl CoreServices {
             workspace: None,
             task_worktrees: None,
             agent_fleet: None,
+            browser_host: std::sync::Arc::new(crate::browser_host::BrowserHost::new()),
             run_controls: None,
         }
     }
@@ -909,6 +913,62 @@ impl CoreServices {
                     Err(e) => pb::SurfaceResponse {
                         ok: false,
                         error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::GetBrowserView(get)) => {
+                match self.browser_view(&get.task_id) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        browser_view: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::SetBrowserLease(set)) => {
+                match self.set_browser_lease(&set) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        browser_view: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::ListPendingApprovals(_)) => {
+                let rows = self
+                    .store
+                    .with_conn(modbit_event_store::approvals::list_pending);
+                match rows {
+                    Ok(rows) => pb::SurfaceResponse {
+                        ok: true,
+                        pending_approvals: Some(pb::PendingApprovalList {
+                            approvals: rows
+                                .into_iter()
+                                .map(|a| pb::ApprovalView {
+                                    approval_id: a.approval_id,
+                                    task_id: a.task_id,
+                                    tool: a.tool,
+                                    scope: a.scope,
+                                    created_at: a.created_at,
+                                })
+                                .collect(),
+                        }),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e.to_string(),
                         ..Default::default()
                     },
                 }
@@ -2003,6 +2063,41 @@ impl CoreServices {
             revision: config.base_revision,
             items,
         })
+    }
+
+    /// Phase 7 residual: a live frame of the task's browser — the SAME
+    /// session the agent uses (docs/60 step 12). Pure observation.
+    fn browser_view(&self, task_id: &str) -> Result<pb::BrowserViewView, String> {
+        let frame = self
+            .browser_host
+            .view(task_id)
+            .map_err(|e| e.to_string())?;
+        use base64::Engine as _;
+        Ok(pb::BrowserViewView {
+            task_id: task_id.to_string(),
+            url: frame.url,
+            title: frame.title,
+            png_base64: base64::engine::general_purpose::STANDARD.encode(frame.png),
+            lease: frame.lease.as_str().to_string(),
+        })
+    }
+
+    /// Takeover (owner=user) or return control (owner=agent); the
+    /// flipped lease is the boundary agent-side browser actions consult
+    /// before acting.
+    fn set_browser_lease(
+        &self,
+        set: &pb::SetBrowserLeaseCommand,
+    ) -> Result<pb::BrowserViewView, String> {
+        let owner = match set.owner.as_str() {
+            "user" => crate::browser_host::LeaseOwner::User,
+            "agent" => crate::browser_host::LeaseOwner::Agent,
+            other => return Err(format!("unknown lease owner {other:?} (use agent|user)")),
+        };
+        self.browser_host
+            .set_lease(&set.task_id, owner)
+            .map_err(|e| e.to_string())?;
+        self.browser_view(&set.task_id)
     }
 
     fn task_view(&self, task_id: &str) -> Option<pb::TaskView> {

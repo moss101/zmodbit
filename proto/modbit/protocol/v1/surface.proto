@@ -59,6 +59,12 @@ message SurfaceRequest {
     // review checklist on the review surface.
     AddReviewCommentCommand add_review_comment = 31;
     GetReviewChecklistRequest get_review_checklist = 32;
+    // Phase 5 residual: the desktop Needs-Attention approval cards.
+    ListPendingApprovalsRequest list_pending_approvals = 33;
+    // Phase 7 residual: the live browser pane — the same Chromium
+    // session the agent uses, viewable and takeable-over by the user.
+    GetBrowserViewRequest get_browser_view = 34;
+    SetBrowserLeaseCommand set_browser_lease = 35;
   }
 }
 
@@ -202,6 +208,8 @@ message SurfaceResponse {
   AgentResultView agent_result = 15;
   AutomationList automations = 16;
   ReviewChecklistView review_checklist = 17;
+  PendingApprovalList pending_approvals = 18;
+  BrowserViewView browser_view = 19;
 }
 
 // AutomationView: the durable spec plus its fire state (the engine
@@ -420,4 +428,38 @@ message ReviewChecklistView {
   string task_id = 1;
   string revision = 2;
   repeated ChecklistItemView items = 3;
+}
+
+message ListPendingApprovalsRequest {}
+
+message ApprovalView {
+  string approval_id = 1;
+  string task_id = 2;
+  string tool = 3;
+  string scope = 4;
+  string created_at = 5;
+}
+
+message PendingApprovalList {
+  repeated ApprovalView approvals = 1;
+}
+
+message GetBrowserViewRequest {
+  string task_id = 1;
+}
+
+message BrowserViewView {
+  string task_id = 1;
+  string url = 2;
+  string title = 3;
+  // PNG bytes, base64.
+  string png_base64 = 4;
+  // "agent" | "user" — who holds the controller lease.
+  string lease = 5;
+}
+
+message SetBrowserLeaseCommand {
+  string task_id = 1;
+  // "agent" | "user" (takeover = user; return = agent).
+  string owner = 2;
 }

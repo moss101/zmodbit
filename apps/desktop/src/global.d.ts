@@ -36,6 +36,53 @@ declare global {
         repoId?: string,
         baseBranch?: string,
       ): Promise<{ ok: boolean; error?: string; task?: TaskView }>;
+      approveEffect(
+        approvalId: string,
+        resolvedBy?: string,
+      ): Promise<{ ok: boolean; error?: string }>;
+      denyEffect(
+        approvalId: string,
+        reason: string,
+        resolvedBy?: string,
+      ): Promise<{ ok: boolean; error?: string }>;
+      getBrowserView(taskId: string): Promise<{
+        ok: boolean;
+        error?: string;
+        browserView?: {
+          taskId: string;
+          url: string;
+          title: string;
+          pngBase64: string;
+          lease: string;
+        };
+      }>;
+      setBrowserLease(
+        taskId: string,
+        owner: "agent" | "user",
+      ): Promise<{
+        ok: boolean;
+        error?: string;
+        browserView?: {
+          taskId: string;
+          url: string;
+          title: string;
+          pngBase64: string;
+          lease: string;
+        };
+      }>;
+      listPendingApprovals(): Promise<{
+        ok: boolean;
+        error?: string;
+        pendingApprovals?: {
+          approvals: {
+            approvalId: string;
+            taskId: string;
+            tool: string;
+            scope: string;
+            createdAt: string;
+          }[];
+        };
+      }>;
       listRecentRepos(): Promise<{
         ok: boolean;
         error?: string;

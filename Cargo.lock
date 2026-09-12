@@ -1387,7 +1387,9 @@ dependencies = [
 name = "modbit-core-runtime"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "futures",
+ "modbit-browser",
  "modbit-checkpoint",
  "modbit-compaction",
  "modbit-context",

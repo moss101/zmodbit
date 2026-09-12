@@ -9,6 +9,7 @@
 
 pub mod agent_fleet;
 pub mod automation;
+pub mod browser_host;
 pub mod diagnostics;
 pub mod review;
 pub mod agent_profiles_plans;

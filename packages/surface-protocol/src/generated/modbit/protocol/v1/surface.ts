@@ -99,7 +99,19 @@ export interface SurfaceRequest {
    * review checklist on the review surface.
    */
   addReviewComment?: AddReviewCommentCommand | undefined;
-  getReviewChecklist?: GetReviewChecklistRequest | undefined;
+  getReviewChecklist?:
+    | GetReviewChecklistRequest
+    | undefined;
+  /** Phase 5 residual: the desktop Needs-Attention approval cards. */
+  listPendingApprovals?:
+    | ListPendingApprovalsRequest
+    | undefined;
+  /**
+   * Phase 7 residual: the live browser pane — the same Chromium
+   * session the agent uses, viewable and takeable-over by the user.
+   */
+  getBrowserView?: GetBrowserViewRequest | undefined;
+  setBrowserLease?: SetBrowserLeaseCommand | undefined;
 }
 
 export interface ApproveEffectCommand {
@@ -270,6 +282,8 @@ export interface SurfaceResponse {
   agentResult: AgentResultView | undefined;
   automations: AutomationList | undefined;
   reviewChecklist: ReviewChecklistView | undefined;
+  pendingApprovals: PendingApprovalList | undefined;
+  browserView: BrowserViewView | undefined;
 }
 
 /**
@@ -531,6 +545,41 @@ export interface ReviewChecklistView {
   items: ChecklistItemView[];
 }
 
+export interface ListPendingApprovalsRequest {
+}
+
+export interface ApprovalView {
+  approvalId: string;
+  taskId: string;
+  tool: string;
+  scope: string;
+  createdAt: string;
+}
+
+export interface PendingApprovalList {
+  approvals: ApprovalView[];
+}
+
+export interface GetBrowserViewRequest {
+  taskId: string;
+}
+
+export interface BrowserViewView {
+  taskId: string;
+  url: string;
+  title: string;
+  /** PNG bytes, base64. */
+  pngBase64: string;
+  /** "agent" | "user" — who holds the controller lease. */
+  lease: string;
+}
+
+export interface SetBrowserLeaseCommand {
+  taskId: string;
+  /** "agent" | "user" (takeover = user; return = agent). */
+  owner: string;
+}
+
 function createBaseSurfaceRequest(): SurfaceRequest {
   return {
     createSession: undefined,
@@ -565,6 +614,9 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     listAutomations: undefined,
     addReviewComment: undefined,
     getReviewChecklist: undefined,
+    listPendingApprovals: undefined,
+    getBrowserView: undefined,
+    setBrowserLease: undefined,
   };
 }
 
@@ -665,6 +717,15 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getReviewChecklist !== undefined) {
       GetReviewChecklistRequest.encode(message.getReviewChecklist, writer.uint32(258).fork()).join();
+    }
+    if (message.listPendingApprovals !== undefined) {
+      ListPendingApprovalsRequest.encode(message.listPendingApprovals, writer.uint32(266).fork()).join();
+    }
+    if (message.getBrowserView !== undefined) {
+      GetBrowserViewRequest.encode(message.getBrowserView, writer.uint32(274).fork()).join();
+    }
+    if (message.setBrowserLease !== undefined) {
+      SetBrowserLeaseCommand.encode(message.setBrowserLease, writer.uint32(282).fork()).join();
     }
     return writer;
   },
@@ -932,6 +993,30 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.getReviewChecklist = GetReviewChecklistRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 33: {
+          if (tag !== 266) {
+            break;
+          }
+
+          message.listPendingApprovals = ListPendingApprovalsRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 34: {
+          if (tag !== 274) {
+            break;
+          }
+
+          message.getBrowserView = GetBrowserViewRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 35: {
+          if (tag !== 282) {
+            break;
+          }
+
+          message.setBrowserLease = SetBrowserLeaseCommand.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -988,6 +1073,13 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
         : undefined,
       getReviewChecklist: isSet(object.getReviewChecklist)
         ? GetReviewChecklistRequest.fromJSON(object.getReviewChecklist)
+        : undefined,
+      listPendingApprovals: isSet(object.listPendingApprovals)
+        ? ListPendingApprovalsRequest.fromJSON(object.listPendingApprovals)
+        : undefined,
+      getBrowserView: isSet(object.getBrowserView) ? GetBrowserViewRequest.fromJSON(object.getBrowserView) : undefined,
+      setBrowserLease: isSet(object.setBrowserLease)
+        ? SetBrowserLeaseCommand.fromJSON(object.setBrowserLease)
         : undefined,
     };
   },
@@ -1089,6 +1181,15 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getReviewChecklist !== undefined) {
       obj.getReviewChecklist = GetReviewChecklistRequest.toJSON(message.getReviewChecklist);
+    }
+    if (message.listPendingApprovals !== undefined) {
+      obj.listPendingApprovals = ListPendingApprovalsRequest.toJSON(message.listPendingApprovals);
+    }
+    if (message.getBrowserView !== undefined) {
+      obj.getBrowserView = GetBrowserViewRequest.toJSON(message.getBrowserView);
+    }
+    if (message.setBrowserLease !== undefined) {
+      obj.setBrowserLease = SetBrowserLeaseCommand.toJSON(message.setBrowserLease);
     }
     return obj;
   },
@@ -1193,6 +1294,15 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.getReviewChecklist = (object.getReviewChecklist !== undefined && object.getReviewChecklist !== null)
       ? GetReviewChecklistRequest.fromPartial(object.getReviewChecklist)
+      : undefined;
+    message.listPendingApprovals = (object.listPendingApprovals !== undefined && object.listPendingApprovals !== null)
+      ? ListPendingApprovalsRequest.fromPartial(object.listPendingApprovals)
+      : undefined;
+    message.getBrowserView = (object.getBrowserView !== undefined && object.getBrowserView !== null)
+      ? GetBrowserViewRequest.fromPartial(object.getBrowserView)
+      : undefined;
+    message.setBrowserLease = (object.setBrowserLease !== undefined && object.setBrowserLease !== null)
+      ? SetBrowserLeaseCommand.fromPartial(object.setBrowserLease)
       : undefined;
     return message;
   },
@@ -2868,6 +2978,8 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     agentResult: undefined,
     automations: undefined,
     reviewChecklist: undefined,
+    pendingApprovals: undefined,
+    browserView: undefined,
   };
 }
 
@@ -2923,6 +3035,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.reviewChecklist !== undefined) {
       ReviewChecklistView.encode(message.reviewChecklist, writer.uint32(138).fork()).join();
+    }
+    if (message.pendingApprovals !== undefined) {
+      PendingApprovalList.encode(message.pendingApprovals, writer.uint32(146).fork()).join();
+    }
+    if (message.browserView !== undefined) {
+      BrowserViewView.encode(message.browserView, writer.uint32(154).fork()).join();
     }
     return writer;
   },
@@ -3070,6 +3188,22 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.reviewChecklist = ReviewChecklistView.decode(reader, reader.uint32());
           continue;
         }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.pendingApprovals = PendingApprovalList.decode(reader, reader.uint32());
+          continue;
+        }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.browserView = BrowserViewView.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3098,6 +3232,10 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       agentResult: isSet(object.agentResult) ? AgentResultView.fromJSON(object.agentResult) : undefined,
       automations: isSet(object.automations) ? AutomationList.fromJSON(object.automations) : undefined,
       reviewChecklist: isSet(object.reviewChecklist) ? ReviewChecklistView.fromJSON(object.reviewChecklist) : undefined,
+      pendingApprovals: isSet(object.pendingApprovals)
+        ? PendingApprovalList.fromJSON(object.pendingApprovals)
+        : undefined,
+      browserView: isSet(object.browserView) ? BrowserViewView.fromJSON(object.browserView) : undefined,
     };
   },
 
@@ -3154,6 +3292,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.reviewChecklist !== undefined) {
       obj.reviewChecklist = ReviewChecklistView.toJSON(message.reviewChecklist);
     }
+    if (message.pendingApprovals !== undefined) {
+      obj.pendingApprovals = PendingApprovalList.toJSON(message.pendingApprovals);
+    }
+    if (message.browserView !== undefined) {
+      obj.browserView = BrowserViewView.toJSON(message.browserView);
+    }
     return obj;
   },
 
@@ -3200,6 +3344,12 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
       : undefined;
     message.reviewChecklist = (object.reviewChecklist !== undefined && object.reviewChecklist !== null)
       ? ReviewChecklistView.fromPartial(object.reviewChecklist)
+      : undefined;
+    message.pendingApprovals = (object.pendingApprovals !== undefined && object.pendingApprovals !== null)
+      ? PendingApprovalList.fromPartial(object.pendingApprovals)
+      : undefined;
+    message.browserView = (object.browserView !== undefined && object.browserView !== null)
+      ? BrowserViewView.fromPartial(object.browserView)
       : undefined;
     return message;
   },
@@ -5801,6 +5951,493 @@ export const ReviewChecklistView: MessageFns<ReviewChecklistView> = {
     message.taskId = object.taskId ?? "";
     message.revision = object.revision ?? "";
     message.items = object.items?.map((e) => ChecklistItemView.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseListPendingApprovalsRequest(): ListPendingApprovalsRequest {
+  return {};
+}
+
+export const ListPendingApprovalsRequest: MessageFns<ListPendingApprovalsRequest> = {
+  encode(_: ListPendingApprovalsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListPendingApprovalsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListPendingApprovalsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListPendingApprovalsRequest {
+    return {};
+  },
+
+  toJSON(_: ListPendingApprovalsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ListPendingApprovalsRequest>, I>>(base?: I): ListPendingApprovalsRequest {
+    return ListPendingApprovalsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ListPendingApprovalsRequest>, I>>(_: I): ListPendingApprovalsRequest {
+    const message = createBaseListPendingApprovalsRequest();
+    return message;
+  },
+};
+
+function createBaseApprovalView(): ApprovalView {
+  return { approvalId: "", taskId: "", tool: "", scope: "", createdAt: "" };
+}
+
+export const ApprovalView: MessageFns<ApprovalView> = {
+  encode(message: ApprovalView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.approvalId !== "") {
+      writer.uint32(10).string(message.approvalId);
+    }
+    if (message.taskId !== "") {
+      writer.uint32(18).string(message.taskId);
+    }
+    if (message.tool !== "") {
+      writer.uint32(26).string(message.tool);
+    }
+    if (message.scope !== "") {
+      writer.uint32(34).string(message.scope);
+    }
+    if (message.createdAt !== "") {
+      writer.uint32(42).string(message.createdAt);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ApprovalView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseApprovalView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.approvalId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.tool = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.scope = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.createdAt = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ApprovalView {
+    return {
+      approvalId: isSet(object.approvalId) ? globalThis.String(object.approvalId) : "",
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      tool: isSet(object.tool) ? globalThis.String(object.tool) : "",
+      scope: isSet(object.scope) ? globalThis.String(object.scope) : "",
+      createdAt: isSet(object.createdAt) ? globalThis.String(object.createdAt) : "",
+    };
+  },
+
+  toJSON(message: ApprovalView): unknown {
+    const obj: any = {};
+    if (message.approvalId !== "") {
+      obj.approvalId = message.approvalId;
+    }
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.tool !== "") {
+      obj.tool = message.tool;
+    }
+    if (message.scope !== "") {
+      obj.scope = message.scope;
+    }
+    if (message.createdAt !== "") {
+      obj.createdAt = message.createdAt;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ApprovalView>, I>>(base?: I): ApprovalView {
+    return ApprovalView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ApprovalView>, I>>(object: I): ApprovalView {
+    const message = createBaseApprovalView();
+    message.approvalId = object.approvalId ?? "";
+    message.taskId = object.taskId ?? "";
+    message.tool = object.tool ?? "";
+    message.scope = object.scope ?? "";
+    message.createdAt = object.createdAt ?? "";
+    return message;
+  },
+};
+
+function createBasePendingApprovalList(): PendingApprovalList {
+  return { approvals: [] };
+}
+
+export const PendingApprovalList: MessageFns<PendingApprovalList> = {
+  encode(message: PendingApprovalList, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.approvals) {
+      ApprovalView.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PendingApprovalList {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePendingApprovalList();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.approvals.push(ApprovalView.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PendingApprovalList {
+    return {
+      approvals: globalThis.Array.isArray(object?.approvals)
+        ? object.approvals.map((e: any) => ApprovalView.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PendingApprovalList): unknown {
+    const obj: any = {};
+    if (message.approvals?.length) {
+      obj.approvals = message.approvals.map((e) => ApprovalView.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PendingApprovalList>, I>>(base?: I): PendingApprovalList {
+    return PendingApprovalList.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PendingApprovalList>, I>>(object: I): PendingApprovalList {
+    const message = createBasePendingApprovalList();
+    message.approvals = object.approvals?.map((e) => ApprovalView.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetBrowserViewRequest(): GetBrowserViewRequest {
+  return { taskId: "" };
+}
+
+export const GetBrowserViewRequest: MessageFns<GetBrowserViewRequest> = {
+  encode(message: GetBrowserViewRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetBrowserViewRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBrowserViewRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetBrowserViewRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "" };
+  },
+
+  toJSON(message: GetBrowserViewRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetBrowserViewRequest>, I>>(base?: I): GetBrowserViewRequest {
+    return GetBrowserViewRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetBrowserViewRequest>, I>>(object: I): GetBrowserViewRequest {
+    const message = createBaseGetBrowserViewRequest();
+    message.taskId = object.taskId ?? "";
+    return message;
+  },
+};
+
+function createBaseBrowserViewView(): BrowserViewView {
+  return { taskId: "", url: "", title: "", pngBase64: "", lease: "" };
+}
+
+export const BrowserViewView: MessageFns<BrowserViewView> = {
+  encode(message: BrowserViewView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.url !== "") {
+      writer.uint32(18).string(message.url);
+    }
+    if (message.title !== "") {
+      writer.uint32(26).string(message.title);
+    }
+    if (message.pngBase64 !== "") {
+      writer.uint32(34).string(message.pngBase64);
+    }
+    if (message.lease !== "") {
+      writer.uint32(42).string(message.lease);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BrowserViewView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBrowserViewView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.url = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.pngBase64 = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.lease = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BrowserViewView {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      url: isSet(object.url) ? globalThis.String(object.url) : "",
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+      pngBase64: isSet(object.pngBase64) ? globalThis.String(object.pngBase64) : "",
+      lease: isSet(object.lease) ? globalThis.String(object.lease) : "",
+    };
+  },
+
+  toJSON(message: BrowserViewView): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.url !== "") {
+      obj.url = message.url;
+    }
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    if (message.pngBase64 !== "") {
+      obj.pngBase64 = message.pngBase64;
+    }
+    if (message.lease !== "") {
+      obj.lease = message.lease;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BrowserViewView>, I>>(base?: I): BrowserViewView {
+    return BrowserViewView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BrowserViewView>, I>>(object: I): BrowserViewView {
+    const message = createBaseBrowserViewView();
+    message.taskId = object.taskId ?? "";
+    message.url = object.url ?? "";
+    message.title = object.title ?? "";
+    message.pngBase64 = object.pngBase64 ?? "";
+    message.lease = object.lease ?? "";
+    return message;
+  },
+};
+
+function createBaseSetBrowserLeaseCommand(): SetBrowserLeaseCommand {
+  return { taskId: "", owner: "" };
+}
+
+export const SetBrowserLeaseCommand: MessageFns<SetBrowserLeaseCommand> = {
+  encode(message: SetBrowserLeaseCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.owner !== "") {
+      writer.uint32(18).string(message.owner);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SetBrowserLeaseCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetBrowserLeaseCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.owner = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetBrowserLeaseCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
+    };
+  },
+
+  toJSON(message: SetBrowserLeaseCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.owner !== "") {
+      obj.owner = message.owner;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetBrowserLeaseCommand>, I>>(base?: I): SetBrowserLeaseCommand {
+    return SetBrowserLeaseCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetBrowserLeaseCommand>, I>>(object: I): SetBrowserLeaseCommand {
+    const message = createBaseSetBrowserLeaseCommand();
+    message.taskId = object.taskId ?? "";
+    message.owner = object.owner ?? "";
     return message;
   },
 };
