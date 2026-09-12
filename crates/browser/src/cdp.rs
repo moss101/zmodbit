@@ -389,17 +389,33 @@ impl CdpBrowser {
         let id = self.next_id;
         self.next_id += 1;
         self.send_cmd(session, id, method, params)?;
-        let deadline = Instant::now() + Duration::from_secs(30);
+        let deadline = Instant::now() + Duration::from_secs(60);
         loop {
-            if Instant::now() >= deadline {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
                 return Err(CdpError {
                     message: format!("{method} timed out"),
                 });
             }
-            let msg = self
-                .socket
-                .read()
-                .map_err(err)?;
+            // Command reads own their timeout: pump() may have left a
+            // short one, and a slow response (e.g. screenshot) must not
+            // surface as EAGAIN. A WouldBlock retry resumes the frame
+            // buffer; the deadline is the hard stop.
+            if !set_read_timeout(&self.socket, Some(remaining)) {
+                return Err(CdpError {
+                    message: "socket does not support read timeouts".into(),
+                });
+            }
+            let msg = match self.socket.read() {
+                Ok(msg) => msg,
+                Err(tungstenite::Error::Io(e))
+                    if e.kind() == std::io::ErrorKind::WouldBlock
+                        || e.kind() == std::io::ErrorKind::TimedOut =>
+                {
+                    continue;
+                }
+                Err(e) => return Err(err(e)),
+            };
             let text = match msg {
                 tungstenite::Message::Text(t) => t.to_string(),
                 tungstenite::Message::Binary(b) => String::from_utf8_lossy(&b).to_string(),
