@@ -3000,10 +3000,13 @@
    "milestone": "M8",
    "order": 0,
    "source": "docs/43",
-   "status": "NOT_STARTED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "log:docs/evidence/phase8-3-cloud-api-2026-09-12.log",
+    "test:cloud_api_e2e::cloud_api_oidc_pkce_login_and_tenant_scoped_control",
+    "commit:f921267"
    ],
    "notes": [
     {
@@ -3013,7 +3016,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T13:06:16Z"
   },
   {
    "id": "M8.2",

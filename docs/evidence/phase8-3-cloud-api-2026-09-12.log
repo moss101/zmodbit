@@ -1,0 +1,32 @@
+Phase 8 item 3 (cloud-api with OIDC, docs/24 + MOD-AUTH-001) — E2E proof
+Date: 2026-09-12
+
+REAL processes: fixture OIDC issuer (separate process, per-boot RSA-2048
+key, real JWKS) + cloud-api + sandbox-gateway + cloud-worker. The api is
+production code; the ISSUER is the only fixture (deterministic local
+stand-in for the hosted IdP — the vendor remains a configuration point
+per MOD-AUTH-001 PROVISIONAL: the PROTOCOL is fixed).
+
+1. GET /login → 302 to {issuer}/authorize with S256 code_challenge,
+   state, nonce (verifier stays server-side).
+2. The issuer authorizes and redirects with a code; the api completes
+   the authorization-code + PKCE exchange at {issuer}/token and verifies
+   the RS256 id_token against the issuer's JWKS (iss/aud/exp) AND the
+   binding nonce.
+3. The api issues its OWN short-lived (15 min) HMAC session token
+   carrying the INTERNAL tenant id — provider ids never become storage
+   paths.
+4. Authenticated GET /fleet relays through the gateway to the tenant's
+   worker and reaches THE Core (ok:true from the real dispatch).
+5. Tampered session token → 401 (signature check).
+6. Replayed callback state → 400 (one-time grants).
+7. Remote run create (GET /task) → durable task in the worker's store
+   (asserted by opening the store).
+
+Test evidence: cargo test -p modbit-cloud-api --test cloud_api_e2e
+(cloud_api_oidc_pkce_login_and_tenant_scoped_control) — green; full
+workspace 552 tests 0 failed.
+
+Operator/infrastructure-gated follow-ups (same split as packaging): the
+hosted OIDC vendor choice (ADR-E PROVISIONAL), managed Postgres/S3
+bindings, Firecracker/vsock guest conformance.

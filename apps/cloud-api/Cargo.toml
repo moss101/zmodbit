@@ -7,7 +7,27 @@ edition.workspace = true
 name = "modbit-cloud-api"
 path = "src/main.rs"
 
+[[bin]]
+name = "fixture-issuer"
+path = "src/bin/fixture-issuer.rs"
+
 [dependencies]
+base64 = "0.22"
+jsonwebtoken = "9"
+prost = "0.13"
+modbit-protocol = { path = "../../crates/protocol" }
+modbit-sandbox-gateway = { path = "../sandbox-gateway" }
+rand = "0.8"
+rsa = "0.9"
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true, features = ["oid"] }
+
+[dev-dependencies]
+modbit-event-store = { path = "../../crates/event-store" }
+sha2 = { workspace = true, features = ["oid"] }
+uuid = { workspace = true }
+
 
 [lints]
 workspace = true

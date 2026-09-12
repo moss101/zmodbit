@@ -299,7 +299,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M8.1` | NOT_STARTED | Cloud API/Postgres/object store |  |
+| `M8.1` | E2E_PROVEN | Cloud API/Postgres/object store |  |
 | `M8.2` | E2E_PROVEN | cloud session kernel lease + worker |  |
 | `M8.3` | NOT_STARTED | Sandbox Gateway + sandbox substrate adapter |  |
 | `M8.4` | NOT_STARTED | signed/versioned `modbit-guest` |  |
