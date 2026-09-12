@@ -16,7 +16,6 @@ base64 = "0.22"
 jsonwebtoken = "9"
 prost = "0.13"
 modbit-protocol = { path = "../../crates/protocol" }
-modbit-sandbox-gateway = { path = "../sandbox-gateway" }
 rand = "0.8"
 rsa = "0.9"
 serde = { workspace = true }

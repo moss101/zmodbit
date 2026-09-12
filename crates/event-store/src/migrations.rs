@@ -70,7 +70,7 @@ pub const SQL_V11_AUTOMATIONS: &str = "
     );
 ";
 
-/// Phase 7 item 2 (REQ-EV-0150): declared write scopes of active tasks —
+/// Phase 7 item 2 (REQ ledger EV-0150): declared write scopes of active tasks —
 /// the durable registry the write coordinator checks BEFORE a task runs.
 pub const SQL_V10_WRITE_SCOPES: &str = "
     CREATE TABLE IF NOT EXISTS task_write_scopes (

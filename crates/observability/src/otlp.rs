@@ -57,6 +57,32 @@ pub fn otlp_logs_payload(ledger: &RunCostLedger, task_id: &str) -> Value {
     })
 }
 
+/// POSTs the payload to `<endpoint>/v1/logs` (feature `otel`).
+#[cfg(feature = "otel")]
+pub fn export_otlp_logs(
+    endpoint: &str,
+    ledger: &RunCostLedger,
+    task_id: &str,
+) -> Result<(), String> {
+    let url = format!("{}/v1/logs", endpoint.trim_end_matches('/'));
+    let body = otlp_logs_payload(ledger, task_id).to_string();
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+    let response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(body)
+        .send()
+        .map_err(|e| e.to_string())?;
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        Err(format!("otlp export status {}", response.status()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,31 +120,5 @@ mod tests {
         let body = otlp_logs_payload(&ledger, "task-0").to_string();
         assert!(body.contains("logRecords"));
         assert!(!body.contains("\"body\""), "no records expected: {body}");
-    }
-}
-
-/// POSTs the payload to `<endpoint>/v1/logs` (feature `otel`).
-#[cfg(feature = "otel")]
-pub fn export_otlp_logs(
-    endpoint: &str,
-    ledger: &RunCostLedger,
-    task_id: &str,
-) -> Result<(), String> {
-    let url = format!("{}/v1/logs", endpoint.trim_end_matches('/'));
-    let body = otlp_logs_payload(ledger, task_id).to_string();
-    let client = reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| e.to_string())?;
-    let response = client
-        .post(url)
-        .header("Content-Type", "application/json")
-        .body(body)
-        .send()
-        .map_err(|e| e.to_string())?;
-    if response.status().is_success() {
-        Ok(())
-    } else {
-        Err(format!("otlp export status {}", response.status()))
     }
 }

@@ -8,6 +8,7 @@
 //!
 //! Canonical owner subsystem: domain-events (docs/81). Layout: docs/12.
 
+pub mod cloud;
 pub mod transport;
 
 pub mod modbit {

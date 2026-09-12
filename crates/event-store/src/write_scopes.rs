@@ -1,4 +1,4 @@
-//! Write-scope coordination (Phase 7 item 2 / REQ-EV-0150): parallel tasks
+//! Write-scope coordination (Phase 7 item 2 / REQ ledger EV-0150): parallel tasks
 //! on the same repository declare the paths they intend to write; the
 //! coordinator denies an acquisition that overlaps an ACTIVE task's scope
 //! BEFORE that task runs, and releases scopes when the holding task

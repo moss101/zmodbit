@@ -18,7 +18,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use modbit_protocol::transport::BootSecret;
-use modbit_sandbox_gateway::{Envelope, Registration};
+use modbit_protocol::cloud::{Envelope, Registration};
 use prost::Message as _;
 
 fn env_or(name: &str, default: &str) -> String {
@@ -361,6 +361,7 @@ fn relay_to_tenant_worker(
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[allow(dead_code)] // iss/aud/exp are validated by jsonwebtoken's Validation
 struct IdClaims {
     iss: String,
     aud: String,
@@ -378,7 +379,7 @@ fn verify_id_token(state: &Arc<AppState>, token: &str, nonce: &str) -> Result<Id
         serde_json::from_str(&jwks_text).map_err(|e| format!("bad jwks: {e}"))?;
     let jwk = jwks.find("cloud-key").ok_or("jwks has no 'cloud-key'")?;
     let mut validation = Validation::new(Algorithm::RS256);
-    validation.set_audience(&[state.client_id.clone()]);
+    validation.set_audience(std::slice::from_ref(&state.client_id));
     let mut claims = jsonwebtoken::decode::<IdClaims>(
         token,
         &DecodingKey::from_jwk(jwk).map_err(|e| format!("jwk -> key: {e}"))?,

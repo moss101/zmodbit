@@ -1091,8 +1091,8 @@
     },
     {
       "path": "tools/architecture-lint/placement_allowlist.json",
-      "bytes": 14711,
-      "sha256": "76d255e7149eb8ac0815094e19a29c4a7e587c251c94f3e083ac72d495ea8f67"
+      "bytes": 12751,
+      "sha256": "f577534c631f41e463c12738a7174113c93c32f168f7e47761babb46ad703fa3"
     },
     {
       "path": "tools/coverage-guard.py",

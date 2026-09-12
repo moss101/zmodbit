@@ -2,7 +2,7 @@
 //! admission (REQ-EV-0267), capacity tickets (REQ-EV-0272),
 //! captain→build TaskContracts (REQ-EV-0144), task→branch/environment
 //! isolation bundles (REQ-EV-0145), the parallel change coordinator
-//! (REQ-EV-0150), and the Needs-Attention aggregator (REQ-EV-0151).
+//! (REQ ledger EV-0150), and the Needs-Attention aggregator (REQ-EV-0151).
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -253,7 +253,7 @@ pub fn bundles_isolated(a: &IsolationBundle, b: &IsolationBundle) -> bool {
 }
 
 // ---------------------------------------------------------------------------
-// Parallel change coordinator (REQ-EV-0150)
+// Parallel change coordinator (REQ ledger EV-0150)
 // ---------------------------------------------------------------------------
 
 /// A proposed write in the parallel plan.

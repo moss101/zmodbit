@@ -14,7 +14,7 @@ use prost::Message;
 
 use modbit_event_store::EventStore;
 use modbit_protocol::transport::{BootSecret, Connection};
-use modbit_sandbox_gateway::{Envelope, Registration};
+use modbit_protocol::cloud::{Envelope, Registration};
 
 fn tempdir(tag: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!(
@@ -114,11 +114,11 @@ fn request(
     )
     .map_err(|e| e.to_string())?;
     let frame = conn.receive().map_err(|e| e.to_string())?;
-    if let Ok(err) = serde_json::from_slice::<modbit_sandbox_gateway::GatewayError>(&frame) {
+    if let Ok(err) = serde_json::from_slice::<modbit_protocol::cloud::GatewayError>(&frame) {
         return Err(err.error);
     }
     let envelope: Envelope = serde_json::from_slice(&frame).map_err(|e| e.to_string())?;
-    let raw = envelope.decode_payload().map_err(|e| e)?;
+    let raw = envelope.decode_payload()?;
     pb::SurfaceResponse::decode(raw.as_slice()).map_err(|e| e.to_string())
 }
 
@@ -147,7 +147,6 @@ fn gateway_relays_real_core_work_and_enforces_tenant_isolation() {
             write_scope: String::new(),
         }),
     )
-    .map_err(|e| e)
     .unwrap_or_else(|e| panic!("relay failed: {e}"));
     assert!(resp.ok, "{:?}", resp.error);
     let task_id = resp.task.expect("task view").task_id;

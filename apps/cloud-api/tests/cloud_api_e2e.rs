@@ -111,7 +111,7 @@ fn cloud_api_oidc_pkce_login_and_tenant_scoped_control() {
     );
 
     // 2. The cloud api.
-    let (api, api_boot) = spawn(
+    let (_api, api_boot) = spawn(
         bin("modbit-cloud-api"),
         &[
             ("MODBIT_CLOUD_API_ADDR", "127.0.0.1:0"),

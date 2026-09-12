@@ -398,12 +398,14 @@ impl CoreServices {
                     // The processor minted the task id; the created event's
                     // aggregate id IS the authoritative task id.
                     Ok(Some(aggregate_id)) => {
-                        // Phase 7 item 2 (REQ-EV-0150): acquire the declared
+                        // Phase 7 item 2 (REQ ledger EV-0150): acquire the declared
                         // write scope; denial cancels the minted task —
                         // admission stays all-or-nothing.
-                        let repo_key = (!create.repo_id.is_empty())
-                            .then(|| create.repo_id.clone())
-                            .unwrap_or_else(|| "default".into());
+                        let repo_key = if create.repo_id.is_empty() {
+                            "default".to_string()
+                        } else {
+                            create.repo_id.clone()
+                        };
                         let acquired = self.store.with_conn(|conn| {
                             modbit_event_store::write_scopes::acquire(
                                 conn,
@@ -887,7 +889,7 @@ impl CoreServices {
             Some(pb::surface_request::Request::ListAutomations(_)) => {
                 match self
                     .store
-                    .with_conn(|conn| modbit_event_store::automations::list(conn))
+                    .with_conn(modbit_event_store::automations::list)
                 {
                     Ok(rows) => pb::SurfaceResponse {
                         ok: true,
@@ -1498,7 +1500,7 @@ impl CoreServices {
         }
 
         // (c) declared write-scope conflict is checked by the durable
-        // write coordinator (REQ-EV-0150) AFTER the child task is minted,
+        // write coordinator (REQ ledger EV-0150) AFTER the child task is minted,
         // with compensation on denial — see acquire below. Undeclared
         // children acquire nothing (merge verification still applies).
 
@@ -1574,7 +1576,7 @@ impl CoreServices {
                 })?;
         }
 
-        // (c, continued) durable write-scope acquisition (REQ-EV-0150):
+        // (c, continued) durable write-scope acquisition (REQ ledger EV-0150):
         // overlapping declarations are denied BEFORE the child starts.
         let repo_key = self.parent_repo_key(&spawn.parent_task_id);
         match self.store.with_conn(|conn| {

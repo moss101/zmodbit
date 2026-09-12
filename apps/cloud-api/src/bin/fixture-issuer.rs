@@ -13,7 +13,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 
 use base64::Engine as _;
-use rsa::pkcs1v15::{Signature, SigningKey};
+use rsa::pkcs1v15::SigningKey;
 use rsa::signature::{RandomizedSigner as _, SignatureEncoding as _};
 use rsa::RsaPrivateKey;
 use serde_json::json;
@@ -212,8 +212,7 @@ fn serve_conn(mut stream: TcpStream, state: Arc<State>) -> std::io::Result<()> {
         }
         "/.well-known/jwks.json" => {
             use rsa::traits::PublicKeyParts as _;
-            use rsa::pkcs1v15::VerifyingKey as _FixtureVK;
-            let public = state.key.as_ref().clone().to_public_key();
+                        let public = state.key.as_ref().clone().to_public_key();
             let enc = |d: &[u8]| b64url(d);
             http_reply(
                 &mut stream,

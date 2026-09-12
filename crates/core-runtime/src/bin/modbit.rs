@@ -155,15 +155,6 @@ fn parse_args() -> CliCommand {
     }
 }
 
-/// `modbit report` vs `modbit diagnostics` — captured before the arg
-/// iterator is consumed.
-fn args_next_is_report() -> bool {
-    std::env::args()
-        .nth(1)
-        .map(|a| a == "report")
-        .unwrap_or(false)
-}
-
 /// Boots a core daemon bound to `repo` (drain threads for its stdout/
 /// stderr live in the returned Child + the spawned drainer thread; the
 /// pipes must never close while the core lives).

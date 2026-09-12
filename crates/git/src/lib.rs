@@ -12,7 +12,7 @@
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::io::Write as _;
-use std::process::{Child, Command, Output};
+use std::process::{Command, Output};
 
 pub mod snapshot;
 pub use snapshot::{SnapshotHandle, SnapshotProvenance, SNAPSHOT_NAMESPACE};
@@ -585,25 +585,6 @@ impl GitRepo {
 mod hunk_tests {
     use super::*;
 
-    fn repo_with(path: &str, content: &str) -> GitRepo {
-        let dir = std::env::temp_dir().join(format!(
-            "git-hunks-{}-{}",
-            std::process::id(),
-            uuid::Uuid::now_v7().simple()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        let repo = GitRepo::init(&dir).unwrap();
-        repo.set_config("user.email", "t@t").unwrap();
-        repo.set_config("user.name", "T").unwrap();
-        repo.set_config("core.autocrlf", "false").unwrap();
-        let full = dir.join("greet.js");
-        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
-        std::fs::write(&full, content).unwrap();
-        repo.stage_path("greet.js").unwrap();
-        repo.commit_all("base").unwrap();
-        let _ = path;
-        repo
-    }
 
     /// diff_hunks_unrated parses a -U0 diff into per-path hunks.
     #[test]

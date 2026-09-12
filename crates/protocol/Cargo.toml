@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+base64 = "0.22"
+serde = { workspace = true }
 prost = "0.13"
 prost-types = "0.13"
 interprocess = "2.2"

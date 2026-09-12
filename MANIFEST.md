@@ -183,7 +183,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `packages/ui/tsconfig.json` |  | 402 | `21fbf660d6be3854ebe1f4fa6fa84521b64b16885bd784c314dfdac3047074e0` |
 | `packages/ui/vitest.config.ts` |  | 155 | `efd3d605aae54974fcf5505d7b6e432132d05bf6fc177cf6cf88e159d71f86c1` |
 | `tools/architecture-lint/lint.py` |  | 22843 | `7d6420abc07ab8aa6a7c11c72f7fcabf41ac711815da568851970821a529431b` |
-| `tools/architecture-lint/placement_allowlist.json` |  | 14711 | `76d255e7149eb8ac0815094e19a29c4a7e587c251c94f3e083ac72d495ea8f67` |
+| `tools/architecture-lint/placement_allowlist.json` |  | 12751 | `f577534c631f41e463c12738a7174113c93c32f168f7e47761babb46ad703fa3` |
 | `tools/coverage-guard.py` |  | 13187 | `05bf43a96ca03c9f537ebb6045497443e499a4aa4f3b52aaf85eb967ee00d68f` |
 | `tools/evidence.py` |  | 4366 | `58d7bb6c1c679208e9abb4cdb9c1346b321b108ae4aa175fc752f73f118e7c47` |
 | `tools/examples_runner.py` |  | 3505 | `3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4` |

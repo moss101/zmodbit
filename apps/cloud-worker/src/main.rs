@@ -16,7 +16,7 @@ use std::sync::Arc;
 use modbit_core_runtime::CoreServices;
 use modbit_event_store::EventStore;
 use modbit_protocol::transport::{BootSecret, Connection};
-use modbit_sandbox_gateway::{Envelope, Registration};
+use modbit_protocol::cloud::{Envelope, Registration};
 
 fn env_or_die(name: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| {

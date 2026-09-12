@@ -493,10 +493,8 @@ impl Drop for CdpBrowser {
 fn set_read_timeout(socket: &Ws, d: Option<Duration>) -> bool {
     match socket.get_ref() {
         MaybeTlsStream::Plain(s) => s.set_read_timeout(d).is_ok(),
-        #[cfg(feature = "native-tls")]
-        MaybeTlsStream::NativeTls(s) => s.get_ref().set_read_timeout(d).is_ok(),
-        #[cfg(feature = "rustls-tls")]
-        MaybeTlsStream::Rustls(s) => s.get_ref().set_read_timeout(d).is_ok(),
+        // TLS-gateway variants only exist with tungstenite TLS features
+        // (not enabled in this workspace); the catch-all covers them.
         _ => false,
     }
 }

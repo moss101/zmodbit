@@ -79,8 +79,8 @@ fn cdp_bridge_drives_a_real_chromium_end_to_end() {
         .expect("button in semantic snapshot");
 
     // Action: click the button through the page; console + network see it.
-    let js = format!("document.querySelector('#go').click()");
-    browser.action(&js).expect("click action");
+    let js = "document.querySelector('#go').click()";
+    browser.action(js).expect("click action");
 
     // Postcondition (M7.4): the action CHANGED the semantic state — the
     // fingerprint moved and the delta names exactly the added element.

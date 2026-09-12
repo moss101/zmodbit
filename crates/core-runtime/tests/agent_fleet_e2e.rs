@@ -379,7 +379,7 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
 
 #[test]
 fn write_coordinator_denies_overlapping_parallel_tasks_before_execution() {
-    // REQ-EV-0150 / QUAL-EV-0150: two INDEPENDENT tasks on the same repo
+    // REQ ledger EV-0150 / QUAL-EV-0150: two INDEPENDENT tasks on the same repo
     // with declared write scopes — the overlapping start is denied BEFORE
     // it runs, and the holder is named.
     let (store, services, _parent) = setup("writecoord");

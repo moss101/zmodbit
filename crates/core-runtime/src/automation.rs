@@ -151,7 +151,7 @@ impl AutomationEngine {
         let key = minute_key(now_epoch_secs);
         let automations = self
             .store
-            .with_conn(|conn| modbit_event_store::automations::list(conn))
+            .with_conn(modbit_event_store::automations::list)
             .unwrap_or_default();
         let mut last_rowid: Option<i64> = None;
         for a in automations {
