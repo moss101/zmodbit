@@ -6,7 +6,7 @@
   "hash_algorithm": "sha256",
   "counts": {
     "docs": 70,
-    "root_and_tooling": 86,
+    "root_and_tooling": 87,
     "docs_bytes": 513963
   },
   "sections": [
@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 863676,
-      "sha256": "2ffe5e156d57c3bf0e80eeb4b67bd0d36479ba763e350b72225276cb8b2fbffc"
+      "bytes": 864046,
+      "sha256": "9a830d8d1032ed9bb170f84f3850a7387a2cb8346e229fe001bdff27d16cd105"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -1108,6 +1108,11 @@
       "path": "tools/examples_runner.py",
       "bytes": 3505,
       "sha256": "3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4"
+    },
+    {
+      "path": "tools/rc_catalog.py",
+      "bytes": 5627,
+      "sha256": "72fd4c201f69729a90a5c77b9f64e0909b94c0f4e4ade4f0850e52a875df604e"
     },
     {
       "path": "tools/release/operator-signing.md",

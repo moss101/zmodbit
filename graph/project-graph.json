@@ -3396,10 +3396,12 @@
    "milestone": "M10",
    "order": 2,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "log:docs/evidence/rc-catalog-2026-09-12.md",
+    "test:release_zero_sh"
    ],
    "notes": [
     {
@@ -3409,7 +3411,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-12T16:48:42Z"
   },
   {
    "id": "M10.4",
@@ -3419,10 +3421,12 @@
    "milestone": "M10",
    "order": 3,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "log:docs/evidence/phase9-m10-gates-2026-09-12.log",
+    "test:perf_gate::event_append_throughput_holds_the_floor"
    ],
    "notes": [
     {
@@ -3432,7 +3436,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-12T16:48:42Z"
   },
   {
    "id": "M10.5",
@@ -3686,10 +3690,12 @@
    "order": 6,
    "source": "docs/56_TOOL_CAPABILITY_CONFORMANCE.md; docs/43 V2 sequencing delta",
    "note": "added in V3.1 from the V2 sequencing delta",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "log:docs/evidence/phase9-m10-gates-2026-09-12.log",
+    "test:tool_conformance::registered_tools_conform_to_the_canonical_inventory"
    ],
    "notes": [
     {
@@ -3699,7 +3705,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-12T16:48:42Z"
   },
   {
    "id": "governance",

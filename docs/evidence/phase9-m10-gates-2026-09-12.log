@@ -1,0 +1,31 @@
+Phase 9 residuals / M10 gates — performance, RC catalog, conformance
+Date: 2026-09-12
+
+1. M10.4 performance regression gates (crates/event-store/tests/
+   perf_gate.rs, ALWAYS-ON, floors set ~10x under observed headroom so
+   CI variance never flips them — 10x regressions fail):
+   - event append throughput >= 2,000 tasks/s through the real command
+     processor (2,000 CreateTasks timed; durable count asserted);
+   - fleet snapshot p95 < 50ms at 500 tasks (100 samples, sorted p95);
+   - write-scope admission: 200 sequential acquisitions against 200
+     active holders < 1s total (the scope scan must not degrade).
+2. M10.7 canonical tool/capability conformance harness (crates/
+   core-runtime/tests/tool_conformance.rs): builds the REAL task-scoped
+   registry via the production builder and asserts EXACT membership in
+   the docs/17 inventory (both directions — drift fails), pool-
+   conditional tools absent without an MCP pool (fail-closed: no phantom
+   surface), version presence, known capability classes with family
+   sanity (reads read-only), and per-tool model-facing JSON-Schema
+   projections whose properties match the typed schema. DEFECT CAUGHT
+   en route: the harness's first run flagged git.status-style
+   zero-parameter tools — schemas must EXIST, not take arguments; the
+   contract was clarified in the harness.
+3. M10.3 RC E2E catalog (tools/rc_catalog.py): all 25 docs/51
+   acceptance scenarios mapped to their proving tests in the current
+   tree; every mapping target VERIFIED to exist (dead mappings fail the
+   generator; unmapped scenarios fail it too). Catalog written to
+   docs/evidence/rc-catalog-2026-09-12.md.
+
+Test evidence: cargo test -p modbit-event-store --test perf_gate (3/3),
+-p modbit-core-runtime --test tool_conformance (1/1); python3
+tools/rc_catalog.py exits 0 with 25/25 mapped.
