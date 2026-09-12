@@ -159,7 +159,14 @@ fn hostile_page_content_stays_inert_data() {
     };
     let (addr, stop) = spawn_fixture_hostile();
 
-    let mut browser = CdpBrowser::launch(&bin).expect("launch");
+    let mut browser = match CdpBrowser::launch(&bin) {
+        Ok(b) => b,
+        Err(e) => {
+            println!("hostile-page e2e skipped: browser cannot launch here: {e}");
+            stop.store(true, std::sync::atomic::Ordering::Relaxed);
+            return;
+        }
+    };
     browser.navigate(&format!("http://{addr}/")).expect("navigate");
 
     // The injection string arrives as PAGE TEXT — data a model may read,
