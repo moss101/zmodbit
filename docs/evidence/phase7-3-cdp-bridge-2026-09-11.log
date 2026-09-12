@@ -34,6 +34,14 @@ fingerprints, ControllerLease, Watchdog in crates/browser); the CDP
 module only moves bytes to and from the browser. Live-view/takeover UI
 is desktop-side follow-up.
 
+Post-condition proof added (M7.2/7.3/7.4): the fixture click now ALSO
+mutates the DOM (appends an "Added" button); the post-action snapshot
+moves the state FINGERPRINT, names the added element in the DELTA
+(added=[button...Added], removed=[]), and the semantic snapshot carries
+stable element refs throughout — semantic entities, fingerprint+delta,
+and actions-with-observable-postconditions all driven through the real
+CDP transport.
+
 Test evidence: cargo test -p modbit-browser (12 unit + cdp_e2e:
 cdp_bridge_drives_a_real_chromium_end_to_end,
 hostile_page_content_stays_inert_data — green under full-workspace

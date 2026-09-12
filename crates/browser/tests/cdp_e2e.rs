@@ -13,7 +13,7 @@ const FIXTURE: &str = r#"<!doctype html>
 <html><head><title>modbit cdp fixture</title></head>
 <body>
   <h1>hello modbit</h1>
-  <button id="go" onclick="console.log('clicked'); fetch('/api').then(r=>r.text()).then(t=>console.log('api:'+t))">Go</button>
+  <button id="go" onclick="console.log('clicked'); var b=document.createElement('button'); b.textContent='Added'; document.body.appendChild(b); fetch('/api').then(r=>r.text()).then(t=>console.log('api:'+t))">Go</button>
   <input id="box" aria-label="name box" value=""/>
 </body></html>"#;
 
@@ -81,6 +81,21 @@ fn cdp_bridge_drives_a_real_chromium_end_to_end() {
     // Action: click the button through the page; console + network see it.
     let js = format!("document.querySelector('#go').click()");
     browser.action(&js).expect("click action");
+
+    // Postcondition (M7.4): the action CHANGED the semantic state — the
+    // fingerprint moved and the delta names exactly the added element.
+    let state2 = browser.snapshot().expect("snapshot after action");
+    assert!(
+        state2.elements.iter().any(|e| e.role == "button" && e.name.contains("Added")),
+        "added button in post-action state: {:?}", state2.elements
+    );
+    assert_ne!(state2.fingerprint, state.fingerprint, "state fingerprint moved");
+    let (added, removed) = state2.delta(&state);
+    assert_eq!(removed.len(), 0);
+    assert!(
+        added.iter().any(|r| r.contains("button") && r.contains("Added")),
+        "delta names the added button: {added:?}"
+    );
 
     // console drains the click AND the async fetch result.
     let mut api_seen = false;

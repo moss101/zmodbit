@@ -2605,10 +2605,13 @@
    "milestone": "M6",
    "order": 0,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "log:docs/evidence/phase7-2-write-coordinator-2026-09-11.log",
+    "commit:5e7099a",
+    "test:agent_fleet_e2e::spawn_admits_a_real_child_task_with_parent_linkage"
    ],
    "notes": [
     {
@@ -2618,7 +2621,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:11:01Z"
   },
   {
    "id": "M6.2",
@@ -2628,10 +2631,13 @@
    "milestone": "M6",
    "order": 1,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "log:docs/evidence/phase7-2-write-coordinator-2026-09-11.log",
+    "commit:5e7099a",
+    "test:agent_fleet_e2e::admission_refuses_without_partial_reservation"
    ],
    "notes": [
     {
@@ -2647,7 +2653,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:11:01Z"
   },
   {
    "id": "M6.3",
@@ -2657,10 +2663,13 @@
    "milestone": "M6",
    "order": 2,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "log:docs/evidence/phase7-2-write-coordinator-2026-09-11.log",
+    "commit:5e7099a",
+    "test:agent_fleet_e2e::admission_refuses_without_partial_reservation"
    ],
    "notes": [
     {
@@ -2676,7 +2685,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:11:01Z"
   },
   {
    "id": "M6.4",
@@ -2686,10 +2695,13 @@
    "milestone": "M6",
    "order": 3,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "log:docs/evidence/phase7-2-write-coordinator-2026-09-11.log",
+    "commit:50e5c61",
+    "test:write_scopes::tests::denies_overlapping_scope_before_execution_then_releases_on_terminal"
    ],
    "notes": [
     {
@@ -2705,7 +2717,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:11:01Z"
   },
   {
    "id": "M6.5",
@@ -2798,10 +2810,13 @@
    "milestone": "M7",
    "order": 1,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "log:docs/evidence/phase7-3-cdp-bridge-2026-09-11.log",
+    "commit:6ce4ab8",
+    "test:cdp_e2e::cdp_bridge_drives_a_real_chromium_end_to_end"
    ],
    "notes": [
     {
@@ -2817,7 +2832,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:11:01Z"
   },
   {
    "id": "M7.3",
@@ -2827,10 +2842,13 @@
    "milestone": "M7",
    "order": 2,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "log:docs/evidence/phase7-3-cdp-bridge-2026-09-11.log",
+    "commit:6ce4ab8",
+    "test:cdp_e2e::cdp_bridge_drives_a_real_chromium_end_to_end"
    ],
    "notes": [
     {
@@ -2846,7 +2864,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:11:01Z"
   },
   {
    "id": "M7.4",
@@ -2856,10 +2874,13 @@
    "milestone": "M7",
    "order": 3,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "log:docs/evidence/phase7-3-cdp-bridge-2026-09-11.log",
+    "commit:6ce4ab8",
+    "test:cdp_e2e::hostile_page_content_stays_inert_data"
    ],
    "notes": [
     {
@@ -2875,7 +2896,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:11:01Z"
   },
   {
    "id": "M7.5",

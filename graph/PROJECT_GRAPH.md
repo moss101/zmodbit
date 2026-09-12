@@ -274,10 +274,10 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
-| `M6.1` | IMPLEMENTING | WorkGraph/AgentGraph projections |  |
-| `M6.2` | IMPLEMENTING | capacity ticket allocator |  |
-| `M6.3` | IMPLEMENTING | transactional subagent admission |  |
-| `M6.4` | IMPLEMENTING | semantic write-conflict detector |  |
+| `M6.1` | E2E_PROVEN | WorkGraph/AgentGraph projections |  |
+| `M6.2` | E2E_PROVEN | capacity ticket allocator |  |
+| `M6.3` | E2E_PROVEN | transactional subagent admission |  |
+| `M6.4` | E2E_PROVEN | semantic write-conflict detector |  |
 | `M6.5` | IMPLEMENTING | subagent result/evidence handoff |  |
 | `M6.6` | IMPLEMENTING | attention-first Fleet states/UI |  |
 | `M6.7` | IMPLEMENTING | Durable subagent continuation (background child survives restart) | kill Core mid-child run; child identity, lineage, event offsets and result envelope survive |
@@ -287,9 +287,9 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | Task | Status | Title | Acceptance / note |
 |---|---|---|---|
 | `M7.1` | E2E_PROVEN | local sandboxed WebContents session + CDP bridge |  |
-| `M7.2` | IMPLEMENTING | AX/DOM/layout semantic entities and stable IDs |  |
-| `M7.3` | IMPLEMENTING | state fingerprints + delta stream |  |
-| `M7.4` | IMPLEMENTING | semantic actions and postconditions |  |
+| `M7.2` | E2E_PROVEN | AX/DOM/layout semantic entities and stable IDs |  |
+| `M7.3` | E2E_PROVEN | state fingerprints + delta stream |  |
+| `M7.4` | E2E_PROVEN | semantic actions and postconditions |  |
 | `M7.5` | E2E_PROVEN | targeted screenshot/vision fallback |  |
 | `M7.6` | IMPLEMENTING | control lease/takeover |  |
 | `M7.7` | IMPLEMENTING | prompt-injection provenance isolation |  |
