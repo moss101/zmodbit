@@ -771,8 +771,8 @@
     },
     {
       "path": "apps/desktop/electron/bridge-schema.cjs",
-      "bytes": 11363,
-      "sha256": "60c901942f6c7dda1c5abf3c0495aa58ed5628503c4fe1d3c17fc1ae3dadc07c"
+      "bytes": 13486,
+      "sha256": "10250ce45075bffefc6bd2abba13aebdd93a5a5a84202d39420dbf314455f21f"
     },
     {
       "path": "apps/desktop/electron/event-stream.cjs",
@@ -781,18 +781,18 @@
     },
     {
       "path": "apps/desktop/electron/main.cjs",
-      "bytes": 9477,
-      "sha256": "879906cc859a30a385d51d07e96da099d29adcd1a44e14a0f9134e3d5815de82"
+      "bytes": 10953,
+      "sha256": "e237d0f3bc5ed69e6eaccee1aa120f10c2a5b815e03d2a4aab13ce943eb1234f"
     },
     {
       "path": "apps/desktop/electron/preload.cjs",
-      "bytes": 2413,
-      "sha256": "2ecab4c147bda5f22a2dcdc499363f44ff19e48d7b26d63cb656998232fe9d46"
+      "bytes": 2926,
+      "sha256": "d986f04e688be2aa5c27ca754a59ffbdc843a8937a874cd897aaebe98ca2ca94"
     },
     {
       "path": "apps/desktop/electron/surface-client.cjs",
-      "bytes": 18712,
-      "sha256": "ada526e7c2f3586c3c2f817ae45c8ac7dc23f820ace92606cd203013b12883fb"
+      "bytes": 21843,
+      "sha256": "08fa3699869bb3ab446df6ba023c474a297ab18eadc17cf981ea52212cb69707"
     },
     {
       "path": "apps/desktop/index.html",
@@ -806,8 +806,8 @@
     },
     {
       "path": "apps/desktop/src/App.tsx",
-      "bytes": 9667,
-      "sha256": "e994c5bda9ec75a59549da55c4add124a2cf948f3baec9f72bfc7aad116c4b2e"
+      "bytes": 11372,
+      "sha256": "3df9657a204fbf3d7f83821d89e11d8ca2427e809678cecda010e8808377cba8"
     },
     {
       "path": "apps/desktop/src/bridge-schema.test.ts",
@@ -861,8 +861,8 @@
     },
     {
       "path": "apps/desktop/src/global.d.ts",
-      "bytes": 2847,
-      "sha256": "e43c8431a2f6785e5cc1c4ad93c54a583920afab8eb90fe61baf7a6e8bc4de5d"
+      "bytes": 4026,
+      "sha256": "bf24839ed322d52939d2af797eb846a7fe3390df18e30ab0f1128b9294b16e30"
     },
     {
       "path": "apps/desktop/src/main.ts",
@@ -896,8 +896,8 @@
     },
     {
       "path": "apps/desktop/src/task-workspace/TaskWorkspace.tsx",
-      "bytes": 5621,
-      "sha256": "70a8eaa2585fb0f20776da32ecc071fffb26030990f90c4b49ca517dfe541b63"
+      "bytes": 8707,
+      "sha256": "39a6db1764e9e48779847a808ad6adf8e4370735b68ce224a1b8cab352ddf39c"
     },
     {
       "path": "apps/desktop/src/task-workspace/view.test.ts",
@@ -1006,8 +1006,8 @@
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/surface.ts",
-      "bytes": 179362,
-      "sha256": "59ecbe16d0369f80e8b39f91efd67a352e289cef3a30fdf0bef15f3e8299a863"
+      "bytes": 199066,
+      "sha256": "f7a217e981d8964222646e2f5e99b33d4e509d592935093c54f8bc70efb9ad4d"
     },
     {
       "path": "packages/surface-protocol/src/generated/modbit/protocol/v1/transport.ts",
