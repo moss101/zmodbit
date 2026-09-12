@@ -8,6 +8,12 @@ name = "modbit-cloud-worker"
 path = "src/main.rs"
 
 [dependencies]
+base64 = "0.22"
+modbit-core-runtime = { path = "../../crates/core-runtime" }
+modbit-event-store = { path = "../../crates/event-store" }
+modbit-protocol = { path = "../../crates/protocol" }
+modbit-sandbox-gateway = { path = "../sandbox-gateway" }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true

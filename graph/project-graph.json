@@ -3023,10 +3023,12 @@
    "milestone": "M8",
    "order": 1,
    "source": "docs/43",
-   "status": "NOT_STARTED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "log:docs/evidence/phase8-1-gateway-worker-2026-09-12.log",
+    "test:gateway_e2e::gateway_relays_real_core_work_and_enforces_tenant_isolation"
    ],
    "notes": [
     {
@@ -3036,7 +3038,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T10:43:32Z"
   },
   {
    "id": "M8.3",

@@ -3,11 +3,24 @@ name = "modbit-sandbox-gateway"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+name = "modbit_sandbox_gateway"
+path = "src/lib.rs"
+
 [[bin]]
 name = "modbit-sandbox-gateway"
 path = "src/main.rs"
 
 [dependencies]
+base64 = "0.22"
+modbit-protocol = { path = "../../crates/protocol" }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+prost = "0.13"
+uuid = { workspace = true }
+modbit-event-store = { path = "../../crates/event-store" }

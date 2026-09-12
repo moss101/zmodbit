@@ -1697,8 +1697,7 @@ impl CoreServices {
     fn agent_result(&self, req: &pb::AgentResultRequest) -> Result<pb::AgentResultView, String> {
         let deadline = std::time::Instant::now()
             + std::time::Duration::from_millis(req.timeout_ms.min(120_000));
-        let (mut state, mut parent) = (String::new(), String::new());
-        loop {
+        let (state, parent) = loop {
             let row = self.store.with_conn(|conn| {
                 conn.query_row(
                     "SELECT state, COALESCE(parent_task_id,'') FROM tasks WHERE task_id = ?1",
@@ -1707,15 +1706,13 @@ impl CoreServices {
                 )
                 .map_err(|_| format!("task {} does not exist", req.task_id))
             })?;
-            state = row.0;
-            parent = row.1;
-            if matches!(state.as_str(), "completed" | "failed" | "cancelled")
+            if matches!(row.0.as_str(), "completed" | "failed" | "cancelled")
                 || std::time::Instant::now() >= deadline
             {
-                break;
+                break row;
             }
             std::thread::sleep(std::time::Duration::from_millis(250));
-        }
+        };
         let (summary, failure_code) = self.store.with_conn(|conn| {
             let summary = conn
                 .query_row(

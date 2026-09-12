@@ -1296,6 +1296,14 @@ version = "0.1.0"
 [[package]]
 name = "modbit-cloud-worker"
 version = "0.1.0"
+dependencies = [
+ "base64",
+ "modbit-core-runtime",
+ "modbit-event-store",
+ "modbit-protocol",
+ "modbit-sandbox-gateway",
+ "serde_json",
+]
 
 [[package]]
 name = "modbit-compaction"
@@ -1528,6 +1536,15 @@ dependencies = [
 [[package]]
 name = "modbit-sandbox-gateway"
 version = "0.1.0"
+dependencies = [
+ "base64",
+ "modbit-event-store",
+ "modbit-protocol",
+ "prost",
+ "serde",
+ "serde_json",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-secrets"

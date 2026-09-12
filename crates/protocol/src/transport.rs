@@ -301,6 +301,17 @@ fn server_handshake(
     stream: &mut Stream,
     secret: &BootSecret,
 ) -> Result<(bool, bool, (u32, u32)), TransportError> {
+    handshake_stream(stream, secret)
+}
+
+/// Server-side handshake over an ARBITRARY byte stream (docs/24 cloud
+/// transport: TCP between gateway/worker/guest). Same
+/// Challenge/Hello/AuthResult contract and proof scheme as the local
+/// socket path; read_only and version negotiation behave identically.
+pub fn handshake_stream<S: Read + Write>(
+    stream: &mut S,
+    secret: &BootSecret,
+) -> Result<(bool, bool, (u32, u32)), TransportError> {
     let server_nonce = random_nonce()?;
     write_frame(
         stream,
@@ -356,8 +367,8 @@ fn server_handshake(
 }
 
 /// An authenticated Core↔desktop connection.
-pub struct Connection {
-    stream: Stream,
+pub struct Connection<S = Stream> {
+    stream: S,
     pub read_only: bool,
     pub negotiated: (u32, u32),
 }
@@ -371,13 +382,71 @@ impl fmt::Debug for Connection {
     }
 }
 
-impl Connection {
+impl<S: Read + Write> Connection<S> {
     pub fn send(&mut self, payload: &[u8]) -> Result<(), TransportError> {
         write_frame(&mut self.stream, payload)
     }
 
     pub fn receive(&mut self) -> Result<Vec<u8>, TransportError> {
         read_frame(&mut self.stream)
+    }
+
+    /// Server-side accept for an ARBITRARY stream (cloud TCP path,
+    /// docs/24): runs the SERVER handshake (Challenge first) — the
+    /// mirror of `over_stream`.
+    pub fn accept_stream(mut stream: S, secret: &BootSecret) -> Result<Self, TransportError> {
+        let (accepted, read_only, negotiated) = handshake_stream(&mut stream, secret)?;
+        if !accepted {
+            return Err(TransportError::AuthRejected {
+                reason: "handshake rejected".into(),
+            });
+        }
+        Ok(Connection {
+            stream,
+            read_only,
+            negotiated,
+        })
+    }
+
+    /// Client-side handshake over an ARBITRARY already-connected stream
+    /// (the cloud TCP path — docs/24). The stream must be freshly
+    /// connected; the server speaks its Challenge first.
+    pub fn over_stream(mut stream: S, secret: &BootSecret) -> Result<Self, TransportError> {
+        let challenge_bytes = read_frame(&mut stream)?;
+        let challenge =
+            pb::Challenge::decode(challenge_bytes.as_slice()).map_err(|e| {
+                TransportError::Protocol {
+                    reason: format!("bad Challenge: {e}"),
+                }
+            })?;
+        let client_nonce = random_nonce()?;
+        let proof = secret.hmac_proof(&challenge.server_nonce, &client_nonce, PROTOCOL_MAJOR, PROTOCOL_MINOR);
+        write_frame(
+            &mut stream,
+            &pb::Hello {
+                proof,
+                client_nonce: client_nonce.to_vec(),
+                major: PROTOCOL_MAJOR,
+                minor: PROTOCOL_MINOR,
+            }
+            .encode_to_vec(),
+        )?;
+        let result_bytes = read_frame(&mut stream)?;
+        let result = pb::AuthResult::decode(result_bytes.as_slice()).map_err(|e| {
+            TransportError::Protocol {
+                reason: format!("bad AuthResult: {e}"),
+            }
+        })?;
+        if !result.ok {
+            return Err(TransportError::AuthRejected {
+                reason: result.error,
+            });
+        }
+        Ok(Connection {
+            stream,
+            read_only: false,
+            negotiated: (PROTOCOL_MAJOR, result.negotiated_minor),
+        })
     }
 }
 

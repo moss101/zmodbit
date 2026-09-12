@@ -1,0 +1,35 @@
+Phase 8 items 1-2 (sandbox-gateway + cloud-worker, docs/24) — E2E proof
+Date: 2026-09-12
+
+Real processes over real TCP, THE canonical Core runtime in the cloud
+worker (no second runtime):
+1. Handshake over TCP generalized in the canonical protocol crate
+   (handshake_stream/Connection::accept_stream/over_stream) — same
+   Challenge/Hello/AuthResult HMAC proof scheme as the local socket
+   transport. DEFECT CAUGHT BY THE E2E: the gateway initially ran the
+   CLIENT side of the handshake on accepted connections (both sides
+   waiting for a Challenge — deadlock); the samples caught it and the
+   server side (accept_stream) is now the gateway path.
+2. Gateway (tenant-bound substrate boundary): boot-secret auth, worker
+   lease per TENANT, opaque framed relay (the gateway never parses the
+   SurfaceProtocol payload).
+3. Cloud worker: leases a tenant and serves guest envelopes through
+   CoreServices::handle against the REAL durable event store — cloud
+   tasks write the same canonical events as local (state asserted in
+   the worker's store).
+4. TENANT ISOLATION (docs/24 § Multi-tenancy): tenant-2 guest gets an
+   explicit "no worker"; a tenant-2 guest FORGING the envelope tenant
+   "tenant-1" is refused ("cross-tenant denied") — the REGISTRATION is
+   the only trusted tenant source.
+5. LOSS/RECOVERY: worker killed → guest gets an explicit typed failure
+   (never a hang, never fabricated success); a re-attached worker serves
+   the DURABLE state — the task created before the kill is in the
+   recovered fleet.
+
+Test evidence: cargo test -p modbit-sandbox-gateway --test gateway_e2e
+(gateway_relays_real_core_work_and_enforces_tenant_isolation) — green;
+full workspace 551 tests 0 failed.
+
+Operator/infrastructure-gated follow-ups (same split as packaging):
+Firecracker/Cloud-Hypervisor substrate, managed Postgres/S3 bindings,
+real-vsock guest conformance.
