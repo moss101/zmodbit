@@ -50,13 +50,20 @@ Current facts:
 | Fact | Value |
 |---|---|
 | Crates in the `modbit-core-runtime` dependency closure | 18 of 26 (`checkpoint`, `compaction`, `context`, `core-runtime`, `diagnostics`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `retrieval`, `terminal`, `tools`, `verification`, `workspace`) |
-| Empty canonical crates | `effects`, `secrets`, `memory`, `observability` |
-| Stub binaries (`fn main() {}`) | `apps/cloud-api`, `apps/cloud-worker`, `apps/sandbox-gateway`, `services/modbit-guest` |
-| Rust / TS tests | 516 / 53 |
+| Empty canonical crates | `memory` (ADR-gated; observability POPULATED in Phase 5: cost + OTLP export) |
+| Stub binaries (`fn main() {}`) | `services/modbit-guest` (Phase 8 residual: guest RPC over vsock) |
+| Rust / TS tests | 552 / 53 |
 | Desktop screens | 2 (fleet, task workspace) |
-| Surface RPCs | 17 requests in the `surface.proto` oneof (Phase 4.1 added RegisterRepo + ListRecentRepos) |
+| Surface RPCs | 30 requests in the `surface.proto` oneof (Phase 7 added GetDiffHunks/ResolveReviewHunk/SpawnAgent/ParkAgent/ResumeAgent/AgentResult/RunVariants/CreateAutomation/ListAutomations) |
 | Nightly live workflow | `.github/workflows/nightly-live.yml` active (cron 03:43Z; five-night gate 2026-09-06..10 green, see section 1) |
-| Milestones | M0, M1 COMPLETE; M2 + M4 `E2E_PROVEN` at task level (M2: 11/11 milestone_tasks and 20 IMPs `E2E_PROVEN`, 42 cross-phase IMPs WIRED with audit notes — never paper-closed; M4: 11/11 tasks `E2E_PROVEN`); **M3: 8/9 milestone_tasks `E2E_PROVEN` — M3.5 decision-deferred (gate passed, revisit triggers recorded)**; M5–M10 IN_PROGRESS |
+| Milestones | M0, M1 COMPLETE; M2, M4 `E2E_PROVEN` at task level; **M3: 8/9 — M3.5 decision-deferred**; **M6: M6.1–M6.4 `E2E_PROVEN`; M7: M7.1–M7.5 `E2E_PROVEN`; M8: M8.1 + M8.2 `E2E_PROVEN` (services real; substrate/guest infra-gated); M9 IN_PROGRESS (approval/receipt/attack-suite items E2E-proven); M10: M10.5 + M10.6 `E2E_PROVEN` (Release Zero packaged run PASS)** |
+
+| Phase 4 EXIT: repository picker (per-task base branch), settings screen with provider presets + `execution_mode`, keychain SecretBroker (`crates/secrets`→keyring v3; keys never in store/logs), headless CLI `modbit run`/`modbit settings`, quick-start docs, packaging implementation + verification (deterministic bundle + SBOM + provenance + operator-signing interface — production signing `BLOCKED_EXTERNAL_CREDENTIAL / RELEASE_GATE` per the user's split directive; no signing credentials ever requested/stored in the agent/runtime/repo) | commits `d60fc1b`, `e865035`, `7078d77`; `tools/release/{package,verify-bundle,release-receipt}.sh`, `tools/release/operator-signing.md`; evidence `docs/evidence/phase4-3-5-6-keychain-cli-docs-2026-09-10.log`, `docs/evidence/phase4-4-packaging-split-2026-09-11.log` |
+| Phase 5 CLOSE (items 1,2,3,4-core,5,6): durable approval loop (ApproveEffect/DenyEffect RPCs, first-decision-wins, survives a Core kill), `crates/effects` tamper-evident receipt chain, `execution_mode=approvals` real consumer, docs/52 attack suite always-on, OTLP/JSON cost export (`crates/observability::otlp`, `OTEL_EXPORTER_OTLP_ENDPOINT`-gated), hunk-level review — `GetDiffHunks`/`ResolveReviewHunk` RPCs, single-hunk inverse-apply, durable `ReviewHunkResolved` events (IMP-EV-0036 E2E_PROVEN) | commits `53c615d`, `dd1057d`, `7d071ae`; `docs/evidence/phase5-approvals-receipts-2026-09-11.log`, `docs/evidence/phase5-hunk-review-2026-09-11.log` |
+| Phase 6 CLOSE: PTY via `portable-pty` in the execd broker (`pty_spawn/write/read/cancel`, broker E2E; Windows ConPTY lifecycle-gated), OS sandbox (macOS Seatbelt wrapper; Linux Landlock via the `sbx-launcher` helper — workspace `unsafe_code=forbid` made in-process `pre_exec` unavailable; outside-worktree writes fail, inside succeed; Windows lifecycle smoke), MCP clients (`crates/mcp` JSON-RPC/stdio `initialize/tools.list/tools.call`, real fixture peer E2E) | commits `dd21f6d`, `7fc42fb`, `5886cfe`; `docs/evidence/phase6-sandbox-pty-2026-09-11.log` |
+| Phase 7 EXIT: M6 + M7 `E2E_PROVEN` at task level — item 1 children through the scheduler (SpawnAgent/ParkAgent/ResumeAgent/AgentResult RPCs, transactional admission: capacity ticket + generation fencing + parent-active, `parent_task_id` linkage v9, fleet UI children-under-parents, merge-conflict proof through the canonical transaction; DEFECT FIXED: UUIDv7 millisecond branch-name collision), item 2 write coordinator (durable `task_write_scopes` v10, overlapping scopes denied BEFORE execution; RunVariants umbrella + desktop composer), item 3 CDP bridge (real headless Chromium, semantic snapshots reusing fingerprint machinery, navigate/snapshot/action/console/network/capture, hostile-page test, M7.1–M7.4), item 4 automations (durable cron/event specs v11, boundary-keyed exactly-once firing, event watermark, engine thread in the daemon; M7.5) | commits `5e7099a`, `3faa07c`, `50e5c61`, `1b8a2fa`, `6ce4ab8`, `57b4f23`, `a36f457`; evidence `docs/evidence/phase7-2-write-coordinator-2026-09-11.log`, `phase7-3-cdp-bridge-2026-09-11.log`, `phase7-4-automations-2026-09-11.log` |
+| Phase 8 CORE SLICES CLOSED: sandbox-gateway + cloud-worker real services over TCP (boot-secret handshake generalized to arbitrary streams; worker hosts THE Core against the durable store; cross-tenant envelopes refused; worker kill → explicit failure → re-attach serves durable state — M8.2), cloud-api OIDC authorization-code + PKCE (RS256 id_token via JWKS, 15-min internal-tenant session tokens, authenticated /fleet + /task relayed to the tenant worker — M8.1). Release Zero gate for Phase 8 satisfied by the deterministic local proof (live-gateway step operator-gated). RESIDUAL (stays in §4): Firecracker/vsock substrate, managed Postgres/S3, guest RPC/conformance, credential broker, remote browser stream | commits `f921267`, `64ef9c8`; evidence `docs/evidence/phase8-1-gateway-worker-2026-09-12.log`, `docs/evidence/phase8-3-cloud-api-2026-09-12.log` |
+| Phase 9 CLOSE: Release Zero expanded proof runner (`tools/release/release-zero.sh` — full component suite, all docs/60 steps + fault variants mapped to per-binary evidence from the same run, verifier cannot fail open) executed on the PACKAGED dev bundle (SBOM + provenance + binary smoke + verify-bundle + release receipt; production signing = operator gate `BLOCKED_EXTERNAL_CREDENTIAL` per the Phase 4.4 split); diagnostics export + report-a-problem (`modbit diagnostics` / `modbit report`, redaction E2E — planted secret appears in NO bundle file); end-user docs + status refresh (M10.5, M10.6 E2E_PROVEN) | commits `4f9bdce`, `c7695dc`, `405e503`, `8d5713e`; evidence `docs/evidence/release-zero-2026-09-12/` (RELEASE_ZERO.md + receipt), `docs/evidence/phase9-diagnostics-2026-09-12.log` |
 
 ## 2. Open defects found in the live path (fix before anything else)
 
@@ -101,56 +108,45 @@ Modbit's differentiators (receipts, exact recovery, one Core local and cloud, ev
 
 ## 4. Recommended work order
 
-Phase 3 closed (see section 1). Each phase ends with `python3 tools/check_dossier.py`, the nightly live job green, the named E2E scenarios, and regenerated README / `docs/98`. A node closes only through production routing with typed evidence and only if its module is in the binary closure.
+Phases 1–7 and the Phase 8 core slices + Phase 9 core deliverables are closed (see section 1); section 4 now carries only the residuals. Each phase ends with `python3 tools/check_dossier.py`, the nightly live job green, the named E2E scenarios, and regenerated README / `docs/98`. A node closes only through production routing with typed evidence and only if its module is in the binary closure.
 
-### Phase 4: the desktop a user can run (M1 polish, M10 packaging)
+### Phase 4 residuals: production signing + updater (OPERATOR GATE)
 
-1. Repository picker (recent repos, clone by URL) replacing `MODBIT_REPO_ROOT`; per-task base branch selection.
-2. Settings screen: providers, models, base URLs, max turns, execution mode; presets for OpenAI, Anthropic, OpenAI-compatible (Ollama, vLLM, z.ai), Gemini and Bedrock adapters after the first two are stable.
-3. `crates/secrets`: keychain-backed `SecretBroker` (macOS Keychain, Windows Credential Manager, Secret Service) with the env broker as fallback; keys never enter the event store or logs.
-4. Packaging: electron-builder with the Rust binaries as sidecars, code signing and notarization, an update channel, SBOM (`cargo cyclonedx`, `pnpm sbom`), `cargo audit`, `cargo deny`, `pnpm audit` in CI.
-5. Headless CLI (`modbit run <repo> "<task>" --json`) over the same daemon for CI use.
-6. Quick-start doc and provider setup guide; fix README status text.
+1. OPERATOR (credential-bearing, from an operator-controlled machine — never inside the agent/runtime/repo): Developer ID signing + notarization of the packaged bundle via `tools/release/operator-signing.md`, then `verify-bundle.sh` + `release-receipt.sh` flip the receipt to `PRODUCTION_OK`.
+2. Update channel (electron-builder auto-update) once a signed build ships.
 
-Exit: a signed build that a new user can open, point at a repo, add a key, and run a task end to end.
+Exit: `PRODUCTION_OK` receipt on a signed build a new user can open, point at a repo, add a key, and run a task end to end.
 
-### Phase 5: approvals, receipts and review (M9 hot path, M2.9 depth)
+### Phase 5 residuals: review-surface depth (M2.9 polish)
 
-1. Approval loop end to end: kernel decision → bound intent persisted → task `Waiting(Approval)` → Needs Attention card → `ApproveIntent` / `DenyIntent` RPCs → receipt → resume; survives a Core kill. Bulk approve/deny of identical intents; per-session effect budgets.
-2. Approval modes as a first-class setting (read-only / edits-only / auto with protected effects / full) mapped onto capability grants.
-3. `crates/effects`: tamper-evident receipt chain moved out of `checkpoint`, written on every protected effect; `crates/memory` and `crates/observability` populated or removed with an ADR.
-4. Review surface: hunk-level diff content over `GetDiff`, accept/reject per hunk, inline revision-bound comments, generated review checklist, merge/apply/export actions gated on verification.
-5. `tracing` + OpenTelemetry export, real cost from usage frames, SLO ladder consumer.
-6. `docs/52` attack suite (prompt injection through tool results, path escape, secret exfiltration) as always-on tests.
+1. Inline revision-bound comments on hunks (durable, surfaced in review).
+2. Generated review checklist bound to the diff.
+3. Desktop approval-card flow proven through the packaged desktop (the approval LOOP is Core-E2E-proven; the card UX pass remains).
 
-Exit: M9 hot-path items and M2.9 `E2E_PROVEN`; E2E approval scenario proven through the desktop.
+### Phase 7 residuals: browser takeover UI (M7 polish)
 
-### Phase 6: terminal, sandbox, external tools (M5, M7 prerequisites, M9)
-
-1. PTY via `portable-pty` (ConPTY on Windows); `shell.attach/input/cancel`; terminal panel in the task workspace streaming from `modbit-execd`.
-2. OS sandbox for `shell.run`: Seatbelt profile on macOS, Landlock + seccomp on Linux, restricted token on Windows; network deny-by-default with allowlist; labelled as part of the capability grant.
-3. `crates/mcp`: stdio and streamable-HTTP MCP client, `external.list/call/cancel` tools through policy and receipts, per-workspace transport pool (types already exist in `checkpoint/mcp_memory.rs`).
-4. `skill.list/load` tools over the existing SKILL.md discovery; procedural isolate after ADR-C (QuickJS or WASM) over the single registry.
-5. Multimodal input: expose the media pipeline through `fs.read` for images and PDFs, and image attachments on task creation.
-
-Exit: M5 `E2E_PROVEN`; MCP conformance and sandbox escape tests green.
-
-### Phase 7: fleet and browser (M6, M7)
-
-1. Children through the scheduler with admission tickets and isolated worktrees; `agent.spawn/steer/park/resume/cancel/wait/result`; parent-child event linkage; fleet UI showing children under parents; conflict proof on merge.
-2. Parallel independent tasks on the same repo with the write coordinator; "run N variants" from New Task.
-3. CDP bridge and Chromium launch reusing the fingerprint and lease code; `browser.navigate/snapshot/action/network/console/capture`; live view and takeover UI; hostile-page test.
-4. Scheduled and event-triggered tasks (automations) on the daemon.
-
-Exit: M6 and M7 `E2E_PROVEN`.
+1. Live view + takeover UI in the desktop task workspace over the CDP bridge (the bridge, semantic snapshots, actions and hostile-page proof are Core-E2E-proven).
 
 ### Phase 8: cloud (M8), only after local Release Zero steps 1 to 15 pass
 
-Guest RPC over vsock/TCP; `sandbox-gateway`, `cloud-worker` hosting Core against a remote store; `cloud-api` with OIDC (ADR-E); substrate adapter (Firecracker or Cloud Hypervisor); GitHub-linked background tasks that open PRs; conformance suite on a real guest; tenant isolation and loss/recovery tests.
+Gate status: the deterministic Release Zero proof passes (see section 1, Phase 9 row); the live-gateway step is operator-gated.
 
-### Phase 9: release (M10)
+1. Guest RPC over vsock/TCP; signed/versioned `modbit-guest` with typed process/fs/PTY RPC (M8.4, M8.5).
+2. Substrate adapter on Firecracker or Cloud Hypervisor + conformance suite on a real guest (M8.3 residue; INFRASTRUCTURE-GATED).
+3. Credential broker + egress policy in the guest (M8.6).
+4. Local→cloud checkpoint handoff (M8.7; the git snapshot path exists — cloud attach remains).
+5. Cloud browser remote stream/CDP relay (M8.8).
+6. Managed Postgres + S3 bindings for the cloud store/object paths (production bindings for the services that run on the SQLite/local equivalents today).
 
-Release Zero on the packaged build as the release-candidate gate with the full evidence bundle; diagnostics export and report-a-problem flow; end-user docs.
+Exit: M8 `E2E_PROVEN` on a real guest with tenant-isolation and loss/recovery tests green in CI or a documented operator-run conformance.
+
+### Phase 9 residuals: release hardening (M10)
+
+1. Updater + update channel (electron-builder; signing remains the operator gate).
+2. Performance regression gates beyond the M3.9 retrieval benchmark.
+3. RC E2E catalog + canonical tool/capability conformance harness (M10.3, M10.7).
+
+Exit: M10 `E2E_PROVEN` (Release Zero scenario + diagnostics already proven; M10.1/M10.2/M10.4 remain open as above).
 
 ## 5. Enhancement backlog (not phase-blocking)
 
