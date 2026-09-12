@@ -871,6 +871,49 @@ impl CoreServices {
                     },
                 }
             }
+            Some(pb::surface_request::Request::CreateAutomation(create)) => {
+                match self.create_automation(&create) {
+                    Ok(()) => pb::SurfaceResponse {
+                        ok: true,
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::ListAutomations(_)) => {
+                match self
+                    .store
+                    .with_conn(|conn| modbit_event_store::automations::list(conn))
+                {
+                    Ok(rows) => pb::SurfaceResponse {
+                        ok: true,
+                        automations: Some(pb::AutomationList {
+                            automations: rows
+                                .into_iter()
+                                .map(|a| pb::AutomationView {
+                                    automation_id: a.automation_id,
+                                    name: a.name,
+                                    cron: a.cron,
+                                    event_pattern: a.event_pattern,
+                                    objective: a.objective,
+                                    enabled: a.enabled,
+                                    last_fire_key: a.last_fire_key,
+                                })
+                                .collect(),
+                        }),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             // Phase 2.6: paginated read of a stored tool-output reference.
             Some(pb::surface_request::Request::ReadOutputRef(read)) => {
                 match self.read_output_ref(&read.output_ref_id, read.offset, read.max_bytes) {
@@ -1767,6 +1810,33 @@ impl CoreServices {
                 .map_err(|e| format!("variant {} refused: {e}", i + 1))?;
         }
         Ok(self.task_view(&umbrella_id))
+    }
+
+    /// Phase 7 item 4: registers a durable automation. Exactly one
+    /// trigger (cron spec or event pattern) must be present; cron specs
+    /// are validated AT CREATION — an unparsable spec never registers.
+    fn create_automation(&self, create: &pb::CreateAutomationCommand) -> Result<(), String> {
+        if create.cron.is_empty() == create.event_pattern.is_empty() {
+            return Err("automation needs exactly one trigger: cron or event_pattern".into());
+        }
+        if !create.cron.is_empty() && crate::automation::CronSpec::parse(&create.cron).is_none() {
+            return Err(format!("unparsable cron spec: {:?}", create.cron));
+        }
+        self.store.with_conn(|conn| {
+            modbit_event_store::automations::create(
+                conn,
+                modbit_event_store::automations::Automation {
+                    automation_id: String::new(),
+                    name: create.name.clone(),
+                    cron: create.cron.clone(),
+                    event_pattern: create.event_pattern.clone(),
+                    objective: create.objective.clone(),
+                    enabled: true,
+                    last_fire_key: String::new(),
+                },
+            )
+        })?;
+        Ok(())
     }
 
     fn task_view(&self, task_id: &str) -> Option<pb::TaskView> {

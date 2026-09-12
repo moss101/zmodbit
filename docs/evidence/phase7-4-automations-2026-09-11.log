@@ -1,0 +1,31 @@
+Phase 7 item 4 (scheduled and event-triggered tasks on the daemon) — E2E proof
+Date: 2026-09-11
+
+Scope proven (real SQLite store v11, real command processor, production dispatch):
+1. CreateAutomation RPC (29): durable spec in the automations table;
+   exactly-one-trigger rule (cron XOR event_pattern); cron specs VALIDATED
+   AT CREATION (unparsable spec refused with a typed error — never
+   registered dead). ListAutomations RPC (30) returns spec + fire state.
+2. Cron engine: boundary-keyed firing (UTC minute "YYYYMMDDHHmm") — a
+   matching minute fires EXACTLY once across ticks AND restarts
+   (last_fire_key recorded, asserted in the ListAutomations response);
+   a second tick in the same minute is a no-op. Minimal 5-field cron
+   parser (lists/ranges/steps, Sunday 0-or-7, day-of-month/day-of-week
+   cron semantics) verified against calendar-checked fixtures
+   (2026-09-07 Monday / 2026-09-12 Saturday cross-checked via dow).
+3. Event engine: event_pattern automations consume the durable event
+   stream past a persisted rowid watermark — task_completed fired one
+   follow-up task; a re-tick NEVER double-fires (watermark proof).
+4. Fired tasks are REAL tasks: created AND queued through the same
+   CommandProcessor path (state asserted 'queued', task aggregate
+   asserted), actor = the automation id (audit trail).
+5. Daemon wiring: modbit-core spawns the engine thread (30s cadence,
+   SystemTime-driven tick).
+
+Test evidence: cargo test -p modbit-core-runtime --lib automation +
+--test agent_fleet_e2e (cron_automation_fires_a_real_task_exactly_once_
+per_boundary, event_automation_follows_task_completion_without_double_
+firing; 9/9 in the file, full workspace 548 tests 0 failed).
+
+Mutation check: removing the boundary-key guard fails the double-fire
+assertion; breaking the dow arithmetic fails the calendar cross-check.

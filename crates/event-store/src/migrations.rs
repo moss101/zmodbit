@@ -53,7 +53,22 @@ pub const MIGRATIONS: &[Migration] = &[
     (8, SQL_V8_APPROVALS),
     (9, SQL_V9_TASK_PARENT),
     (10, SQL_V10_WRITE_SCOPES),
+    (11, SQL_V11_AUTOMATIONS),
 ];
+
+/// Phase 7 item 4: scheduled and event-triggered task automation specs.
+pub const SQL_V11_AUTOMATIONS: &str = "
+    CREATE TABLE IF NOT EXISTS automations (
+        automation_id  TEXT PRIMARY KEY,
+        name           TEXT NOT NULL,
+        trigger        TEXT NOT NULL,
+        cron           TEXT NOT NULL DEFAULT '',
+        event_pattern  TEXT NOT NULL DEFAULT '',
+        objective      TEXT NOT NULL,
+        enabled        INTEGER NOT NULL DEFAULT 1,
+        last_fire_key  TEXT NOT NULL DEFAULT ''
+    );
+";
 
 /// Phase 7 item 2 (REQ-EV-0150): declared write scopes of active tasks —
 /// the durable registry the write coordinator checks BEFORE a task runs.
@@ -217,6 +232,6 @@ mod tests {
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(v, 10, "latest migration version");
+        assert_eq!(v, 11, "latest migration version");
     }
 }

@@ -346,7 +346,7 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
             .unwrap();
     assert!(matches!(outcome, modbit_git::MergeOutcome::Merged), "{outcome:?}");
     assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Validating);
-    let tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
+    let _tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
     let tx = modbit_workspace::merge_transaction::commit(&repo).unwrap();
     assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Committed);
 
@@ -371,7 +371,7 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
     assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Validating);
     assert!(tx.conflicts.is_empty());
     assert!(tx.resolutions.iter().any(|r| r.path == "shared.txt" && r.strategy == "manual"));
-    let tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
+    let _tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
     let tx = modbit_workspace::merge_transaction::commit(&repo).unwrap();
     assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Committed);
     let _ = store;
@@ -502,5 +502,163 @@ fn run_variants_creates_umbrella_with_admitted_children() {
         );
         assert!(!resp.ok, "count {bad} must refuse");
         assert!(resp.error.contains("count"), "{}", resp.error);
+    }
+}
+
+mod automations {
+    use modbit_core_runtime::automation::{AutomationEngine, CronSpec, minute_key};
+    use modbit_domain::TaskId;
+
+    use super::*;
+
+    fn current_utc_minute() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() - d.as_secs() % 60)
+            .unwrap_or(0)
+    }
+
+    /// A cron spec that matches EVERY minute — always due regardless of
+    /// the wall clock.
+    fn now_cron() -> String {
+        "* * * * *".into()
+    }
+
+    #[test]
+    fn cron_automation_fires_a_real_task_exactly_once_per_boundary() {
+        let (_store, services, _parent) = setup("auto-cron");
+        let engine = AutomationEngine::new(_store.clone());
+
+        // Register via the SURFACE (validation + durable spec).
+        let resp = roundtrip(
+            &services,
+            pb::surface_request::Request::CreateAutomation(pb::CreateAutomationCommand {
+                name: "nightly sweep".into(),
+                cron: now_cron(),
+                event_pattern: String::new(),
+                objective: "sweep the workspace".into(),
+            }),
+        );
+        assert!(resp.ok, "{:?}", resp.error);
+
+        // Unparsable cron is refused at creation.
+        let resp = roundtrip(
+            &services,
+            pb::surface_request::Request::CreateAutomation(pb::CreateAutomationCommand {
+                name: "broken".into(),
+                cron: "not a cron".into(),
+                event_pattern: String::new(),
+                objective: "x".into(),
+            }),
+        );
+        assert!(!resp.ok, "unparsable cron must refuse");
+        assert!(resp.error.contains("unparsable"), "{}", resp.error);
+
+        // Tick at the CURRENT minute: the every-minute spec is due; the
+        // task must be created AND queued (a real task aggregate).
+        let now = current_utc_minute();
+        let outcome = engine.tick(now + 30); // 30s into the minute
+        assert_eq!(outcome.fired.len(), 1, "{outcome:?}");
+        let (automation_id, task_id) = &outcome.fired[0];
+        assert!(automation_id.starts_with("auto-"));
+        assert!(
+            TaskId::parse(task_id).is_ok(),
+            "fired a real task aggregate"
+        );
+
+        // The fired task exists in 'queued' state with the objective.
+        let state: String = _store
+            .with_conn(|conn| {
+                conn.query_row(
+                    "SELECT state FROM tasks WHERE task_id = ?1",
+                    [task_id.as_str()],
+                    |r| r.get(0),
+                )
+            })
+            .unwrap();
+        assert_eq!(state, "queued");
+
+        // A SECOND tick in the SAME minute must NOT double-fire
+        // (boundary-keyed), and neither must a restart-shaped re-tick.
+        let outcome2 = engine.tick(now + 45);
+        assert!(outcome2.fired.is_empty(), "no double fire: {outcome2:?}");
+
+        // ListAutomations shows the recorded fire key.
+        let resp = roundtrip(
+            &services,
+            pb::surface_request::Request::ListAutomations(pb::ListAutomationsRequest {}),
+        );
+        assert!(resp.ok, "{:?}", resp.error);
+        let list = resp.automations.expect("automation list");
+        assert_eq!(list.automations.len(), 1);
+        assert_eq!(
+            list.automations[0].last_fire_key,
+            minute_key(now + 30),
+            "boundary recorded"
+        );
+    }
+
+    #[test]
+    fn event_automation_follows_task_completion_without_double_firing() {
+        let (_store, services, _parent) = setup("auto-event");
+        let engine = AutomationEngine::new(_store.clone());
+
+        let resp = roundtrip(
+            &services,
+            pb::surface_request::Request::CreateAutomation(pb::CreateAutomationCommand {
+                name: "post-completion review".into(),
+                cron: String::new(),
+                event_pattern: "task_completed".into(),
+                objective: "review the completed work".into(),
+            }),
+        );
+        assert!(resp.ok, "{:?}", resp.error);
+
+        // No completions yet: the tick is a no-op.
+        let outcome = engine.tick(current_utc_minute() + 30);
+        assert!(outcome.fired.is_empty(), "nothing consumed yet: {outcome:?}");
+
+        // The parent completes: the durable event stream gains
+        // task_completed (host-verified).
+        let processor = CommandProcessor::new(_store.clone());
+        let task_id = TaskId::parse(&_parent).unwrap();
+        for payload in [
+            CommandPayload::TaskReadyForReview { task_id },
+            CommandPayload::CompleteTask {
+                task_id,
+                summary: "done".into(),
+                host_verified: true,
+            },
+        ] {
+            processor
+                .execute(Command {
+                    command_id: uuid::Uuid::now_v7().to_string(),
+                    actor: Actor { actor_type: ActorType::System, actor_id: "t".into() },
+                    payload,
+                })
+                .unwrap();
+        }
+
+        // Tick: the event is consumed and a follow-up task fires.
+        let outcome = engine.tick(current_utc_minute() + 60);
+        assert_eq!(outcome.fired.len(), 1, "{outcome:?}");
+        let state: String = _store
+            .with_conn(|conn| {
+                conn.query_row(
+                    "SELECT state FROM tasks WHERE task_id = ?1",
+                    [&outcome.fired[0].1],
+                    |r| r.get(0),
+                )
+            })
+            .unwrap();
+        assert_eq!(state, "queued", "follow-up task queued");
+
+        // Another tick: the SAME event is never consumed twice.
+        let outcome2 = engine.tick(current_utc_minute() + 90);
+        assert!(outcome2.fired.is_empty(), "no double fire: {outcome2:?}");
+
+        // Step-cron specs also parse through the same surface validation.
+        assert!(CronSpec::parse("*/5 * * * *").is_some());
+        assert!(CronSpec::parse("0 9 * * 1-5").is_some());
     }
 }

@@ -52,6 +52,9 @@ message SurfaceRequest {
     AgentResultRequest agent_result = 27;
     // Phase 7 item 2: run N variants of one objective in parallel.
     RunVariantsCommand run_variants = 28;
+    // Phase 7 item 4: automations on the daemon.
+    CreateAutomationCommand create_automation = 29;
+    ListAutomationsRequest list_automations = 30;
   }
 }
 
@@ -193,6 +196,23 @@ message SurfaceResponse {
   SettingsView settings = 13;
   DiffHunksView diff_hunks = 14;
   AgentResultView agent_result = 15;
+  AutomationList automations = 16;
+}
+
+// AutomationView: the durable spec plus its fire state (the engine
+// records the last fired cron boundary / consumed event rowid).
+message AutomationView {
+  string automation_id = 1;
+  string name = 2;
+  string cron = 3;
+  string event_pattern = 4;
+  string objective = 5;
+  bool enabled = 6;
+  string last_fire_key = 7;
+}
+
+message AutomationList {
+  repeated AutomationView automations = 1;
 }
 
 // Paginated read of a stored tool-output reference (Phase 2.6): the full

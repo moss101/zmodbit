@@ -1,7 +1,7 @@
 # Modbit Project Graph
 
 > Generated from `graph/project-graph.json` by `tools/graph.py render --write`. Do not edit by hand; edit the graph through `tools/graph.py set` or regenerate structure with `tools/build_graph.py`.  
-> Graph generated on 2026-09-12; view rendered on 2026-09-11.
+> Graph generated on 2026-09-12; view rendered on 2026-09-12.
 
 ## What the graph is
 
@@ -290,7 +290,7 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M7.2` | IMPLEMENTING | AX/DOM/layout semantic entities and stable IDs |  |
 | `M7.3` | IMPLEMENTING | state fingerprints + delta stream |  |
 | `M7.4` | IMPLEMENTING | semantic actions and postconditions |  |
-| `M7.5` | IMPLEMENTING | targeted screenshot/vision fallback |  |
+| `M7.5` | E2E_PROVEN | targeted screenshot/vision fallback |  |
 | `M7.6` | IMPLEMENTING | control lease/takeover |  |
 | `M7.7` | IMPLEMENTING | prompt-injection provenance isolation |  |
 | `M7.8` | IMPLEMENTING | credential handle fill path |  |

@@ -176,7 +176,7 @@ fn hostile_page_content_stays_inert_data() {
             break;
         }
     }
-    let (requests, responses) = browser.network();
+    let (_requests, responses) = browser.network();
     let exfil_ok = responses.iter().any(|r| r.contains("attacker"));
     assert!(
         saw_failure && !exfil_ok,

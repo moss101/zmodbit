@@ -57,3 +57,18 @@ message CancelTaskCommand {
   string task_id = 1;
   string reason = 2;
 }
+
+// Phase 7 item 4: scheduled (cron) or event-triggered task automation.
+// Exactly one trigger must be non-empty.
+message CreateAutomationCommand {
+  string name = 1;
+  // 5-field cron (minute hour day-of-month month day-of-week, UTC).
+  string cron = 2;
+  // Durable event type to react to (e.g. "task_completed"); empty when
+  // the trigger is cron.
+  string event_pattern = 3;
+  // The follow-up task objective.
+  string objective = 4;
+}
+
+message ListAutomationsRequest {}

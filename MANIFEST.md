@@ -105,8 +105,8 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 7544 | `36191e61c92e9b910b97a5068b1a155425fe9a13e703de432b27717e1bbb07e0` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
-| `graph/project-graph.json` | project driver graph with live status | 861897 | `e8180e62b7c7e54d4e58d9d56437520d67693007eb59831b5ed416ecd8d95136` |
-| `graph/PROJECT_GRAPH.md` | human view of the graph | 22606 | `059420812c86f05836a8e5c5f927589ff7ca6183b1bc7703081c55220e7d49b1` |
+| `graph/project-graph.json` | project driver graph with live status | 862058 | `a5cdef0048b273dce0d0f7af1e7f56a1c85e08696d6fa542a677b5825207be65` |
+| `graph/PROJECT_GRAPH.md` | human view of the graph | 22604 | `2eda26fd1f706a054ab59eeda36fc50717f1ea17b3bd86875ff06a05fc83649c` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
 | `tools/graph.py` | query/update graph | 19373 | `4bf6107ea47ece515ec72936110618f2842e4b69ad3b432d9b2172c60f6d1fc2` |

@@ -2885,10 +2885,12 @@
    "milestone": "M7",
    "order": 4,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
-    "commit:79466b5"
+    "commit:79466b5",
+    "log:docs/evidence/phase7-4-automations-2026-09-11.log",
+    "test:agent_fleet_e2e::automations::cron_automation_fires_a_real_task_exactly_once_per_boundary"
    ],
    "notes": [
     {
@@ -2898,7 +2900,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-12T00:09:22Z"
   },
   {
    "id": "M7.6",

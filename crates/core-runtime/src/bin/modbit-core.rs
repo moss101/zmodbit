@@ -74,6 +74,23 @@ eprintln!("boot: worktree source attached");
     // Phase 2.3: the surface signals in-flight runs (Stop/Pause/Steer)
     // through the scheduler's live control registry.
     services = services.with_run_controls(scheduler.controls());
+    // Phase 7 item 4: the automation engine ticks every 30s in a daemon
+    // thread — cron automations fire once per matching minute
+    // (boundary-keyed), event automations consume new durable events.
+    {
+        let engine = modbit_core_runtime::automation::AutomationEngine::new(store.clone());
+        std::thread::spawn(move || loop {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            let outcome = engine.tick(now);
+            for (automation_id, task_id) in &outcome.fired {
+                eprintln!("automation {automation_id} fired task {task_id}");
+            }
+            std::thread::sleep(std::time::Duration::from_secs(30));
+        });
+    }
     // Phase 7 item 1: admitted child agents persist in the fleet journal
     // next to the durable store (AgentGraph ownership survives restarts).
     let fleet_journal = std::path::PathBuf::from(&db).with_file_name("agent-fleet.jsonl");
