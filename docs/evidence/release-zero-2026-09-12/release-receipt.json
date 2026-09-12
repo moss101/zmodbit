@@ -1,0 +1,17 @@
+{
+  "bundle": "/Users/mohsin/projects/zmodbit/dist/modbit-0.1.0-aarch64-apple-darwin",
+  "sha256sums": "5a26dcdea5262f95e87e4697783d9398793d983f831e54009bb1aac35bfa5f3f",
+  "provenance": {
+  "product": "modbit",
+  "version": "0.1.0",
+  "git_rev": "c7695dcb7a17ad2aa30555a4e8fc6262a3ce9bb6",
+  "profile": "debug",
+  "target": "aarch64-apple-darwin",
+  "rustc_commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+  "built_at": "2026-09-12T09:58:23Z",
+  "signed": false,
+  "signing_state": "BLOCKED_EXTERNAL_CREDENTIAL / RELEASE_GATE"
+},
+  "signature_verified": false,
+  "release_gate": "BLOCKED_EXTERNAL_CREDENTIAL"
+}
