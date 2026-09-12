@@ -3437,10 +3437,12 @@
    "milestone": "M10",
    "order": 4,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:diagnostics_e2e::diagnostics_bundle_is_complete_and_secret_free",
+    "commit:c7695dc"
    ],
    "notes": [
     {
@@ -3450,7 +3452,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-12T09:59:50Z"
   },
   {
    "id": "M10.6",
@@ -3460,10 +3462,12 @@
    "milestone": "M10",
    "order": 5,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "log:docs/evidence/release-zero-2026-09-12/RELEASE_ZERO.md",
+    "commit:405e503"
    ],
    "notes": [
     {
@@ -3473,7 +3477,7 @@
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-12T09:59:50Z"
   },
   {
    "id": "M0.4",

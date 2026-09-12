@@ -328,8 +328,8 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 | `M10.2` | IMPLEMENTING | updater/signing/SBOM |  |
 | `M10.3` | IMPLEMENTING | full RC E2E catalog |  |
 | `M10.4` | IMPLEMENTING | performance regression gates |  |
-| `M10.5` | IMPLEMENTING | docs/runbooks/support diagnostics |  |
-| `M10.6` | IMPLEMENTING | Release Zero scenario |  |
+| `M10.5` | E2E_PROVEN | docs/runbooks/support diagnostics |  |
+| `M10.6` | E2E_PROVEN | Release Zero scenario |  |
 | `M10.7` | IMPLEMENTING | Canonical tool and capability conformance harness | every production tool family passes its real-substrate conformance suite; no canned success |
 
 ## Proof scenarios by milestone
