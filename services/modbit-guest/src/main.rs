@@ -64,9 +64,12 @@ fn main() {
         .map(|t| t.trim().to_string())
         .filter(|t| !t.is_empty())
         .collect();
+    // Windows paths contain ':' (drive letters) — the list separator is
+    // ';' there and ':' on unix.
+    let roots_sep = if cfg!(windows) { ';' } else { ':' };
     let fs_roots: Vec<String> = std::env::var("MODBIT_GUEST_FS_ROOTS")
         .unwrap_or_default()
-        .split(':')
+        .split(roots_sep)
         .map(|r| r.trim().to_string())
         .filter(|r| !r.is_empty())
         .collect();

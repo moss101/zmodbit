@@ -1,0 +1,14 @@
+Phase 8 item 4 (M8.7 — local→cloud checkpoint handoff) — attach contract proof
+Date: 2026-09-13
+
+== cargo test -p modbit-checkpoint cloud_attach (REAL git repos: dirty-state capture -> self-contained git bundle transfer -> cloud attach with provenance/transfer/provenance verification; exact reconstruction proven by tree digest) ==
+running 2 tests
+test cloud_attach::tests::attach_refuses_task_confusion_and_corrupt_transfer ... ok
+test cloud_attach::tests::checkpoint_handoff_round_trip_is_exact ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out; finished in 0.27s
+
+== cargo test -p modbit-git --lib (snapshot bundle export/import in the canonical git crate) ==
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+== architecture lint (REQ-tag placement + edges) ==
+architecture-lint: OK (33 members checked, 0 forbidden edges, 28 COMPLETE tasks reachable, 75 misplaced REQ tag(s) allowlisted)

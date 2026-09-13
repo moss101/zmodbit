@@ -202,6 +202,44 @@ impl GitRepo {
         Ok(actual == handle.tree)
     }
 
+    /// Exports the snapshot as a SELF-CONTAINED git bundle (M8.7): the
+    /// bytes carry every reachable object of the snapshot ref, so the
+    /// cloud side needs no access to the origin repository. Only refs
+    /// inside the modbit snapshot namespace are exportable.
+    pub fn export_snapshot_bundle(&self, handle: &SnapshotHandle) -> Result<Vec<u8>, GitError> {
+        require_snapshot_ref("export_snapshot_bundle", &handle.ref_name)?;
+        // `git bundle create - <ref>` writes the self-contained bundle to
+        // stdout (the `-` file argument) — captured as raw bytes.
+        let out = self.git("bundle", &["create", "-", &handle.ref_name])?;
+        if out.stdout.is_empty() {
+            return Err(GitError::Git {
+                operation: "export_snapshot_bundle".into(),
+                message: "git bundle produced no bytes".into(),
+            });
+        }
+        Ok(out.stdout)
+    }
+
+    /// Imports an exported snapshot bundle into this repository (the
+    /// CLOUD half of the handoff). The bundle arrives as raw bytes —
+    /// written to a temp file under .git and fetched through git's own
+    /// bundle transport. Only modbit-namespace refs are importable.
+    pub fn import_snapshot_bundle(
+        &self,
+        handle: &SnapshotHandle,
+        bytes: &[u8],
+    ) -> Result<(), GitError> {
+        require_snapshot_ref("import_snapshot_bundle", &handle.ref_name)?;
+        let tmp = self
+            .root
+            .join(format!(".git/modbit-import-bundle-{}", std::process::id()));
+        std::fs::write(&tmp, bytes).map_err(GitError::Io)?;
+        let spec = format!("{}:{}", handle.ref_name, handle.ref_name);
+        let result = self.git("fetch", &[&tmp.to_string_lossy(), &spec]);
+        let _ = std::fs::remove_file(&tmp);
+        result.map(|_| ())
+    }
+
     /// Removes the temporary snapshot ref. SAFETY: refuses any ref outside
     /// `refs/modbit/snapshot/` — cleanup can never delete user branches,
     /// tags, or other refs.

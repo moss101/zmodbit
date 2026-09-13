@@ -8,6 +8,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+pub mod cloud_attach;
 pub mod cursor_meta;
 pub mod delta;
 pub mod failure;

@@ -137,7 +137,7 @@ impl Default for FirecrackerSpec {
 /// 1. The rootfs image is GENERIC — it contains the modbit-guest binary,
 ///    an init that mounts `/run` as tmpfs and starts `modbit-guest`
 ///    sourcing `/run/modbit/guest.env`. NO secrets are baked into any
-///    image (REQ-EV-0288).
+///    image (credential-injection ledger 0288, effects-security owner).
 /// 2. At VM start the provisioner renders [`GuestBootstrap`] through
 ///    [`GuestBootstrap::env_file`] and injects it into the VM's tmpfs via
 ///    the substrate's provisioning channel (vsock-first fetch or a

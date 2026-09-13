@@ -1340,6 +1340,8 @@ dependencies = [
 name = "modbit-checkpoint"
 version = "0.1.0"
 dependencies = [
+ "modbit-git",
+ "modbit-workspace",
  "serde",
  "serde_json",
  "sha2",

@@ -699,7 +699,7 @@ fn e2e_no_secret_material_in_guest_child_env() {
     let _ = std::fs::remove_dir_all(&root);
 }
 
-/// M8.6 (REQ-EV-0288): the credential broker issues a short-lived,
+/// M8.6 (credential-injection requirement, effects-security owner): the broker issues a short-lived,
 /// task/generation/scope-scoped lease; materialization flows through the
 /// REAL guest RPC into a REAL child env for the authorized request; the
 /// audit trail carries references only; redaction scrubs leaked-shaped

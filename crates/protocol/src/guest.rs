@@ -2,7 +2,8 @@
 //! layout docs/33 `services/modbit-guest`): the versioned, SIGNED
 //! `modbit-guest` identity manifest (M8.4) and the versioned typed
 //! process/fs/PTY request frames carrying task/effect/capability/generation
-//! identity (M8.5, REQ-EV-0289). Canonical owner: the protocol crate —
+//! identity (M8.5; requirement ledger: typed guest RPC 0289, owned by the
+//! sandbox-cloud subsystem in crates/sandbox). Canonical owner: the protocol crate —
 //! the guest binary, the host-side client and the substrate tooling share
 //! these types from here; no second definition is permitted.
 //!
@@ -25,7 +26,8 @@ use sha2::Sha256;
 pub const GUEST_PROTOCOL_MAJOR: u32 = 1;
 pub const GUEST_PROTOCOL_MINOR: u32 = 0;
 
-/// Typed guest RPC version (REQ-EV-0289: versioned guest RPC). Unknown
+/// Typed guest RPC version (ledger 0289: versioned guest RPC, owned by
+/// the sandbox-cloud subsystem). Unknown
 /// versions are rejected before any other check.
 pub const GUEST_RPC_VERSION: u32 = 1;
 
@@ -204,7 +206,7 @@ impl GuestOp {
     }
 }
 
-/// A typed guest RPC (REQ-EV-0289): versioned, and carrying task,
+/// A typed guest RPC (ledger 0289): versioned, and carrying task,
 /// capability and generation identity on EVERY request.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestRequest {

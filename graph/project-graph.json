@@ -3180,10 +3180,12 @@
    "milestone": "M8",
    "order": 6,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "log:docs/evidence/phase8-7-checkpoint-attach-2026-09-13.log",
+    "commit:8ef198c"
    ],
    "notes": [
     {
@@ -3191,9 +3193,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T09:43:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "checkpoint handoff bundle contract real: crates/git gains export/import of SELF-CONTAINED git bundles (modbit-namespace refs only); crates/checkpoint::cloud_attach adds CheckpointHandoffBundle (env bundle + SnapshotHandle + bundle bytes + digest) with export_checkpoint_bundle (local dirty state -> transferable bundle; branch/worktree/index untouched) and attach_checkpoint_bundle (cloud side: env validation, digest verification BEFORE git, task provenance binding refusing cross-task attach, restore, EXACT reconstruction proven by tree digest). Proven on real repos incl. untracked-file survival + corruption/task-confusion refusals. REMAINING: routing the bundle through cloud-api/worker surface (transport-agnostic contract is this module's; relay is a surface-RPC slice)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-13T09:43:24Z"
   },
   {
    "id": "M8.8",
@@ -31048,5 +31056,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-13T07:21:47Z"
+ "updated_on": "2026-09-13T09:43:24Z"
 }
