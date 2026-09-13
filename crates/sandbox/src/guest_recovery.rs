@@ -72,6 +72,11 @@ pub fn is_guest_lost(err: &GuestClientError) -> bool {
                 || e.contains("unexpected end")
                 || e.contains("temporarily unavailable")
                 || e.contains("timed out")
+                // Windows socket phrasing (WSAETIMEDOUT/WSAECONNABORTED):
+                || e.contains("did not properly respond")
+                || e.contains("connection attempt failed")
+                || e.contains("connection aborted")
+                || e.contains("software caused connection abort")
         }
         _ => false,
     }
@@ -179,6 +184,12 @@ mod tests {
         )));
         assert!(is_guest_lost(&GuestClientError::Transport(
             "broken pipe".into()
+        )));
+        assert!(is_guest_lost(&GuestClientError::Transport(
+            "transport io: A connection attempt failed because the connected party did not properly respond after a period of time".into()
+        )));
+        assert!(is_guest_lost(&GuestClientError::Transport(
+            "transport io: A connection attempt failed because the connected party did not properly respond after a period of time or established connection failed because connected host has failed to respond".into()
         )));
         assert!(!is_guest_lost(&GuestClientError::Guest(
             modbit_protocol::guest::GuestError::new("fenced", "stale generation")
