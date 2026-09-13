@@ -3,7 +3,7 @@
  "product": "Modbit",
  "edition": "V3.1",
  "authority_date": "2026-09-03",
- "generated_on": "2026-09-12",
+ "generated_on": "2026-09-13",
  "generator": "tools/build_graph.py",
  "status_vocabulary": [
   "NOT_STARTED",
@@ -3074,10 +3074,14 @@
    "milestone": "M8",
    "order": 3,
    "source": "docs/43",
-   "status": "NOT_STARTED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "commit:5d3ddf6",
+    "run:local/cargo-test-workspace-2026-09-13/574-pass",
+    "log:docs/evidence/phase8-4-guest-rpc-2026-09-13.log",
+    "scenario:E2E-017"
    ],
    "notes": [
     {
@@ -3085,9 +3089,15 @@
      "from": "COMPLETE",
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T06:20:22Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "signed/versioned guest proven: HMAC-signed manifest (dev signing, same verify interface as production key service) verified fail-closed in E2E before any request; build_hash pins the running executable; protocol major negotiated"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-13T06:22:54Z"
   },
   {
    "id": "M8.5",
@@ -3097,10 +3107,14 @@
    "milestone": "M8",
    "order": 4,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "commit:5d3ddf6",
+    "run:local/cargo-test-workspace-2026-09-13/574-pass",
+    "log:docs/evidence/phase8-4-guest-rpc-2026-09-13.log",
+    "scenario:E2E-017"
    ],
    "notes": [
     {
@@ -3108,9 +3122,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T06:20:22Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "typed guest RPC proven through the REAL modbit-guest binary over the authenticated TCP transport: services/modbit-guest/tests/guest_e2e.rs (identity, negatives, effects, fencing, reconnect); sandbox gate unit suite; rc_catalog E2E-017 mapping"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-13T06:22:54Z"
   },
   {
    "id": "M8.6",
@@ -15351,10 +15371,15 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0286",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "commit:5d3ddf6",
+    "test:apps/sandbox-gateway/tests/gateway_e2e.rs",
+    "log:docs/evidence/phase8-4-guest-rpc-2026-09-13.log",
+    "scenario:E2E-017",
+    "scenario:E2E-024"
    ],
    "notes": [
     {
@@ -15362,9 +15387,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T06:20:23Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "tenant-bound gateway denial/audit proven by gateway_e2e (with worker + cloud-api slices); guest side now serves only its boot-bound task"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-13T06:22:54Z"
   },
   {
    "id": "IMP-EV-0287",
@@ -15377,10 +15408,15 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0287",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "commit:5d3ddf6",
+    "test:apps/sandbox-gateway/tests/gateway_e2e.rs",
+    "log:docs/evidence/phase8-4-guest-rpc-2026-09-13.log",
+    "scenario:E2E-017",
+    "scenario:E2E-024"
    ],
    "notes": [
     {
@@ -15388,9 +15424,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T06:20:23Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "deny-by-default proven on both sides: gateway cross-tenant refusal + guest fs/network policy starting CLOSED with explicit grants only (guest_e2e effects+policy)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-13T06:22:54Z"
   },
   {
    "id": "IMP-EV-0288",
@@ -15429,10 +15471,14 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0289",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "commit:5d3ddf6",
+    "test:services/modbit-guest/tests/guest_e2e.rs",
+    "log:docs/evidence/phase8-4-guest-rpc-2026-09-13.log",
+    "scenario:E2E-017"
    ],
    "notes": [
     {
@@ -15440,9 +15486,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T06:20:22Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "versioned typed RPC with task/effect/capability identity on every request; unknown version/token/class rejected on the live binary (QUAL-EV-0289)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-13T06:22:54Z"
   },
   {
    "id": "IMP-EV-0290",
@@ -15455,10 +15507,14 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0290",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "commit:5d3ddf6",
+    "test:services/modbit-guest/tests/guest_e2e.rs",
+    "log:docs/evidence/phase8-4-guest-rpc-2026-09-13.log",
+    "scenario:E2E-017"
    ],
    "notes": [
     {
@@ -15466,9 +15522,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T06:20:23Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "deny-by-default fs roots with canonicalized traversal/symlink escape refusal proven on the live guest (QUAL-EV-0290)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-13T06:22:54Z"
   },
   {
    "id": "IMP-EV-0291",
@@ -15481,10 +15543,14 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0291",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "commit:5d3ddf6",
+    "test:services/modbit-guest/tests/guest_e2e.rs",
+    "log:docs/evidence/phase8-4-guest-rpc-2026-09-13.log",
+    "scenario:E2E-017"
    ],
    "notes": [
     {
@@ -15492,9 +15558,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T06:20:23Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "conformance_suite passes against BOTH LocalBackend and the live GuestBackend (guest-tcp) — substrate details behind the boundary (QUAL-EV-0291)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-13T06:22:54Z"
   },
   {
    "id": "QUAL-EV-0001",
@@ -30950,5 +31022,6 @@
    "to": "eval-bench",
    "type": "constrains"
   }
- ]
+ ],
+ "updated_on": "2026-09-13T06:22:54Z"
 }

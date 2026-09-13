@@ -1,7 +1,7 @@
 # Modbit Dossier Manifest — V3.1
 
 > **Authority date:** 2026-09-03  
-> **Generated:** 2026-09-12 by `tools/build_manifest.py`  
+> **Generated:** 2026-09-13 by `tools/build_manifest.py`  
 > **Scope:** every specification file in `docs/` plus the root governing files and tooling. The previous `99_MANIFEST.md` covered only 39 Part 2 files; this manifest covers all 70 docs.
 > **Machine-readable twin:** `manifest.json` (same content, same hashes).
 
@@ -105,7 +105,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `README.md` | human orientation | 9560 | `ac910d1bcf8cd4a3295b6d3d254f243f5bb1a78faf842c5f6936ad2770dff9f1` |
 | `AGENTS.md` | build-agent operating contract (highest authority) | 7157 | `ab1346ff055c8e379a1259836f0ac8b546ea4df9773e2c19434a2fa5b88633b4` |
 | `SKILLS.md` | governed procedures for agents | 15088 | `52554d1677c8246babe8924aec3ed66c95733a1ced3b44f87588befdff404cfb` |
-| `graph/project-graph.json` | project driver graph with live status | 864138 | `2c8802df42a5206372c7af06a2c86479e3cc8f61aac243c89ed690f1888facd3` |
+| `graph/project-graph.json` | project driver graph with live status | 866700 | `b13a56d15333c3b2b099b4b7dfbe34b0b8a943949d24c5d75a7fcc3de71af186` |
 | `graph/PROJECT_GRAPH.md` | human view of the graph | 22574 | `c6f5c2353cd4958cc7f971843f5b430ab7aed93f5227932bb670c3f9c9d38254` |
 | `tools/build_manifest.py` | regenerates this manifest | 17343 | `86c8883057f68d6218f536abce15fe9ca951d4c2203e494f39bd692ed01e2f9a` |
 | `tools/build_graph.py` | regenerates graph structure from docs | 28361 | `4ba6eeb3903b6be3adcc7be5e53377128101ac96a3b626d9f59130785146e90e` |
@@ -187,7 +187,7 @@ A dossier package is valid only if every path below exists with the listed SHA-2
 | `tools/coverage-guard.py` |  | 13187 | `05bf43a96ca03c9f537ebb6045497443e499a4aa4f3b52aaf85eb967ee00d68f` |
 | `tools/evidence.py` |  | 4366 | `58d7bb6c1c679208e9abb4cdb9c1346b321b108ae4aa175fc752f73f118e7c47` |
 | `tools/examples_runner.py` |  | 3505 | `3e34e656ad9b0c85e8ba92f64d19257a3e518d33d268be96abe1171fd7e752f4` |
-| `tools/rc_catalog.py` |  | 5627 | `72fd4c201f69729a90a5c77b9f64e0909b94c0f4e4ade4f0850e52a875df604e` |
+| `tools/rc_catalog.py` |  | 5845 | `5d7226e13f8846fe60167d356f7700690fc0e78240bfed7deb230368bea0174b` |
 | `tools/release/operator-signing.md` |  | 1770 | `0c433db5861d0184cbb4c1d9fc5eacb922e47254a1fb8bdd7f78edaa0cee6509` |
 
 ## Rename map (V3 flat numbering → V3.1 `docs/`)

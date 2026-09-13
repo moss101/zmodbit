@@ -51,8 +51,8 @@ Current facts:
 |---|---|
 | Crates in the `modbit-core-runtime` dependency closure | 18 of 26 (`checkpoint`, `compaction`, `context`, `core-runtime`, `diagnostics`, `domain`, `event-store`, `git`, `policy`, `prompt-compiler`, `protocol`, `protocol-state`, `providers`, `retrieval`, `terminal`, `tools`, `verification`, `workspace`) |
 | Empty canonical crates | `memory` (ADR-gated; observability POPULATED in Phase 5: cost + OTLP export) |
-| Stub binaries (`fn main() {}`) | `services/modbit-guest` (Phase 8 residual: guest RPC over vsock) |
-| Rust / TS tests | 552 / 53 |
+| Stub binaries (`fn main() {}`) | none (Phase 8 item 1 closed: `services/modbit-guest` is the real guest RPC agent, commit `5d3ddf6`) |
+| Rust / TS tests | 574 / 53 |
 | Desktop screens | 2 (fleet, task workspace) |
 | Surface RPCs | 30 requests in the `surface.proto` oneof (Phase 7 added GetDiffHunks/ResolveReviewHunk/SpawnAgent/ParkAgent/ResumeAgent/AgentResult/RunVariants/CreateAutomation/ListAutomations) |
 | Nightly live workflow | `.github/workflows/nightly-live.yml` active (cron 03:43Z; five-night gate 2026-09-06..10 green, see section 1) |
@@ -133,7 +133,7 @@ No residuals remain for Phase 7.
 
 Gate status: the deterministic Release Zero proof passes (see section 1, Phase 9 row); the live-gateway step is operator-gated.
 
-1. Guest RPC over vsock/TCP; signed/versioned `modbit-guest` with typed process/fs/PTY RPC (M8.4, M8.5).
+1. CLOSED in this pass: guest RPC over TCP + signed/versioned `modbit-guest` with typed process/fs/PTY RPC (M8.4, M8.5). `services/modbit-guest` is a real agent binary (stub removed): wire types in `modbit_protocol::guest` (signed versioned manifest — HMAC dev signing through the production verify interface, typed requests carrying task/capability/generation identity), gate + executor in `modbit_sandbox::guest`, verified host client + `GuestBackend` ExecutionBackend in `modbit_sandbox::guest_client`. Proven by the 6-test real-process E2E (`services/modbit-guest/tests/guest_e2e.rs`, commit `5d3ddf6`): manifest verification fail-closed (wrong key/tamper/incompatible major), raw-wire negatives (wrong task, forged token, class/op mismatch, stale generation, undecodable frame), real proc/fs/PTY effects under deny-by-default canonicalized policy, timeout kill, generation fencing that kills in-flight work, idempotent replay, no secret material in child env, reconnect preserving state, and `conformance_suite` passing against the LIVE guest backend. The vsock PRODUCTION transport stays with item 2 (substrate adapter); the RPC contract is transport-independent.
 2. Substrate adapter on Firecracker or Cloud Hypervisor + conformance suite on a real guest (M8.3 residue; INFRASTRUCTURE-GATED).
 3. Credential broker + egress policy in the guest (M8.6).
 4. Local→cloud checkpoint handoff (M8.7; the git snapshot path exists — cloud attach remains).

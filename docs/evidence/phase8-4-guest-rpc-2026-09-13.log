@@ -1,0 +1,73 @@
+Phase 8 item 1 (M8.4/M8.5 — signed/versioned modbit-guest + typed guest process/fs/PTY RPC, docs/24 § substrate) — E2E proof
+Date: 2026-09-13
+Commit: 5d3ddf6254c3933c81a8b2ab062f0834d76f36eb
+
+== cargo test -p modbit-guest (real-process E2E: the actual guest binary over authenticated TCP) ==
+     Running unittests src/main.rs (target/debug/deps/modbit_guest-1955cbd093c52bf0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/guest_e2e.rs (target/debug/deps/guest_e2e-b1a733f264b91f83)
+
+running 6 tests
+test e2e_generation_fencing_kills_in_flight has been running for over 60 seconds
+test e2e_identity_verification_and_fail_closed has been running for over 60 seconds
+test e2e_no_secret_material_in_guest_child_env has been running for over 60 seconds
+test e2e_raw_wire_negatives has been running for over 60 seconds
+test e2e_real_effects_and_policy has been running for over 60 seconds
+test e2e_reconnect_preserves_state has been running for over 60 seconds
+test e2e_identity_verification_and_fail_closed ... ok
+test e2e_reconnect_preserves_state ... ok
+test e2e_raw_wire_negatives ... ok
+test e2e_no_secret_material_in_guest_child_env ... ok
+test e2e_real_effects_and_policy ... ok
+test e2e_generation_fencing_kills_in_flight ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 76.41s
+
+
+== cargo test -p modbit-sandbox (gate/executor unit suite: gate ladder, fs policy, timeout, replay, fencing, revocation) ==
+     Running unittests src/lib.rs (target/debug/deps/modbit_sandbox-525e74b8f3dc762b)
+
+running 15 tests
+test tests::browser_worker_crash_contained ... ok
+test tests::renderer_view_cannot_regress_canonical_state ... ok
+test tests::privileged_execution_requires_capability_token ... ok
+test tests::guest_rpc_rejects_unknown_version_and_stale_tokens ... ok
+test guest::tests::revoked_token_fails_closed ... ok
+test tests::reverse_connect_registers_and_revokes ... ok
+test tests::negotiation_rejects_missing_required_protocols ... ok
+test tests::cross_tenant_sandbox_use_denied_and_audited ... ok
+test guest::tests::gate_refuses_every_violation ... ok
+test tests::checkpoint_handoff_digest_stable ... ok
+test tests::guest_denied_by_default ... ok
+test guest::tests::fs_ops_enforce_policy ... ok
+test tests::conformance_suite_passes_on_local_and_cloud ... ok
+test guest::tests::proc_exec_timeout_and_idempotent_replay ... ok
+test guest::tests::generation_advance_fences_in_flight_proc ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+   Doc-tests modbit_sandbox
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+== cargo test -p modbit-protocol --lib guest (manifest signing fail-closed + wire round trip) ==
+     Running unittests src/lib.rs (target/debug/deps/modbit_protocol-c396404cc7142a6e)
+
+running 3 tests
+test guest::tests::manifest_rejects_incompatible_major ... ok
+test guest::tests::manifest_signature_verifies_and_fails_closed ... ok
+test guest::tests::guest_request_response_round_trip ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+== tools/rc_catalog.py (E2E-017 mapping incl. guest_e2e; dead mappings fail) ==
+| E2E-017 | Cloud isolated task | `gateway_e2e::gateway_relays_real_core_work_and_enforces_tenant_isolation`, `guest_e2e::e2e_real_effects_and_policy`, `guest_e2e::e2e_no_secret_material_in_guest_child_env` |
+| E2E-024 | Cross-tenant cloud isolation | `gateway_e2e::gateway_relays_real_core_work_and_enforces_tenant_isolation` |
