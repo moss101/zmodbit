@@ -69,6 +69,28 @@ fn spawn(path: std::path::PathBuf, envs: &[(&str, &str)], piped_boot: bool) -> (
     (Proc(child), boot)
 }
 
+/// Waits (bounded) until the tenant worker has leased and the fleet
+/// relay succeeds — worker registration is async on a fresh OS process;
+/// fixed sleeps race on slow runners.
+fn wait_for_worker(api_addr: &str, token: &str) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+    loop {
+        let (head, body) = read_http(api_addr, &format!("/fleet?token={token}"));
+        if head.contains("200") {
+            if let Ok(fleet) = serde_json::from_str::<serde_json::Value>(&body) {
+                if fleet["ok"] == true {
+                    return;
+                }
+            }
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "worker never leased: {head} {body}"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+}
+
 fn read_http(addr: &str, target: &str) -> (String, String) {
     let mut stream = std::net::TcpStream::connect(addr).expect("connect");
     stream
@@ -197,12 +219,9 @@ fn cloud_api_oidc_pkce_login_and_tenant_scoped_control() {
     assert_eq!(token.split('.').count(), 3, "compact JWT shape");
 
     // 5. An authenticated /fleet call relays through the gateway to the
-    // tenant-1 worker and reaches the REAL Core.
-    std::thread::sleep(std::time::Duration::from_millis(400));
-    let (head, body) = read_http(&api_addr, &format!("/fleet?token={token}"));
-    assert!(head.contains("200"), "{head} {body}");
-    let fleet: serde_json::Value = serde_json::from_str(&body).expect("fleet json");
-    assert_eq!(fleet["ok"], true, "{body}");
+    // tenant-1 worker and reaches the REAL Core (wait out the async
+    // worker lease instead of racing a fixed sleep).
+    wait_for_worker(&api_addr, token);
 
     // 6. A tampered session token is rejected (signature check).
     let forged = format!("{}.forged.sig", token.split('.').next().unwrap());
@@ -373,6 +392,7 @@ fn cloud_browser_relay_view_lease_and_tenant_isolation() {
     };
     let token1 = login(&api1, &iss1_addr);
     let _token2 = login(&api2, &iss2_addr);
+    wait_for_worker(&api1, &token1);
 
     // 4. Tenant-1 live view through the cloud plane: the worker's
     // BrowserHost launches REAL headless Chromium on demand and returns
