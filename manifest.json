@@ -701,8 +701,8 @@
     },
     {
       "path": "graph/project-graph.json",
-      "bytes": 871048,
-      "sha256": "3e0d30f8bb8331749384ddcf3646f3a726e1dbcb3a999ccd803499efacfc7898"
+      "bytes": 871832,
+      "sha256": "a205f641f4babd18af3b26e945c5103a882069a975f255147de96d87d000f139"
     },
     {
       "path": "graph/PROJECT_GRAPH.md",
@@ -1111,8 +1111,8 @@
     },
     {
       "path": "tools/rc_catalog.py",
-      "bytes": 5845,
-      "sha256": "5d7226e13f8846fe60167d356f7700690fc0e78240bfed7deb230368bea0174b"
+      "bytes": 5889,
+      "sha256": "f20ec610aa5bc5f83dc3f7350ff77262abe43eefde134cc48a5655be3cf2b3b7"
     },
     {
       "path": "tools/release/operator-signing.md",

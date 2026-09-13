@@ -142,6 +142,8 @@ Gate status: the deterministic Release Zero proof passes (see section 1, Phase 9
 
 Exit: M8 `E2E_PROVEN` on a real guest with tenant-isolation and loss/recovery tests green in CI or a documented operator-run conformance.
 
+CLOSED in this pass: M8.9 sandbox-loss recovery (E2E-018 → `crates/sandbox::guest_recovery` + `services/modbit-guest` E2E) — typed loss classification (dropped connection or expired bounded wait = outcome UNKNOWN; typed guest refusals are known), fs.write reconciliation by read-back against the fresh sandbox (AlreadyApplied never re-executed / absent re-executed exactly once + verified / divergent Unresolved → checkpoint restore), proc.exec refused by design (duplicate external effect).
+
 ### Phase 9 residuals: release hardening (M10)
 
 CLOSED in this pass: M10.1 (durable run-cost telemetry + GetRunCost — every completed run lands its measured ledger as a durable event, proven by the always-on scripted E2E), M10.3 (RC E2E catalog: all 25 docs/51 scenarios mapped to verified live proofs, `tools/rc_catalog.py` fails on dead mappings), M10.4 (performance regression gates: append throughput, snapshot p95, write-scope admission — always-on), M10.7 (canonical tool/capability conformance harness — exact inventory membership, fail-closed pool conditionality, schema projections).

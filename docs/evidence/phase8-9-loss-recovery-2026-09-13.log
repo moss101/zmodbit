@@ -1,0 +1,33 @@
+Phase 8 M8.9 (sandbox-loss recovery, E2E-018) — loss detection + reconciliation proof
+Date: 2026-09-13
+
+REAL PROCESSES: the guest agent is HARD-KILLED mid-operation (the
+substrate loss event). The blocked in-flight caller gets a classified
+loss (outcome UNKNOWN — dropped connection or expired bounded wait;
+typed guest refusals are known outcomes, never 'lost'). A FRESH guest
+(same checkpoint-restored root, fresh identity) reconciles a lost
+fs.write by READ-BACK: already-applied → NOT re-executed; absent →
+re-executed exactly once and verified; divergent bytes → Unresolved
+(checkpoint restore required). proc.exec is never reconciled (a re-run
+is a duplicate external effect) — typed refusal steers to restore.
+
+== cargo test -p modbit-sandbox --lib guest_recovery (classification + proc-not-reconcilable) ==
+running 2 tests
+test guest_recovery::tests::proc_exec_not_reconcilable ... ok
+test guest_recovery::tests::loss_classification ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+== cargo test -p modbit-guest --test guest_e2e (adds e2e_sandbox_loss_recovery) ==
+running 8 tests
+test e2e_reconnect_preserves_state ... ok
+test e2e_identity_verification_and_fail_closed ... ok
+test e2e_raw_wire_negatives ... ok
+test e2e_no_secret_material_in_guest_child_env ... ok
+test e2e_credential_lease_materializes_scoped_into_guest_proc ... ok
+test e2e_real_effects_and_policy ... ok
+test e2e_generation_fencing_kills_in_flight ... ok
+test e2e_sandbox_loss_recovery ... ok
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 31.12s
+
+== rc_catalog (E2E-018 mapping gains the guest loss-recovery proof) ==
+| E2E-018 | Sandbox loss recovery | `gateway_e2e`, `guest_e2e::e2e_sandbox_loss_recovery` |

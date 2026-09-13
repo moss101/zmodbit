@@ -3243,10 +3243,13 @@
    "milestone": "M8",
    "order": 8,
    "source": "docs/43",
-   "status": "NOT_STARTED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "log:docs/evidence/phase8-9-loss-recovery-2026-09-13.log",
+    "scenario:E2E-018",
+    "commit:f8ae31d"
    ],
    "notes": [
     {
@@ -3254,9 +3257,15 @@
      "from": "COMPLETE",
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T17:33:59Z",
+     "from": "NOT_STARTED",
+     "to": "E2E_PROVEN",
+     "note": "sandbox-loss recovery proven over REAL processes: guest agent hard-killed with an op in flight — the blocked caller gets a typed loss classification (dropped connection OR expired bounded wait = outcome unknown; typed refusals are known outcomes), a FRESH guest (same restored root) reconciles a lost fs.write by read-back (already-applied NOT re-executed; absent re-executed exactly once + verified; divergent Unresolved → checkpoint restore), proc.exec is never reconciled by design. rc_catalog E2E-018 mapping gains guest_e2e::e2e_sandbox_loss_recovery"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-13T17:33:59Z"
   },
   {
    "id": "M9.1",
@@ -31065,5 +31074,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-13T10:31:03Z"
+ "updated_on": "2026-09-13T17:33:59Z"
 }

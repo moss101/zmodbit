@@ -10,6 +10,7 @@
 
 pub mod guest;
 pub mod guest_client;
+pub mod guest_recovery;
 pub mod substrate;
 
 use serde::{Deserialize, Serialize};

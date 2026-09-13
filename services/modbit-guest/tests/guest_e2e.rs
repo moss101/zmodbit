@@ -55,6 +55,14 @@ struct Guest {
     pub build_hash: String,
 }
 
+impl Guest {
+    /// Hard-kills the guest process (the substrate loss event).
+    pub fn terminate(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+    }
+}
+
 impl Drop for Guest {
     fn drop(&mut self) {
         let _ = self.child.kill();
@@ -783,4 +791,138 @@ fn hex_to_bytes(s: &str) -> Vec<u8> {
         .step_by(2)
         .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
         .collect()
+}
+
+/// M8.9 / E2E-018 sandbox-loss recovery over REAL processes: an in-flight
+/// op reports a typed GUEST LOSS when the guest process is killed; a lost
+/// fs.write is reconciled against a FRESH guest (same checkpoint-restored
+/// root) by read-back — already-applied effects are NOT re-executed,
+/// absent effects are re-executed exactly once, divergent state is left
+/// unresolved for the checkpoint-restore path.
+#[test]
+fn e2e_sandbox_loss_recovery() {
+    use modbit_sandbox::guest_recovery::{is_guest_lost, reconcile_fs_write, LostOutcome};
+
+    let root = tempdir("loss");
+    let (mut guest1, provision_key_hex, _) = boot_with_secret("loss1", &root);
+    let key1 = hex_to_bytes(&provision_key_hex);
+    let mut client1 = connect(&guest1, &key1);
+
+    // Checkpoint state: the task's durable workspace marker.
+    client1
+        .call(
+            "tok-live",
+            0,
+            GuestOp::FsWrite {
+                path: root.join("checkpoint.txt").to_string_lossy().to_string(),
+                bytes_base64: base64::engine::general_purpose::STANDARD.encode(b"checkpoint-9"),
+            },
+        )
+        .expect("checkpoint write");
+
+    // CASE A (setup) — the write whose fate we will reconcile LANDS
+    // while guest1 lives (response read = effect certain).
+    let nonce_a = format!("landed-{}", uuid::Uuid::now_v7().simple());
+    let payload_a = base64::engine::general_purpose::STANDARD.encode(nonce_a.as_bytes());
+    let path_a = root.join("reconcile-a.txt").to_string_lossy().to_string();
+    client1
+        .call(
+            "tok-live",
+            0,
+            GuestOp::FsWrite {
+                path: path_a.clone(),
+                bytes_base64: payload_a.clone(),
+            },
+        )
+        .expect("case A write landed while guest1 lived");
+
+    // LOSS DETECTION on an in-flight op: kill the guest while a long
+    // process runs — the blocked caller gets a transport loss, never a
+    // fabricated answer.
+    let mut client_inflight = connect(&guest1, &key1);
+    let lost_call = client_inflight.call(
+        "tok-live",
+        0,
+        GuestOp::ProcExec {
+            argv: sleep_argv(60),
+            cwd: None,
+            env: Default::default(),
+            timeout_ms: None,
+        },
+    );
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    guest1.terminate();
+    let err: GuestClientError = match lost_call {
+        Err(e) => e,
+        Ok(_) => panic!("in-flight op must fail after guest loss, not succeed"),
+    };
+    assert!(
+        is_guest_lost(&err),
+        "in-flight op must classify as guest loss, got {err:?}"
+    );
+
+    // FRESH SANDBOX: the substrate restores the checkpoint into a new
+    // guest process (same restored root, fresh identity + boot secret).
+    let (guest2, provision_key_hex2, _) = boot_with_secret("loss2", &root);
+    let key2 = hex_to_bytes(&provision_key_hex2);
+    let mut fresh = connect(&guest2, &key2);
+    // The checkpoint marker is present in the restored workspace.
+    fresh
+        .call(
+            "tok-live",
+            0,
+            GuestOp::FsRead {
+                path: root.join("checkpoint.txt").to_string_lossy().to_string(),
+            },
+        )
+        .expect("checkpoint restored");
+
+    // CASE A — the lost write HAD landed: read-back finds the exact bytes
+    // and NOTHING is re-executed.
+    let outcome = reconcile_fs_write(&mut fresh, "tok-live", 0, &path_a, &payload_a)
+        .expect("case A reconcile");
+    assert_eq!(outcome, LostOutcome::AlreadyApplied);
+
+    // CASE B — the lost write NEVER landed (absent from the restored
+    // root): re-executed exactly once and verified present.
+    let nonce_b = format!("absent-{}", uuid::Uuid::now_v7().simple());
+    let payload_b = base64::engine::general_purpose::STANDARD.encode(nonce_b.as_bytes());
+    let path_b = root.join("reconcile-b.txt").to_string_lossy().to_string();
+    let outcome = reconcile_fs_write(&mut fresh, "tok-live", 0, &path_b, &payload_b)
+        .expect("case B reconcile");
+    assert_eq!(outcome, LostOutcome::Reexecuted);
+    // The effect is real on the fresh sandbox.
+    match fresh
+        .call(
+            "tok-live",
+            0,
+            GuestOp::FsRead {
+                path: path_b.clone(),
+            },
+        )
+        .expect("read back B")
+    {
+        GuestPayload::Data { bytes_base64, .. } => {
+            assert_eq!(
+                base64::engine::general_purpose::STANDARD
+                    .decode(&bytes_base64)
+                    .unwrap(),
+                nonce_b.as_bytes()
+            );
+        }
+        other => panic!("expected data, got {other:?}"),
+    }
+
+    // CASE C — DIVERGENT state: the path holds different bytes; the
+    // reconciler refuses to touch it (checkpoint restore required).
+    let payload_c = base64::engine::general_purpose::STANDARD.encode(b"what-host-thinks");
+    let path_c = root.join("reconcile-a.txt").to_string_lossy().to_string();
+    let outcome = reconcile_fs_write(&mut fresh, "tok-live", 0, &path_c, &payload_c)
+        .expect("case C reconcile");
+    match outcome {
+        LostOutcome::Unresolved(reason) => assert!(reason.contains("different bytes")),
+        other => panic!("expected Unresolved, got {other:?}"),
+    }
+
+    let _ = std::fs::remove_dir_all(&root);
 }
