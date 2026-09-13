@@ -66,6 +66,12 @@ pub type ToolPair = (String, String, Option<Vec<u8>>);
 
 pub struct RuntimeStore {
     conn: Mutex<Connection>,
+    /// Optional object-store backend (Phase 8 item 6): when attached,
+    /// large payloads live in the namespaced object store (SQLite rows
+    /// keep only preview + metadata; legacy rows without a backend object
+    /// still read from their inline payload). Default `None` = today's
+    /// all-SQLite behavior, byte-for-byte.
+    object_backend: Option<std::sync::Arc<dyn crate::object_store::ObjectStore>>,
 }
 
 #[derive(Debug)]
@@ -113,6 +119,35 @@ impl RuntimeStore {
         }
         Ok(Self {
             conn: Mutex::new(conn),
+            object_backend: None,
+        })
+    }
+
+    /// Attaches an object-store backend (local FS, S3-compatible, ...).
+    /// Payload bytes of NEW output refs go to the backend (digest-verified
+    /// on read); SQLite keeps preview + metadata. The choice is a
+    /// deployment property fixed at open time.
+    pub fn with_object_store(
+        mut self,
+        backend: std::sync::Arc<dyn crate::object_store::ObjectStore>,
+    ) -> Self {
+        self.object_backend = Some(backend);
+        self
+    }
+
+    fn backend(&self) -> Option<&std::sync::Arc<dyn crate::object_store::ObjectStore>> {
+        self.object_backend.as_ref()
+    }
+
+    fn object_key_for(
+        &self,
+        output_ref_id: &str,
+    ) -> Result<crate::object_store::ObjectKey, RuntimeError> {
+        crate::object_store::ObjectKey::new("_runtime", "output-refs", output_ref_id).map_err(|e| {
+            RuntimeError::Io(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                e.to_string(),
+            ))
         })
     }
 
@@ -133,6 +168,19 @@ impl RuntimeStore {
                 .chars()
                 .take(PREVIEW_BYTES)
                 .collect();
+        // With an object backend attached, bytes live in the object
+        // store (content-addressed by digest) and the row keeps preview +
+        // metadata only.
+        let stored_bytes: Vec<u8> = match self.backend() {
+            Some(backend) => {
+                let key = self.object_key_for(output_ref_id)?;
+                backend
+                    .put(&key, content_type, payload, None)
+                    .map_err(|e| RuntimeError::Io(std::io::Error::other(e.to_string())))?;
+                Vec::new()
+            }
+            None => payload.to_vec(),
+        };
         let conn = self.conn.lock().expect("runtime store mutex poisoned");
         conn.execute(
             "INSERT OR REPLACE INTO output_refs (output_ref_id, object_hash, content_type, byte_length,
@@ -145,7 +193,7 @@ impl RuntimeStore {
                 payload.len() as i64,
                 object_hash,
                 preview_text,
-                payload,
+                stored_bytes,
             ],
         )
         .map_err(RuntimeError::Sqlite)?;
@@ -168,6 +216,16 @@ impl RuntimeStore {
         offset: u64,
         max: u64,
     ) -> Result<(Vec<u8>, u64), RuntimeError> {
+        let (payload, total) = self.load_output_payload(output_ref_id)?;
+        let start = (offset as usize).min(payload.len());
+        let end = (offset.saturating_add(max) as usize).min(payload.len());
+        Ok((payload[start..end].to_vec(), total))
+    }
+
+    /// Loads the full payload behind a reference: object backend first
+    /// (digest-verified), legacy inline row bytes as fallback; fails if
+    /// neither has the bytes.
+    fn load_output_payload(&self, output_ref_id: &str) -> Result<(Vec<u8>, u64), RuntimeError> {
         let conn = self.conn.lock().expect("runtime store mutex poisoned");
         let row = conn
             .query_row(
@@ -178,24 +236,31 @@ impl RuntimeStore {
             .optional()
             .map_err(RuntimeError::Sqlite)?
             .ok_or_else(|| RuntimeError::NotFound(output_ref_id.to_string()))?;
-        let (payload, total) = (row.0, row.1.max(0) as u64);
-        let start = (offset as usize).min(payload.len());
-        let end = (offset.saturating_add(max) as usize).min(payload.len());
-        Ok((payload[start..end].to_vec(), total))
+        drop(conn);
+        let total = row.1.max(0) as u64;
+        let inline = row.0;
+        if let Some(backend) = self.backend() {
+            let key = self.object_key_for(output_ref_id)?;
+            match backend.get(&key) {
+                Ok((bytes, _)) => return Ok((bytes, total)),
+                Err(crate::object_store::ObjectStoreError::NotFound(_)) => {
+                    // Legacy row written before the backend was attached.
+                    if !inline.is_empty() {
+                        return Ok((inline, total));
+                    }
+                    return Err(RuntimeError::NotFound(output_ref_id.to_string()));
+                }
+                Err(e) => {
+                    return Err(RuntimeError::Io(std::io::Error::other(e.to_string())));
+                }
+            }
+        }
+        Ok((inline, total))
     }
 
     /// Reads the full output behind a reference.
     pub fn read_output(&self, output_ref_id: &str) -> Result<Vec<u8>, RuntimeError> {
-        let conn = self.conn.lock().expect("runtime store mutex poisoned");
-        let payload: Vec<u8> = conn
-            .query_row(
-                "SELECT payload FROM output_refs WHERE output_ref_id = ?1",
-                [output_ref_id],
-                |r| r.get(0),
-            )
-            .optional()
-            .map_err(RuntimeError::Sqlite)?
-            .ok_or_else(|| RuntimeError::NotFound(output_ref_id.to_string()))?;
+        let (payload, _) = self.load_output_payload(output_ref_id)?;
         Ok(payload)
     }
 
@@ -317,10 +382,8 @@ mod range_tests {
     /// the end return empty with the true total.
     #[test]
     fn output_ranges_clamp_and_report_total() {
-        let dir = std::env::temp_dir().join(format!(
-            "modbit-outrange-{}",
-            uuid::Uuid::now_v7().simple()
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("modbit-outrange-{}", uuid::Uuid::now_v7().simple()));
         std::fs::create_dir_all(&dir).unwrap();
         let store = RuntimeStore::open(&dir.join("runtime.db")).unwrap();
         store
@@ -331,7 +394,10 @@ mod range_tests {
         assert_eq!((head.as_slice(), total), (b"hello".as_slice(), 21));
 
         let (tail, total) = store.read_output_range("ref-1", 6, 1000).unwrap();
-        assert_eq!((tail.as_slice(), total), (b"paginated world".as_slice(), 21));
+        assert_eq!(
+            (tail.as_slice(), total),
+            (b"paginated world".as_slice(), 21)
+        );
 
         let (beyond, total) = store.read_output_range("ref-1", 50, 10).unwrap();
         assert_eq!((beyond.as_slice(), total), (b"".as_slice(), 21));

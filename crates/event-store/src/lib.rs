@@ -14,6 +14,7 @@ pub mod commands;
 pub mod index_store;
 pub mod leases;
 pub mod migrations;
+pub mod object_store;
 pub mod projections;
 pub mod repos;
 pub mod runtime;

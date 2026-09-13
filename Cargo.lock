@@ -1465,6 +1465,7 @@ dependencies = [
 name = "modbit-event-store"
 version = "0.1.0"
 dependencies = [
+ "hmac",
  "modbit-domain",
  "rusqlite",
  "serde",
