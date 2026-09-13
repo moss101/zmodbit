@@ -18,6 +18,7 @@ pub mod object_store;
 pub mod projections;
 pub mod repos;
 pub mod runtime;
+pub mod runtime_pg;
 pub mod settings;
 pub mod store;
 pub mod write_scopes;

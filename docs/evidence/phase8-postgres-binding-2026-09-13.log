@@ -1,0 +1,26 @@
+Phase 8 item 6 (managed Postgres + S3 bindings) — Postgres adapter proof (S3 binding closed earlier this pass)
+Date: 2026-09-13
+
+REAL POSTGRES via docker (postgres:16-alpine, 127.0.0.1:5432):
+crates/event-store::runtime_pg — PgRuntimeStore mirrors the SQLite
+RuntimeStore method-for-method over the runtime surface (output refs
+content-addressed with bounded preview, background operations durable,
+tool call/result pairing durable). Dialect mapping documented in the
+module (?N→$N, INSERT OR REPLACE→ON CONFLICT DO UPDATE, INSERT OR IGNORE
+→ON CONFLICT DO NOTHING, datetime('now')→now(), BLOB→BYTEA). Parity note:
+PG TEXT refuses NUL bytes SQLite tolerated — previews strip NULs on this
+backend (display text only; payloads are BYTEA).
+MANAGED cloud boundary (RDS proper, credentials, TLS) stays operator-gated.
+
+== cargo test -p modbit-event-store --lib runtime_pg (real Postgres contracts) ==
+running 2 tests
+test runtime_pg::tests::pg_output_ref_contract ... ok
+test runtime_pg::tests::pg_background_and_tool_pair_contract ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.04s
+
+== cargo test -p modbit-event-store (full crate incl. object_store contract: sqlite+localfs+MinIO) ==
+11
+none failed
+
+== architecture lint ==
+architecture-lint: OK (33 members checked, 0 forbidden edges, 28 COMPLETE tasks reachable, 75 misplaced REQ tag(s) allowlisted)
