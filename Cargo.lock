@@ -1604,6 +1604,7 @@ name = "modbit-sandbox"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "libc",
  "modbit-protocol",
  "modbit-terminal",
  "serde",

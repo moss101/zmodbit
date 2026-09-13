@@ -1,0 +1,52 @@
+Phase 8 item 2 (M8.3 — Firecracker substrate adapter, docs/24 § substrate) — controller/transport proof
+Date: 2026-09-13
+Commit: 701ea4c (impl; closure commit follows)
+
+SCOPE NOTE: Firecracker cannot run on this host (macOS/arm64 — no KVM).
+This log proves the production ADAPTER code: VM lifecycle controller, host vsock
+link, bootstrap contract — against a fixture VMM socket and real subprocess
+lifecycle. REAL-GUEST conformance is an environmental proof requirement
+(Linux/KVM host + firecracker + kernel/rootfs artifacts) and stays in
+Future-tasks section 4 as the item-2 residual gate.
+
+== cargo test -p modbit-sandbox (includes substrate suite) ==
+     Running unittests src/lib.rs (target/debug/deps/modbit_sandbox-525e74b8f3dc762b)
+
+running 19 tests
+test tests::guest_rpc_rejects_unknown_version_and_stale_tokens ... ok
+test tests::privileged_execution_requires_capability_token ... ok
+test tests::browser_worker_crash_contained ... ok
+test guest::tests::revoked_token_fails_closed ... ok
+test tests::negotiation_rejects_missing_required_protocols ... ok
+test tests::guest_denied_by_default ... ok
+test tests::cross_tenant_sandbox_use_denied_and_audited ... ok
+test tests::checkpoint_handoff_digest_stable ... ok
+test tests::renderer_view_cannot_regress_canonical_state ... ok
+test substrate::tests::bootstrap_renders_env_without_secrets_in_spec ... ok
+test guest::tests::gate_refuses_every_violation ... ok
+test tests::reverse_connect_registers_and_revokes ... ok
+test substrate::tests::boot_with_missing_vmm_binary_fails_typed ... ok
+test guest::tests::fs_ops_enforce_policy ... ok
+sleep: illegal option -- -
+usage: sleep number[unit] [...]
+Unit can be 's' (seconds, the default), m (minutes), h (hours), or d (days).
+test tests::conformance_suite_passes_on_local_and_cloud ... ok
+test substrate::tests::vsock_link_handshake_and_refusal ... ok
+test substrate::tests::controller_boots_and_reaches_running_against_fixture_vmm ... ok
+test guest::tests::proc_exec_timeout_and_idempotent_replay ... ok
+test guest::tests::generation_advance_fences_in_flight_proc ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+   Doc-tests modbit_sandbox
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+== cargo test -p modbit-guest (guest E2E unchanged over dev transport) ==
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 6 tests
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.99s

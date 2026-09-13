@@ -94,68 +94,118 @@ fn main() {
 
     let executor = std::sync::Arc::new(GuestExecutor::new(&task, tokens, policy));
 
-    let listener = TcpListener::bind(&listen).unwrap_or_else(|e| {
-        eprintln!("modbit-guest: cannot bind {listen}: {e}");
-        std::process::exit(1);
-    });
-    let bound = listener.local_addr().expect("bound addr");
-    println!("guest {bound} {} {build_hash}", env!("CARGO_PKG_VERSION"));
+    let vsock_port: Option<u32> = std::env::var("MODBIT_GUEST_VSOCK_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok());
 
-    for stream in listener.incoming() {
-        let Ok(stream) = stream else { continue };
-        let secret = secret.clone();
-        let frame = frame.clone();
-        let executor = executor.clone();
-        std::thread::spawn(move || {
-            // The guest is the SERVER side of the boot-secret handshake.
-            let mut conn = match Connection::accept_stream(stream, &secret) {
-                Ok(c) => c,
+    // Both transports share ONE connection body (handshake, signed
+    // manifest, request loop) — see serve_connection below.
+    match vsock_port {
+        Some(port) => {
+            // PRODUCTION transport (docs/24 § substrate): AF_VSOCK inside
+            // the guest VM. Requires the Linux guest kernel; the host
+            // reaches this listener through the Firecracker vsock UDS
+            // (crates/sandbox::substrate::connect_guest_vsock).
+            let listener = match modbit_sandbox::substrate::guest_vsock::VsockListener::bind(port) {
+                Ok(l) => l,
                 Err(e) => {
-                    eprintln!("modbit-guest: handshake failed: {e}");
-                    return;
+                    eprintln!("modbit-guest: vsock bind port {port}: {e}");
+                    std::process::exit(1);
                 }
             };
-            // Identity first: the host verifies BEFORE serving anything.
-            let manifest_bytes = match serde_json::to_vec(&frame) {
-                Ok(b) => b,
-                Err(e) => {
-                    eprintln!("modbit-guest: manifest encode: {e}");
-                    return;
-                }
-            };
-            if let Err(e) = conn.send(&manifest_bytes) {
-                eprintln!("modbit-guest: manifest send: {e}");
-                return;
-            }
-            // Request loop: gate + execute; authority never leaves the
-            // frame's typed fields.
+            println!(
+                "guest vsock:{port} {} {build_hash}",
+                env!("CARGO_PKG_VERSION")
+            );
             loop {
-                let bytes = match conn.receive() {
-                    Ok(b) => b,
-                    Err(_) => return, // clean EOF or reset ends this host session
-                };
-                let resp = match serde_json::from_slice::<GuestRequest>(&bytes) {
-                    Ok(req) => executor.execute(&req),
-                    Err(e) => GuestResponse::err(
-                        "",
-                        GuestError::new(
-                            modbit_protocol::guest::guest_error_codes::BAD_REQUEST,
-                            format!("undecodable request: {e}"),
-                        ),
-                    ),
-                };
-                let out = match serde_json::to_vec(&resp) {
-                    Ok(b) => b,
+                let stream = match listener.accept() {
+                    Ok(s) => s,
                     Err(e) => {
-                        eprintln!("modbit-guest: response encode: {e}");
-                        return;
+                        eprintln!("modbit-guest: vsock accept: {e}");
+                        continue;
                     }
                 };
-                if conn.send(&out).is_err() {
-                    return;
-                }
+                let secret = secret.clone();
+                let frame = frame.clone();
+                let executor = executor.clone();
+                std::thread::spawn(move || {
+                    serve_connection(stream, &secret, &frame, &executor);
+                });
             }
-        });
+        }
+        None => {
+            let listener = TcpListener::bind(&listen).unwrap_or_else(|e| {
+                eprintln!("modbit-guest: cannot bind {listen}: {e}");
+                std::process::exit(1);
+            });
+            let bound = listener.local_addr().expect("bound addr");
+            println!("guest {bound} {} {build_hash}", env!("CARGO_PKG_VERSION"));
+
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else { continue };
+                let secret = secret.clone();
+                let frame = frame.clone();
+                let executor = executor.clone();
+                std::thread::spawn(move || {
+                    serve_connection(stream, &secret, &frame, &executor);
+                });
+            }
+        }
+    }
+}
+
+/// One accepted host connection: server-side boot-secret handshake, the
+/// SIGNED manifest (the host verifies before serving anything), then the
+/// gated request loop. Shared by the TCP (dev) and vsock (production)
+/// transports — the RPC contract is transport-independent.
+fn serve_connection<S: std::io::Read + std::io::Write + Send + 'static>(
+    stream: S,
+    secret: &BootSecret,
+    frame: &GuestManifestFrame,
+    executor: &GuestExecutor,
+) {
+    let mut conn = match Connection::accept_stream(stream, secret) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("modbit-guest: handshake failed: {e}");
+            return;
+        }
+    };
+    let manifest_bytes = match serde_json::to_vec(frame) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("modbit-guest: manifest encode: {e}");
+            return;
+        }
+    };
+    if conn.send(&manifest_bytes).is_err() {
+        return;
+    }
+    loop {
+        let bytes = match conn.receive() {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        let resp = match serde_json::from_slice::<GuestRequest>(&bytes) {
+            Ok(req) => executor.execute(&req),
+            Err(e) => GuestResponse::err(
+                "",
+                GuestError::new(
+                    modbit_protocol::guest::guest_error_codes::BAD_REQUEST,
+                    format!("undecodable request: {e}"),
+                ),
+            ),
+        };
+        let out = match serde_json::to_vec(&resp) {
+            Ok(b) => b,
+            Err(e) => {
+                eprintln!("modbit-guest: response encode: {e}");
+                return;
+            }
+        };
+        if conn.send(&out).is_err() {
+            return;
+        }
     }
 }
 

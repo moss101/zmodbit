@@ -3051,10 +3051,12 @@
    "milestone": "M8",
    "order": 2,
    "source": "docs/43",
-   "status": "NOT_STARTED",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "log:docs/evidence/phase8-3-substrate-adapter-2026-09-13.log",
+    "commit:701ea4c"
    ],
    "notes": [
     {
@@ -3062,9 +3064,15 @@
      "from": "COMPLETE",
      "to": "NOT_STARTED",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T07:16:18Z",
+     "from": "NOT_STARTED",
+     "to": "WIRED",
+     "note": "Firecracker substrate adapter code complete: VM lifecycle controller (spawn/config/start/state-poll/shutdown with typed failures), host vsock link (UDS CONNECT handshake), guest bootstrap contract (generic rootfs, tmpfs-only provisioning, secret-free VM spec), Linux AF_VSOCK guest listener, vsock transport option in modbit-guest. Proven against fixture VMM + real subprocess lifecycle; real-guest conformance remains INFRASTRUCTURE-GATED (Linux/KVM host + firecracker + kernel/rootfs artifacts) per Future-tasks §4 item 2 — never claimed here"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-13T07:16:18Z"
   },
   {
    "id": "M8.4",
@@ -31023,5 +31031,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-13T06:22:54Z"
+ "updated_on": "2026-09-13T07:16:18Z"
 }

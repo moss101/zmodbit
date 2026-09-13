@@ -10,6 +10,7 @@
 
 pub mod guest;
 pub mod guest_client;
+pub mod substrate;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
