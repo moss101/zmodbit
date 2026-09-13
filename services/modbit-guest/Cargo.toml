@@ -8,6 +8,15 @@ name = "modbit-guest"
 path = "src/main.rs"
 
 [dependencies]
+modbit-protocol = { path = "../../crates/protocol" }
+modbit-sandbox = { path = "../../crates/sandbox" }
+serde = { workspace = true }
+serde_json = "1"
+sha2 = { workspace = true }
+base64 = "0.22"
+
+[dev-dependencies]
+uuid = { workspace = true }
 
 [lints]
 workspace = true

@@ -1483,6 +1483,15 @@ dependencies = [
 [[package]]
 name = "modbit-guest"
 version = "0.1.0"
+dependencies = [
+ "base64",
+ "modbit-protocol",
+ "modbit-sandbox",
+ "serde",
+ "serde_json",
+ "sha2",
+ "uuid",
+]
 
 [[package]]
 name = "modbit-mcp"
@@ -1543,6 +1552,7 @@ dependencies = [
  "prost-build",
  "prost-types",
  "serde",
+ "serde_json",
  "sha2",
 ]
 
@@ -1593,8 +1603,13 @@ dependencies = [
 name = "modbit-sandbox"
 version = "0.1.0"
 dependencies = [
+ "base64",
+ "modbit-protocol",
+ "modbit-terminal",
  "serde",
+ "serde_json",
  "sha2",
+ "uuid",
 ]
 
 [[package]]

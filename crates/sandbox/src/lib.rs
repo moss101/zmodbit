@@ -8,6 +8,9 @@
 //!
 //! Canonical owner subsystem: sandbox-cloud (docs/81). Layout: docs/12.
 
+pub mod guest;
+pub mod guest_client;
+
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -48,9 +51,11 @@ impl ExecutionBackend for LocalBackend {
     }
 }
 
-/// The cloud MicroVM backend: same contract, remote substrate
-/// (simulated transport here; the real transport lands with the cloud
-/// gateway deployment).
+/// The cloud MicroVM backend: same contract, remote substrate. This
+/// in-process variant is a deterministic fixture for the conformance unit
+/// test ONLY; the REAL remote transport is `guest_client::GuestBackend`
+/// (typed RPC over the authenticated channel to a live `modbit-guest`,
+/// verified in services/modbit-guest tests).
 #[derive(Default, Debug)]
 pub struct CloudMicroVmBackend {
     pub vm_id: String,

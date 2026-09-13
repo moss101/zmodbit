@@ -113,17 +113,19 @@ impl PtyBroker {
         Ok(())
     }
 
-    /// Writes bytes to the session's stdin (shell.input).
+    /// Writes bytes to the session's stdin (shell.input). The writer stays
+    /// with the session — repeated writes are the normal interactive path
+    /// (guest RPC PtyWrite); writes serialize on the session lock.
     pub fn write(&self, id: &str, bytes: &[u8]) -> Result<(), PtyError> {
-        let writer_slot = {
-            let sessions = self.sessions.lock().expect("pty sessions");
-            match sessions.get(id) {
-                Some(session) => session.lock().expect("pty session lock").writer.take(),
-                None => return Err(PtyError { message: format!("no session {id}") }),
-            }
-        };
-        let mut writer = writer_slot
-            .ok_or_else(|| PtyError { message: "session writer already taken".into() })?;
+        let sessions = self.sessions.lock().expect("pty sessions");
+        let session = sessions
+            .get(id)
+            .ok_or_else(|| PtyError { message: format!("no session {id}") })?;
+        let mut session = session.lock().expect("pty session lock");
+        let writer = session
+            .writer
+            .as_mut()
+            .ok_or_else(|| PtyError { message: "session writer closed".into() })?;
         writer
             .write_all(bytes)
             .and_then(|_| writer.flush())

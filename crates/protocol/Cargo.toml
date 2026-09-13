@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 base64 = "0.22"
 serde = { workspace = true }
+serde_json = "1"
 prost = "0.13"
 prost-types = "0.13"
 interprocess = "2.2"
