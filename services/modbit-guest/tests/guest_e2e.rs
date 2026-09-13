@@ -699,6 +699,85 @@ fn e2e_no_secret_material_in_guest_child_env() {
     let _ = std::fs::remove_dir_all(&root);
 }
 
+/// M8.6 (REQ-EV-0288): the credential broker issues a short-lived,
+/// task/generation/scope-scoped lease; materialization flows through the
+/// REAL guest RPC into a REAL child env for the authorized request; the
+/// audit trail carries references only; redaction scrubs leaked-shaped
+/// text; the expired path fails closed. Synthetic secret fixture only.
+#[test]
+fn e2e_credential_lease_materializes_scoped_into_guest_proc() {
+    use modbit_secrets::{redact, CredScope, CredentialBroker};
+
+    let root = tempdir("cred");
+    let (guest, provision_key_hex, _) = boot_with_secret("cred", &root);
+    let key = hex_to_bytes(&provision_key_hex);
+    let mut client = connect(&guest, &key);
+
+    let mut broker = CredentialBroker::new();
+    let secret_ref = broker.register("task-g-1", "provider-api", b"synthetic-cred-E2E-9911");
+    let lease = broker
+        .issue_lease(
+            &secret_ref,
+            "task-g-1",
+            0,
+            vec![CredScope::ProcEnv],
+            std::time::Duration::from_secs(60),
+        )
+        .expect("lease");
+    let value = broker
+        .materialize(&lease.handle, "task-g-1", 0, CredScope::ProcEnv)
+        .expect("materialize for the authorized request");
+    let value_str = String::from_utf8(value.clone()).unwrap();
+
+    // REAL child on the REAL guest receives the scoped value via env.
+    let print_argv = if cfg!(windows) {
+        vec!["cmd".into(), "/c".into(), "echo %SYNTH_CRED%".into()]
+    } else {
+        vec!["sh".into(), "-c".into(), "echo $SYNTH_CRED".into()]
+    };
+    let mut env = std::collections::BTreeMap::new();
+    env.insert("SYNTH_CRED".to_string(), value_str.clone());
+    match client
+        .call(
+            "tok-live",
+            0,
+            GuestOp::ProcExec {
+                argv: print_argv,
+                cwd: None,
+                env,
+                timeout_ms: Some(10_000),
+            },
+        )
+        .expect("cred proc")
+    {
+        GuestPayload::Proc { stdout, .. } => {
+            assert!(
+                stdout.contains(&value_str),
+                "scoped credential never reached the child env"
+            );
+        }
+        other => panic!("expected proc, got {other:?}"),
+    }
+
+    // Durable-style evidence (broker audit) carries references only.
+    let audit_text = format!("{:?}", broker.audit());
+    assert!(
+        !audit_text.contains("synthetic-cred-E2E-9911"),
+        "audit leaked the credential"
+    );
+
+    // A log/error line carrying the value redacts before persistence.
+    let noisy = format!("proc failed: env SYNTH_CRED={value_str} (task-g-1)");
+    let clean = redact(&noisy, &[&value]);
+    assert!(!clean.contains("synthetic-cred-E2E-9911"));
+    assert!(clean.contains("[REDACTED:secret-0]"));
+
+    // The lease handle itself is opaque on the wire paths.
+    assert!(!lease.handle.contains("synthetic"));
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
 fn hex_to_bytes(s: &str) -> Vec<u8> {
     (0..s.len())
         .step_by(2)

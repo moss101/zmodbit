@@ -1487,6 +1487,7 @@ dependencies = [
  "base64",
  "modbit-protocol",
  "modbit-sandbox",
+ "modbit-secrets",
  "serde",
  "serde_json",
  "sha2",
@@ -1629,6 +1630,10 @@ dependencies = [
 [[package]]
 name = "modbit-secrets"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2",
+]
 
 [[package]]
 name = "modbit-skills"

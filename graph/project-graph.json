@@ -3148,10 +3148,13 @@
    "milestone": "M8",
    "order": 5,
    "source": "docs/43",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "log:docs/evidence/phase8-6-credential-broker-2026-09-13.log",
+    "scenario:E2E-017",
+    "commit:4c5aaae"
    ],
    "notes": [
     {
@@ -3159,9 +3162,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T07:21:46Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "credential broker real in crates/secrets (was a stub): opaque SecretRef registration, short-lived leases bound to task+generation+scope, materialize at execution time with fail-closed Expired/Revoked/TaskMismatch/Fenced/ScopeDenied, task-scoped emergency revocation (blast radius = one guest), value-free audit, fingerprint redaction. E2E: lease materializes into a REAL child env on the REAL guest (services/modbit-guest tests); no long-lived secret in image/config (substrate bootstrap test) — QUAL-EV-0288. Guest egress ENFORCEMENT stays with the substrate network layer at real-guest qualification (documented in Future-tasks item 3)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:43Z"
+   "status_changed_on": "2026-09-13T07:21:46Z"
   },
   {
    "id": "M8.7",
@@ -15453,10 +15462,12 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0288",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
-    "commit:66f5d08"
+    "commit:66f5d08",
+    "log:docs/evidence/phase8-6-credential-broker-2026-09-13.log",
+    "scenario:E2E-017"
    ],
    "notes": [
     {
@@ -15464,9 +15475,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-13T07:21:47Z",
+     "from": "IMPLEMENTING",
+     "to": "E2E_PROVEN",
+     "note": "dynamic handle/lease injection proven: short-lived scoped leases, static secrets absent from guest image/config/env dump (QUAL-EV-0288)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-13T07:21:47Z"
   },
   {
    "id": "IMP-EV-0289",
@@ -31031,5 +31048,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-13T07:16:18Z"
+ "updated_on": "2026-09-13T07:21:47Z"
 }

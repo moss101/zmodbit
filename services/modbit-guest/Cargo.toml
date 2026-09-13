@@ -17,6 +17,7 @@ base64 = "0.22"
 
 [dev-dependencies]
 uuid = { workspace = true }
+modbit-secrets = { path = "../../crates/secrets" }
 
 [lints]
 workspace = true
