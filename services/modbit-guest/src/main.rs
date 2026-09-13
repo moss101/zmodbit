@@ -99,58 +99,64 @@ fn main() {
         .and_then(|p| p.parse().ok());
 
     // Both transports share ONE connection body (handshake, signed
-    // manifest, request loop) — see serve_connection below.
-    match vsock_port {
-        Some(port) => {
-            // PRODUCTION transport (docs/24 § substrate): AF_VSOCK inside
-            // the guest VM. Requires the Linux guest kernel; the host
-            // reaches this listener through the Firecracker vsock UDS
-            // (crates/sandbox::substrate::connect_guest_vsock).
-            let listener = match modbit_sandbox::substrate::guest_vsock::VsockListener::bind(port) {
-                Ok(l) => l,
+    // manifest, request loop) — see serve_connection below. The vsock
+    // transport is PRODUCTION inside the Linux guest VM; TCP is the
+    // dev/test transport (the host reaches vsock through the Firecracker
+    // UDS link — crates/sandbox::substrate::connect_guest_vsock).
+    #[cfg(not(target_os = "linux"))]
+    if let Some(port) = vsock_port {
+        eprintln!(
+            "modbit-guest: MODBIT_GUEST_VSOCK_PORT={port} requires the Linux guest kernel (fail closed)"
+        );
+        std::process::exit(1);
+    }
+
+    #[cfg(target_os = "linux")]
+    if let Some(port) = vsock_port {
+        let listener = match modbit_sandbox::substrate::guest_vsock::VsockListener::bind(port) {
+            Ok(l) => l,
+            Err(e) => {
+                eprintln!("modbit-guest: vsock bind port {port}: {e}");
+                std::process::exit(1);
+            }
+        };
+        println!(
+            "guest vsock:{port} {} {build_hash}",
+            env!("CARGO_PKG_VERSION")
+        );
+        loop {
+            let stream = match listener.accept() {
+                Ok(s) => s,
                 Err(e) => {
-                    eprintln!("modbit-guest: vsock bind port {port}: {e}");
-                    std::process::exit(1);
+                    eprintln!("modbit-guest: vsock accept: {e}");
+                    continue;
                 }
             };
-            println!(
-                "guest vsock:{port} {} {build_hash}",
-                env!("CARGO_PKG_VERSION")
-            );
-            loop {
-                let stream = match listener.accept() {
-                    Ok(s) => s,
-                    Err(e) => {
-                        eprintln!("modbit-guest: vsock accept: {e}");
-                        continue;
-                    }
-                };
-                let secret = secret.clone();
-                let frame = frame.clone();
-                let executor = executor.clone();
-                std::thread::spawn(move || {
-                    serve_connection(stream, &secret, &frame, &executor);
-                });
-            }
-        }
-        None => {
-            let listener = TcpListener::bind(&listen).unwrap_or_else(|e| {
-                eprintln!("modbit-guest: cannot bind {listen}: {e}");
-                std::process::exit(1);
+            let secret = secret.clone();
+            let frame = frame.clone();
+            let executor = executor.clone();
+            std::thread::spawn(move || {
+                serve_connection(stream, &secret, &frame, &executor);
             });
-            let bound = listener.local_addr().expect("bound addr");
-            println!("guest {bound} {} {build_hash}", env!("CARGO_PKG_VERSION"));
-
-            for stream in listener.incoming() {
-                let Ok(stream) = stream else { continue };
-                let secret = secret.clone();
-                let frame = frame.clone();
-                let executor = executor.clone();
-                std::thread::spawn(move || {
-                    serve_connection(stream, &secret, &frame, &executor);
-                });
-            }
         }
+    }
+
+    // Dev/test TCP transport.
+    let listener = TcpListener::bind(&listen).unwrap_or_else(|e| {
+        eprintln!("modbit-guest: cannot bind {listen}: {e}");
+        std::process::exit(1);
+    });
+    let bound = listener.local_addr().expect("bound addr");
+    println!("guest {bound} {} {build_hash}", env!("CARGO_PKG_VERSION"));
+
+    for stream in listener.incoming() {
+        let Ok(stream) = stream else { continue };
+        let secret = secret.clone();
+        let frame = frame.clone();
+        let executor = executor.clone();
+        std::thread::spawn(move || {
+            serve_connection(stream, &secret, &frame, &executor);
+        });
     }
 }
 

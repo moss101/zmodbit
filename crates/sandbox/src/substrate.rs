@@ -4,20 +4,20 @@
 //! One substrate behind the SAME guest contract — nothing here leaks into
 //! the agent/tool/domain layers (REQ-EV-0291).
 //!
+//! Platform scoping (the workspace forbids `unsafe_code`): the VMM
+//! controller and host vsock link are unix-only (Firecracker hosts are
+//! unix; Windows gets typed fail-closed stubs with the same API). The
+//! guest-side AF_VSOCK listener exists on Linux through the safe `vsock`
+//! crate; everywhere else it fails closed.
+//!
 //! HONEST SCOPE (docs/50 real-system gates): this module contains the
 //! complete production adapter code, configuration, controller and
 //! fixtures, unit-tested against a fixture VMM socket server and against
 //! REAL subprocess lifecycle failure paths. It does NOT and MUST NOT
 //! claim real-guest (Linux/KVM + Firecracker) validation: that conformance
 //! is an environmental proof requirement recorded in Future-tasks §4
-//! Phase 8 item 2. `FixtureVmm` in tests is labeled as a controller
+//! Phase 8 item 2. The fixture VMM in tests is labeled as a controller
 //! fixture, never as virtualization.
-
-use std::io::{BufRead, BufReader, Read, Write};
-use std::os::unix::net::UnixStream;
-use std::path::{Path, PathBuf};
-use std::process::Child;
-use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
@@ -38,7 +38,7 @@ pub enum SubstrateError {
     },
     /// The VMM API socket never became usable.
     ApiSocketTimeout {
-        path: PathBuf,
+        path: String,
     },
     /// The VM did not reach the Running state within the boot budget.
     BootTimeout {
@@ -49,7 +49,7 @@ pub enum SubstrateError {
         port: u32,
         detail: String,
     },
-    /// vsock on this platform/host has no implementation (fail closed).
+    /// vsock/VMM on this platform has no implementation (fail closed).
     PlatformUnsupported {
         detail: String,
     },
@@ -70,7 +70,7 @@ impl std::fmt::Display for SubstrateError {
                 write!(f, "VMM API {path} rejected ({status}): {fault}")
             }
             SubstrateError::ApiSocketTimeout { path } => {
-                write!(f, "VMM API socket {path:?} never became usable")
+                write!(f, "VMM API socket {path} never became usable")
             }
             SubstrateError::BootTimeout { waited_ms } => {
                 write!(f, "VM did not reach Running within {waited_ms} ms")
@@ -89,7 +89,7 @@ impl std::fmt::Display for SubstrateError {
 impl std::error::Error for SubstrateError {}
 
 // ---------------------------------------------------------------------------
-// Machine configuration (the production VM spec)
+// Machine configuration (the production VM spec) — pure data, all platforms
 // ---------------------------------------------------------------------------
 
 /// The full production VM spec for one task guest. Serializable so the
@@ -128,206 +128,22 @@ impl Default for FirecrackerSpec {
 }
 
 // ---------------------------------------------------------------------------
-// Minimal Firecracker API client (HTTP/1.1 over the unix API socket)
-// ---------------------------------------------------------------------------
-
-pub struct FirecrackerApi {
-    sock_path: String,
-}
-
-#[derive(Debug)]
-pub struct ApiResponse {
-    pub status: u16,
-    pub body: String,
-}
-
-impl FirecrackerApi {
-    pub fn over(sock_path: impl Into<String>) -> Self {
-        FirecrackerApi {
-            sock_path: sock_path.into(),
-        }
-    }
-
-    fn request(
-        &self,
-        method: &str,
-        path: &str,
-        body: Option<&str>,
-    ) -> Result<ApiResponse, SubstrateError> {
-        let mut stream = UnixStream::connect(&self.sock_path)
-            .map_err(|e| SubstrateError::Io(format!("connect {}: {e}", self.sock_path)))?;
-        let body = body.unwrap_or("");
-        let req = format!(
-            "{method} {path} HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nAccept: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-            body.len()
-        );
-        stream
-            .write_all(req.as_bytes())
-            .map_err(|e| SubstrateError::Io(format!("api write: {e}")))?;
-        let mut reader = BufReader::new(stream);
-        let mut status_line = String::new();
-        reader
-            .read_line(&mut status_line)
-            .map_err(|e| SubstrateError::Io(format!("api read: {e}")))?;
-        // "HTTP/1.1 204 No Content"
-        let status = status_line
-            .split_whitespace()
-            .nth(1)
-            .and_then(|s| s.parse::<u16>().ok())
-            .ok_or_else(|| SubstrateError::Io(format!("bad status line {status_line:?}")))?;
-        let mut content_length: usize = 0;
-        loop {
-            let mut line = String::new();
-            reader
-                .read_line(&mut line)
-                .map_err(|e| SubstrateError::Io(format!("api header: {e}")))?;
-            let line = line.trim_end();
-            if line.is_empty() {
-                break;
-            }
-            if let Some(v) = line
-                .to_ascii_lowercase()
-                .strip_prefix("content-length:")
-                .map(|v| v.trim().to_string())
-            {
-                content_length = v.parse().unwrap_or(0);
-            }
-        }
-        let mut body_buf = vec![0u8; content_length];
-        if content_length > 0 {
-            reader
-                .read_exact(&mut body_buf)
-                .map_err(|e| SubstrateError::Io(format!("api body: {e}")))?;
-        }
-        Ok(ApiResponse {
-            status,
-            body: String::from_utf8_lossy(&body_buf).to_string(),
-        })
-    }
-
-    /// PUT a JSON configuration; 2xx passes, anything else extracts the
-    /// Firecracker fault message into a typed error.
-    pub fn put(&self, path: &str, json: &str) -> Result<ApiResponse, SubstrateError> {
-        let resp = self.request("PUT", path, Some(json))?;
-        self.checked(path, resp)
-    }
-
-    pub fn get(&self, path: &str) -> Result<ApiResponse, SubstrateError> {
-        let resp = self.request("GET", path, None)?;
-        self.checked(path, resp)
-    }
-
-    fn checked(&self, path: &str, resp: ApiResponse) -> Result<ApiResponse, SubstrateError> {
-        if (200..300).contains(&resp.status) {
-            return Ok(resp);
-        }
-        let fault = serde_json::from_str::<serde_json::Value>(&resp.body)
-            .ok()
-            .and_then(|v| {
-                v.get("fault_message")
-                    .and_then(|f| f.as_str().map(|s| s.to_string()))
-            })
-            .unwrap_or_else(|| resp.body.clone());
-        Err(SubstrateError::Api {
-            path: path.to_string(),
-            status: resp.status,
-            fault,
-        })
-    }
-
-    /// VM state from GET / (Firecracker: {"state": "..."} or {"vm": {"state": "..."}}).
-    pub fn vm_state(&self) -> Result<String, SubstrateError> {
-        let resp = self.get("/")?;
-        let v: serde_json::Value = serde_json::from_str(&resp.body)
-            .map_err(|e| SubstrateError::Io(format!("bad state body: {e}")))?;
-        let state = v
-            .get("state")
-            .and_then(|s| s.as_str())
-            .or_else(|| {
-                v.get("vm")
-                    .and_then(|vm| vm.get("state"))
-                    .and_then(|s| s.as_str())
-            })
-            .unwrap_or("Unknown")
-            .to_string();
-        Ok(state)
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Host-side vsock link (Firecracker convention: the guest vsock surfaces
-// on the host as a UDS; `CONNECT <port>` first line opens a raw channel)
-// ---------------------------------------------------------------------------
-
-/// Opens a raw byte channel to the guest's vsock `port` through the VMM's
-/// host UDS. On success the stream IS the guest-side TCP-equivalent: the
-/// guest RPC (boot-secret handshake, manifest, typed frames) rides it
-/// unchanged.
-pub fn connect_guest_vsock(uds_path: &Path, port: u32) -> Result<UnixStream, SubstrateError> {
-    let mut stream = UnixStream::connect(uds_path).map_err(|e| SubstrateError::VsockHandshake {
-        port,
-        detail: format!("connect {:?}: {e}", uds_path),
-    })?;
-    stream
-        .write_all(format!("CONNECT {port}\n").as_bytes())
-        .map_err(|e| SubstrateError::VsockHandshake {
-            port,
-            detail: format!("write: {e}"),
-        })?;
-    // Read the reply line BYTE-WISE on the channel itself — a buffered
-    // clone could swallow a coalesced first payload beyond the newline.
-    let mut line = Vec::new();
-    let mut one = [0u8; 1];
-    loop {
-        let n = stream
-            .read(&mut one)
-            .map_err(|e| SubstrateError::VsockHandshake {
-                port,
-                detail: format!("read: {e}"),
-            })?;
-        if n == 0 {
-            return Err(SubstrateError::VsockHandshake {
-                port,
-                detail: "connection closed before Ok".into(),
-            });
-        }
-        if one[0] == b'\n' {
-            break;
-        }
-        line.push(one[0]);
-        if line.len() > 128 {
-            return Err(SubstrateError::VsockHandshake {
-                port,
-                detail: "runaway handshake reply".into(),
-            });
-        }
-    }
-    if String::from_utf8_lossy(&line).trim_end() != "Ok" {
-        return Err(SubstrateError::VsockHandshake {
-            port,
-            detail: format!("guest refused: {:?}", String::from_utf8_lossy(&line)),
-        });
-    }
-    Ok(stream)
-}
-
-// ---------------------------------------------------------------------------
-// Guest bootstrap contract
+// Guest bootstrap contract — pure data, all platforms
 // ---------------------------------------------------------------------------
 
 /// The bootstrap contract between the substrate provisioner and the
 /// modbit-guest init inside the VM:
 ///
 /// 1. The rootfs image is GENERIC — it contains the modbit-guest binary,
-///    an init that mounts `/run` as tmpfs and starts
-///    `modbit-guest` sourcing `/run/modbit/guest.env`. NO secrets are
-///    baked into any image (REQ-EV-0288).
+///    an init that mounts `/run` as tmpfs and starts `modbit-guest`
+///    sourcing `/run/modbit/guest.env`. NO secrets are baked into any
+///    image (REQ-EV-0288).
 /// 2. At VM start the provisioner renders [`GuestBootstrap`] through
 ///    [`GuestBootstrap::env_file`] and injects it into the VM's tmpfs via
 ///    the substrate's provisioning channel (vsock-first fetch or a
 ///    read-only tmpfs drive), never into the rootfs.
 /// 3. The host then talks ONLY the verified guest RPC over the vsock
-///    link ([`connect_guest_vsock`]).
+///    link (see the unix `connect_guest_vsock`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuestBootstrap {
     pub task: String,
@@ -363,240 +179,447 @@ impl GuestBootstrap {
 }
 
 // ---------------------------------------------------------------------------
-// VM lifecycle controller
+// VMM controller + host vsock link (unix platforms — Firecracker hosts)
 // ---------------------------------------------------------------------------
 
-/// A booted, configured, started VM. Drop kills the VMM process (a dead
-/// controller never leaves an orphan VM behind).
-pub struct RunningVm {
-    pub spec: FirecrackerSpec,
-    api: FirecrackerApi,
-    child: Option<Child>,
-}
+#[cfg(unix)]
+pub mod vmm {
+    use super::{FirecrackerSpec, SubstrateError};
+    use std::io::{BufRead, BufReader, Read, Write};
+    use std::os::unix::net::UnixStream;
+    use std::path::Path;
+    use std::process::Child;
+    use std::time::{Duration, Instant};
 
-impl std::fmt::Debug for RunningVm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RunningVm")
-            .field("spec", &self.spec)
-            .finish_non_exhaustive()
-    }
-}
-
-impl RunningVm {
-    pub fn state(&self) -> Result<String, SubstrateError> {
-        self.api.vm_state()
+    /// Minimal Firecracker API client (HTTP/1.1 over the unix API socket).
+    pub struct FirecrackerApi {
+        sock_path: String,
     }
 
-    /// Substrate-level stop: attempt a guest-initiated shutdown first,
-    /// then kill the VMM. The VM is dead when this returns.
-    pub fn shutdown(&mut self) -> Result<(), SubstrateError> {
-        // Best-effort graceful action; failure falls through to kill.
-        let _ = self
-            .api
-            .put("/actions", "{\"action_type\": \"SendCtrlAltDel\"}");
-        self.kill()
+    #[derive(Debug)]
+    pub struct ApiResponse {
+        pub status: u16,
+        pub body: String,
     }
 
-    fn kill(&mut self) -> Result<(), SubstrateError> {
-        if let Some(mut child) = self.child.take() {
-            let _ = child.kill();
-            let _ = child.wait();
+    impl FirecrackerApi {
+        pub fn over(sock_path: impl Into<String>) -> Self {
+            FirecrackerApi {
+                sock_path: sock_path.into(),
+            }
         }
-        let _ = std::fs::remove_file(&self.spec.api_sock_path);
-        let _ = std::fs::remove_file(&self.spec.vsock_uds_path);
-        Ok(())
-    }
-}
 
-impl Drop for RunningVm {
-    fn drop(&mut self) {
-        let _ = self.kill();
-    }
-}
+        fn request(
+            &self,
+            method: &str,
+            path: &str,
+            body: Option<&str>,
+        ) -> Result<ApiResponse, SubstrateError> {
+            let mut stream = UnixStream::connect(&self.sock_path)
+                .map_err(|e| SubstrateError::Io(format!("connect {}: {e}", self.sock_path)))?;
+            let body = body.unwrap_or("");
+            let req = format!(
+                "{method} {path} HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nAccept: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(req.as_bytes())
+                .map_err(|e| SubstrateError::Io(format!("api write: {e}")))?;
+            let mut reader = BufReader::new(stream);
+            let mut status_line = String::new();
+            reader
+                .read_line(&mut status_line)
+                .map_err(|e| SubstrateError::Io(format!("api read: {e}")))?;
+            // "HTTP/1.1 204 No Content"
+            let status = status_line
+                .split_whitespace()
+                .nth(1)
+                .and_then(|s| s.parse::<u16>().ok())
+                .ok_or_else(|| SubstrateError::Io(format!("bad status line {status_line:?}")))?;
+            let mut content_length: usize = 0;
+            loop {
+                let mut line = String::new();
+                reader
+                    .read_line(&mut line)
+                    .map_err(|e| SubstrateError::Io(format!("api header: {e}")))?;
+                let line = line.trim_end();
+                if line.is_empty() {
+                    break;
+                }
+                if let Some(v) = line
+                    .to_ascii_lowercase()
+                    .strip_prefix("content-length:")
+                    .map(|v| v.trim().to_string())
+                {
+                    content_length = v.parse().unwrap_or(0);
+                }
+            }
+            let mut body_buf = vec![0u8; content_length];
+            if content_length > 0 {
+                reader
+                    .read_exact(&mut body_buf)
+                    .map_err(|e| SubstrateError::Io(format!("api body: {e}")))?;
+            }
+            Ok(ApiResponse {
+                status,
+                body: String::from_utf8_lossy(&body_buf).to_string(),
+            })
+        }
 
-/// Boots one task VM: spawns the VMM, waits for its API socket, applies
-/// the configuration (machine config, boot source, rootfs drive, vsock
-/// device), starts the instance and waits for Running. Production calls
-/// `boot(spec, "firecracker", &[])`; `extra_args` exists so tests can
-/// drive the FULL controller lifecycle with a fixture process.
-pub fn boot(
-    spec: FirecrackerSpec,
-    vmm_binary: &str,
-    extra_args: &[String],
-) -> Result<RunningVm, SubstrateError> {
-    let _ = std::fs::remove_file(&spec.api_sock_path);
-    let mut command = std::process::Command::new(vmm_binary);
-    command.arg("--api-sock").arg(&spec.api_sock_path);
-    command.args(extra_args);
-    let mut child = command
-        .spawn()
-        .map_err(|e| SubstrateError::VmmBinaryMissing {
-            program: vmm_binary.to_string(),
-            detail: e.to_string(),
-        })?;
+        /// PUT a JSON configuration; 2xx passes, anything else extracts the
+        /// Firecracker fault message into a typed error.
+        pub fn put(&self, path: &str, json: &str) -> Result<ApiResponse, SubstrateError> {
+            let resp = self.request("PUT", path, Some(json))?;
+            self.checked(path, resp)
+        }
 
-    match boot_configured(&spec) {
-        Ok(()) => Ok(RunningVm {
-            api: FirecrackerApi::over(&spec.api_sock_path),
-            spec,
-            child: Some(child),
-        }),
-        Err(e) => {
-            let _ = child.kill();
-            let _ = child.wait();
-            Err(e)
+        pub fn get(&self, path: &str) -> Result<ApiResponse, SubstrateError> {
+            let resp = self.request("GET", path, None)?;
+            self.checked(path, resp)
+        }
+
+        fn checked(&self, path: &str, resp: ApiResponse) -> Result<ApiResponse, SubstrateError> {
+            if (200..300).contains(&resp.status) {
+                return Ok(resp);
+            }
+            let fault = serde_json::from_str::<serde_json::Value>(&resp.body)
+                .ok()
+                .and_then(|v| {
+                    v.get("fault_message")
+                        .and_then(|f| f.as_str().map(|s| s.to_string()))
+                })
+                .unwrap_or_else(|| resp.body.clone());
+            Err(SubstrateError::Api {
+                path: path.to_string(),
+                status: resp.status,
+                fault,
+            })
+        }
+
+        /// VM state from GET / ({"state": "..."} or {"vm": {"state": "..."}}).
+        pub fn vm_state(&self) -> Result<String, SubstrateError> {
+            let resp = self.get("/")?;
+            let v: serde_json::Value = serde_json::from_str(&resp.body)
+                .map_err(|e| SubstrateError::Io(format!("bad state body: {e}")))?;
+            let state = v
+                .get("state")
+                .and_then(|s| s.as_str())
+                .or_else(|| {
+                    v.get("vm")
+                        .and_then(|vm| vm.get("state"))
+                        .and_then(|s| s.as_str())
+                })
+                .unwrap_or("Unknown")
+                .to_string();
+            Ok(state)
         }
     }
-}
 
-fn boot_configured(spec: &FirecrackerSpec) -> Result<(), SubstrateError> {
-    // 1. Wait for the API socket to appear (bounded).
-    let deadline = Instant::now() + Duration::from_secs(5);
-    let sock = Path::new(&spec.api_sock_path);
-    loop {
-        if sock.exists() && UnixStream::connect(sock).is_ok() {
-            break;
+    /// A booted, configured, started VM. Drop kills the VMM process (a
+    /// dead controller never leaves an orphan VM behind).
+    pub struct RunningVm {
+        pub spec: FirecrackerSpec,
+        api: FirecrackerApi,
+        child: Option<Child>,
+    }
+
+    impl std::fmt::Debug for RunningVm {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("RunningVm")
+                .field("spec", &self.spec)
+                .finish_non_exhaustive()
         }
-        if Instant::now() >= deadline {
-            return Err(SubstrateError::ApiSocketTimeout {
-                path: sock.to_path_buf(),
+    }
+
+    impl RunningVm {
+        pub fn state(&self) -> Result<String, SubstrateError> {
+            self.api.vm_state()
+        }
+
+        /// Substrate-level stop: attempt a guest-initiated shutdown first,
+        /// then kill the VMM. The VM is dead when this returns.
+        pub fn shutdown(&mut self) -> Result<(), SubstrateError> {
+            // Best-effort graceful action; failure falls through to kill.
+            let _ = self
+                .api
+                .put("/actions", "{\"action_type\": \"SendCtrlAltDel\"}");
+            self.kill()
+        }
+
+        fn kill(&mut self) -> Result<(), SubstrateError> {
+            if let Some(mut child) = self.child.take() {
+                let _ = child.kill();
+                let _ = child.wait();
+            }
+            let _ = std::fs::remove_file(&self.spec.api_sock_path);
+            let _ = std::fs::remove_file(&self.spec.vsock_uds_path);
+            Ok(())
+        }
+    }
+
+    impl Drop for RunningVm {
+        fn drop(&mut self) {
+            let _ = self.kill();
+        }
+    }
+
+    /// Boots one task VM: spawns the VMM, waits for its API socket, applies
+    /// the configuration (machine config, boot source, rootfs drive, vsock
+    /// device), starts the instance and waits for Running. Production
+    /// calls `boot(spec, "firecracker", &[])`; `extra_args` exists so
+    /// tests can drive the FULL controller lifecycle with a fixture
+    /// process.
+    pub fn boot(
+        spec: FirecrackerSpec,
+        vmm_binary: &str,
+        extra_args: &[String],
+    ) -> Result<RunningVm, SubstrateError> {
+        let _ = std::fs::remove_file(&spec.api_sock_path);
+        let mut command = std::process::Command::new(vmm_binary);
+        command.arg("--api-sock").arg(&spec.api_sock_path);
+        command.args(extra_args);
+        let mut child = command
+            .spawn()
+            .map_err(|e| SubstrateError::VmmBinaryMissing {
+                program: vmm_binary.to_string(),
+                detail: e.to_string(),
+            })?;
+
+        match boot_configured(&spec) {
+            Ok(()) => Ok(RunningVm {
+                api: FirecrackerApi::over(&spec.api_sock_path),
+                spec,
+                child: Some(child),
+            }),
+            Err(e) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                Err(e)
+            }
+        }
+    }
+
+    fn boot_configured(spec: &FirecrackerSpec) -> Result<(), SubstrateError> {
+        // 1. Wait for the API socket to appear (bounded; slow CI runners
+        // can stall seconds at a time).
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let sock = Path::new(&spec.api_sock_path);
+        loop {
+            if sock.exists() && UnixStream::connect(sock).is_ok() {
+                break;
+            }
+            if Instant::now() >= deadline {
+                return Err(SubstrateError::ApiSocketTimeout {
+                    path: spec.api_sock_path.clone(),
+                });
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+
+        let api = FirecrackerApi::over(&spec.api_sock_path);
+        // 2. Configure. Each step is checked; failures carry fault messages.
+        let machine = serde_json::json!({
+            "vcpu_count": spec.vcpus,
+            "mem_size_mib": spec.mem_mib,
+        });
+        api.put("/machine-config", &machine.to_string())?;
+        let boot_source = serde_json::json!({
+            "kernel_image_path": spec.kernel_path,
+            "boot_args": spec.boot_args,
+        });
+        api.put("/boot-source", &boot_source.to_string())?;
+        let drive = serde_json::json!({
+            "drive_id": "rootfs",
+            "path_on_host": spec.rootfs_path,
+            "is_root_device": true,
+            "is_read_only": true,
+        });
+        api.put("/drives/rootfs", &drive.to_string())?;
+        let vsock = serde_json::json!({
+            "guest_cid": spec.guest_cid,
+            "uds_path": spec.vsock_uds_path,
+        });
+        api.put("/vsock", &vsock.to_string())?;
+        // 3. Start.
+        api.put("/actions", "{\"action_type\": \"InstanceStart\"}")?;
+        // 4. Wait for Running (bounded).
+        let deadline = Instant::now() + Duration::from_secs(10);
+        loop {
+            let state = api.vm_state()?;
+            if state == "Running" {
+                return Ok(());
+            }
+            if Instant::now() >= deadline {
+                return Err(SubstrateError::BootTimeout { waited_ms: 10_000 });
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+    }
+
+    /// Opens a raw byte channel to the guest's vsock `port` through the
+    /// VMM's host UDS. On success the stream IS the guest-side
+    /// TCP-equivalent: the guest RPC (boot-secret handshake, manifest,
+    /// typed frames) rides it unchanged.
+    pub fn connect_guest_vsock(uds_path: &Path, port: u32) -> Result<UnixStream, SubstrateError> {
+        let mut stream =
+            UnixStream::connect(uds_path).map_err(|e| SubstrateError::VsockHandshake {
+                port,
+                detail: format!("connect {:?}: {e}", uds_path),
+            })?;
+        stream
+            .write_all(format!("CONNECT {port}\n").as_bytes())
+            .map_err(|e| SubstrateError::VsockHandshake {
+                port,
+                detail: format!("write: {e}"),
+            })?;
+        // Read the reply line BYTE-WISE on the channel itself — a buffered
+        // clone could swallow a coalesced first payload beyond the newline.
+        let mut line = Vec::new();
+        let mut one = [0u8; 1];
+        loop {
+            let n = stream
+                .read(&mut one)
+                .map_err(|e| SubstrateError::VsockHandshake {
+                    port,
+                    detail: format!("read: {e}"),
+                })?;
+            if n == 0 {
+                return Err(SubstrateError::VsockHandshake {
+                    port,
+                    detail: "connection closed before Ok".into(),
+                });
+            }
+            if one[0] == b'\n' {
+                break;
+            }
+            line.push(one[0]);
+            if line.len() > 128 {
+                return Err(SubstrateError::VsockHandshake {
+                    port,
+                    detail: "runaway handshake reply".into(),
+                });
+            }
+        }
+        if String::from_utf8_lossy(&line).trim_end() != "Ok" {
+            return Err(SubstrateError::VsockHandshake {
+                port,
+                detail: format!("guest refused: {:?}", String::from_utf8_lossy(&line)),
             });
         }
-        std::thread::sleep(Duration::from_millis(20));
+        Ok(stream)
+    }
+}
+
+#[cfg(unix)]
+pub use vmm::{boot, connect_guest_vsock, FirecrackerApi, RunningVm};
+
+/// Windows fail-closed stubs: Firecracker hosts are unix; the same entry
+/// points exist so callers compile, and every call is a typed refusal —
+/// never a silent success.
+#[cfg(not(unix))]
+pub mod vmm {
+    use super::{FirecrackerSpec, SubstrateError};
+
+    pub struct FirecrackerApi;
+
+    impl FirecrackerApi {
+        pub fn over(_sock_path: impl Into<String>) -> Self {
+            FirecrackerApi
+        }
+
+        pub fn vm_state(&self) -> Result<String, SubstrateError> {
+            Err(SubstrateError::PlatformUnsupported {
+                detail: "Firecracker VMM controller requires a unix host".into(),
+            })
+        }
     }
 
-    let api = FirecrackerApi::over(&spec.api_sock_path);
-    // 2. Configure. Each step is checked; failures carry fault messages.
-    let machine = serde_json::json!({
-        "vcpu_count": spec.vcpus,
-        "mem_size_mib": spec.mem_mib,
-    });
-    api.put("/machine-config", &machine.to_string())?;
-    let boot_source = serde_json::json!({
-        "kernel_image_path": spec.kernel_path,
-        "boot_args": spec.boot_args,
-    });
-    api.put("/boot-source", &boot_source.to_string())?;
-    let drive = serde_json::json!({
-        "drive_id": "rootfs",
-        "path_on_host": spec.rootfs_path,
-        "is_root_device": true,
-        "is_read_only": true,
-    });
-    api.put("/drives/rootfs", &drive.to_string())?;
-    let vsock = serde_json::json!({
-        "guest_cid": spec.guest_cid,
-        "uds_path": spec.vsock_uds_path,
-    });
-    api.put("/vsock", &vsock.to_string())?;
-    // 3. Start.
-    api.put("/actions", "{\"action_type\": \"InstanceStart\"}")?;
-    // 4. Wait for Running (bounded).
-    let deadline = Instant::now() + Duration::from_secs(10);
-    loop {
-        let state = api.vm_state()?;
-        if state == "Running" {
-            return Ok(());
+    #[derive(Debug)]
+    pub struct RunningVm {
+        pub spec: FirecrackerSpec,
+    }
+
+    impl RunningVm {
+        pub fn state(&self) -> Result<String, SubstrateError> {
+            Err(SubstrateError::PlatformUnsupported {
+                detail: "Firecracker VMM controller requires a unix host".into(),
+            })
         }
-        if Instant::now() >= deadline {
-            return Err(SubstrateError::BootTimeout { waited_ms: 10_000 });
+
+        pub fn shutdown(&mut self) -> Result<(), SubstrateError> {
+            Err(SubstrateError::PlatformUnsupported {
+                detail: "Firecracker VMM controller requires a unix host".into(),
+            })
         }
-        std::thread::sleep(Duration::from_millis(50));
+    }
+
+    pub fn boot(
+        _spec: FirecrackerSpec,
+        _vmm_binary: &str,
+        _extra_args: &[String],
+    ) -> Result<RunningVm, SubstrateError> {
+        Err(SubstrateError::PlatformUnsupported {
+            detail: "Firecracker VMM controller requires a unix host".into(),
+        })
+    }
+
+    pub fn connect_guest_vsock(
+        _uds_path: &std::path::Path,
+        port: u32,
+    ) -> Result<std::net::TcpStream, SubstrateError> {
+        Err(SubstrateError::VsockHandshake {
+            port,
+            detail: "host vsock link requires a unix host".into(),
+        })
     }
 }
 
 // ---------------------------------------------------------------------------
-// In-guest vsock listener (production transport server side; Linux only —
-// the guest runs a Linux kernel; on other platforms this fails closed)
+// In-guest vsock listener (production transport server side). Linux via
+// the SAFE `vsock` crate (the workspace forbids unsafe code); everywhere
+// else it fails closed with a typed error rather than pretending to
+// listen.
 // ---------------------------------------------------------------------------
 
 /// Binds a guest-side AF_VSOCK listener on (cid, port). The guest CID is
-/// `VMADDR_CID_ANY` (2) for the guest itself.
+/// `VMADDR_CID_ANY` for the guest itself.
 #[cfg(target_os = "linux")]
 pub mod guest_vsock {
     use super::SubstrateError;
-    use std::os::unix::io::FromRawFd;
 
-    const AF_VSOCK: libc::c_int = 40;
-    const VMADDR_CID_ANY: u32 = 0xFFFFFFFF;
-
-    #[repr(C)]
-    struct SockAddrVm {
-        svm_family: libc::sa_family_t,
-        svm_reserved1: libc::c_ushort,
-        svm_port: u32,
-        svm_cid: u32,
-    }
+    const VMADDR_CID_ANY: u32 = 0xFFFF_FFFF;
 
     pub struct VsockListener {
-        fd: libc::c_int,
+        listener: vsock::VsockListener,
     }
 
     impl VsockListener {
         pub fn bind(port: u32) -> Result<Self, SubstrateError> {
-            unsafe {
-                let fd = libc::socket(AF_VSOCK, libc::SOCK_STREAM, 0);
-                if fd < 0 {
-                    return Err(SubstrateError::PlatformUnsupported {
-                        detail: "AF_VSOCK socket unavailable".into(),
-                    });
-                }
-                let addr = SockAddrVm {
-                    svm_family: AF_VSOCK as libc::sa_family_t,
-                    svm_reserved1: 0,
-                    svm_port: port,
-                    svm_cid: VMADDR_CID_ANY,
-                };
-                let ret = libc::bind(
-                    fd,
-                    &addr as *const SockAddrVm as *const libc::sockaddr,
-                    std::mem::size_of::<SockAddrVm>() as libc::socklen_t,
-                );
-                if ret < 0 {
-                    libc::close(fd);
-                    return Err(SubstrateError::Io("vsock bind failed".into()));
-                }
-                if libc::listen(fd, 8) < 0 {
-                    libc::close(fd);
-                    return Err(SubstrateError::Io("vsock listen failed".into()));
-                }
-                Ok(VsockListener { fd })
-            }
+            let addr = vsock::VsockAddr::new(VMADDR_CID_ANY, port);
+            let listener = vsock::VsockListener::bind(&addr)
+                .map_err(|e| SubstrateError::Io(format!("vsock bind port {port}: {e}")))?;
+            Ok(VsockListener { listener })
         }
 
-        /// Accepts one host connection as a std UnixStream over the vsock fd.
-        pub fn accept(&self) -> Result<std::os::unix::net::UnixStream, SubstrateError> {
-            unsafe {
-                let conn = libc::accept(self.fd, std::ptr::null_mut(), null_socklen());
-                if conn < 0 {
-                    return Err(SubstrateError::Io("vsock accept failed".into()));
-                }
-                Ok(std::os::unix::net::UnixStream::from_raw_fd(conn))
-            }
+        /// Accepts one host connection as a `VsockStream` (Read + Write +
+        /// Send), which feeds the transport-independent connection body
+        /// unchanged.
+        pub fn accept(&self) -> Result<vsock::VsockStream, SubstrateError> {
+            let (stream, _) = self
+                .listener
+                .accept()
+                .map_err(|e| SubstrateError::Io(format!("vsock accept: {e}")))?;
+            Ok(stream)
         }
-    }
-
-    impl Drop for VsockListener {
-        fn drop(&mut self) {
-            unsafe {
-                libc::close(self.fd);
-            }
-        }
-    }
-
-    fn null_socklen() -> *mut libc::socklen_t {
-        std::ptr::null_mut()
     }
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(all(unix, not(target_os = "linux")))]
 /// Guest-side vsock has no implementation off Linux — fail closed with a
-/// typed error rather than pretending to listen. Same API surface as the
-/// Linux implementation so callers compile unchanged.
+/// typed error rather than pretending to listen. Same API surface shape
+/// as the Linux implementation so callers compile unchanged.
 pub mod guest_vsock {
     use super::SubstrateError;
-    use std::io::{Read, Write};
-    use std::os::unix::net::UnixStream;
 
     pub struct VsockListener;
 
@@ -606,27 +629,34 @@ pub mod guest_vsock {
                 detail: "guest vsock requires the Linux guest kernel".into(),
             })
         }
+    }
+}
 
-        pub fn accept(&self) -> Result<UnixStream, SubstrateError> {
+#[cfg(not(unix))]
+pub mod guest_vsock {
+    use super::SubstrateError;
+
+    pub struct VsockListener;
+
+    impl VsockListener {
+        pub fn bind(_port: u32) -> Result<Self, SubstrateError> {
             Err(SubstrateError::PlatformUnsupported {
                 detail: "guest vsock requires the Linux guest kernel".into(),
             })
         }
     }
-
-    /// Keep the trait imports referenced on platforms where the real
-    /// accept body is absent.
-    #[allow(dead_code)]
-    fn _traits_used(s: &mut UnixStream) {
-        let _ = s.read(&mut []);
-        let _ = s.write(&[]);
-    }
 }
 
 #[cfg(test)]
+#[cfg(unix)]
 mod tests {
-    use super::*;
+    use super::vmm::{boot, connect_guest_vsock};
+    use super::{FirecrackerSpec, GuestBootstrap, SubstrateError};
+    use std::io::{Read, Write};
     use std::os::unix::net::UnixListener;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+    use std::time::{Duration, Instant};
 
     /// THE FIXTURE VMM: a unix-socket server that speaks just enough of
     /// the Firecracker API to drive the controller. This validates the
@@ -640,16 +670,15 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let api_sock = dir.join("api.sock");
 
-        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let stop = Arc::new(AtomicBool::new(false));
         let server_stop = stop.clone();
         let api_sock_path = api_sock.clone();
         let server = std::thread::spawn(move || {
             let listener = UnixListener::bind(&api_sock_path).unwrap();
             listener.set_nonblocking(true).expect("fixture nonblocking");
-            let mut configured_boot = false;
             let mut started = false;
             loop {
-                if server_stop.load(std::sync::atomic::Ordering::SeqCst) {
+                if server_stop.load(Ordering::SeqCst) {
                     return;
                 }
                 let (mut stream, _) = match listener.accept() {
@@ -672,10 +701,10 @@ mod tests {
                 let method = parts.next().unwrap_or("").to_string();
                 let path = parts.next().unwrap_or("").to_string();
                 let reply = match (method.as_str(), path.as_str()) {
-                    ("PUT", "/machine-config") | ("PUT", "/boot-source") | ("PUT", "/drives/rootfs") | ("PUT", "/vsock") => {
-                        if path == "/vsock" {
-                            configured_boot = true;
-                        }
+                    ("PUT", "/machine-config")
+                    | ("PUT", "/boot-source")
+                    | ("PUT", "/drives/rootfs")
+                    | ("PUT", "/vsock") => {
                         "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n".to_string()
                     }
                     ("PUT", "/actions") => {
@@ -696,13 +725,17 @@ mod tests {
                             body.len()
                         )
                     }
-                    _ => format!(
-                        "HTTP/1.1 400 Bad Request\r\nContent-Length: {}\r\n\r\n{{\"fault_message\": \"fixture: unexpected {method} {path}\"}}",
-                        format!("{{\"fault_message\": \"fixture: unexpected {method} {path}\"}}").len()
-                    ),
+                    _ => {
+                        let body = format!(
+                            "{{\"fault_message\": \"fixture: unexpected {method} {path}\"}}"
+                        );
+                        format!(
+                            "HTTP/1.1 400 Bad Request\r\nContent-Length: {}\r\n\r\n{body}",
+                            body.len()
+                        )
+                    }
                 };
                 let _ = stream.write_all(reply.as_bytes());
-                let _ = configured_boot;
             }
         });
 
@@ -715,18 +748,11 @@ mod tests {
         // spawns a REAL process — a sleeping no-op binary stands in for
         // the VMM process so lifecycle (spawn/Drop-kill) is exercised.
         // Production passes ("firecracker", &[]).
-        let (stand_in, extra) = if cfg!(windows) {
-            (
-                "ping",
-                vec!["-n".to_string(), "30".to_string(), "127.0.0.1".to_string()],
-            )
-        } else {
-            ("sleep", vec!["30".to_string()])
-        };
+        let (stand_in, extra) = ("sleep", vec!["30".to_string()]);
         let mut vm = boot(spec, stand_in, &extra).expect("fixture boot");
         assert_eq!(vm.state().expect("state"), "Running");
         vm.shutdown().expect("shutdown");
-        stop.store(true, std::sync::atomic::Ordering::SeqCst);
+        stop.store(true, Ordering::SeqCst);
         server.join().expect("fixture server");
         let _ = std::fs::remove_dir_all(&dir);
     }
