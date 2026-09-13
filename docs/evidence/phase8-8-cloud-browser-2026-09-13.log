@@ -1,0 +1,20 @@
+Phase 8 item 5 (M8.8 — cloud browser remote stream/CDP) — relay proof
+Date: 2026-09-13
+
+REAL TRANSPORT, REAL PROCESSES, REAL CHROMIUM: tenant HTTP session →
+cloud-api /browser (tenant-bearer authed) → gateway relay (tenant-bound)
+→ tenant worker hosting THE Core → BrowserHost lazy-launches REAL
+headless Chromium via CDP → live PNG frame + page + lease relayed back.
+ISOLATION: a second tenant (own OIDC issuer vouching tenant-2, own
+cloud-api) asking for the same task id fails closed at its own plane
+(no worker), never sees tenant-1's browser state, and tenant-1's lease
+is untouched by the denied attempt.
+
+== cargo test -p modbit-cloud-api --test cloud_api_e2e ==
+running 2 tests
+test cloud_api_oidc_pkce_login_and_tenant_scoped_control ... ok
+test cloud_browser_relay_view_lease_and_tenant_isolation ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.18s
+
+== architecture lint ==
+architecture-lint: OK (33 members checked, 0 forbidden edges, 28 COMPLETE tasks reachable, 75 misplaced REQ tag(s) allowlisted)

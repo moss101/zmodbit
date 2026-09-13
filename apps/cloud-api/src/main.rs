@@ -17,8 +17,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
-use modbit_protocol::transport::BootSecret;
 use modbit_protocol::cloud::{Envelope, Registration};
+use modbit_protocol::transport::BootSecret;
 use prost::Message as _;
 
 fn env_or(name: &str, default: &str) -> String {
@@ -167,7 +167,12 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
         "/callback" => {
             let code = params.get("code").cloned().unwrap_or_default();
             let oauth_state = params.get("state").cloned().unwrap_or_default();
-            let pkce = state.logins.lock().expect("logins").pending.remove(&oauth_state);
+            let pkce = state
+                .logins
+                .lock()
+                .expect("logins")
+                .pending
+                .remove(&oauth_state);
             let Some(pkce) = pkce else {
                 stream.write_all(&http_response(
                     "400 Bad Request",
@@ -188,8 +193,16 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
             );
             let issued = http_post_form(&state.issuer, "/token", &form);
             let Ok(body_text) = issued else {
-                let body = format!("{{\"error\":\"issuer unreachable: {}\"}}", issued.unwrap_err().replace('"', "'"));
-                stream.write_all(&http_response("502 Bad Gateway", "application/json", &body, None))?;
+                let body = format!(
+                    "{{\"error\":\"issuer unreachable: {}\"}}",
+                    issued.unwrap_err().replace('"', "'")
+                );
+                stream.write_all(&http_response(
+                    "502 Bad Gateway",
+                    "application/json",
+                    &body,
+                    None,
+                ))?;
                 return Ok(());
             };
             let Ok(body) = serde_json::from_str::<serde_json::Value>(&body_text) else {
@@ -216,7 +229,12 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
                 Ok(c) => c,
                 Err(e) => {
                     let body = format!("{{\"error\":\"{e}\"}}");
-                    stream.write_all(&http_response("401 Unauthorized", "application/json", &body, None))?;
+                    stream.write_all(&http_response(
+                        "401 Unauthorized",
+                        "application/json",
+                        &body,
+                        None,
+                    ))?;
                     return Ok(());
                 }
             };
@@ -242,7 +260,7 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
                 None,
             ))?;
         }
-        "/fleet" | "/task" => {
+        "/fleet" | "/task" | "/browser" => {
             // Authenticated control endpoint: the bearer session token
             // authorizes the TENANT; the request relays through the
             // gateway to that tenant's worker only.
@@ -251,10 +269,82 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
                 Ok(s) => s,
                 Err(e) => {
                     let body = format!("{{\"error\":\"{e}\"}}");
-                    stream.write_all(&http_response("401 Unauthorized", "application/json", &body, None))?;
+                    stream.write_all(&http_response(
+                        "401 Unauthorized",
+                        "application/json",
+                        &body,
+                        None,
+                    ))?;
                     return Ok(());
                 }
             };
+            // M8.8 cloud browser relay (docs/24 § Cloud API): the typed
+            // browser RPCs (GetBrowserView 34 / SetBrowserLease 35) ride
+            // the SAME relay to the tenant worker's BrowserHost — the
+            // cloud api never hosts a browser and never parses the view
+            // payload; task identity comes from the query, tenant
+            // identity only from the SESSION.
+            if path == "/browser" {
+                let task = params.get("task").cloned().unwrap_or_default();
+                if task.is_empty() {
+                    stream.write_all(&http_response(
+                        "400 Bad Request",
+                        "application/json",
+                        "{\"error\":\"browser requires task\"}".to_string().as_str(),
+                        None,
+                    ))?;
+                    return Ok(());
+                }
+                let request = match params.get("action").map(String::as_str) {
+                    Some("view") => {
+                        modbit_protocol::modbit::protocol::v1::SurfaceRequest {
+                            request: Some(
+                                modbit_protocol::modbit::protocol::v1::surface_request::Request::GetBrowserView(
+                                    modbit_protocol::modbit::protocol::v1::GetBrowserViewRequest { task_id: task },
+                                ),
+                            ),
+                        }
+                        .encode_to_vec()
+                    }
+                    Some("lease") => {
+                        modbit_protocol::modbit::protocol::v1::SurfaceRequest {
+                            request: Some(
+                                modbit_protocol::modbit::protocol::v1::surface_request::Request::SetBrowserLease(
+                                    modbit_protocol::modbit::protocol::v1::SetBrowserLeaseCommand {
+                                        task_id: task,
+                                        owner: params.get("owner").cloned().unwrap_or_default(),
+                                    },
+                                ),
+                            ),
+                        }
+                        .encode_to_vec()
+                    }
+                    _ => {
+                        stream.write_all(&http_response("400 Bad Request", "application/json", "{\"error\":\"browser action must be view|lease\"}".to_string().as_str(), None))?;
+                        return Ok(());
+                    }
+                };
+                match relay_to_tenant_worker_view(state, &session.tenant, &request) {
+                    Ok(response) => {
+                        stream.write_all(&http_response(
+                            "200 OK",
+                            "application/json",
+                            &response,
+                            None,
+                        ))?;
+                    }
+                    Err(e) => {
+                        let body = format!("{{\"error\":\"{e}\"}}");
+                        stream.write_all(&http_response(
+                            "502 Bad Gateway",
+                            "application/json",
+                            &body,
+                            None,
+                        ))?;
+                    }
+                }
+                return Ok(());
+            }
             let payload = if path == "/fleet" {
                 modbit_protocol::modbit::protocol::v1::SurfaceRequest {
                     request: Some(
@@ -288,11 +378,21 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
             };
             match relay_to_tenant_worker(state, &session.tenant, &payload) {
                 Ok(response) => {
-                    stream.write_all(&http_response("200 OK", "application/json", &response, None))?;
+                    stream.write_all(&http_response(
+                        "200 OK",
+                        "application/json",
+                        &response,
+                        None,
+                    ))?;
                 }
                 Err(e) => {
                     let body = format!("{{\"error\":\"{e}\"}}");
-                    stream.write_all(&http_response("502 Bad Gateway", "application/json", &body, None))?;
+                    stream.write_all(&http_response(
+                        "502 Bad Gateway",
+                        "application/json",
+                        &body,
+                        None,
+                    ))?;
                 }
             }
         }
@@ -313,6 +413,75 @@ struct GatewayErr {
     error: String,
 }
 
+/// Relays a SurfaceRequest and surfaces the BROWSER VIEW payload (M8.8):
+/// the same gateway relay, with the decoded BrowserViewView carried into
+/// the JSON body (task/url/title/png_base64/lease) so a tenant client
+/// sees the live frame. The cloud api still never hosts a browser.
+fn relay_to_tenant_worker_view(
+    state: &Arc<AppState>,
+    tenant: &str,
+    payload: &[u8],
+) -> Result<String, String> {
+    let response = relay_to_tenant_worker_response(state, tenant, payload)?;
+    let mut body = serde_json::Map::new();
+    body.insert("ok".into(), serde_json::Value::Bool(response.ok));
+    body.insert(
+        "error".into(),
+        serde_json::Value::String(response.error.clone()),
+    );
+    if let Some(v) = response.browser_view.as_ref() {
+        body.insert(
+            "browser_view".into(),
+            serde_json::json!({
+                "task_id": v.task_id,
+                "url": v.url,
+                "title": v.title,
+                "png_base64": v.png_base64,
+                "lease": v.lease,
+            }),
+        );
+    }
+    Ok(serde_json::Value::Object(body).to_string())
+}
+
+fn relay_to_tenant_worker_response(
+    state: &Arc<AppState>,
+    tenant: &str,
+    payload: &[u8],
+) -> Result<modbit_protocol::modbit::protocol::v1::SurfaceResponse, String> {
+    let stream =
+        TcpStream::connect(&state.gateway_addr).map_err(|e| format!("gateway unreachable: {e}"))?;
+    let mut conn =
+        modbit_protocol::transport::Connection::over_stream(stream, &state.gateway_secret)
+            .map_err(|e| format!("gateway handshake failed: {e}"))?;
+    conn.send(
+        &serde_json::to_vec(&Registration {
+            role: "guest".into(),
+            tenant: tenant.to_string(),
+            task: String::new(),
+        })
+        .expect("json"),
+    )
+    .map_err(|e| e.to_string())?;
+    conn.send(
+        &serde_json::to_vec(&Envelope {
+            tenant: tenant.to_string(),
+            task: String::new(),
+            payload: Envelope::encode_payload(payload),
+        })
+        .expect("json"),
+    )
+    .map_err(|e| e.to_string())?;
+    let frame = conn.receive().map_err(|e| e.to_string())?;
+    if let Ok(err) = serde_json::from_slice::<GatewayErr>(&frame) {
+        return Err(err.error);
+    }
+    let envelope: Envelope = serde_json::from_slice(&frame).map_err(|e| e.to_string())?;
+    let raw = envelope.decode_payload()?;
+    modbit_protocol::modbit::protocol::v1::SurfaceResponse::decode(raw.as_slice())
+        .map_err(|e| e.to_string())
+}
+
 /// Relays a SurfaceRequest to the caller's tenant worker THROUGH the
 /// gateway (guest role, bound to the authenticated tenant).
 fn relay_to_tenant_worker(
@@ -322,11 +491,9 @@ fn relay_to_tenant_worker(
 ) -> Result<String, String> {
     let stream =
         TcpStream::connect(&state.gateway_addr).map_err(|e| format!("gateway unreachable: {e}"))?;
-    let mut conn = modbit_protocol::transport::Connection::over_stream(
-        stream,
-        &state.gateway_secret,
-    )
-    .map_err(|e| format!("gateway handshake failed: {e}"))?;
+    let mut conn =
+        modbit_protocol::transport::Connection::over_stream(stream, &state.gateway_secret)
+            .map_err(|e| format!("gateway handshake failed: {e}"))?;
     conn.send(
         &serde_json::to_vec(&Registration {
             role: "guest".into(),
@@ -426,13 +593,20 @@ fn verify_session(state: &Arc<AppState>, token: &str) -> Result<Session, String>
 /// Minimal HTTP GET over TcpStream (the daemon's hand-rolled HTTP
 /// pattern; no client stack needed for the two fixed issuer calls).
 fn http_get(base: &str, path: &str) -> Result<String, String> {
-    let addr = base.trim_start_matches("http://").trim_end_matches('/').to_string();
+    let addr = base
+        .trim_start_matches("http://")
+        .trim_end_matches('/')
+        .to_string();
     let mut stream = TcpStream::connect(&addr).map_err(|e| format!("connect {addr}: {e}"))?;
     stream
-        .write_all(format!("GET {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n").as_bytes())
+        .write_all(
+            format!("GET {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n").as_bytes(),
+        )
         .map_err(|e| e.to_string())?;
     let mut text = String::new();
-    stream.read_to_string(&mut text).map_err(|e| e.to_string())?;
+    stream
+        .read_to_string(&mut text)
+        .map_err(|e| e.to_string())?;
     text.split_once("\r\n\r\n")
         .map(|(_, b)| b.to_string())
         .ok_or_else(|| "no http body".into())
@@ -440,16 +614,23 @@ fn http_get(base: &str, path: &str) -> Result<String, String> {
 
 /// Minimal HTTP POST (x-www-form-urlencoded) over TcpStream.
 fn http_post_form(base: &str, path: &str, form: &str) -> Result<String, String> {
-    let addr = base.trim_start_matches("http://").trim_end_matches('/').to_string();
+    let addr = base
+        .trim_start_matches("http://")
+        .trim_end_matches('/')
+        .to_string();
     let mut stream = TcpStream::connect(&addr).map_err(|e| format!("connect {addr}: {e}"))?;
     let body = form.to_string();
     let req = format!(
         "POST {path} HTTP/1.1\r\nHost: {addr}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
         body.len()
     );
-    stream.write_all(req.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .write_all(req.as_bytes())
+        .map_err(|e| e.to_string())?;
     let mut text = String::new();
-    stream.read_to_string(&mut text).map_err(|e| e.to_string())?;
+    stream
+        .read_to_string(&mut text)
+        .map_err(|e| e.to_string())?;
     text.split_once("\r\n\r\n")
         .map(|(_, b)| b.to_string())
         .ok_or_else(|| "no http body".into())

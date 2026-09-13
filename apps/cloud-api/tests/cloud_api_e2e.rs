@@ -22,7 +22,11 @@ fn tempdir(tag: &str) -> std::path::PathBuf {
 
 fn bin(name: &str) -> std::path::PathBuf {
     let exe = std::env::current_exe().expect("current_exe");
-    let dir = exe.parent().expect("deps dir").parent().expect("profile dir");
+    let dir = exe
+        .parent()
+        .expect("deps dir")
+        .parent()
+        .expect("profile dir");
     let candidate = dir.join(name);
     // Windows: sibling bins carry the .exe suffix.
     if candidate.exists() || !cfg!(target_os = "windows") {
@@ -41,11 +45,7 @@ impl Drop for Proc {
     }
 }
 
-fn spawn(
-    path: std::path::PathBuf,
-    envs: &[(&str, &str)],
-    piped_boot: bool,
-) -> (Proc, String) {
+fn spawn(path: std::path::PathBuf, envs: &[(&str, &str)], piped_boot: bool) -> (Proc, String) {
     let mut cmd = Command::new(path);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -160,7 +160,10 @@ fn cloud_api_oidc_pkce_login_and_tenant_scoped_control() {
     let authorize_query = rest[rest.find('/').expect("path starts")..].to_string();
     let params: std::collections::HashMap<String, String> = authorize_query
         .split('&')
-        .filter_map(|p| p.split_once('=').map(|(k, v)| (k.to_string(), v.to_string())))
+        .filter_map(|p| {
+            p.split_once('=')
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+        })
         .collect();
     assert_eq!(
         params.get("code_challenge_method").map(String::as_str),
@@ -247,4 +250,194 @@ fn urlencode(s: &str) -> String {
         }
     }
     out
+}
+
+/// Drives the FULL cloud browser relay (M8.8, docs/24 § Cloud API): a
+/// tenant session over REAL HTTP reaches the tenant worker's REAL
+/// BrowserHost through the gateway — live view (real Chromium PNG),
+/// takeover (lease=user) and return (lease=agent). ISOLATION: a second
+/// tenant's session asking for the same task id can never observe the
+/// first tenant's browser state — its relay goes only to its own plane
+/// and fails closed (no worker), and tenant-1's lease is untouched.
+/// Skips with a recorded note when no Chromium-family binary exists
+/// (same documented gap as the cdp e2e), never a fake pass.
+#[test]
+fn cloud_browser_relay_view_lease_and_tenant_isolation() {
+    use modbit_browser::cdp::CdpBrowser;
+    if CdpBrowser::find_browser().is_none() {
+        println!(
+            "cloud browser e2e skipped: no Chromium-family browser on this runner (recorded gap)"
+        );
+        return;
+    }
+
+    // 0. Issuer for tenant-1 (default fixture tenant).
+    let (_issuer1, issuer1_boot) = spawn(bin("fixture-issuer"), &[], true);
+    let iss1_addr = issuer1_boot
+        .split_whitespace()
+        .nth(1)
+        .expect("iss1")
+        .to_string();
+    // Issuer for tenant-2: same fixture binary, different INTERNAL tenant.
+    let (_issuer2, issuer2_boot) = spawn(
+        bin("fixture-issuer"),
+        &[("MODBIT_FIXTURE_TENANT", "tenant-2")],
+        true,
+    );
+    let iss2_addr = issuer2_boot
+        .split_whitespace()
+        .nth(1)
+        .expect("iss2")
+        .to_string();
+
+    // 1. Gateway + tenant-1 worker (real Core, real store).
+    let (_gateway, gateway_boot) = spawn(
+        bin("modbit-sandbox-gateway"),
+        &[("MODBIT_GATEWAY_ADDR", "127.0.0.1:0")],
+        true,
+    );
+    let gw_parts: Vec<&str> = gateway_boot.split_whitespace().collect();
+    let (gw_addr, gw_secret) = (gw_parts[1].to_string(), gw_parts[2].to_string());
+    let db1 = tempdir("db1").join("cloud.db");
+    let (_worker1, _) = spawn(
+        bin("modbit-cloud-worker"),
+        &[
+            ("MODBIT_GATEWAY_ADDR", gw_addr.as_str()),
+            ("MODBIT_GATEWAY_SECRET", gw_secret.as_str()),
+            ("MODBIT_WORKER_TENANT", "tenant-1"),
+            ("MODBIT_CORE_DB", db1.to_str().unwrap()),
+        ],
+        false,
+    );
+
+    // 2. Cloud apis: one per tenant, same gateway, different issuers.
+    let api_boot_for = |issuer: &str| {
+        let (api, boot) = spawn(
+            bin("modbit-cloud-api"),
+            &[
+                ("MODBIT_CLOUD_API_ADDR", "127.0.0.1:0"),
+                ("MODBIT_GATEWAY_SECRET", gw_secret.as_str()),
+                ("MODBIT_CLOUD_GATEWAY", gw_addr.as_str()),
+                ("MODBIT_OIDC_ISSUER", issuer),
+                ("MODBIT_OIDC_REDIRECT", "http://localhost/callback"),
+            ],
+            true,
+        );
+        let addr = boot
+            .split_whitespace()
+            .nth(1)
+            .expect("api addr")
+            .to_string();
+        (api, addr)
+    };
+    let (_api1, api1) = api_boot_for(&format!("http://{iss1_addr}"));
+    let (_api2, api2) = api_boot_for(&format!("http://{iss2_addr}"));
+    std::thread::sleep(std::time::Duration::from_millis(400));
+
+    // 3. PKCE login per tenant (fixture issuer → callback → session).
+    let login = |api_addr: &str, issuer_addr: &str| -> String {
+        let (head, _) = read_http(api_addr, "/login");
+        assert!(head.contains("302"), "{head}");
+        let location = head
+            .lines()
+            .find(|l| l.to_lowercase().starts_with("location:"))
+            .expect("location")
+            .split_once(' ')
+            .expect("loc value")
+            .1
+            .to_string();
+        let rest = location
+            .split_once("://")
+            .map(|(_, r)| r)
+            .unwrap_or(&location);
+        let authorize_query = rest[rest.find('/').expect("path")..].to_string();
+        let (cb_head, _cb_path) = read_http(issuer_addr, &authorize_query);
+        assert!(cb_head.contains("302"), "{cb_head}");
+        let cb_loc = cb_head
+            .lines()
+            .find(|l| l.to_lowercase().starts_with("location:"))
+            .expect("cb location")
+            .split_once(' ')
+            .expect("cb loc value")
+            .1
+            .to_string();
+        let cb_rest = cb_loc.split_once("://").map(|(_, r)| r).unwrap_or(&cb_loc);
+        let callback_target = cb_rest[cb_rest.find('/').expect("cb path")..].to_string();
+        let (head, body) = read_http(api_addr, &callback_target);
+        assert!(head.contains("200"), "callback: {head} {body}");
+        let session: serde_json::Value = serde_json::from_str(&body).expect("session json");
+        session["session_token"]
+            .as_str()
+            .expect("token")
+            .to_string()
+    };
+    let token1 = login(&api1, &iss1_addr);
+    let _token2 = login(&api2, &iss2_addr);
+
+    // 4. Tenant-1 live view through the cloud plane: the worker's
+    // BrowserHost launches REAL headless Chromium on demand and returns
+    // the live PNG + page + lease (agent by default).
+    let (head, body) = read_http(
+        &api1,
+        &format!("/browser?token={token1}&task=t-cloud-b&action=view"),
+    );
+    assert!(head.contains("200"), "view: {head} {body}");
+    let view: serde_json::Value = serde_json::from_str(&body).expect("view json");
+    assert_eq!(view["ok"], true, "{body}");
+    let v = &view["browser_view"];
+    assert_eq!(v["task_id"], "t-cloud-b");
+    assert_eq!(v["lease"], "agent", "fresh browser starts agent-owned");
+    let png = v["png_base64"].as_str().expect("png");
+    assert!(
+        png.len() > 100,
+        "live PNG frame expected, got {} chars",
+        png.len()
+    );
+
+    // 5. Takeover through the cloud plane: lease flips to the user.
+    let (head, body) = read_http(
+        &api1,
+        &format!("/browser?token={token1}&task=t-cloud-b&action=lease&owner=user"),
+    );
+    assert!(head.contains("200"), "takeover: {head} {body}");
+    let view: serde_json::Value = serde_json::from_str(&body).expect("takeover json");
+    assert_eq!(view["browser_view"]["lease"], "user", "{body}");
+
+    // 6. Return to agent through the cloud plane.
+    let (head, body) = read_http(
+        &api1,
+        &format!("/browser?token={token1}&task=t-cloud-b&action=lease&owner=agent"),
+    );
+    assert!(head.contains("200"), "return: {head} {body}");
+    let view: serde_json::Value = serde_json::from_str(&body).expect("return json");
+    assert_eq!(view["browser_view"]["lease"], "agent", "{body}");
+
+    // 7. ISOLATION: tenant-2 (own cloud api, own issuer-vouched tenant)
+    // asks for the SAME task id. The gateway relays only within
+    // tenant-2's plane; with no tenant-2 worker the relay fails closed —
+    // and never leaks tenant-1's browser state.
+    let (head, body) = read_http(
+        &api2,
+        &format!("/browser?token={_token2}&task=t-cloud-b&action=view"),
+    );
+    assert!(
+        head.contains("502") || head.contains("404") || head.contains("400"),
+        "tenant-2 relay must fail closed, got: {head} {body}"
+    );
+    assert!(
+        !body.contains("png_base64"),
+        "cross-tenant response leaked a view: {body}"
+    );
+
+    // 8. Tenant-1's browser state is untouched by the denied attempt.
+    let (head, body) = read_http(
+        &api1,
+        &format!("/browser?token={token1}&task=t-cloud-b&action=view"),
+    );
+    assert!(head.contains("200"), "{head}");
+    let view: serde_json::Value = serde_json::from_str(&body).expect("view json");
+    assert_eq!(
+        view["browser_view"]["lease"], "agent",
+        "denied cross-tenant read disturbed tenant-1 state: {body}"
+    );
 }

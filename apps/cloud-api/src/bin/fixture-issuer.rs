@@ -70,7 +70,10 @@ fn urldecode(s: &str) -> String {
 fn parse_query(query: &str) -> HashMap<String, String> {
     query
         .split('&')
-        .filter_map(|p| p.split_once('=').map(|(k, v)| (k.to_string(), urldecode(v))))
+        .filter_map(|p| {
+            p.split_once('=')
+                .map(|(k, v)| (k.to_string(), urldecode(v)))
+        })
         .collect()
 }
 
@@ -102,7 +105,11 @@ fn serve_conn(mut stream: TcpStream, state: Arc<State>) -> std::io::Result<()> {
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut request_line = String::new();
     reader.read_line(&mut request_line)?;
-    let target = request_line.split_whitespace().nth(1).unwrap_or("").to_string();
+    let target = request_line
+        .split_whitespace()
+        .nth(1)
+        .unwrap_or("")
+        .to_string();
     let mut content_length = 0usize;
     loop {
         let mut header = String::new();
@@ -132,7 +139,10 @@ fn serve_conn(mut stream: TcpStream, state: Arc<State>) -> std::io::Result<()> {
         "/authorize" => {
             // The issued CODE is the grant handle: /token looks the grant
             // up by code (state is never sent to the token endpoint).
-            let code = params.get("code").cloned().unwrap_or_else(|| "authcode-1".into());
+            let code = params
+                .get("code")
+                .cloned()
+                .unwrap_or_else(|| "authcode-1".into());
             state.pending.lock().unwrap().insert(
                 code,
                 (
@@ -154,7 +164,10 @@ fn serve_conn(mut stream: TcpStream, state: Arc<State>) -> std::io::Result<()> {
         "/token" => {
             let form: HashMap<String, String> = body
                 .split('&')
-                .filter_map(|p| p.split_once('=').map(|(k, v)| (k.to_string(), urldecode(v))))
+                .filter_map(|p| {
+                    p.split_once('=')
+                        .map(|(k, v)| (k.to_string(), urldecode(v)))
+                })
                 .collect();
             let pending = form
                 .get("code")
@@ -188,7 +201,10 @@ fn serve_conn(mut stream: TcpStream, state: Arc<State>) -> std::io::Result<()> {
                 "iss": state.iss,
                 "aud": "modbit-cloud",
                 "sub": "user-42",
-                "tenant": "tenant-1",
+                // The INTERNAL tenant this issuer vouches for (default
+                // tenant-1; tests boot a second instance for tenant-2).
+                "tenant": std::env::var("MODBIT_FIXTURE_TENANT")
+                    .unwrap_or_else(|_| "tenant-1".into()),
                 "nonce": nonce,
                 "exp": now + 300,
                 "iat": now,
@@ -196,13 +212,8 @@ fn serve_conn(mut stream: TcpStream, state: Arc<State>) -> std::io::Result<()> {
             let enc = |v: &serde_json::Value| b64url(v.to_string().as_bytes());
             let signing_input = format!("{}.{}", enc(&header), enc(&claims));
             let mut rng = rand::thread_rng();
-            let sig = state
-                .key
-                .sign_with_rng(&mut rng, signing_input.as_bytes());
-            let id_token = format!(
-                "{signing_input}.{}",
-                b64url(&sig.to_bytes())
-            );
+            let sig = state.key.sign_with_rng(&mut rng, signing_input.as_bytes());
+            let id_token = format!("{signing_input}.{}", b64url(&sig.to_bytes()));
             http_reply(
                 &mut stream,
                 "200 OK",
@@ -212,7 +223,7 @@ fn serve_conn(mut stream: TcpStream, state: Arc<State>) -> std::io::Result<()> {
         }
         "/.well-known/jwks.json" => {
             use rsa::traits::PublicKeyParts as _;
-                        let public = state.key.as_ref().clone().to_public_key();
+            let public = state.key.as_ref().clone().to_public_key();
             let enc = |d: &[u8]| b64url(d);
             http_reply(
                 &mut stream,
