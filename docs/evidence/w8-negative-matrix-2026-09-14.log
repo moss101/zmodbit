@@ -1,0 +1,33 @@
+W8 security/authority negative-testing matrix — goal list mapped to proving tests
+Date: 2026-09-14
+
+| Attack (goal W8) | Proving test(s) |
+|---|---|
+| Workspace escape / path traversal / symlink escape | policy_attack_suite::hostile_paths_are_denied_despite_write_grants (E2E-023), guest_e2e traversal cases (policy_denied, canonicalized) |
+| Unauthorized write | policy kernel write-scope admission (perf_gate always-on), guest fs policy_denied cases |
+| Unauthorized network target | sandbox deny-by-default check_network (control-plane never grantable), guest network_allow empty |
+| Unapproved effect | approvals_e2e (E2E-004), approval_decisions_bind_intent_hashes (attack suite) |
+| Expired approval | approvals_e2e expiry paths |
+| Replayed approval / replayed effect | approval intent-hash binding (attack suite); guest idempotent replay (sandbox unit + guest_e2e raw-wire replay) |
+| Wrong-task approval | approval task binding (approvals_e2e) |
+| Wrong-generation command | guest_e2e raw-wire stale generation -> fenced; generation advance kills in-flight (loss test) |
+| Credential theft / secret exfiltration | guest_e2e::e2e_no_secret_material_in_guest_child_env + credential-broker E2E (value-free audit, redaction, opaque handles) |
+| Tool-schema manipulation | guest_e2e effect-class/operation mismatch -> bad_request; conformance harness (M10.7) |
+| Capability escalation | policy_attack_suite::hostile_tool_results_cannot_self_grant; capability kernel tests |
+| Guest impersonation (no boot secret) | NEW gateway_e2e::gateway_refuses_impersonating_peers_without_the_boot_secret |
+| Worker impersonation (no boot secret) | same test |
+| Stale browser lease / concurrent takeover | browser_view_e2e (E2E-015: lease generation increments, stale agent inputs fenced) + browser_host_recovery (lease reset on relaunch) |
+| Cross-task browser access | per-task session keys in ONE BrowserHost; guest gate refuses wrong-task; cloud relay tenant binding |
+| Cross-task artifact access | object keys tenant/task-namespaced (object_store_contract isolation cases) |
+| Cross-task database access | event-store task scoping; cloud tenant binding (gateway_e2e E2E-024) |
+
+== gateway impersonation negatives (NEW) ==
+
+running 2 tests
+test gateway_refuses_impersonating_peers_without_the_boot_secret ... ok
+test gateway_relays_real_core_work_and_enforces_tenant_isolation ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+     Running tests/gateway_e2e.rs (target/debug/deps/gateway_e2e-ac0e630ad674c514)

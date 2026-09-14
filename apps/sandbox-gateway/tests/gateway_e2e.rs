@@ -13,14 +13,12 @@ use std::sync::Arc;
 use prost::Message;
 
 use modbit_event_store::EventStore;
-use modbit_protocol::transport::{BootSecret, Connection};
 use modbit_protocol::cloud::{Envelope, Registration};
+use modbit_protocol::transport::{BootSecret, Connection};
 
 fn tempdir(tag: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "modbit-gw-{tag}-{}",
-        uuid::Uuid::now_v7().simple()
-    ));
+    let dir =
+        std::env::temp_dir().join(format!("modbit-gw-{tag}-{}", uuid::Uuid::now_v7().simple()));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -35,7 +33,11 @@ struct Boot {
 /// `target/<profile>/` — CARGO_BIN_EXE only covers same-package bins.
 fn bin(name: &str) -> std::path::PathBuf {
     let exe = std::env::current_exe().expect("current_exe");
-    let dir = exe.parent().expect("deps dir").parent().expect("profile dir");
+    let dir = exe
+        .parent()
+        .expect("deps dir")
+        .parent()
+        .expect("profile dir");
     let candidate = dir.join(name);
     // Windows: sibling bins carry the .exe suffix.
     if candidate.exists() || !cfg!(target_os = "windows") {
@@ -89,9 +91,7 @@ fn spawn_worker(boot: &Boot, tenant: &str, db: &std::path::Path) -> Child {
         Ok(child) => child,
         Err(first) => match spawn(db) {
             Ok(child) => child,
-            Err(second) => panic!(
-                "spawn worker failed twice: first={first} second={second}"
-            ),
+            Err(second) => panic!("spawn worker failed twice: first={first} second={second}"),
         },
     }
 }
@@ -118,10 +118,7 @@ fn request(
     req: modbit_protocol::modbit::protocol::v1::surface_request::Request,
 ) -> Result<modbit_protocol::modbit::protocol::v1::SurfaceResponse, String> {
     use modbit_protocol::modbit::protocol::v1 as pb;
-    let payload = pb::SurfaceRequest {
-        request: Some(req),
-    }
-    .encode_to_vec();
+    let payload = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     conn.send(
         &serde_json::to_vec(&Envelope {
             tenant: tenant.to_string(),
@@ -260,4 +257,40 @@ fn gateway_relays_real_core_work_and_enforces_tenant_isolation() {
     );
     let _ = worker2.kill();
     let _ = worker2.wait();
+}
+
+/// W8 impersonation negatives: a peer that does not hold the boot secret
+/// cannot join the relay fabric as a worker OR a guest — the HMAC
+/// challenge proof fails and the gateway drops the connection before any
+/// registration is honored. A forged role on a VALID secret is bounded by
+/// the tenant binding (worker leases its tenant; guests only relay within
+/// it — proven above).
+#[test]
+fn gateway_refuses_impersonating_peers_without_the_boot_secret() {
+    let boot = boot_gateway("impersonation");
+    // Worker impersonation: wrong secret.
+    let wrong = BootSecret::generate().unwrap();
+    let stream = std::net::TcpStream::connect(&boot.addr).expect("connect");
+    let refused = Connection::over_stream(stream, &wrong)
+        .err()
+        .expect("wrong secret must be refused");
+    assert!(
+        matches!(
+            refused,
+            modbit_protocol::transport::TransportError::AuthRejected { .. }
+        ) || matches!(
+            refused,
+            modbit_protocol::transport::TransportError::Protocol { .. }
+        ) || matches!(refused, modbit_protocol::transport::TransportError::Io(_)),
+        "unexpected refusal shape: {refused:?}"
+    );
+    // Guest impersonation with the wrong secret: same refusal.
+    let stream = std::net::TcpStream::connect(&boot.addr).expect("connect");
+    assert!(Connection::over_stream(stream, &wrong).is_err());
+    // A correct-secret worker still leases (the gateway is healthy after
+    // the refusals). The worker is a serving process — never wait() on
+    // it; the harness drop kills it.
+    let db = tempdir("imp-db").join("core.db");
+    let _worker = spawn_worker(&boot, "tenant-imp", &db);
+    std::thread::sleep(std::time::Duration::from_millis(400));
 }

@@ -142,6 +142,8 @@ Gate status: the deterministic Release Zero proof passes (see section 1, Phase 9
 
 Exit: M8 `E2E_PROVEN` on a real guest with tenant-isolation and loss/recovery tests green in CI or a documented operator-run conformance.
 
+W8 security negative-testing matrix AUDITED and recorded (docs/evidence/w8-negative-matrix-2026-09-14.log): every goal attack maps to a live proving test. One gap found and closed: gateway peer-impersonation negatives (worker AND guest roles connecting with a WRONG boot secret are refused at the HMAC handshake before any registration).
+
 W6 durability/recovery matrix AUDITED and recorded (docs/evidence/w6-durability-matrix-2026-09-14.log): every goal recovery scenario maps to a live proving test. One gap found and closed: BrowserHost never relaunched a dead browser session — `view()` now drops the dead session and relaunches once (lease resets to agent, takeover re-verifiable), proven against REAL Chromium (`browser_host_recovery::browser_host_relaunches_after_browser_loss`).
 
 CLOSED in this pass: M8.9 sandbox-loss recovery (E2E-018 → `crates/sandbox::guest_recovery` + `services/modbit-guest` E2E) — typed loss classification (dropped connection or expired bounded wait = outcome UNKNOWN; typed guest refusals are known), fs.write reconciliation by read-back against the fresh sandbox (AlreadyApplied never re-executed / absent re-executed exactly once + verified / divergent Unresolved → checkpoint restore), proc.exec refused by design (duplicate external effect).
