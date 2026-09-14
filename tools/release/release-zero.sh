@@ -37,7 +37,12 @@ echo "profile: $PROFILE_FLAG skip-package: $SKIP_PACKAGE"
 
 echo
 echo "== [1/4] deterministic component suite (real effectors) =="
-cargo test --workspace 2>&1 | tee "$BUNDLE/cargo-test.log" | grep -E "^test result" > "$BUNDLE/summaries.txt"
+# NOTE: redirect to a FILE, never `| tee | grep` — leaked long-lived E2E
+# daemons (documented modbit-execd/core leak class) inherit the pipe's
+# write end and EOF never arrives, wedging the script forever. The file
+# gives the same evidence with no EOF dependency.
+cargo test --workspace > "$BUNDLE/cargo-test.log" 2>&1
+grep -E "^test result" "$BUNDLE/cargo-test.log" > "$BUNDLE/summaries.txt"
 PASS=$(awk -F'[ ;]' '{p+=$4} END {print p+0}' "$BUNDLE/summaries.txt")
 FAIL=$(awk -F'[ ;]' '{f+=$6} END {print f+0}' "$BUNDLE/summaries.txt")
 echo "component totals: $PASS passed, $FAIL failed"

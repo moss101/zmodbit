@@ -1,0 +1,24 @@
+W12 RELEASE-CANDIDATE SEAL — verification sequence (docs/50, Future-tasks Phase 9 exit)
+Date: 2026-09-14
+HEAD: 1a16ddb (W11 reconciliation + fmt normalization; seal commit extends)  CI: 1a16ddb FULLY GREEN (windows/ubuntu/macos + architecture)
+
+1. formatting        cargo fmt --check                       CLEAN (workspace normalized this pass — 97 files of accumulated drift, zero semantic change; full suite re-verified on the formatted tree)
+2. lint/static       cargo clippy --workspace -D warnings    CLEAN (CI gate, green on final HEAD)
+3. Rust tests        cargo test --workspace                  603 passed / 0 failed (137 binaries; includes scripted E2E, negative suites, perf gates, conformance)
+4. TypeScript tests  pnpm -r test                            37 desktop + 7 ui + 6 surface-protocol + 4 design-tokens passed (the -r parallel-run flake re-verified green standalone)
+5. TS typecheck      pnpm -r typecheck                       4/4 Done
+6. integration/e2e   included in (3): daemon_*, cloud_api_e2e, gateway_e2e, guest_e2e, browser/cdp e2e, scheduler/fleet/lease
+7. negative suites   policy_attack_suite + gateway impersonation negatives + guest raw-wire negatives + object-store digest/tamper (all green in (3))
+8. performance       perf_gate (always-on CI gates; slowest-runner calibration) — green in (3)
+9. conformance       tool_conformance + M10.7 harness — green in (3)
+10. evidence         tools/check_dossier.py                  OK (70 docs, 291 REQ, 265 IMP, 291 QUAL)
+11. rc catalog       tools/rc_catalog.py                     OK (all 25 docs/51 scenarios mapped to live proofs)
+12. architecture     tools/architecture-lint/lint.py         OK (0 forbidden edges; REQ-tag placement clean)
+13. artifacts        tools/release/package.sh                bundle dist/modbit-0.1.0-aarch64-apple-darwin (release build, SBOM, provenance, SHA256SUMS)
+14. bundle verify    tools/release/verify-bundle.sh          OK — hashes OK, provenance complete, binaries execute, AD-HOC dev signature (production Developer ID = operator gate)
+15. release zero     tools/release/release-zero.sh           (this bundle; result appended below)
+16. clean clone      fresh git clone + cargo check           builds (33.7s check pass on protocol/core-runtime/guest)
+17. secrets sweep    repo scan for key material              CLEAN (only hit is the redaction scanner's own pattern)
+18. ledger reconcile tools/build_graph.py + build_manifest   regenerated; graph: 0 IMPLEMENTING imp_tasks remain (162 advanced to WIRED with verified file evidence in the W11 audit); milestone layer 7x E2E_PROVEN + WIRED-environmentals in M8 alone
+
+W11 findings fixed this pass: TODO/placeholder/mock sweep CLEAN; dead-RPC sweep CLEAN (37/37 surface variants dispatched); graph-state reconciliation (above).
