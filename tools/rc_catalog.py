@@ -39,7 +39,7 @@ MAPPING = {
     "E2E-014": [("cdp_e2e", None)],
     "E2E-015": [("browser_view_e2e", "browser_view_launches_observes_and_takes_over")],
     "E2E-016": [("policy_attack_suite", None), ("cdp_e2e", "hostile_page_content_stays_inert_data")],
-    "E2E-017": [("gateway_e2e", "gateway_relays_real_core_work_and_enforces_tenant_isolation"), ("guest_e2e", "e2e_real_effects_and_policy"), ("guest_e2e", "e2e_no_secret_material_in_guest_child_env")],
+    "E2E-017": [("gateway_e2e", "gateway_relays_real_core_work_and_enforces_tenant_isolation"), ("guest_e2e", "e2e_real_effects_and_policy"), ("guest_e2e", "e2e_no_secret_material_in_guest_child_env"), ("cloud_api_e2e", "cloud_checkpoint_attach_routes_through_relay")],
     "E2E-018": [("gateway_e2e", None), ("guest_e2e", "e2e_sandbox_loss_recovery")],
     "E2E-019": [("daemon_roles_e2e", None)],
     "E2E-020": [("daemon_sse", None)],

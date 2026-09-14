@@ -115,7 +115,11 @@ export interface SurfaceRequest {
     | SetBrowserLeaseCommand
     | undefined;
   /** M10.1: the durable per-run cost ledger for a task. */
-  getRunCost?: GetRunCostRequest | undefined;
+  getRunCost?:
+    | GetRunCostRequest
+    | undefined;
+  /** M8.7: cloud checkpoint attach (checkpoint handoff bundle JSON). */
+  importCheckpoint?: ImportCheckpointCommand | undefined;
 }
 
 export interface ApproveEffectCommand {
@@ -288,7 +292,32 @@ export interface SurfaceResponse {
   reviewChecklist: ReviewChecklistView | undefined;
   pendingApprovals: PendingApprovalList | undefined;
   browserView: BrowserViewView | undefined;
-  runCosts: RunCostList | undefined;
+  runCosts:
+    | RunCostList
+    | undefined;
+  /** M8.7: receipt of a checkpoint handoff attach on this worker. */
+  checkpointAttach: CheckpointAttachView | undefined;
+}
+
+/**
+ * M8.7: import a checkpoint handoff bundle (crates/checkpoint::cloud_attach
+ * CheckpointHandoffBundle JSON) and attach it as the named task on this
+ * worker's repository. Provenance binding is enforced server-side.
+ */
+export interface ImportCheckpointCommand {
+  taskId: string;
+  bundleJson: string;
+}
+
+/**
+ * M8.7: receipt of a successful attach — exact reconstruction is proven
+ * by the restored tree digest.
+ */
+export interface CheckpointAttachView {
+  taskId: string;
+  restoredCommit: string;
+  restoredTree: string;
+  exactReconstruction: boolean;
 }
 
 /**
@@ -641,6 +670,7 @@ function createBaseSurfaceRequest(): SurfaceRequest {
     getBrowserView: undefined,
     setBrowserLease: undefined,
     getRunCost: undefined,
+    importCheckpoint: undefined,
   };
 }
 
@@ -753,6 +783,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getRunCost !== undefined) {
       GetRunCostRequest.encode(message.getRunCost, writer.uint32(290).fork()).join();
+    }
+    if (message.importCheckpoint !== undefined) {
+      ImportCheckpointCommand.encode(message.importCheckpoint, writer.uint32(298).fork()).join();
     }
     return writer;
   },
@@ -1052,6 +1085,14 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
           message.getRunCost = GetRunCostRequest.decode(reader, reader.uint32());
           continue;
         }
+        case 37: {
+          if (tag !== 298) {
+            break;
+          }
+
+          message.importCheckpoint = ImportCheckpointCommand.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1117,6 +1158,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
         ? SetBrowserLeaseCommand.fromJSON(object.setBrowserLease)
         : undefined,
       getRunCost: isSet(object.getRunCost) ? GetRunCostRequest.fromJSON(object.getRunCost) : undefined,
+      importCheckpoint: isSet(object.importCheckpoint)
+        ? ImportCheckpointCommand.fromJSON(object.importCheckpoint)
+        : undefined,
     };
   },
 
@@ -1229,6 +1273,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
     }
     if (message.getRunCost !== undefined) {
       obj.getRunCost = GetRunCostRequest.toJSON(message.getRunCost);
+    }
+    if (message.importCheckpoint !== undefined) {
+      obj.importCheckpoint = ImportCheckpointCommand.toJSON(message.importCheckpoint);
     }
     return obj;
   },
@@ -1345,6 +1392,9 @@ export const SurfaceRequest: MessageFns<SurfaceRequest> = {
       : undefined;
     message.getRunCost = (object.getRunCost !== undefined && object.getRunCost !== null)
       ? GetRunCostRequest.fromPartial(object.getRunCost)
+      : undefined;
+    message.importCheckpoint = (object.importCheckpoint !== undefined && object.importCheckpoint !== null)
+      ? ImportCheckpointCommand.fromPartial(object.importCheckpoint)
       : undefined;
     return message;
   },
@@ -3023,6 +3073,7 @@ function createBaseSurfaceResponse(): SurfaceResponse {
     pendingApprovals: undefined,
     browserView: undefined,
     runCosts: undefined,
+    checkpointAttach: undefined,
   };
 }
 
@@ -3087,6 +3138,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     }
     if (message.runCosts !== undefined) {
       RunCostList.encode(message.runCosts, writer.uint32(162).fork()).join();
+    }
+    if (message.checkpointAttach !== undefined) {
+      CheckpointAttachView.encode(message.checkpointAttach, writer.uint32(170).fork()).join();
     }
     return writer;
   },
@@ -3258,6 +3312,14 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
           message.runCosts = RunCostList.decode(reader, reader.uint32());
           continue;
         }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.checkpointAttach = CheckpointAttachView.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3291,6 +3353,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
         : undefined,
       browserView: isSet(object.browserView) ? BrowserViewView.fromJSON(object.browserView) : undefined,
       runCosts: isSet(object.runCosts) ? RunCostList.fromJSON(object.runCosts) : undefined,
+      checkpointAttach: isSet(object.checkpointAttach)
+        ? CheckpointAttachView.fromJSON(object.checkpointAttach)
+        : undefined,
     };
   },
 
@@ -3356,6 +3421,9 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     if (message.runCosts !== undefined) {
       obj.runCosts = RunCostList.toJSON(message.runCosts);
     }
+    if (message.checkpointAttach !== undefined) {
+      obj.checkpointAttach = CheckpointAttachView.toJSON(message.checkpointAttach);
+    }
     return obj;
   },
 
@@ -3412,6 +3480,193 @@ export const SurfaceResponse: MessageFns<SurfaceResponse> = {
     message.runCosts = (object.runCosts !== undefined && object.runCosts !== null)
       ? RunCostList.fromPartial(object.runCosts)
       : undefined;
+    message.checkpointAttach = (object.checkpointAttach !== undefined && object.checkpointAttach !== null)
+      ? CheckpointAttachView.fromPartial(object.checkpointAttach)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseImportCheckpointCommand(): ImportCheckpointCommand {
+  return { taskId: "", bundleJson: "" };
+}
+
+export const ImportCheckpointCommand: MessageFns<ImportCheckpointCommand> = {
+  encode(message: ImportCheckpointCommand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.bundleJson !== "") {
+      writer.uint32(18).string(message.bundleJson);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ImportCheckpointCommand {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseImportCheckpointCommand();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.bundleJson = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ImportCheckpointCommand {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      bundleJson: isSet(object.bundleJson) ? globalThis.String(object.bundleJson) : "",
+    };
+  },
+
+  toJSON(message: ImportCheckpointCommand): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.bundleJson !== "") {
+      obj.bundleJson = message.bundleJson;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ImportCheckpointCommand>, I>>(base?: I): ImportCheckpointCommand {
+    return ImportCheckpointCommand.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ImportCheckpointCommand>, I>>(object: I): ImportCheckpointCommand {
+    const message = createBaseImportCheckpointCommand();
+    message.taskId = object.taskId ?? "";
+    message.bundleJson = object.bundleJson ?? "";
+    return message;
+  },
+};
+
+function createBaseCheckpointAttachView(): CheckpointAttachView {
+  return { taskId: "", restoredCommit: "", restoredTree: "", exactReconstruction: false };
+}
+
+export const CheckpointAttachView: MessageFns<CheckpointAttachView> = {
+  encode(message: CheckpointAttachView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "") {
+      writer.uint32(10).string(message.taskId);
+    }
+    if (message.restoredCommit !== "") {
+      writer.uint32(18).string(message.restoredCommit);
+    }
+    if (message.restoredTree !== "") {
+      writer.uint32(26).string(message.restoredTree);
+    }
+    if (message.exactReconstruction !== false) {
+      writer.uint32(32).bool(message.exactReconstruction);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckpointAttachView {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckpointAttachView();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.restoredCommit = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.restoredTree = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.exactReconstruction = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckpointAttachView {
+    return {
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      restoredCommit: isSet(object.restoredCommit) ? globalThis.String(object.restoredCommit) : "",
+      restoredTree: isSet(object.restoredTree) ? globalThis.String(object.restoredTree) : "",
+      exactReconstruction: isSet(object.exactReconstruction) ? globalThis.Boolean(object.exactReconstruction) : false,
+    };
+  },
+
+  toJSON(message: CheckpointAttachView): unknown {
+    const obj: any = {};
+    if (message.taskId !== "") {
+      obj.taskId = message.taskId;
+    }
+    if (message.restoredCommit !== "") {
+      obj.restoredCommit = message.restoredCommit;
+    }
+    if (message.restoredTree !== "") {
+      obj.restoredTree = message.restoredTree;
+    }
+    if (message.exactReconstruction !== false) {
+      obj.exactReconstruction = message.exactReconstruction;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CheckpointAttachView>, I>>(base?: I): CheckpointAttachView {
+    return CheckpointAttachView.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CheckpointAttachView>, I>>(object: I): CheckpointAttachView {
+    const message = createBaseCheckpointAttachView();
+    message.taskId = object.taskId ?? "";
+    message.restoredCommit = object.restoredCommit ?? "";
+    message.restoredTree = object.restoredTree ?? "";
+    message.exactReconstruction = object.exactReconstruction ?? false;
     return message;
   },
 };

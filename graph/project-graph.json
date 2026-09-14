@@ -3180,12 +3180,15 @@
    "milestone": "M8",
    "order": 6,
    "source": "docs/43",
-   "status": "WIRED",
+   "status": "E2E_PROVEN",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
     "commit:dfec7b7",
     "log:docs/evidence/phase8-7-checkpoint-attach-2026-09-13.log",
-    "commit:8ef198c"
+    "commit:8ef198c",
+    "log:docs/evidence/phase8-7-checkpoint-routing-2026-09-14.log",
+    "scenario:E2E-017",
+    "commit:d66f339"
    ],
    "notes": [
     {
@@ -3199,9 +3202,15 @@
      "from": "IMPLEMENTING",
      "to": "WIRED",
      "note": "checkpoint handoff bundle contract real: crates/git gains export/import of SELF-CONTAINED git bundles (modbit-namespace refs only); crates/checkpoint::cloud_attach adds CheckpointHandoffBundle (env bundle + SnapshotHandle + bundle bytes + digest) with export_checkpoint_bundle (local dirty state -> transferable bundle; branch/worktree/index untouched) and attach_checkpoint_bundle (cloud side: env validation, digest verification BEFORE git, task provenance binding refusing cross-task attach, restore, EXACT reconstruction proven by tree digest). Proven on real repos incl. untracked-file survival + corruption/task-confusion refusals. REMAINING: routing the bundle through cloud-api/worker surface (transport-agnostic contract is this module's; relay is a surface-RPC slice)"
+    },
+    {
+     "at": "2026-09-14T05:16:27Z",
+     "from": "WIRED",
+     "to": "E2E_PROVEN",
+     "note": "routing residual closed: surface field 37 ImportCheckpointCommand + CheckpointAttachView; cloud-api POST /checkpoint (tenant-bearer) relays through the gateway to the worker Core; CoreServices::with_repo_root(MODBIT_REPO_ROOT) binds the attach contract to the worker's repository; E2E proves the full route (local dirty repo → export → relay → attach with tree-digest EXACT receipt → reconstructed files on the worker) + cross-task provenance refusal. Bundle contract + routing BOTH proven; production signing of images stays operator-gated"
     }
    ],
-   "status_changed_on": "2026-09-13T09:43:24Z"
+   "status_changed_on": "2026-09-14T05:16:27Z"
   },
   {
    "id": "M8.8",
@@ -31074,5 +31083,5 @@
    "type": "constrains"
   }
  ],
- "updated_on": "2026-09-13T17:33:59Z"
+ "updated_on": "2026-09-14T05:16:27Z"
 }

@@ -120,13 +120,27 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
     let mut parts = request_line.split_whitespace();
     let _method = parts.next().unwrap_or_default().to_string();
     let target = parts.next().unwrap_or_default().to_string();
-    // Drain headers (GET-only control plane; bodies unused).
+    // Headers: capture Content-Length (POST /checkpoint carries the
+    // checkpoint bundle body; everything else is query-only).
+    let mut content_length: usize = 0;
     loop {
         let mut header = String::new();
         if reader.read_line(&mut header)? == 0 || header.trim().is_empty() {
             break;
         }
+        if let Some(v) = header
+            .to_ascii_lowercase()
+            .strip_prefix("content-length:")
+            .map(|v| v.trim().to_string())
+        {
+            content_length = v.parse().unwrap_or(0);
+        }
     }
+    let mut body_bytes = vec![0u8; content_length];
+    if content_length > 0 {
+        reader.read_exact(&mut body_bytes)?;
+    }
+    let body_text = String::from_utf8_lossy(&body_bytes).to_string();
     let (path, query) = match target.split_once('?') {
         Some((p, q)) => (p.to_string(), q.to_string()),
         None => (target.clone(), String::new()),
@@ -259,6 +273,98 @@ fn handle_connection(stream: TcpStream, state: &Arc<AppState>) -> std::io::Resul
                 &format!("{{\"session_token\":\"{token}\"}}"),
                 None,
             ))?;
+        }
+        "/checkpoint" => {
+            // M8.7: the tenant posts a checkpoint handoff bundle; the
+            // relay carries it as the typed ImportCheckpoint RPC to the
+            // tenant worker's Core, which attaches it into the worker's
+            // repository (provenance binding + exact-reconstruction
+            // proof live in the attach contract).
+            let token = params.get("token").cloned().unwrap_or_default();
+            let session = match verify_session(state, &token) {
+                Ok(s) => s,
+                Err(e) => {
+                    let body = format!("{{\"error\":\"{e}\"}}");
+                    stream.write_all(&http_response(
+                        "401 Unauthorized",
+                        "application/json",
+                        &body,
+                        None,
+                    ))?;
+                    return Ok(());
+                }
+            };
+            let posted: serde_json::Value = match serde_json::from_str(body_text.trim()) {
+                Ok(v) => v,
+                Err(e) => {
+                    let body = format!("{{\"error\":\"bad json body: {e}\"}}");
+                    stream.write_all(&http_response(
+                        "400 Bad Request",
+                        "application/json",
+                        &body,
+                        None,
+                    ))?;
+                    return Ok(());
+                }
+            };
+            let task = posted["task_id"].as_str().unwrap_or_default().to_string();
+            let bundle_json = posted["bundle_json"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string();
+            if task.is_empty() || bundle_json.is_empty() {
+                stream.write_all(&http_response(
+                    "400 Bad Request",
+                    "application/json",
+                    "{\"error\":\"checkpoint requires task_id and bundle_json\"}",
+                    None,
+                ))?;
+                return Ok(());
+            }
+            let request = modbit_protocol::modbit::protocol::v1::SurfaceRequest {
+                request: Some(
+                    modbit_protocol::modbit::protocol::v1::surface_request::Request::ImportCheckpoint(
+                        modbit_protocol::modbit::protocol::v1::ImportCheckpointCommand { task_id: task, bundle_json },
+                    ),
+                ),
+            }
+            .encode_to_vec();
+            match relay_to_tenant_worker_response(state, &session.tenant, &request) {
+                Ok(response) => {
+                    let mut body = serde_json::Map::new();
+                    body.insert("ok".into(), serde_json::Value::Bool(response.ok));
+                    body.insert(
+                        "error".into(),
+                        serde_json::Value::String(response.error.clone()),
+                    );
+                    if let Some(v) = response.checkpoint_attach.as_ref() {
+                        body.insert(
+                            "checkpoint_attach".into(),
+                            serde_json::json!({
+                                "task_id": v.task_id,
+                                "restored_commit": v.restored_commit,
+                                "restored_tree": v.restored_tree,
+                                "exact_reconstruction": v.exact_reconstruction,
+                            }),
+                        );
+                    }
+                    stream.write_all(&http_response(
+                        "200 OK",
+                        "application/json",
+                        &serde_json::Value::Object(body).to_string(),
+                        None,
+                    ))?;
+                }
+                Err(e) => {
+                    let body = format!("{{\"error\":\"{e}\"}}");
+                    stream.write_all(&http_response(
+                        "502 Bad Gateway",
+                        "application/json",
+                        &body,
+                        None,
+                    ))?;
+                }
+            }
         }
         "/fleet" | "/task" | "/browser" => {
             // Authenticated control endpoint: the bearer session token

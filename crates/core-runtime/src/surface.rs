@@ -32,6 +32,10 @@ pub struct CoreServices {
     /// Live run-control signals (Phase 2.3): Stop/Pause/Steer reach the
     /// in-flight run through the scheduler's registry.
     run_controls: Option<std::sync::Arc<crate::scheduler::RunControls>>,
+    /// M8.7: this host's base repository for checkpoint attach (the
+    /// cloud worker's mirror of the tenant repo). Set by the host binary
+    /// (MODBIT_REPO_ROOT); import_checkpoint refuses without it.
+    repo_root: Option<std::path::PathBuf>,
 }
 
 /// RFC3339-ish timestamp matching the store's format (no chrono dep).
@@ -85,7 +89,45 @@ impl CoreServices {
             agent_fleet: None,
             browser_host: std::sync::Arc::new(crate::browser_host::BrowserHost::new()),
             run_controls: None,
+            repo_root: None,
         }
+    }
+
+    /// Configures the base repository for checkpoint attach (M8.7).
+    pub fn with_repo_root(mut self, root: std::path::PathBuf) -> Self {
+        self.repo_root = Some(root);
+        self
+    }
+
+    /// M8.7: attaches a checkpoint handoff bundle (JSON) as the named
+    /// task on this host's base repository. The attach contract
+    /// (provenance binding, transfer digest, tree-digest EXACT proof)
+    /// lives in modbit-checkpoint::cloud_attach — this only binds it to
+    /// the host's repository and surfaces the receipt.
+    pub fn import_checkpoint(
+        &self,
+        task_id: &str,
+        bundle_json: &str,
+    ) -> Result<pb::CheckpointAttachView, String> {
+        let root = self
+            .repo_root
+            .as_ref()
+            .ok_or_else(|| "no repository configured for checkpoint attach (set MODBIT_REPO_ROOT)".to_string())?;
+        let bundle: modbit_checkpoint::cloud_attach::CheckpointHandoffBundle =
+            serde_json::from_str(bundle_json)
+                .map_err(|e| format!("bad checkpoint bundle: {e}"))?;
+        let repo =
+            modbit_git::GitRepo::open(root).map_err(|e| e.to_string())?;
+        let receipt = modbit_checkpoint::cloud_attach::attach_checkpoint_bundle(
+            &repo, &bundle, task_id,
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(pb::CheckpointAttachView {
+            task_id: receipt.task_id,
+            restored_commit: receipt.restored_commit,
+            restored_tree: receipt.restored_tree,
+            exact_reconstruction: receipt.exact_reconstruction,
+        })
     }
 
     /// Attaches the scheduler's live run-control registry (Phase 2.3):
@@ -936,6 +978,20 @@ impl CoreServices {
                     Ok(view) => pb::SurfaceResponse {
                         ok: true,
                         browser_view: Some(view),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
+            Some(pb::surface_request::Request::ImportCheckpoint(import)) => {
+                match self.import_checkpoint(&import.task_id, &import.bundle_json) {
+                    Ok(view) => pb::SurfaceResponse {
+                        ok: true,
+                        checkpoint_attach: Some(view),
                         ..Default::default()
                     },
                     Err(e) => pb::SurfaceResponse {

@@ -1,0 +1,27 @@
+Phase 8 M8.7 residual (checkpoint handoff routed through the cloud plane) — relay proof
+Date: 2026-09-14
+
+REAL TRANSPORT, REAL REPOS: a local machine exports a checkpoint
+handoff bundle from a REAL dirty git repo (tracked edit + untracked
+file), POSTs it to the tenant /checkpoint endpoint (bearer-authed),
+the relay carries it as the typed ImportCheckpoint RPC (surface field
+37) through the gateway, and the worker's Core attaches it into ITS
+repository (MODBIT_REPO_ROOT) via the attach contract — receipt proves
+exact reconstruction (tree digest); the worker's worktree really holds
+the reconstructed files. Cross-task provenance refusal rides the same
+typed contract (ok=false, no receipt).
+
+== cargo test -p modbit-cloud-api --test cloud_api_e2e ==
+running 3 tests
+test cloud_api_oidc_pkce_login_and_tenant_scoped_control ... ok
+test cloud_browser_relay_view_lease_and_tenant_isolation ... ok
+test cloud_checkpoint_attach_routes_through_relay ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.95s
+
+== pnpm -r typecheck (TS bindings regenerated for field 37; zero drift) ==
+packages/surface-protocol typecheck: Done
+packages/ui typecheck: Done
+apps/desktop typecheck: Done
+
+== architecture lint ==
+architecture-lint: OK (33 members checked, 0 forbidden edges, 28 COMPLETE tasks reachable, 75 misplaced REQ tag(s) allowlisted)

@@ -67,6 +67,8 @@ message SurfaceRequest {
     SetBrowserLeaseCommand set_browser_lease = 35;
     // M10.1: the durable per-run cost ledger for a task.
     GetRunCostRequest get_run_cost = 36;
+    // M8.7: cloud checkpoint attach (checkpoint handoff bundle JSON).
+    ImportCheckpointCommand import_checkpoint = 37;
   }
 }
 
@@ -213,6 +215,25 @@ message SurfaceResponse {
   PendingApprovalList pending_approvals = 18;
   BrowserViewView browser_view = 19;
   RunCostList run_costs = 20;
+  // M8.7: receipt of a checkpoint handoff attach on this worker.
+  CheckpointAttachView checkpoint_attach = 21;
+}
+
+// M8.7: import a checkpoint handoff bundle (crates/checkpoint::cloud_attach
+// CheckpointHandoffBundle JSON) and attach it as the named task on this
+// worker's repository. Provenance binding is enforced server-side.
+message ImportCheckpointCommand {
+  string task_id = 1;
+  string bundle_json = 2;
+}
+
+// M8.7: receipt of a successful attach — exact reconstruction is proven
+// by the restored tree digest.
+message CheckpointAttachView {
+  string task_id = 1;
+  string restored_commit = 2;
+  string restored_tree = 3;
+  bool exact_reconstruction = 4;
 }
 
 // AutomationView: the durable spec plus its fire state (the engine

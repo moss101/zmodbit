@@ -24,7 +24,9 @@ modbit-protocol = { path = "../../crates/protocol" }
 
 [dev-dependencies]
 modbit-browser = { path = "../../crates/browser" }
+modbit-checkpoint = { path = "../../crates/checkpoint" }
 modbit-event-store = { path = "../../crates/event-store" }
+modbit-git = { path = "../../crates/git" }
 uuid = { workspace = true }
 
 

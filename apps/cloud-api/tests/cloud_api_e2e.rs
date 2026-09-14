@@ -471,3 +471,211 @@ fn cloud_browser_relay_view_lease_and_tenant_isolation() {
         "denied cross-tenant read disturbed tenant-1 state: {body}"
     );
 }
+
+/// M8.7: the checkpoint handoff routed through the CLOUD plane — a local
+/// machine exports a checkpoint handoff bundle from a REAL dirty git
+/// repo, posts it to the tenant /checkpoint endpoint, the relay carries
+/// it as the typed ImportCheckpoint RPC through the gateway, and the
+/// worker's Core attaches it into ITS repository with the
+/// exact-reconstruction receipt (tree digest proven).
+#[test]
+fn cloud_checkpoint_attach_routes_through_relay() {
+    use modbit_checkpoint::cloud_attach::export_checkpoint_bundle;
+    use modbit_git::snapshot::SnapshotProvenance;
+    use modbit_git::GitRepo;
+
+    // 0. Issuer + gateway + tenant worker (with a REAL repository to
+    // attach into) + cloud api.
+    let (_issuer, issuer_boot) = spawn(bin("fixture-issuer"), &[], true);
+    let iss_addr = issuer_boot
+        .split_whitespace()
+        .nth(1)
+        .expect("iss")
+        .to_string();
+    let (_gateway, gateway_boot) = spawn(
+        bin("modbit-sandbox-gateway"),
+        &[("MODBIT_GATEWAY_ADDR", "127.0.0.1:0")],
+        true,
+    );
+    let gw_parts: Vec<&str> = gateway_boot.split_whitespace().collect();
+    let (gw_addr, gw_secret) = (gw_parts[1].to_string(), gw_parts[2].to_string());
+
+    let worker_repo_dir = tempdir("worker-repo");
+    let worker_repo = GitRepo::init(&worker_repo_dir).expect("init worker repo");
+    std::fs::write(worker_repo_dir.join("seed.txt"), "seed\n").unwrap();
+    worker_repo.commit_all("cloud-base").expect("seed");
+
+    let db = tempdir("ckpt-db").join("cloud.db");
+    let (_worker, _) = spawn(
+        bin("modbit-cloud-worker"),
+        &[
+            ("MODBIT_GATEWAY_ADDR", gw_addr.as_str()),
+            ("MODBIT_GATEWAY_SECRET", gw_secret.as_str()),
+            ("MODBIT_WORKER_TENANT", "tenant-1"),
+            ("MODBIT_CORE_DB", db.to_str().unwrap()),
+            ("MODBIT_REPO_ROOT", worker_repo_dir.to_str().unwrap()),
+        ],
+        false,
+    );
+    let (_api, api_addr) = {
+        let (api, boot) = spawn(
+            bin("modbit-cloud-api"),
+            &[
+                ("MODBIT_CLOUD_API_ADDR", "127.0.0.1:0"),
+                ("MODBIT_GATEWAY_SECRET", gw_secret.as_str()),
+                ("MODBIT_CLOUD_GATEWAY", gw_addr.as_str()),
+                ("MODBIT_OIDC_ISSUER", format!("http://{iss_addr}").as_str()),
+                ("MODBIT_OIDC_REDIRECT", "http://localhost/callback"),
+            ],
+            true,
+        );
+        let addr = boot
+            .split_whitespace()
+            .nth(1)
+            .expect("api boot")
+            .to_string();
+        (api, addr)
+    };
+    std::thread::sleep(std::time::Duration::from_millis(300));
+
+    // 1. LOCAL machine: a real repo with committed base + dirty state
+    // (tracked edit + untracked file).
+    let local_dir = tempdir("local-repo");
+    let local = GitRepo::init(&local_dir).expect("init local");
+    std::fs::write(local_dir.join("seed.txt"), "seed\n").unwrap();
+    local.commit_all("base").expect("commit");
+    std::fs::write(local_dir.join("feature.txt"), "dirty feature work").unwrap();
+    std::fs::create_dir_all(local_dir.join("notes")).unwrap();
+    std::fs::write(local_dir.join("notes/idea.md"), "untracked note").unwrap();
+
+    let bundle = export_checkpoint_bundle(
+        &local,
+        &SnapshotProvenance::new("task-ckpt-1", "mac-local", "local-workspace"),
+        "continue the feature on the worker",
+        "feature.txt rewritten, notes pending",
+        vec![],
+        vec![],
+    )
+    .expect("export");
+    let bundle_json = serde_json::to_string(&bundle).expect("bundle json");
+
+    // 2. Login (PKCE) and wait for the worker lease.
+    let (head, _) = read_http(&api_addr, "/login");
+    assert!(head.contains("302"), "{head}");
+    let location = head
+        .lines()
+        .find(|l| l.to_lowercase().starts_with("location:"))
+        .expect("location")
+        .split_once(' ')
+        .expect("loc")
+        .1
+        .to_string();
+    let rest = location
+        .split_once("://")
+        .map(|(_, r)| r)
+        .unwrap_or(&location);
+    let authorize_query = rest[rest.find('/').expect("path")..].to_string();
+    let (cb_head, _) = read_http(&iss_addr, &authorize_query);
+    assert!(cb_head.contains("302"), "{cb_head}");
+    let cb_loc = cb_head
+        .lines()
+        .find(|l| l.to_lowercase().starts_with("location:"))
+        .expect("cb loc")
+        .split_once(' ')
+        .expect("cb loc value")
+        .1
+        .to_string();
+    let cb_rest = cb_loc.split_once("://").map(|(_, r)| r).unwrap_or(&cb_loc);
+    let callback_target = cb_rest[cb_rest.find('/').expect("cb path")..].to_string();
+    let (head, body) = read_http(&api_addr, &callback_target);
+    assert!(head.contains("200"), "{head} {body}");
+    let session: serde_json::Value = serde_json::from_str(&body).expect("session");
+    let token = session["session_token"].as_str().expect("token");
+    wait_for_worker(&api_addr, token);
+
+    // 3. POST the bundle through the tenant checkpoint endpoint.
+    let post_body = serde_json::json!({
+        "task_id": "task-ckpt-1",
+        "bundle_json": bundle_json,
+    })
+    .to_string();
+    let mut stream = std::net::TcpStream::connect(&api_addr).expect("connect");
+    stream
+        .write_all(
+            format!(
+                "POST /checkpoint?token={token} HTTP/1.1\r\nHost: t\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{post_body}",
+                post_body.len()
+            )
+            .as_bytes(),
+        )
+        .unwrap();
+    let mut text = String::new();
+    std::io::Read::read_to_string(&mut stream, &mut text).unwrap();
+    assert!(text.contains("200"), "checkpoint attach: {text}");
+    let (_head, resp_body) = text
+        .split_once("\r\n\r\n")
+        .map(|(h, b)| (h.to_string(), b.to_string()))
+        .expect("http split");
+    let resp: serde_json::Value = serde_json::from_str(&resp_body).expect("resp json");
+    assert_eq!(resp["ok"], true, "{resp_body}");
+    let receipt = &resp["checkpoint_attach"];
+    assert_eq!(receipt["task_id"], "task-ckpt-1");
+    assert_eq!(receipt["exact_reconstruction"], true, "{resp_body}");
+    assert_eq!(
+        receipt["restored_tree"], bundle.snapshot.tree,
+        "worker reproduced the exact dirty tree"
+    );
+
+    // 4. The worker's repository really holds the reconstructed state.
+    assert_eq!(
+        std::fs::read_to_string(worker_repo_dir.join("feature.txt")).unwrap(),
+        "dirty feature work"
+    );
+    assert_eq!(
+        std::fs::read_to_string(worker_repo_dir.join("notes/idea.md")).unwrap(),
+        "untracked note"
+    );
+
+    // 5. Provenance binding through the relay: attaching the same bundle
+    // under a DIFFERENT task id is refused by the worker's attach
+    // contract (typed error, no state change).
+    let post_body = serde_json::json!({
+        "task_id": "task-OTHER",
+        "bundle_json": bundle_json,
+    })
+    .to_string();
+    let mut stream = std::net::TcpStream::connect(&api_addr).expect("connect");
+    stream
+        .write_all(
+            format!(
+                "POST /checkpoint?token={token} HTTP/1.1\r\nHost: t\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{post_body}",
+                post_body.len()
+            )
+            .as_bytes(),
+        )
+        .unwrap();
+    let mut text = String::new();
+    std::io::Read::read_to_string(&mut stream, &mut text).unwrap();
+    let (_h, resp_body) = text
+        .split_once("\r\n\r\n")
+        .map(|(h, b)| (h.to_string(), b.to_string()))
+        .expect("http split");
+    let resp: serde_json::Value = serde_json::from_str(&resp_body).expect("resp json");
+    // The attach CONTRACT refused it: ok=false with the typed provenance
+    // error and NO receipt — the worker's repository stays untouched.
+    assert_eq!(
+        resp["ok"], false,
+        "cross-task attach must be refused: {resp_body}"
+    );
+    assert!(
+        resp["error"]
+            .as_str()
+            .map(|e| e.contains("refusing attach"))
+            .unwrap_or(false),
+        "expected the provenance refusal, got {resp_body}"
+    );
+    assert!(
+        resp["checkpoint_attach"].is_null(),
+        "no receipt for a refused attach"
+    );
+}

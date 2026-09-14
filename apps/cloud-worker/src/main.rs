@@ -15,8 +15,8 @@ use std::sync::Arc;
 
 use modbit_core_runtime::CoreServices;
 use modbit_event_store::EventStore;
-use modbit_protocol::transport::{BootSecret, Connection};
 use modbit_protocol::cloud::{Envelope, Registration};
+use modbit_protocol::transport::{BootSecret, Connection};
 
 fn env_or_die(name: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| {
@@ -45,7 +45,13 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let services = CoreServices::new(store);
+    // M8.7: the worker's base repository for checkpoint attach (the
+    // tenant repo mirror on this host); absent, checkpoint import fails
+    // typed rather than guessing a path.
+    let mut services = CoreServices::new(store);
+    if let Ok(repo_root) = std::env::var("MODBIT_REPO_ROOT") {
+        services = services.with_repo_root(std::path::PathBuf::from(repo_root));
+    }
 
     let stream = TcpStream::connect(&addr).unwrap_or_else(|e| {
         eprintln!("cloud-worker: cannot connect to gateway {addr}: {e}");
