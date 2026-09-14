@@ -32,7 +32,16 @@ fn tempdir(tag: &str) -> PathBuf {
     // Short prefix: unix socket paths must fit sun_path (104 bytes).
     // UUIDv7 leads with its TIMESTAMP: take the random tail instead, or
     // dirs created in the same millisecond window collide across runs.
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("mle{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -88,8 +97,7 @@ struct CoreProc {
 }
 
 fn spawn_execd() -> Option<Child> {
-    let exe = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../target/debug/modbit-execd");
+    let exe = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut child = Command::new(exe)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -139,9 +147,7 @@ fn spawn_core(repo_root: &Path, worktree_root: &Path) -> CoreProc {
     reader.read_line(&mut line).expect("boot line");
     assert!(line.contains("socket"), "boot line: {line}");
     // Keep draining stdout so the pipe never breaks the core's writes.
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -191,7 +197,10 @@ impl Drop for CoreProc {
 // ---- surface protocol over the daemon ---------------------------------------
 
 fn request(core: &CoreProc, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{}/commands", core.daemon))
@@ -277,13 +286,17 @@ fn start_task(core: &CoreProc, title: &str, prompt: &str) -> String {
             title: title.into(),
             prompt: prompt.into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "create: {}", created.error);
     let task_id = created.task.expect("task view").task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let response = request(core, payload);
         assert!(response.ok, "queue/start: {}", response.error);
@@ -364,7 +377,9 @@ fn e2e_001_fresh_local_coding_task_end_to_end() {
     assert!(worktree.exists(), "worktree allocated");
     let diff = request(
         &core,
-        pb::surface_request::Request::GetDiff(pb::GetDiffRequest { task_id: task_id.clone() }),
+        pb::surface_request::Request::GetDiff(pb::GetDiffRequest {
+            task_id: task_id.clone(),
+        }),
     );
     assert!(diff.ok, "diff: {}", diff.error);
     let files = diff.diff.expect("diff view").files;
@@ -454,17 +469,24 @@ fn e2e_003_stream_reconnect_replays_losslessly() {
     let replay_ids: Vec<String> = replayed
         .iter()
         .filter_map(|p| serde_json::from_str::<serde_json::Value>(p).ok())
-        .filter_map(|v| {
-            v.get("event_id").and_then(|v| v.as_str()).map(String::from)
-        })
+        .filter_map(|v| v.get("event_id").and_then(|v| v.as_str()).map(String::from))
         .collect();
-    assert!(!replay_ids.is_empty(), "reconnect replays events after cursor");
+    assert!(
+        !replay_ids.is_empty(),
+        "reconnect replays events after cursor"
+    );
     for id in &replay_ids {
-        assert!(!first_ids.contains(&id.as_str()), "no duplicate events after replay");
+        assert!(
+            !first_ids.contains(&id.as_str()),
+            "no duplicate events after replay"
+        );
     }
     assert_eq!(
         replay_ids.len(),
-        replay_ids.iter().collect::<std::collections::HashSet<_>>().len(),
+        replay_ids
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len(),
         "replay carries no duplicates"
     );
 

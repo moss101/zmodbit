@@ -68,7 +68,9 @@ fn main() {
     let mut documents: std::collections::BTreeMap<String, String> = Default::default();
 
     while let Some(body) = read_message(&mut reader) {
-        let Ok(msg) = serde_json::from_slice::<serde_json::Value>(&body) else { continue };
+        let Ok(msg) = serde_json::from_slice::<serde_json::Value>(&body) else {
+            continue;
+        };
         let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
         let id = msg.get("id").cloned();
         let params = msg.get("params").cloned().unwrap_or_default();
@@ -91,9 +93,10 @@ fn main() {
             "initialized" | "textDocument/didOpen" | "$/cancelRequest" => {
                 if method == "textDocument/didOpen" {
                     if let Some(doc) = params.get("textDocument") {
-                        if let (Some(uri), Some(text)) =
-                            (doc.get("uri").and_then(|u| u.as_str()), doc.get("text").and_then(|t| t.as_str()))
-                        {
+                        if let (Some(uri), Some(text)) = (
+                            doc.get("uri").and_then(|u| u.as_str()),
+                            doc.get("text").and_then(|t| t.as_str()),
+                        ) {
                             documents.insert(uri.to_string(), text.to_string());
                         }
                     }
@@ -114,25 +117,33 @@ fn main() {
                 // Resolve the word at the requested position against the
                 // opened document text (a real semantic lookup shape).
                 let lines: Vec<&str> = text.lines().collect();
-                let word = lines
-                    .get(line)
-                    .and_then(|l| {
-                        let bytes = l.as_bytes();
-                        let mut start = line_char_to_byte(l, params.pointer("/position/character").and_then(|c| c.as_u64()).unwrap_or(0) as usize);
-                        if start > bytes.len() {
-                            start = bytes.len();
-                        }
-                        let is_word = |c: u8| c.is_ascii_alphanumeric() || c == b'_';
-                        let mut s = start;
-                        while s > 0 && is_word(bytes[s - 1]) {
-                            s -= 1;
-                        }
-                        let mut e = start;
-                        while e < bytes.len() && is_word(bytes[e]) {
-                            e += 1;
-                        }
-                        if s < e { Some(l[s..e].to_string()) } else { None }
-                    });
+                let word = lines.get(line).and_then(|l| {
+                    let bytes = l.as_bytes();
+                    let mut start = line_char_to_byte(
+                        l,
+                        params
+                            .pointer("/position/character")
+                            .and_then(|c| c.as_u64())
+                            .unwrap_or(0) as usize,
+                    );
+                    if start > bytes.len() {
+                        start = bytes.len();
+                    }
+                    let is_word = |c: u8| c.is_ascii_alphanumeric() || c == b'_';
+                    let mut s = start;
+                    while s > 0 && is_word(bytes[s - 1]) {
+                        s -= 1;
+                    }
+                    let mut e = start;
+                    while e < bytes.len() && is_word(bytes[e]) {
+                        e += 1;
+                    }
+                    if s < e {
+                        Some(l[s..e].to_string())
+                    } else {
+                        None
+                    }
+                });
 
                 let include_decl = params
                     .pointer("/context/includeDeclaration")

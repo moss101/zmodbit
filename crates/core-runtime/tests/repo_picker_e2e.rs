@@ -25,7 +25,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("rp1{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -41,7 +50,8 @@ fn make_repo(tag: &str, with_feature_branch: bool) -> PathBuf {
     repo.commit_all("base").expect("base commit");
     if with_feature_branch {
         // The edge file exists ONLY on feature/edge: main never sees it.
-        repo.create_branch("feature/edge", None).expect("feature branch");
+        repo.create_branch("feature/edge", None)
+            .expect("feature branch");
         repo.checkout("feature/edge").expect("checkout feature");
         std::fs::write(root.join("edge.txt"), "edge content\n").unwrap();
         repo.stage_path("edge.txt").unwrap();
@@ -65,8 +75,13 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
 
 /// Boots a core daemon against `db_path` (restarts share the DB) with NO
 /// MODBIT_REPO_ROOT — the picker path must not need it.
-fn spawn_core(db_path: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr) -> (Child, String) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+fn spawn_core(
+    db_path: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String) {
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -105,9 +120,7 @@ fn spawn_core(db_path: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -116,7 +129,10 @@ fn spawn_core(db_path: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -148,7 +164,10 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
         _ => "other",
     };
     eprintln!("REQ> {which}");
-    let client = Client::builder().timeout(Duration::from_secs(60)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(60))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -190,7 +209,8 @@ fn spawn_model_fixture(model_addr: SocketAddr) {
                     let n = reader.read(&mut chunk).unwrap();
                     buf.extend_from_slice(&chunk[..n]);
                     let text = String::from_utf8_lossy(&buf);
-                    if text.contains("\r\n\r\n") && text.contains("}") && text.rfind('}').is_some() {
+                    if text.contains("\r\n\r\n") && text.contains("}") && text.rfind('}').is_some()
+                    {
                         if let Some(end) = text.find("\r\n\r\n") {
                             let head = &text[..end];
                             let clen = head
@@ -221,9 +241,12 @@ fn spawn_model_fixture(model_addr: SocketAddr) {
 fn wait_state(daemon: &str, task_id: &str, want: i32, deadline_secs: u64) -> i32 {
     let deadline = Instant::now() + Duration::from_secs(deadline_secs);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         if let Some(t) = fleet.tasks.iter().find(|t| t.task_id == task_id) {
             if t.state == want {
                 return t.state;
@@ -280,7 +303,10 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
         "the clone lands under the worktree root's registered/ dir: {}",
         repo_b_view.path
     );
-    assert!(worktrees.join("registered").exists(), "clone directory exists");
+    assert!(
+        worktrees.join("registered").exists(),
+        "clone directory exists"
+    );
 
     // 3) The picker's list: both repos, with ids.
     let listed = request(
@@ -303,17 +329,21 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
             prompt: "Do it.".into(),
             repo_id: repo_a_id.clone(),
             base_branch: "feature/edge".into(),
-        
+
             parent_task_id: String::new(),
-        
+
             write_scope: String::new(),
         }),
     );
     assert!(created.ok, "create: {}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -325,9 +355,12 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
         if let Ok(Some(status)) = core.try_wait() {
             panic!("CORE DIED during the run: {status}");
         }
-        let fleet = request(&daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            &daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         if let Some(t) = fleet.tasks.iter().find(|t| t.task_id == task_id) {
             state_now = t.state;
             if state_now == pb::TaskStatus::ReadyForReview as i32 {
@@ -336,7 +369,11 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
         }
         std::thread::sleep(Duration::from_millis(200));
     }
-    assert_eq!(state_now, pb::TaskStatus::ReadyForReview as i32, "task must complete");
+    assert_eq!(
+        state_now,
+        pb::TaskStatus::ReadyForReview as i32,
+        "task must complete"
+    );
 
     // The worktree was allocated FROM feature/edge: the edge file is
     // checked out and the branch is the task's own modbit/<id> branch.
@@ -346,10 +383,18 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
         "the base branch's file is checked out (per-task base branch selection)"
     );
     let branch_out = Command::new("git")
-        .args(["-C", &worktree.display().to_string(), "rev-parse", "--abbrev-ref", "HEAD"])
+        .args([
+            "-C",
+            &worktree.display().to_string(),
+            "rev-parse",
+            "--abbrev-ref",
+            "HEAD",
+        ])
         .output()
         .expect("branch probe");
-    let branch = String::from_utf8_lossy(&branch_out.stdout).trim().to_string();
+    let branch = String::from_utf8_lossy(&branch_out.stdout)
+        .trim()
+        .to_string();
     assert_eq!(branch, format!("modbit/{task_id}"));
 
     // 5) Durability: the registry survives a core restart on the same DB.
@@ -376,9 +421,9 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
             prompt: "Do it.".into(),
             repo_id: "repo-does-not-exist".into(),
             base_branch: String::new(),
-        
+
             parent_task_id: String::new(),
-        
+
             write_scope: String::new(),
         }),
     );
@@ -389,8 +434,12 @@ fn registered_repos_drive_task_worktrees_with_base_branches() {
     );
     let bad_id = created_bad.task.expect("task view").task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: bad_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: bad_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: bad_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: bad_id.clone(),
+        }),
     ] {
         let r = request(&daemon2, payload);
         assert!(r.ok, "{}", r.error);

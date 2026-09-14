@@ -12,8 +12,8 @@
 
 use portable_pty::{native_pty_system, Child, MasterPty};
 use std::collections::BTreeMap;
-use std::path::Path;
 use std::io::{Read, Write};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 /// Shared output buffer for one PTY session (append-only; reads by offset
@@ -45,7 +45,9 @@ impl std::fmt::Display for PtyError {
 impl std::error::Error for PtyError {}
 
 fn pty_err(e: impl std::fmt::Display) -> PtyError {
-    PtyError { message: e.to_string() }
+    PtyError {
+        message: e.to_string(),
+    }
 }
 
 impl PtyBroker {
@@ -66,14 +68,21 @@ impl PtyBroker {
     ) -> Result<(), PtyError> {
         let mut sessions = self.sessions.lock().expect("pty sessions");
         if sessions.contains_key(id) {
-            return Err(PtyError { message: format!("session {id} already exists") });
+            return Err(PtyError {
+                message: format!("session {id} already exists"),
+            });
         }
         let pty_system = native_pty_system();
-        let pair = pty_system.openpty(PtySize { rows, cols, ..Default::default() })
+        let pair = pty_system
+            .openpty(PtySize {
+                rows,
+                cols,
+                ..Default::default()
+            })
             .map_err(pty_err)?;
-        let mut cmd = CommandBuilder::new(
-            argv.first().ok_or_else(|| PtyError { message: "empty argv".into() })?,
-        );
+        let mut cmd = CommandBuilder::new(argv.first().ok_or_else(|| PtyError {
+            message: "empty argv".into(),
+        })?);
         cmd.args(argv.iter().skip(1));
         if let Some(cwd) = cwd {
             cmd.cwd(cwd);
@@ -98,7 +107,10 @@ impl PtyBroker {
                 match reader.read(&mut chunk) {
                     Ok(0) | Err(_) => break,
                     Ok(n) => {
-                        out_for_thread.lock().expect("pty output").extend_from_slice(&chunk[..n]);
+                        out_for_thread
+                            .lock()
+                            .expect("pty output")
+                            .extend_from_slice(&chunk[..n]);
                     }
                 }
             }
@@ -108,7 +120,12 @@ impl PtyBroker {
         let _ = child; // owned by the session; kill via the pty handle
         sessions.insert(
             id.to_string(),
-            Arc::new(Mutex::new(Session { output, pty: child, writer, alive })),
+            Arc::new(Mutex::new(Session {
+                output,
+                pty: child,
+                writer,
+                alive,
+            })),
         );
         Ok(())
     }
@@ -118,14 +135,13 @@ impl PtyBroker {
     /// (guest RPC PtyWrite); writes serialize on the session lock.
     pub fn write(&self, id: &str, bytes: &[u8]) -> Result<(), PtyError> {
         let sessions = self.sessions.lock().expect("pty sessions");
-        let session = sessions
-            .get(id)
-            .ok_or_else(|| PtyError { message: format!("no session {id}") })?;
+        let session = sessions.get(id).ok_or_else(|| PtyError {
+            message: format!("no session {id}"),
+        })?;
         let mut session = session.lock().expect("pty session lock");
-        let writer = session
-            .writer
-            .as_mut()
-            .ok_or_else(|| PtyError { message: "session writer closed".into() })?;
+        let writer = session.writer.as_mut().ok_or_else(|| PtyError {
+            message: "session writer closed".into(),
+        })?;
         writer
             .write_all(bytes)
             .and_then(|_| writer.flush())
@@ -136,13 +152,17 @@ impl PtyBroker {
     pub fn read(&self, id: &str, offset: usize, max: usize) -> Result<(Vec<u8>, usize), PtyError> {
         let (bytes, next) = {
             let sessions = self.sessions.lock().expect("pty sessions");
-            let session = sessions
-                .get(id)
-                .ok_or_else(|| PtyError { message: format!("no session {id}") })?;
+            let session = sessions.get(id).ok_or_else(|| PtyError {
+                message: format!("no session {id}"),
+            })?;
             let output = session.lock().expect("pty session lock").output.clone();
             let buf = output.lock().expect("pty output");
             let end = (offset + max).min(buf.len());
-            let slice = if offset < buf.len() { &buf[offset..end] } else { &[][..] };
+            let slice = if offset < buf.len() {
+                &buf[offset..end]
+            } else {
+                &[][..]
+            };
             (slice.to_vec(), end)
         };
         Ok((bytes, next))
@@ -151,20 +171,30 @@ impl PtyBroker {
     /// Total output length so far (pollers use it to detect progress).
     pub fn output_len(&self, id: &str) -> Result<usize, PtyError> {
         let sessions = self.sessions.lock().expect("pty sessions");
-        let session = sessions
-            .get(id)
-            .ok_or_else(|| PtyError { message: format!("no session {id}") })?;
-        let len = session.lock().expect("pty session lock").output.lock().expect("pty output").len();
+        let session = sessions.get(id).ok_or_else(|| PtyError {
+            message: format!("no session {id}"),
+        })?;
+        let len = session
+            .lock()
+            .expect("pty session lock")
+            .output
+            .lock()
+            .expect("pty output")
+            .len();
         Ok(len)
     }
 
     /// Whether the child has exited (the reader thread saw EOF).
     pub fn alive(&self, id: &str) -> Result<bool, PtyError> {
         let sessions = self.sessions.lock().expect("pty sessions");
-        let session = sessions
-            .get(id)
-            .ok_or_else(|| PtyError { message: format!("no session {id}") })?;
-        let alive = session.lock().expect("pty session lock").alive.load(std::sync::atomic::Ordering::SeqCst);
+        let session = sessions.get(id).ok_or_else(|| PtyError {
+            message: format!("no session {id}"),
+        })?;
+        let alive = session
+            .lock()
+            .expect("pty session lock")
+            .alive
+            .load(std::sync::atomic::Ordering::SeqCst);
         Ok(alive)
     }
 
@@ -179,7 +209,12 @@ impl PtyBroker {
 
     /// Lists live session ids.
     pub fn list(&self) -> Vec<String> {
-        self.sessions.lock().expect("pty sessions").keys().cloned().collect()
+        self.sessions
+            .lock()
+            .expect("pty sessions")
+            .keys()
+            .cloned()
+            .collect()
     }
 }
 
@@ -207,13 +242,7 @@ mod tests {
         }
         let pty = broker();
         let shell = if cfg!(windows) { "cmd" } else { "sh" };
-        let spawn = pty.spawn(
-            "s1",
-            &[shell.to_string()],
-            None,
-            24,
-            80,
-        );
+        let spawn = pty.spawn("s1", &[shell.to_string()], None, 24, 80);
         if let Err(e) = spawn {
             println!("pty unavailable ({e}); session test skipped");
             return;

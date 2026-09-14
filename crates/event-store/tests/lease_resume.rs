@@ -158,7 +158,7 @@ fn stale_lease_cannot_append_but_current_lease_can() {
                 title: "fenced".into(),
                 prompt: "p".into(),
                 repo_id: None,
-    base_branch: None,
+                base_branch: None,
 
                 parent_task_id: None,
             },

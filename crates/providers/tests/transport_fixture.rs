@@ -14,12 +14,11 @@ use futures::future::BoxFuture;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
-
+use modbit_providers::gateway::Provider;
 use modbit_providers::transport::{
     EventStream, HttpStreamTransport, ModelTransport, OutgoingRequest, RetryPolicy, SecretBroker,
     TokenUsage, TransportError, TransportEvent,
 };
-use modbit_providers::gateway::Provider;
 
 type Handler = Arc<dyn Fn(TcpStream) -> BoxFuture<'static, ()> + Send + Sync>;
 
@@ -27,7 +26,9 @@ type Handler = Arc<dyn Fn(TcpStream) -> BoxFuture<'static, ()> + Send + Sync>;
 /// accepted connection with the 1-based connection index. Returns the bound
 /// address and the live connection counter.
 async fn spawn_fixture(handler: Handler) -> (SocketAddr, Arc<AtomicUsize>) {
-    let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind fixture");
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind fixture");
     let addr = listener.local_addr().expect("addr");
     let connections = Arc::new(AtomicUsize::new(0));
     let counter = connections.clone();
@@ -175,7 +176,10 @@ async fn streams_incrementally_with_usage_and_eof() {
 
     let transport = HttpStreamTransport::new(Arc::new(StaticBroker("test-key-1"))).unwrap();
     let mut stream = transport
-        .stream(openai_request(format!("http://{addr}/v1/chat/completions"), "{}"))
+        .stream(openai_request(
+            format!("http://{addr}/v1/chat/completions"),
+            "{}",
+        ))
         .unwrap();
 
     // First frame must arrive while the server is parked (incrementality).
@@ -253,7 +257,10 @@ async fn retries_429_then_succeeds_before_first_token() {
             max_delay: Duration::from_millis(5),
         });
     let mut stream = transport
-        .stream(openai_request(format!("http://{addr}/v1/chat/completions"), "{}"))
+        .stream(openai_request(
+            format!("http://{addr}/v1/chat/completions"),
+            "{}",
+        ))
         .unwrap();
     let (events, error) = collect(&mut stream).await;
     assert!(error.is_none(), "retry should have recovered: {error:?}");
@@ -290,7 +297,10 @@ async fn no_retry_after_tokens_started_interrupts() {
             max_delay: Duration::from_millis(2),
         });
     let mut stream = transport
-        .stream(openai_request(format!("http://{addr}/v1/chat/completions"), "{}"))
+        .stream(openai_request(
+            format!("http://{addr}/v1/chat/completions"),
+            "{}",
+        ))
         .unwrap();
     let first = stream.recv().await.unwrap().unwrap();
     assert!(matches!(first, TransportEvent::SseData(_)));
@@ -322,7 +332,10 @@ async fn cancel_terminates_the_stream() {
 
     let transport = HttpStreamTransport::new(Arc::new(StaticBroker("k"))).unwrap();
     let mut stream = transport
-        .stream(openai_request(format!("http://{addr}/v1/chat/completions"), "{}"))
+        .stream(openai_request(
+            format!("http://{addr}/v1/chat/completions"),
+            "{}",
+        ))
         .unwrap();
     let _ = stream.recv().await.unwrap().unwrap();
     stream.cancel_handle().cancel();
@@ -389,7 +402,10 @@ async fn missing_credential_fails_closed_without_connecting() {
 
     let transport = HttpStreamTransport::new(Arc::new(RejectingBroker)).unwrap();
     let err = transport
-        .stream(openai_request(format!("http://{addr}/v1/chat/completions"), "{}"))
+        .stream(openai_request(
+            format!("http://{addr}/v1/chat/completions"),
+            "{}",
+        ))
         .unwrap_err();
     assert!(matches!(err, TransportError::MissingCredential(_)));
     // Fail closed: not a single byte was sent to the endpoint.

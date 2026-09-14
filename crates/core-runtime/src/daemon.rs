@@ -49,9 +49,7 @@ impl Daemon {
         addr: &str,
         store: Arc<EventStore>,
         services: Arc<super::CoreServices>,
-        protocol_state: Option<
-            Arc<std::sync::Mutex<modbit_protocol_state::ProtocolStateStore>>,
-        >,
+        protocol_state: Option<Arc<std::sync::Mutex<modbit_protocol_state::ProtocolStateStore>>>,
     ) -> Result<Self, String> {
         let listener = TcpListener::bind(addr).map_err(|e| e.to_string())?;
         Ok(Self {
@@ -192,12 +190,9 @@ fn handle_connection(
                 if client.is_empty() {
                     return None;
                 }
-                protocol_state.as_ref().and_then(|state| {
-                    state
-                        .lock()
-                        .ok()
-                        .and_then(|s| s.last_cursor(&client))
-                })
+                protocol_state
+                    .as_ref()
+                    .and_then(|state| state.lock().ok().and_then(|s| s.last_cursor(&client)))
             })
             .unwrap_or(0);
         sse_stream(stream, store, since, client, protocol_state);

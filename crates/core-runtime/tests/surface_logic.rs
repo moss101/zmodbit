@@ -21,7 +21,7 @@ fn create_task_with_empty_session_creates_default_session_and_task() {
                 title: "direct".into(),
                 prompt: "p".into(),
                 ..Default::default()
-},
+            },
         )),
     };
     let response =

@@ -58,7 +58,9 @@ fn bridge_handshakes_and_resolves_definition_and_references() {
     );
 
     // Definition on a NON-symbol position: null result → empty, no error.
-    let none = session.definition("src/lib.rs", 1, 0).expect("definition null");
+    let none = session
+        .definition("src/lib.rs", 1, 0)
+        .expect("definition null");
     assert!(none.is_empty(), "a non-symbol position resolves to nothing");
 
     // References from the definition (declaration excluded): the call in
@@ -72,7 +74,8 @@ fn bridge_handshakes_and_resolves_definition_and_references() {
         "the same-document call site is a reference: {refs:?}"
     );
     assert!(
-        refs.iter().any(|r| r.path.ends_with("/src/other.rs") && r.line == 9),
+        refs.iter()
+            .any(|r| r.path.ends_with("/src/other.rs") && r.line == 9),
         "the cross-document reference normalizes: {refs:?}"
     );
 

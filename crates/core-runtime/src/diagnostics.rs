@@ -51,7 +51,10 @@ pub struct Bundle {
 /// report.json (version/rev/os, redacted settings, task + event counts,
 /// automation list), recent task events (last 200), the effects-ledger
 /// tail (tamper-evident chain), and a protocol-state summary.
-pub fn collect(store: &std::sync::Arc<modbit_event_store::EventStore>, out_dir: &Path) -> Result<Bundle, String> {
+pub fn collect(
+    store: &std::sync::Arc<modbit_event_store::EventStore>,
+    out_dir: &Path,
+) -> Result<Bundle, String> {
     let ts = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -59,15 +62,14 @@ pub fn collect(store: &std::sync::Arc<modbit_event_store::EventStore>, out_dir: 
     let dir = out_dir.join(format!("modbit-diagnostics-{ts}"));
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
-    let settings: Value = store
-        .with_conn(|conn| {
-            conn.query_row("SELECT data FROM app_settings WHERE id = 1", [], |r| {
-                r.get::<_, String>(0)
-            })
-            .ok()
-            .and_then(|s| serde_json::from_str::<Value>(&s).ok())
-            .unwrap_or(Value::Null)
-        });
+    let settings: Value = store.with_conn(|conn| {
+        conn.query_row("SELECT data FROM app_settings WHERE id = 1", [], |r| {
+            r.get::<_, String>(0)
+        })
+        .ok()
+        .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+        .unwrap_or(Value::Null)
+    });
 
     let (task_count, event_count): (i64, i64) = store.with_conn(|conn| {
         let tasks: i64 = conn
@@ -138,8 +140,11 @@ pub fn collect(store: &std::sync::Arc<modbit_event_store::EventStore>, out_dir: 
         let text = std::fs::read_to_string(&ledger).map_err(|e| e.to_string())?;
         let tail: Vec<&str> = text.lines().rev().take(100).collect();
         let tail: Vec<&str> = tail.into_iter().rev().collect();
-        std::fs::write(dir.join("effects-tail.jsonl"), format!("{}\n", tail.join("\n")))
-            .map_err(|e| e.to_string())?;
+        std::fs::write(
+            dir.join("effects-tail.jsonl"),
+            format!("{}\n", tail.join("\n")),
+        )
+        .map_err(|e| e.to_string())?;
     }
 
     // Hash the whole bundle for the report-a-problem reference.

@@ -75,11 +75,15 @@ pub fn walk_worktree(root: &Path) -> (Vec<IndexedFile>, WalkStats) {
         .build();
     for entry in walker.flatten() {
         let path = entry.into_path();
-        let Ok(rel) = path.strip_prefix(root) else { continue };
+        let Ok(rel) = path.strip_prefix(root) else {
+            continue;
+        };
         if rel.as_os_str().is_empty() {
             continue; // the root itself
         }
-        let Ok(meta) = std::fs::symlink_metadata(&path) else { continue };
+        let Ok(meta) = std::fs::symlink_metadata(&path) else {
+            continue;
+        };
         if meta.is_dir() {
             // The iterator descends into committed generated/vendor dirs;
             // their files are rejected by the per-component check below.
@@ -100,7 +104,9 @@ pub fn walk_worktree(root: &Path) -> (Vec<IndexedFile>, WalkStats) {
             stats.skipped_size += 1;
             continue;
         }
-        let Ok(bytes) = std::fs::read(&path) else { continue };
+        let Ok(bytes) = std::fs::read(&path) else {
+            continue;
+        };
         if !is_indexable(&bytes) {
             stats.skipped_binary += 1;
             continue;
@@ -150,10 +156,18 @@ mod tests {
         write(&root, "docs/readme.md", b"# doc\n");
         write(&root, "docs/.gitignore", b"secret.md\n");
         write(&root, "docs/secret.md", b"nested ignore hit\n");
-        write(&root, "node_modules/pkg/index.js", b"committed vendor tree\n");
+        write(
+            &root,
+            "node_modules/pkg/index.js",
+            b"committed vendor tree\n",
+        );
         write(&root, ".modbit/changes.jsonl", b"{}\n");
         // Negation: one whitelisted file overrides the drop rule.
-        write(&root, "src/.gitignore", b"generated*.rs\n!generated_keep.rs\n");
+        write(
+            &root,
+            "src/.gitignore",
+            b"generated*.rs\n!generated_keep.rs\n",
+        );
         write(&root, "src/generated_drop.rs", b"generated\n");
         write(&root, "src/generated_keep.rs", b"kept by negation\n");
         // Binary (NUL in the sniff window) and oversized files.
@@ -169,12 +183,20 @@ mod tests {
         got.sort_unstable();
         assert_eq!(
             got,
-            vec!["docs/readme.md", "src/generated_keep.rs", "src/main.rs", "src/util.rs"],
+            vec![
+                "docs/readme.md",
+                "src/generated_keep.rs",
+                "src/main.rs",
+                "src/util.rs"
+            ],
             "unexpected index set: {got:?}"
         );
 
         assert_eq!(stats.indexed, 4);
-        assert_eq!(stats.skipped_policy, 1, "node_modules file pruned by policy");
+        assert_eq!(
+            stats.skipped_policy, 1,
+            "node_modules file pruned by policy"
+        );
         assert_eq!(stats.skipped_binary, 1, "NUL byte sniffed as binary");
         assert_eq!(stats.skipped_size, 1, "oversized file skipped");
 

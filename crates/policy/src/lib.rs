@@ -127,10 +127,7 @@ impl PolicyKernel {
                 // docs/52 § path escape: ANY parent-directory component in
                 // a protected-effect path is denied — prefix lists alone
                 // miss mid-path traversal (foo/../../etc/shadow).
-                if path
-                    .split(['/', '\\'])
-                    .any(|component| component == "..")
-                {
+                if path.split(['/', '\\']).any(|component| component == "..") {
                     return PolicyDecision::Deny {
                         reason: format!("path {path:?} escapes the workspace (parent component)"),
                     };

@@ -24,7 +24,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use modbit_domain::events::{Actor, ActorType, AggregateType, DomainEvent, EventEnvelope, StepType};
+use modbit_domain::events::{
+    Actor, ActorType, AggregateType, DomainEvent, EventEnvelope, StepType,
+};
 use modbit_domain::ids::{RunId, RunStepId, SessionId, TaskId, TurnId};
 use modbit_domain::{Command, CommandPayload};
 use modbit_event_store::{CommandProcessor, EventStore, Outcome};
@@ -105,7 +107,9 @@ impl SchedulerConfig {
             // MODBIT_LIVE_MODEL is the documented live-proof override (the
             // qualification script exports it); MODBIT_MODEL takes precedence.
             model,
-            base_url: std::env::var("MODBIT_BASE_URL").ok().filter(|s| !s.is_empty()),
+            base_url: std::env::var("MODBIT_BASE_URL")
+                .ok()
+                .filter(|s| !s.is_empty()),
             // Phase 4.3: keychain-first secret broker — the OS keychain
             // (macOS Keychain / Windows Credential Manager / Secret
             // Service) wins; the env broker stays the fallback so CI and
@@ -121,9 +125,7 @@ impl SchedulerConfig {
                     Some(Arc::new(DefaultWorktreeRoot(
                         std::env::var("MODBIT_WORKTREE_ROOT")
                             .map(PathBuf::from)
-                            .unwrap_or_else(|_| {
-                                std::env::temp_dir().join("modbit-worktrees")
-                            }),
+                            .unwrap_or_else(|_| std::env::temp_dir().join("modbit-worktrees")),
                     )) as Arc<dyn WorktreeSource>)
                 }),
             // Total-request budget: reasoning-tier models legitimately
@@ -134,7 +136,9 @@ impl SchedulerConfig {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(8),
-            execd_addr: std::env::var("MODBIT_EXECD_ADDR").ok().filter(|s| !s.is_empty()),
+            execd_addr: std::env::var("MODBIT_EXECD_ADDR")
+                .ok()
+                .filter(|s| !s.is_empty()),
             model_settings,
             max_input_tokens: std::env::var("MODBIT_MAX_INPUT_TOKENS")
                 .ok()
@@ -257,7 +261,9 @@ impl RunControls {
     pub fn pause(&self, task_id: &str) -> bool {
         match self.runs.lock().expect("run controls").get(task_id) {
             Some(signal) => {
-                signal.paused.store(true, std::sync::atomic::Ordering::SeqCst);
+                signal
+                    .paused
+                    .store(true, std::sync::atomic::Ordering::SeqCst);
                 true
             }
             None => false,
@@ -303,13 +309,9 @@ impl Scheduler {
                 // Checkpoint epochs). Sequential, before tailing.
                 if let Some(s) = weak.upgrade() {
                     for task_id in interrupted_tasks(&s.store) {
-                        eprintln!(
-                            "modbit scheduler: resuming interrupted task {task_id}"
-                        );
+                        eprintln!("modbit scheduler: resuming interrupted task {task_id}");
                         if let Err(err) = s.resume_task(&task_id) {
-                            eprintln!(
-                                "modbit scheduler: task {task_id} resume failed: {err}"
-                            );
+                            eprintln!("modbit scheduler: task {task_id} resume failed: {err}");
                         }
                     }
                 }
@@ -333,9 +335,14 @@ impl Scheduler {
                                         // id) must not leave the task Running
                                         // forever — transition it durably.
                                         if let Ok(task_id) = TaskId::parse(&e.aggregate_id) {
-                                            let processor = modbit_event_store::CommandProcessor::new(s.store.clone());
+                                            let processor =
+                                                modbit_event_store::CommandProcessor::new(
+                                                    s.store.clone(),
+                                                );
                                             let _ = processor.execute(Command {
-                                                command_id: uuid::Uuid::now_v7().simple().to_string(),
+                                                command_id: uuid::Uuid::now_v7()
+                                                    .simple()
+                                                    .to_string(),
                                                 actor: Actor {
                                                     actor_type: ActorType::System,
                                                     actor_id: "scheduler".into(),
@@ -419,16 +426,20 @@ impl Scheduler {
         // Phase 4.2: persisted settings overlay the boot configuration
         // for THIS run (provider/model/base_url/max_turns/execution_mode).
         // The settings screen writes them; env stays the fallback.
-        let stored_settings =
-            self.store
-                .with_conn(|conn| {
-                    modbit_event_store::settings::get(conn).map_err(|e| e.to_string())
-                });
+        let stored_settings = self
+            .store
+            .with_conn(|conn| modbit_event_store::settings::get(conn).map_err(|e| e.to_string()));
         let (s_provider, s_model, s_base, s_turns, s_mode) = match &stored_settings {
             Ok(Some(doc)) => (
-                doc.get("provider").and_then(|v| v.as_str()).map(str::to_string),
-                doc.get("model").and_then(|v| v.as_str()).map(str::to_string),
-                doc.get("base_url").and_then(|v| v.as_str()).map(str::to_string),
+                doc.get("provider")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
+                doc.get("model")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
+                doc.get("base_url")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
                 doc.get("max_turns").and_then(|v| v.as_u64()),
                 doc.get("execution_mode")
                     .and_then(|v| v.as_str())
@@ -484,9 +495,7 @@ impl Scheduler {
                         repo_root: PathBuf::from(&repo.path),
                         worktree_root,
                         default_branch: repo.default_branch,
-                        requested_branch: base_branch
-                            .clone()
-                            .filter(|b| !b.trim().is_empty()),
+                        requested_branch: base_branch.clone().filter(|b| !b.trim().is_empty()),
                     }) as Arc<dyn WorktreeSource>)
                 }
                 Ok(None) => None,
@@ -507,15 +516,19 @@ impl Scheduler {
                 .or_else(|| {
                     EnvWorktreeSource::from_env().map(|s| Arc::new(s) as Arc<dyn WorktreeSource>)
                 })
-                .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?,
+                .ok_or_else(|| {
+                    "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string()
+                })?,
         };
-        let layout = source
-            .layout(&task_id.to_string())
-            .ok_or_else(|| "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string())?;
+        let layout = source.layout(&task_id.to_string()).ok_or_else(|| {
+            "no repository configured for runs (set MODBIT_REPO_ROOT)".to_string()
+        })?;
         let worktree_path = layout.worktree.clone();
         let base_revision = layout.base_revision.clone();
         let repo = GitRepo::open(
-            &source.repo_root().ok_or("worktree source has no repository root")?,
+            &source
+                .repo_root()
+                .ok_or("worktree source has no repository root")?,
         )
         .map_err(|e| format!("open repo: {e}"))?;
         if worktree_path.exists() {
@@ -534,14 +547,17 @@ impl Scheduler {
 
         // 2. Context pack through the canonical file service on the worktree.
         let ws = Arc::new(
-            WorkspaceFileService::open(&worktree_path).map_err(|e| format!("open workspace: {e}"))?,
+            WorkspaceFileService::open(&worktree_path)
+                .map_err(|e| format!("open workspace: {e}"))?,
         );
         // IMP-EV-0004: the task's repository index, built by walking the
         // real worktree at task start (gitignore/hidden/policy/binary/size
         // filters). The writer is attached to the run plane below; refreshes
         // ride the change journal from change.apply and the turn boundary.
-        let built_index =
-            modbit_retrieval::task_index::TaskIndex::build_at(&worktree_path, ws.workspace_revision());
+        let built_index = modbit_retrieval::task_index::TaskIndex::build_at(
+            &worktree_path,
+            ws.workspace_revision(),
+        );
 
         // 3. Task-scoped tools bound to the worktree. shell.run routes
         // through modbit-execd (durable broker); everything stays inside the
@@ -575,13 +591,10 @@ impl Scheduler {
             });
             match leased {
                 Ok(_lease) => {
-                    *shared.lease.lock().expect("lease cell") =
-                        Some((session_id, lease_id));
+                    *shared.lease.lock().expect("lease cell") = Some((session_id, lease_id));
                 }
                 Err(e) => {
-                    eprintln!(
-                        "modbit scheduler: session lease acquire failed for {task_id}: {e}"
-                    );
+                    eprintln!("modbit scheduler: session lease acquire failed for {task_id}: {e}");
                 }
             }
         }
@@ -624,12 +637,12 @@ impl Scheduler {
         // Ledger path: MODBIT_EFFECTS_LEDGER or temp/modbit-effects.jsonl.
         let ledger_path = std::env::var("MODBIT_EFFECTS_LEDGER")
             .map(PathBuf::from)
-            .unwrap_or_else(|_| {
-                std::env::temp_dir().join("modbit-effects.jsonl")
-            });
+            .unwrap_or_else(|_| std::env::temp_dir().join("modbit-effects.jsonl"));
         let effects_ledger = Arc::new(std::sync::Mutex::new(
             modbit_effects::Ledger::open(&ledger_path).unwrap_or_else(|_| {
-                eprintln!("modbit scheduler: effects ledger open failed; receipts disabled for this run");
+                eprintln!(
+                    "modbit scheduler: effects ledger open failed; receipts disabled for this run"
+                );
                 modbit_effects::Ledger::open(&ledger_path.with_extension("fallback.jsonl"))
                     .expect("fallback ledger")
             }),
@@ -705,7 +718,9 @@ impl Scheduler {
             registry: &registry,
             kernel: &kernel,
             grants: live_grants.as_ref(),
-            approval_gate: approval_gate.as_ref().map(|g| g as &dyn crate::one_agent::ApprovalGate),
+            approval_gate: approval_gate
+                .as_ref()
+                .map(|g| g as &dyn crate::one_agent::ApprovalGate),
             cost_tracker: Some(cost_tracker.as_ref()),
             max_turns: run_config.max_turns,
             observer: Some(&observer),
@@ -756,39 +771,37 @@ impl Scheduler {
                     &cost_tracker.snapshot(),
                 );
                 match run.final_state {
-                modbit_domain::turn::TurnState::Completed => {
-                    // Phase 5 item 4: export the run's cost ledger via
-                    // OTLP/JSON when an endpoint is configured. Best-effort:
-                    // export failures never fail the task.
-                    if let Ok(endpoint) = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT") {
-                        if !endpoint.trim().is_empty() {
-                            let snapshot = cost_tracker.snapshot();
-                            if let Err(e) = modbit_observability::otlp::export_otlp_logs(
-                                &endpoint,
-                                &snapshot,
-                                &task_id.to_string(),
-                            ) {
-                                eprintln!(
-                                    "modbit scheduler: OTLP cost export failed: {e}"
-                                );
+                    modbit_domain::turn::TurnState::Completed => {
+                        // Phase 5 item 4: export the run's cost ledger via
+                        // OTLP/JSON when an endpoint is configured. Best-effort:
+                        // export failures never fail the task.
+                        if let Ok(endpoint) = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT") {
+                            if !endpoint.trim().is_empty() {
+                                let snapshot = cost_tracker.snapshot();
+                                if let Err(e) = modbit_observability::otlp::export_otlp_logs(
+                                    &endpoint,
+                                    &snapshot,
+                                    &task_id.to_string(),
+                                ) {
+                                    eprintln!("modbit scheduler: OTLP cost export failed: {e}");
+                                }
                             }
                         }
+                        execute(
+                            &processor,
+                            task_id,
+                            CommandPayload::TaskReadyForReview { task_id },
+                        )
                     }
-                    execute(
+                    _ => execute(
                         &processor,
                         task_id,
-                        CommandPayload::TaskReadyForReview { task_id },
-                    )
-                }
-                _ => execute(
-                    &processor,
-                    task_id,
-                    CommandPayload::FailTask {
-                        task_id,
-                        failure_code: "run_exhausted".into(),
-                        message: tail(&run.assembled_text, 500),
-                    },
-                ),
+                        CommandPayload::FailTask {
+                            task_id,
+                            failure_code: "run_exhausted".into(),
+                            message: tail(&run.assembled_text, 500),
+                        },
+                    ),
                 }
             }
             // A transport/provider failure is an outage, not a task defect:
@@ -799,9 +812,7 @@ impl Scheduler {
                 // the signal already flipped — the task is Cancelled on the
                 // store side; parking it in Waiting would resurrect it.
                 if signal.is_cancelled() {
-                    eprintln!(
-                        "modbit scheduler: task {task_id} stream aborted by stop ({err})"
-                    );
+                    eprintln!("modbit scheduler: task {task_id} stream aborted by stop ({err})");
                     return Ok(());
                 }
                 // Surface the transport failure: a parked task with no
@@ -842,7 +853,13 @@ fn execute(
 
 /// Tail of a string for failure messages, bounded.
 fn tail(s: &str, max: usize) -> String {
-    s.chars().rev().take(max).collect::<Vec<_>>().into_iter().rev().collect()
+    s.chars()
+        .rev()
+        .take(max)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect()
 }
 
 /// The deterministic task-worktree layout shared by the scheduler and the
@@ -896,7 +913,11 @@ fn external_servers_from_env() -> std::collections::BTreeMap<String, modbit_mcp:
         }
         out.insert(
             name.clone(),
-            modbit_mcp::ExternalServer { name, command, args },
+            modbit_mcp::ExternalServer {
+                name,
+                command,
+                args,
+            },
         );
     }
     out
@@ -959,17 +980,13 @@ pub struct DurableApprovalGate {
 }
 
 impl DurableApprovalGate {
-
     fn request_persisted(
         &self,
         intent_hash: &str,
         tool: &str,
         arguments: &serde_json::Value,
     ) -> String {
-        let approval_id = format!(
-            "appr-{}",
-            &uuid::Uuid::now_v7().simple().to_string()[..16]
-        );
+        let approval_id = format!("appr-{}", &uuid::Uuid::now_v7().simple().to_string()[..16]);
         let scope = serde_json::json!({
             "intent_hash": intent_hash,
             "arguments": arguments,
@@ -1193,11 +1210,10 @@ struct TaskBrief {
 
 /// Reads the task brief (session, title, prompt) and the Phase 4.1 repo
 /// selection (registered repo id + base branch) from its created event.
-fn read_task_brief(
-    store: &EventStore,
-    task_id: &TaskId,
-) -> Result<TaskBrief, String> {
-    let events = store.load(&task_id.to_string()).map_err(|e| e.to_string())?;
+fn read_task_brief(store: &EventStore, task_id: &TaskId) -> Result<TaskBrief, String> {
+    let events = store
+        .load(&task_id.to_string())
+        .map_err(|e| e.to_string())?;
     for e in &events {
         if let DomainEvent::TaskCreated {
             session_id,
@@ -1225,7 +1241,9 @@ fn task_has_run(store: &EventStore, task_id: &TaskId) -> Result<bool, String> {
     store
         .with_conn(|conn| {
             let mut stmt = conn
-                .prepare("SELECT aggregate_id FROM events WHERE aggregate_type = 'run' AND sequence = 1")
+                .prepare(
+                    "SELECT aggregate_id FROM events WHERE aggregate_type = 'run' AND sequence = 1",
+                )
                 .map_err(|e| e.to_string())?;
             let ids = stmt
                 .query_map([], |r| r.get::<_, String>(0))
@@ -1311,7 +1329,10 @@ fn build_context_pack(
             })
             .collect();
         if !lines.is_empty() {
-            reasons.push(("workspace:recently-changed".into(), "workspace change journal".into()));
+            reasons.push((
+                "workspace:recently-changed".into(),
+                "workspace change journal".into(),
+            ));
             fragments.push(Fragment {
                 path: "workspace:recently-changed".into(),
                 text: format!("# Recently changed files\n{}", lines.join("\n")),
@@ -1346,7 +1367,9 @@ fn build_context_pack(
             {
                 continue;
             }
-            let Ok((bytes, _rev)) = ws.read(&hit.path) else { continue };
+            let Ok((bytes, _rev)) = ws.read(&hit.path) else {
+                continue;
+            };
             let head: String = String::from_utf8_lossy(&bytes)
                 .lines()
                 .take(40)
@@ -1356,7 +1379,10 @@ fn build_context_pack(
                 continue;
             }
             let score = (hit.score.clamp(0.0, 4.0) / 4.0) + 0.6;
-            reasons.push((format!("file:{}", hit.path), format!("index query hit (score {:.3})", hit.score)));
+            reasons.push((
+                format!("file:{}", hit.path),
+                format!("index query hit (score {:.3})", hit.score),
+            ));
             fragments.push(Fragment {
                 path: format!("file:{}", hit.path),
                 text: head,
@@ -1461,7 +1487,9 @@ fn read_workspace_rules(worktree: &std::path::Path) -> String {
 
     fn add_file(sections: &mut Vec<String>, path: &std::path::Path, display: &str) {
         const MAX: usize = 64 * 1024;
-        let Ok(bytes) = std::fs::read(path) else { return };
+        let Ok(bytes) = std::fs::read(path) else {
+            return;
+        };
         let digest = {
             use sha2::{Digest, Sha256};
             let mut hasher = Sha256::new();
@@ -1469,8 +1497,7 @@ fn read_workspace_rules(worktree: &std::path::Path) -> String {
             format!("{:x}", hasher.finalize())
         };
         let truncated = bytes.len() > MAX;
-        let mut text =
-            String::from_utf8_lossy(&bytes[..bytes.len().min(MAX)]).to_string();
+        let mut text = String::from_utf8_lossy(&bytes[..bytes.len().min(MAX)]).to_string();
         if truncated {
             text.push_str("\n…[rules file truncated at 64 KiB]\n");
         }
@@ -1508,18 +1535,29 @@ fn read_workspace_rules(worktree: &std::path::Path) -> String {
     }
     // Directory-scoped AGENTS.md/CLAUDE.md down the tree (root-first
     // order; deeper entries appear later and override by proximity).
-    fn walk(dir: &std::path::Path, worktree: &std::path::Path, depth: usize, sections: &mut Vec<String>) {
+    fn walk(
+        dir: &std::path::Path,
+        worktree: &std::path::Path,
+        depth: usize,
+        sections: &mut Vec<String>,
+    ) {
         const MAX_WALK_DEPTH: usize = 4;
         if depth > MAX_WALK_DEPTH {
             return;
         }
-        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
         let mut children: Vec<_> = entries.flatten().map(|e| e.path()).collect();
         children.sort();
         for child in children {
             if child.is_dir() {
                 let name = child.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if name == ".git" || name.starts_with('.') || name == "node_modules" || name == "target" {
+                if name == ".git"
+                    || name.starts_with('.')
+                    || name == "node_modules"
+                    || name == "target"
+                {
                     continue;
                 }
                 for rule in ["AGENTS.md", "CLAUDE.md"] {
@@ -1599,20 +1637,29 @@ pub fn build_worktree_registry(
 
     // ---- fs.read / fs.list: canonical safe-path file service ----------
     let mut read_params = std::collections::BTreeMap::new();
-    read_params.insert("path".into(), param(ParamType::Str, true, "File path inside the worktree"));
+    read_params.insert(
+        "path".into(),
+        param(ParamType::Str, true, "File path inside the worktree"),
+    );
     registry
         .register_with_schema(
             "fs.read",
             "1.0.0",
             EffectClass::ReadOnly,
             "Read a UTF-8 file from the worktree",
-            Some(ToolSchema { aliases: Default::default(), parameters: read_params }),
+            Some(ToolSchema {
+                aliases: Default::default(),
+                parameters: read_params,
+            }),
             {
                 let ws = ws.clone();
                 let media = media.clone();
                 let task_index = task_index.clone();
                 Arc::new(move |args| {
-                    let path = args.get("path").and_then(|v| v.as_str()).ok_or("missing path")?;
+                    let path = args
+                        .get("path")
+                        .and_then(|v| v.as_str())
+                        .ok_or("missing path")?;
                     // Files checked out by git are adopted on first touch so
                     // reads carry revisions (canonical change-engine guard).
                     let _ = ws.adopt(path);
@@ -1664,14 +1711,24 @@ pub fn build_worktree_registry(
         .expect("register fs.read");
 
     let mut list_params = std::collections::BTreeMap::new();
-    list_params.insert("dir".into(), param(ParamType::Str, false, "Directory inside the worktree (default: root)"));
+    list_params.insert(
+        "dir".into(),
+        param(
+            ParamType::Str,
+            false,
+            "Directory inside the worktree (default: root)",
+        ),
+    );
     registry
         .register_with_schema(
             "fs.list",
             "1.0.0",
             EffectClass::ReadOnly,
             "List entries of a directory in the worktree",
-            Some(ToolSchema { aliases: Default::default(), parameters: list_params }),
+            Some(ToolSchema {
+                aliases: Default::default(),
+                parameters: list_params,
+            }),
             {
                 let ws = ws.clone();
                 Arc::new(move |args| {
@@ -1798,8 +1855,18 @@ pub fn build_worktree_registry(
     // ---- change.propose / change.apply: edit gate + change engine -----
     let mut propose_params = std::collections::BTreeMap::new();
     propose_params.insert("path".into(), param(ParamType::Str, true, "File to edit"));
-    propose_params.insert("old_text".into(), param(ParamType::Str, true, "Exact existing text to replace (must occur exactly once)"));
-    propose_params.insert("new_text".into(), param(ParamType::Str, true, "Replacement text"));
+    propose_params.insert(
+        "old_text".into(),
+        param(
+            ParamType::Str,
+            true,
+            "Exact existing text to replace (must occur exactly once)",
+        ),
+    );
+    propose_params.insert(
+        "new_text".into(),
+        param(ParamType::Str, true, "Replacement text"),
+    );
     registry
         .register_with_schema(
             "change.propose",
@@ -1857,9 +1924,26 @@ pub fn build_worktree_registry(
 
     let mut apply_params = std::collections::BTreeMap::new();
     apply_params.insert("path".into(), param(ParamType::Str, true, "File to edit"));
-    apply_params.insert("old_text".into(), param(ParamType::Str, true, "Exact existing text to replace (must occur exactly once)"));
-    apply_params.insert("new_text".into(), param(ParamType::Str, true, "Replacement text"));
-    apply_params.insert("expected_revision".into(), param(ParamType::Int, false, "File revision from the read that produced old_text (optimistic concurrency guard)"));
+    apply_params.insert(
+        "old_text".into(),
+        param(
+            ParamType::Str,
+            true,
+            "Exact existing text to replace (must occur exactly once)",
+        ),
+    );
+    apply_params.insert(
+        "new_text".into(),
+        param(ParamType::Str, true, "Replacement text"),
+    );
+    apply_params.insert(
+        "expected_revision".into(),
+        param(
+            ParamType::Int,
+            false,
+            "File revision from the read that produced old_text (optimistic concurrency guard)",
+        ),
+    );
     registry
         .register_with_schema(
             "change.apply",
@@ -1923,8 +2007,18 @@ pub fn build_worktree_registry(
 
     // ---- search.grep: literal search, bounded (index arrives with M3) --
     let mut grep_params = std::collections::BTreeMap::new();
-    grep_params.insert("pattern".into(), param(ParamType::Str, true, "Literal text to find"));
-    grep_params.insert("path".into(), param(ParamType::Str, false, "Limit search to this directory (default: worktree root)"));
+    grep_params.insert(
+        "pattern".into(),
+        param(ParamType::Str, true, "Literal text to find"),
+    );
+    grep_params.insert(
+        "path".into(),
+        param(
+            ParamType::Str,
+            false,
+            "Limit search to this directory (default: worktree root)",
+        ),
+    );
     registry
         .register_with_schema(
             "search.grep",
@@ -1981,9 +2075,23 @@ pub fn build_worktree_registry(
 
     // ---- context.query: fused BM25 + path + symbol index query --------
     let mut cq_params = std::collections::BTreeMap::new();
-    cq_params.insert("query".into(), param(ParamType::Str, true, "What to find: terms, an identifier, or a path fragment"));
+    cq_params.insert(
+        "query".into(),
+        param(
+            ParamType::Str,
+            true,
+            "What to find: terms, an identifier, or a path fragment",
+        ),
+    );
     cq_params.insert("mode".into(), param(ParamType::Str, false, "auto (default: the retrieval planner routes L0-L3) | fused | exact | regex | path | impact (import dependents of a path)"));
-    cq_params.insert("limit".into(), param(ParamType::Int, false, "Max hits (default 20, max 50; exact/regex/path max 200)"));
+    cq_params.insert(
+        "limit".into(),
+        param(
+            ParamType::Int,
+            false,
+            "Max hits (default 20, max 50; exact/regex/path max 200)",
+        ),
+    );
     registry
         .register_with_schema(
             "context.query",
@@ -2036,7 +2144,10 @@ pub fn build_worktree_registry(
 
     // ---- search.symbol: tree-sitter definitions/references ------------
     let mut sym_params = std::collections::BTreeMap::new();
-    sym_params.insert("name".into(), param(ParamType::Str, true, "Exact symbol name to resolve"));
+    sym_params.insert(
+        "name".into(),
+        param(ParamType::Str, true, "Exact symbol name to resolve"),
+    );
     registry
         .register_with_schema(
             "search.symbol",
@@ -2084,7 +2195,10 @@ pub fn build_worktree_registry(
             "1.0.0",
             EffectClass::ReadOnly,
             "Working-tree status of the task worktree (porcelain codes)",
-            Some(ToolSchema { aliases: Default::default(), parameters: status_params }),
+            Some(ToolSchema {
+                aliases: Default::default(),
+                parameters: status_params,
+            }),
             {
                 let worktree = worktree.to_path_buf();
                 Arc::new(move |_args| {
@@ -2125,8 +2239,18 @@ pub fn build_worktree_registry(
 
     // ---- test.run: verification engine with runner adapters -----------
     let mut test_params = std::collections::BTreeMap::new();
-    test_params.insert("runner".into(), param(ParamType::Str, true, "Test runner: cargo | vitest | pytest"));
-    test_params.insert("args".into(), param(ParamType::Str, false, "Extra args appended to the runner invocation"));
+    test_params.insert(
+        "runner".into(),
+        param(ParamType::Str, true, "Test runner: cargo | vitest | pytest"),
+    );
+    test_params.insert(
+        "args".into(),
+        param(
+            ParamType::Str,
+            false,
+            "Extra args appended to the runner invocation",
+        ),
+    );
     registry
         .register_with_schema(
             "test.run",
@@ -2162,18 +2286,27 @@ pub fn build_worktree_registry(
     // ---- Phase 6 item 3: external MCP tools (policy + receipts) ------
     if let Some(pool) = mcp_pool.clone() {
         let mut params = std::collections::BTreeMap::new();
-        params.insert("server".into(), param(ParamType::Str, false, "Filter: only this MCP server"));
+        params.insert(
+            "server".into(),
+            param(ParamType::Str, false, "Filter: only this MCP server"),
+        );
         registry
             .register_with_schema(
                 "external.list",
                 "1.0.0",
                 EffectClass::ReadOnly,
                 "List configured external MCP servers and their tools",
-                Some(ToolSchema { aliases: Default::default(), parameters: params }),
+                Some(ToolSchema {
+                    aliases: Default::default(),
+                    parameters: params,
+                }),
                 {
                     let pool = pool.clone();
                     Arc::new(move |args| {
-                        let filter = args.get("server").and_then(|v| v.as_str()).map(String::from);
+                        let filter = args
+                            .get("server")
+                            .and_then(|v| v.as_str())
+                            .map(String::from);
                         let mut pool = pool.lock().expect("mcp pool");
                         let mut servers = serde_json::Map::new();
                         for (name, result) in modbit_mcp::McpPool::list_all(&mut pool) {
@@ -2206,14 +2339,23 @@ pub fn build_worktree_registry(
             )
             .expect("register external.list");
 
-    // external.call: invokes a tool on a named MCP server. Policy-gated
-    // (External effect class → operator approval under approvals mode)
-    // and receipt-bound (the call digest rides the effects ledger).
-    let mut ec_params = std::collections::BTreeMap::new();
-    ec_params.insert("server".into(), param(ParamType::Str, true, "MCP server name"));
-    ec_params.insert("tool".into(), param(ParamType::Str, true, "Tool name on that server"));
-    ec_params.insert("arguments".into(), param(ParamType::Str, true, "JSON object of tool arguments"));
-    registry
+        // external.call: invokes a tool on a named MCP server. Policy-gated
+        // (External effect class → operator approval under approvals mode)
+        // and receipt-bound (the call digest rides the effects ledger).
+        let mut ec_params = std::collections::BTreeMap::new();
+        ec_params.insert(
+            "server".into(),
+            param(ParamType::Str, true, "MCP server name"),
+        );
+        ec_params.insert(
+            "tool".into(),
+            param(ParamType::Str, true, "Tool name on that server"),
+        );
+        ec_params.insert(
+            "arguments".into(),
+            param(ParamType::Str, true, "JSON object of tool arguments"),
+        );
+        registry
         .register_with_schema(
             "external.call",
             "1.0.0",
@@ -2256,10 +2398,14 @@ pub fn build_worktree_registry(
 
 /// Bounded depth-first walk over regular files (search.grep substrate).
 fn walk_files(dir: &std::path::Path, f: &mut dyn FnMut(&std::path::Path)) {
-    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
     for entry in entries.flatten() {
         let path = entry.path();
-        let Ok(meta) = std::fs::metadata(&path) else { continue };
+        let Ok(meta) = std::fs::metadata(&path) else {
+            continue;
+        };
         if meta.is_dir() {
             let name = entry.file_name();
             // Skip VCS and dependency dirs: never search those.
@@ -2278,19 +2424,71 @@ fn walk_files(dir: &std::path::Path, f: &mut dyn FnMut(&std::path::Path)) {
 /// these without touching the others.
 pub fn worktree_grants() -> Vec<CapabilityGrant> {
     vec![
-        CapabilityGrant { grant_id: "g-fs-read".into(), tool: "fs.read".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-fs-list".into(), tool: "fs.list".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-grep".into(), tool: "search.grep".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-context-query".into(), tool: "context.query".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-search-symbol".into(), tool: "search.symbol".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-external-list".into(), tool: "external.list".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-external-call".into(), tool: "external.call".into(), effect_class: EffectClass::External },
-        CapabilityGrant { grant_id: "g-git-status".into(), tool: "git.status".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-git-diff".into(), tool: "git.diff".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-change-propose".into(), tool: "change.propose".into(), effect_class: EffectClass::ReadOnly },
-        CapabilityGrant { grant_id: "g-change-apply".into(), tool: "change.apply".into(), effect_class: EffectClass::Write },
-        CapabilityGrant { grant_id: "g-shell-run".into(), tool: "shell.run".into(), effect_class: EffectClass::External },
-        CapabilityGrant { grant_id: "g-test-run".into(), tool: "test.run".into(), effect_class: EffectClass::External },
+        CapabilityGrant {
+            grant_id: "g-fs-read".into(),
+            tool: "fs.read".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-fs-list".into(),
+            tool: "fs.list".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-grep".into(),
+            tool: "search.grep".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-context-query".into(),
+            tool: "context.query".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-search-symbol".into(),
+            tool: "search.symbol".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-external-list".into(),
+            tool: "external.list".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-external-call".into(),
+            tool: "external.call".into(),
+            effect_class: EffectClass::External,
+        },
+        CapabilityGrant {
+            grant_id: "g-git-status".into(),
+            tool: "git.status".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-git-diff".into(),
+            tool: "git.diff".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-change-propose".into(),
+            tool: "change.propose".into(),
+            effect_class: EffectClass::ReadOnly,
+        },
+        CapabilityGrant {
+            grant_id: "g-change-apply".into(),
+            tool: "change.apply".into(),
+            effect_class: EffectClass::Write,
+        },
+        CapabilityGrant {
+            grant_id: "g-shell-run".into(),
+            tool: "shell.run".into(),
+            effect_class: EffectClass::External,
+        },
+        CapabilityGrant {
+            grant_id: "g-test-run".into(),
+            tool: "test.run".into(),
+            effect_class: EffectClass::External,
+        },
     ]
 }
 
@@ -2385,12 +2583,7 @@ impl RunPlaneShared {
     }
 
     fn take_pending_run_events(&self) -> Vec<DomainEvent> {
-        std::mem::take(
-            &mut self
-                .pending_run_events
-                .lock()
-                .expect("pending run events"),
-        )
+        std::mem::take(&mut self.pending_run_events.lock().expect("pending run events"))
     }
 }
 
@@ -2399,28 +2592,27 @@ impl RunPlaneShared {
     /// FATAL for this run: the fence flag flips, the cancel hook fires,
     /// and the typed error returns (M4.4: a fenced-out writer must not
     /// write or continue).
-    fn append_fenced(&self, store: &EventStore, envelope: &mut EventEnvelope) -> Result<(), String> {
+    fn append_fenced(
+        &self,
+        store: &EventStore,
+        envelope: &mut EventEnvelope,
+    ) -> Result<(), String> {
         let lease = self.lease.lock().expect("lease cell").clone();
         let outcome = match lease {
             Some((session_id, lease_id)) => store
                 .append_with_lease(&session_id.to_string(), &lease_id, &mut [envelope.clone()])
                 .map_err(|e| e.to_string()),
-            None => store.append(&mut [envelope.clone()]).map_err(|e| e.to_string()),
+            None => store
+                .append(&mut [envelope.clone()])
+                .map_err(|e| e.to_string()),
         };
         if let Err(err) = &outcome {
             if err.contains("stale lease") {
                 self.fenced.store(true, std::sync::atomic::Ordering::SeqCst);
-                if let Some(hook) = self
-                    .cancel_hook
-                    .lock()
-                    .expect("cancel hook")
-                    .as_ref()
-                {
+                if let Some(hook) = self.cancel_hook.lock().expect("cancel hook").as_ref() {
                     hook.store(true, std::sync::atomic::Ordering::SeqCst);
                 }
-                eprintln!(
-                    "modbit scheduler: run fenced out (session lease lost): {err}"
-                );
+                eprintln!("modbit scheduler: run fenced out (session lease lost): {err}");
             }
         }
         outcome
@@ -2498,11 +2690,7 @@ pub struct WorktreeJournalWriter {
 }
 
 impl WorktreeJournalWriter {
-    fn new(
-        store: Arc<EventStore>,
-        session_id: SessionId,
-        shared: Arc<RunPlaneShared>,
-    ) -> Self {
+    fn new(store: Arc<EventStore>, session_id: SessionId, shared: Arc<RunPlaneShared>) -> Self {
         WorktreeJournalWriter {
             store,
             session_id,
@@ -2532,7 +2720,9 @@ impl WorktreeJournalWriter {
         let epoch = self
             .next_epoch
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        let Ok(mut journal) = self.inner.lock() else { return };
+        let Ok(mut journal) = self.inner.lock() else {
+            return;
+        };
         let meta = modbit_checkpoint::cursor_meta::CursorMeta {
             surface,
             handle: handle.to_string(),
@@ -2564,7 +2754,10 @@ impl WorktreeJournalWriter {
             &self.store,
             self.session_id,
             run_id,
-            DomainEvent::WorktreeCheckpointed { epoch, journal_json },
+            DomainEvent::WorktreeCheckpointed {
+                epoch,
+                journal_json,
+            },
         );
     }
 
@@ -2578,16 +2771,20 @@ impl WorktreeJournalWriter {
         let epoch = self
             .next_epoch
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        let Ok(mut journal) = self.inner.lock() else { return };
+        let Ok(mut journal) = self.inner.lock() else {
+            return;
+        };
         journal
             .baseline
             .entry(path.to_string())
             .or_insert_with(|| baseline.clone());
         if let Some(content) = delta {
-            journal.deltas.push(modbit_checkpoint::delta::WorktreeDelta {
-                path: path.to_string(),
-                content: Some(content),
-            });
+            journal
+                .deltas
+                .push(modbit_checkpoint::delta::WorktreeDelta {
+                    path: path.to_string(),
+                    content: Some(content),
+                });
         }
         let Ok(journal_json) = serde_json::to_string(&*journal) else {
             return;
@@ -2612,7 +2809,10 @@ impl WorktreeJournalWriter {
             &self.store,
             self.session_id,
             run_id,
-            DomainEvent::WorktreeCheckpointed { epoch, journal_json },
+            DomainEvent::WorktreeCheckpointed {
+                epoch,
+                journal_json,
+            },
         );
     }
 }
@@ -2636,8 +2836,9 @@ pub struct TaskIndexWriter {
     /// Headless LSP sessions per language (M3.4): lazily spawned from the
     /// MODBIT_LSP_<LANG> env commands, killed when the writer drops.
     /// None = a previous spawn failed (do not retry every query).
-    lsp_sessions:
-        std::sync::Mutex<std::collections::BTreeMap<String, Option<modbit_diagnostics::lsp::LspSession>>>,
+    lsp_sessions: std::sync::Mutex<
+        std::collections::BTreeMap<String, Option<modbit_diagnostics::lsp::LspSession>>,
+    >,
 }
 
 /// Evidence bound for the recomputed-segment list in one event.
@@ -2669,10 +2870,7 @@ impl TaskIndexWriter {
 
     /// Whether a path has retrieval evidence yet.
     pub(crate) fn has_evidence(&self, path: &str) -> bool {
-        self.evidence
-            .lock()
-            .expect("evidence set")
-            .contains(path)
+        self.evidence.lock().expect("evidence set").contains(path)
     }
 
     /// Ranked index hits for pack seeding (task-context compilation):
@@ -2709,7 +2907,9 @@ impl TaskIndexWriter {
     /// with nothing new is a no-op (no event). Returns true when the index
     /// moved.
     fn refresh_from_journal(&self, ws: &WorkspaceFileService, reason: &str) -> bool {
-        let Ok(events) = ws.changes() else { return false };
+        let Ok(events) = ws.changes() else {
+            return false;
+        };
         let mut index = self.index.lock().expect("task index mutex");
         let fresh: Vec<_> = events
             .into_iter()
@@ -2767,7 +2967,12 @@ impl TaskIndexWriter {
     /// context.query (docs/17: Context Engine): refreshes the index from
     /// the change journal FIRST (freshness before answering), then runs
     /// the fused BM25 + path + symbol query. Bounded, deterministic.
-    fn query_context(&self, ws: &WorkspaceFileService, query: &str, limit: usize) -> serde_json::Value {
+    fn query_context(
+        &self,
+        ws: &WorkspaceFileService,
+        query: &str,
+        limit: usize,
+    ) -> serde_json::Value {
         self.refresh_from_journal(ws, "context_query");
         let index = self.index.lock().expect("task index mutex");
         let hits = index.context_query(query, limit);
@@ -2834,7 +3039,9 @@ impl TaskIndexWriter {
                 _ => return None,
             }
         );
-        let command = std::env::var(&env_key).ok().filter(|c| !c.trim().is_empty())?;
+        let command = std::env::var(&env_key)
+            .ok()
+            .filter(|c| !c.trim().is_empty())?;
 
         // Read the defining file's fresh bytes for didOpen (no locks held).
         // Files checked out by git are adopted on first touch (the same
@@ -2887,7 +3094,12 @@ impl TaskIndexWriter {
                 e.to_string()
             });
         let references = session
-            .references(&first_def.path, first_def.line.saturating_sub(1), col, false)
+            .references(
+                &first_def.path,
+                first_def.line.saturating_sub(1),
+                col,
+                false,
+            )
             .map_err(|e| {
                 eprintln!("lsp_enrich: references failed: {e}");
                 e.to_string()
@@ -2904,7 +3116,12 @@ impl TaskIndexWriter {
 
     /// M3.1 direct index modes for context.query: exact term, regex, and
     /// path queries over the indexed corpus (fused stays the default).
-    fn query_exact(&self, ws: &WorkspaceFileService, term: &str, limit: usize) -> serde_json::Value {
+    fn query_exact(
+        &self,
+        ws: &WorkspaceFileService,
+        term: &str,
+        limit: usize,
+    ) -> serde_json::Value {
         self.refresh_from_journal(ws, "exact_query");
         let index = self.index.lock().expect("task index mutex");
         let hits = index.query_exact(term, limit);
@@ -2924,7 +3141,9 @@ impl TaskIndexWriter {
     ) -> Result<serde_json::Value, String> {
         self.refresh_from_journal(ws, "regex_query");
         let index = self.index.lock().expect("task index mutex");
-        let hits = index.query_regex(pattern, limit).map_err(|e| e.to_string())?;
+        let hits = index
+            .query_regex(pattern, limit)
+            .map_err(|e| e.to_string())?;
         Ok(serde_json::json!({
             "mode": "regex",
             "hits": hits.iter().map(|h| serde_json::json!({
@@ -2935,7 +3154,12 @@ impl TaskIndexWriter {
 
     /// M3.6 impact mode: the import-impact set of a corpus path
     /// (transitive dependents, bounded BFS, test files flagged).
-    fn query_impact(&self, ws: &WorkspaceFileService, path: &str, limit: usize) -> serde_json::Value {
+    fn query_impact(
+        &self,
+        ws: &WorkspaceFileService,
+        path: &str,
+        limit: usize,
+    ) -> serde_json::Value {
         self.refresh_from_journal(ws, "impact_query");
         let index = self.index.lock().expect("task index mutex");
         let limit = limit.clamp(1, 200);
@@ -2964,7 +3188,12 @@ impl TaskIndexWriter {
         })
     }
 
-    fn query_paths(&self, ws: &WorkspaceFileService, needle: &str, limit: usize) -> serde_json::Value {
+    fn query_paths(
+        &self,
+        ws: &WorkspaceFileService,
+        needle: &str,
+        limit: usize,
+    ) -> serde_json::Value {
         self.refresh_from_journal(ws, "path_query");
         let index = self.index.lock().expect("task index mutex");
         let mut paths = index.repo.path(needle);
@@ -2979,7 +3208,12 @@ impl TaskIndexWriter {
     /// plan rides the response as provenance of the routing decision.
     /// L3 (engineering) currently escalates to the fused query plus a
     /// note — its full evidence graph (Git/diagnostics/runtime) is M3.6.
-    fn query_auto(&self, ws: &WorkspaceFileService, query: &str, limit: usize) -> serde_json::Value {
+    fn query_auto(
+        &self,
+        ws: &WorkspaceFileService,
+        query: &str,
+        limit: usize,
+    ) -> serde_json::Value {
         use modbit_context::planner::{plan, QuerySignals, RetrievalLevel};
 
         self.refresh_from_journal(ws, "auto_query");
@@ -2993,9 +3227,18 @@ impl TaskIndexWriter {
             && matches! {
                 lower.rsplit('_').next(),
                 Some("fn") | Some("struct") | Some("trait") | Some("impl") | Some("enum")
-            } || ["fn ", "struct ", "trait ", "impl ", "definition", "definition of", "references of"]
-                .iter()
-                .any(|k| lower.starts_with(k));
+            }
+            || [
+                "fn ",
+                "struct ",
+                "trait ",
+                "impl ",
+                "definition",
+                "definition of",
+                "references of",
+            ]
+            .iter()
+            .any(|k| lower.starts_with(k));
         let engineering = ["how ", "why ", "flow", "architecture", "impact", "owns "]
             .iter()
             .any(|k| lower.starts_with(k) || lower.contains(k));
@@ -3055,11 +3298,10 @@ impl TaskIndexWriter {
                         .impact(&top, 2)
                         .into_iter()
                         .take(10)
-                        .map(|(p, hops)| {
-                            serde_json::json!({ "path": p, "hops": hops })
-                        })
+                        .map(|(p, hops)| serde_json::json!({ "path": p, "hops": hops }))
                         .collect();
-                    r["impact_of_top_hit"] = serde_json::json!({ "path": top, "dependents": impact });
+                    r["impact_of_top_hit"] =
+                        serde_json::json!({ "path": top, "dependents": impact });
                 }
                 r["mode"] = serde_json::json!("auto:engineering:fused");
                 r["note"] = serde_json::json!(
@@ -3190,7 +3432,9 @@ fn run_streaming_capture(
     loop {
         if cancel.load(Ordering::SeqCst) {
             execd.stop(run_id)?;
-            return Err(modbit_terminal::TerminalError::Cancelled(run_id.to_string()));
+            return Err(modbit_terminal::TerminalError::Cancelled(
+                run_id.to_string(),
+            ));
         }
         let (bytes, new_offset) = execd.read_output(run_id, offset, DRAIN_MAX)?;
         if !bytes.is_empty() {
@@ -3298,12 +3542,9 @@ struct LiveGatewayTransport<'a> {
 }
 
 impl<'a> LiveGatewayTransport<'a> {
-    fn new(
-        config: &'a SchedulerConfig,
-        cancel: Arc<std::sync::atomic::AtomicBool>,
-    ) -> Self {
-        let transport = HttpStreamTransport::new(config.broker.clone())
-            .expect("build provider transport");
+    fn new(config: &'a SchedulerConfig, cancel: Arc<std::sync::atomic::AtomicBool>) -> Self {
+        let transport =
+            HttpStreamTransport::new(config.broker.clone()).expect("build provider transport");
         LiveGatewayTransport {
             config,
             runtime: tokio::runtime::Builder::new_current_thread()
@@ -3349,10 +3590,7 @@ impl<'a> crate::one_agent::ModelTransport for LiveGatewayTransport<'a> {
             timeout: self.config.request_timeout,
         };
         self.runtime.block_on(async move {
-            let mut stream = self
-                .transport
-                .stream(outgoing)
-                .map_err(|e| e.to_string())?;
+            let mut stream = self.transport.stream(outgoing).map_err(|e| e.to_string())?;
             let mut events = Vec::new();
             loop {
                 // Phase 2.3: race the stream against the cancellation flag
@@ -3501,7 +3739,9 @@ impl EventStoreObserver {
 
 impl RunObserver for EventStoreObserver {
     fn run_started(&self, run_id: &str, attempt: u32) {
-        let Ok(parsed) = RunId::parse(run_id) else { return };
+        let Ok(parsed) = RunId::parse(run_id) else {
+            return;
+        };
         *self.shared.run.lock().expect("observer mutex") = Some(parsed);
         self.append(
             AggregateType::Run,
@@ -3520,8 +3760,6 @@ impl RunObserver for EventStoreObserver {
         }
     }
 
-
-
     fn turn_prepared(&self, turn_id: &str, ordinal: u32) {
         let run_id = self.run_of();
         self.append(
@@ -3535,7 +3773,9 @@ impl RunObserver for EventStoreObserver {
     }
 
     fn model_invoke_started(&self, turn_id: &str, step_id: &str) {
-        let Ok(parsed_turn) = TurnId::parse(turn_id) else { return };
+        let Ok(parsed_turn) = TurnId::parse(turn_id) else {
+            return;
+        };
         self.append(
             AggregateType::RunStep,
             step_id,
@@ -3547,12 +3787,23 @@ impl RunObserver for EventStoreObserver {
         );
     }
 
-    fn model_invoke_finished(&self, _turn_id: &str, step_id: &str, _usage: Option<modbit_providers::TokenUsage>) {
-        self.append(AggregateType::RunStep, step_id, DomainEvent::RunStepCompleted);
+    fn model_invoke_finished(
+        &self,
+        _turn_id: &str,
+        step_id: &str,
+        _usage: Option<modbit_providers::TokenUsage>,
+    ) {
+        self.append(
+            AggregateType::RunStep,
+            step_id,
+            DomainEvent::RunStepCompleted,
+        );
     }
 
     fn tool_step_started(&self, turn_id: &str, step_id: &str, _call_id: &str, _name: &str) {
-        let Ok(parsed_turn) = TurnId::parse(turn_id) else { return };
+        let Ok(parsed_turn) = TurnId::parse(turn_id) else {
+            return;
+        };
         self.append(
             AggregateType::RunStep,
             step_id,
@@ -3564,7 +3815,14 @@ impl RunObserver for EventStoreObserver {
         );
     }
 
-    fn tool_step_finished(&self, turn_id: &str, step_id: &str, _call_id: &str, _name: &str, ok: bool) {
+    fn tool_step_finished(
+        &self,
+        turn_id: &str,
+        step_id: &str,
+        _call_id: &str,
+        _name: &str,
+        ok: bool,
+    ) {
         let _ = (turn_id, _call_id, _name);
         let payload = if ok {
             DomainEvent::RunStepCompleted
@@ -3588,12 +3846,7 @@ impl RunObserver for EventStoreObserver {
         self.append(AggregateType::Turn, turn_id, DomainEvent::TurnCompleted);
     }
 
-    fn conversation_checkpointed(
-        &self,
-        run_id: &str,
-        turn_ordinal: u32,
-        conversation_json: &str,
-    ) {
+    fn conversation_checkpointed(&self, run_id: &str, turn_ordinal: u32, conversation_json: &str) {
         self.append(
             AggregateType::Run,
             run_id,
@@ -3612,7 +3865,9 @@ impl RunObserver for EventStoreObserver {
         reclaimed_tokens: u64,
         manifest_digest: &str,
     ) {
-        let Ok(parsed_turn) = TurnId::parse(turn_id) else { return };
+        let Ok(parsed_turn) = TurnId::parse(turn_id) else {
+            return;
+        };
         let run_id = self.run_of().unwrap_or_else(RunId::generate);
         self.append(
             AggregateType::Run,
@@ -3699,7 +3954,11 @@ mod shell_words_tests {
         );
         assert_eq!(
             split_shell_words("echo \"hello world\" tail").unwrap(),
-            vec!["echo".to_string(), "hello world".to_string(), "tail".to_string()]
+            vec![
+                "echo".to_string(),
+                "hello world".to_string(),
+                "tail".to_string()
+            ]
         );
         assert_eq!(
             split_shell_words("echo 'a  b' \"c d\"").unwrap(),
@@ -3716,7 +3975,10 @@ mod rules_tests {
     use super::read_workspace_rules;
 
     fn tempdir(tag: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("modbit-rules-{tag}-{}", uuid::Uuid::now_v7().simple()));
+        let dir = std::env::temp_dir().join(format!(
+            "modbit-rules-{tag}-{}",
+            uuid::Uuid::now_v7().simple()
+        ));
         std::fs::create_dir_all(&dir).unwrap();
         dir
     }
@@ -3749,7 +4011,10 @@ mod rules_tests {
             hasher.update(b"root: always run clippy");
             format!("{:x}", hasher.finalize())
         };
-        assert!(rules.contains(&digest), "provenance hash must match file bytes");
+        assert!(
+            rules.contains(&digest),
+            "provenance hash must match file bytes"
+        );
         // Ordering: root AGENTS.md before the subdirectory's.
         let root_pos = rules.find("root: always run clippy").unwrap();
         let src_pos = rules.find("src: no unsafe").unwrap();

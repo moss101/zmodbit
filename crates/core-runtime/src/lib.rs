@@ -8,21 +8,21 @@
 //! Canonical owner subsystem: core-runtime (docs/81). Layout: docs/12.
 
 pub mod agent_fleet;
-pub mod automation;
-pub mod browser_host;
-pub mod diagnostics;
-pub mod review;
 pub mod agent_profiles_plans;
 pub mod agent_runtime_batch2;
 pub mod agent_runtime_batch3;
 pub mod agent_runtime_final;
+pub mod automation;
+pub mod browser_host;
 pub mod config;
 pub mod daemon;
 pub mod delegation;
+pub mod diagnostics;
 pub mod fleet_admission;
 pub mod one_agent;
-pub mod scheduler;
 pub mod reminder_engine;
+pub mod review;
+pub mod scheduler;
 pub mod surface;
 
 pub use config::{resolve, Authority, ConfigLayer, ResolvedConfig};

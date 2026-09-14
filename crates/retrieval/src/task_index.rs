@@ -59,10 +59,8 @@ impl TaskIndex {
     /// index halves over the same file set at the given revision.
     pub fn build_at(root: &Path, workspace_revision: u64) -> Self {
         let (files, _stats) = walk_worktree(root);
-        let owned: BTreeMap<String, Vec<u8>> = files
-            .into_iter()
-            .map(|f| (f.path, f.bytes))
-            .collect();
+        let owned: BTreeMap<String, Vec<u8>> =
+            files.into_iter().map(|f| (f.path, f.bytes)).collect();
         let mut lexical = LexicalIndex::new().expect("in-memory lexical index");
         let mut symbols = SymbolIndex::default();
         let mut repo = RepositoryIndex::new(workspace_revision);
@@ -121,9 +119,7 @@ impl TaskIndex {
                 _ => deleted.push(path.to_string()),
             }
         }
-        let recomputed = self
-            .merkle
-            .apply_changes(&changed, &deleted, new_revision);
+        let recomputed = self.merkle.apply_changes(&changed, &deleted, new_revision);
         for (path, bytes) in &changed {
             self.repo.index_file(path, bytes, new_revision);
             self.lexical.replace(path, bytes);
@@ -137,8 +133,7 @@ impl TaskIndex {
         self.lexical.commit();
         // Dependency edges: re-extract for changed files, drop deletions,
         // prune edges pointing at evicted targets.
-        let known: std::collections::BTreeSet<String> =
-            self.repo.files.keys().cloned().collect();
+        let known: std::collections::BTreeSet<String> = self.repo.files.keys().cloned().collect();
         for (path, bytes) in &changed {
             self.deps.index_file(root, path, bytes, &known);
         }
@@ -306,9 +301,18 @@ mod tests {
         std::fs::remove_file(root.join("docs/readme.md")).unwrap();
 
         let changes = vec![
-            IndexChange { path: "src/b.rs".into(), deleted: false },
-            IndexChange { path: "src/deep/c.rs".into(), deleted: false },
-            IndexChange { path: "docs/readme.md".into(), deleted: true },
+            IndexChange {
+                path: "src/b.rs".into(),
+                deleted: false,
+            },
+            IndexChange {
+                path: "src/deep/c.rs".into(),
+                deleted: false,
+            },
+            IndexChange {
+                path: "docs/readme.md".into(),
+                deleted: true,
+            },
         ];
         let recomputed = index.apply_delta(&root, &changes, 2);
 
@@ -318,10 +322,15 @@ mod tests {
             Recomputed::FileLeaf { path } if path == "src/deep/c.rs")));
         assert!(recomputed.iter().any(|r| matches!(r,
             Recomputed::DirNode { dir } if dir == "src/deep")));
-        assert!(recomputed.iter().any(|r| matches!(r,
+        assert!(
+            recomputed.iter().any(|r| matches!(r,
             Recomputed::DirNode { dir } if dir == "docs")),
-            "the emptied docs dir is pruned with evidence");
-        assert!(!index.merkle.dirs.contains_key("docs"), "pruned dir carries no digest");
+            "the emptied docs dir is pruned with evidence"
+        );
+        assert!(
+            !index.merkle.dirs.contains_key("docs"),
+            "pruned dir carries no digest"
+        );
         assert_eq!(index.indexed_workspace_revision, 2, "revision-correct");
 
         // Incremental root == full rebuild over the same final tree.
@@ -337,7 +346,10 @@ mod tests {
         assert!(index.repo.path("readme").is_empty(), "deleted file evicted");
 
         // A delta with no effective change recomputes nothing.
-        let same = vec![IndexChange { path: "src/b.rs".into(), deleted: false }];
+        let same = vec![IndexChange {
+            path: "src/b.rs".into(),
+            deleted: false,
+        }];
         assert!(index.apply_delta(&root, &same, 3).is_empty());
         let _ = std::fs::remove_dir_all(&root);
     }
@@ -361,7 +373,10 @@ mod tests {
         std::fs::write(root.join("pkg7/mod11/lib.rs"), b"pub fn edited() {}\n").unwrap();
         let recomputed = index.apply_delta(
             &root,
-            &[IndexChange { path: "pkg7/mod11/lib.rs".into(), deleted: false }],
+            &[IndexChange {
+                path: "pkg7/mod11/lib.rs".into(),
+                deleted: false,
+            }],
             2,
         );
         let dirs: Vec<&str> = recomputed
@@ -423,8 +438,14 @@ mod tests {
         index.apply_delta(
             &root,
             &[
-                IndexChange { path: "src/top.rs".into(), deleted: false },
-                IndexChange { path: "src/mid.rs".into(), deleted: true },
+                IndexChange {
+                    path: "src/top.rs".into(),
+                    deleted: false,
+                },
+                IndexChange {
+                    path: "src/mid.rs".into(),
+                    deleted: true,
+                },
             ],
             2,
         );
@@ -451,11 +472,31 @@ mod tests {
     fn context_query_fuses_sources_and_survives_deltas() {
         let root = scratch("ctx");
         std::fs::create_dir_all(root.join("src/ui")).unwrap();
-        std::fs::write(root.join("src/retry.rs"), b"retry backoff timeout retry policy\n").unwrap();
-        std::fs::write(root.join("src/ui/button.rs"), b"button click render widget\n").unwrap();
-        std::fs::write(root.join("docs/retry-notes.md"), b"retry notes about backoff\n").unwrap();
-        std::fs::write(root.join("src/caller.rs"), b"fn run_task() {\n    let _ = retry_helpers();\n}\n").unwrap();
-        std::fs::write(root.join("src/helpers.rs"), b"pub fn retry_helpers() -> bool { true }\n").unwrap();
+        std::fs::write(
+            root.join("src/retry.rs"),
+            b"retry backoff timeout retry policy\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("src/ui/button.rs"),
+            b"button click render widget\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("docs/retry-notes.md"),
+            b"retry notes about backoff\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("src/caller.rs"),
+            b"fn run_task() {\n    let _ = retry_helpers();\n}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("src/helpers.rs"),
+            b"pub fn retry_helpers() -> bool { true }\n",
+        )
+        .unwrap();
 
         let mut index = TaskIndex::build_at(&root, 1);
 
@@ -480,7 +521,10 @@ mod tests {
         .unwrap();
         index.apply_delta(
             &root,
-            &[IndexChange { path: "src/helpers.rs".into(), deleted: false }],
+            &[IndexChange {
+                path: "src/helpers.rs".into(),
+                deleted: false,
+            }],
             2,
         );
         let cold = TaskIndex::build_at(&root, 2);
@@ -490,14 +534,23 @@ mod tests {
             "incremental query output == cold rebuild"
         );
         assert_eq!(index.symbol_definitions("brand_new_marker").len(), 1);
-        assert_eq!(index.symbol_definitions("brand_new_marker"), cold.symbol_definitions("brand_new_marker"));
-        assert_eq!(index.symbol_references("retry_helpers"), cold.symbol_references("retry_helpers"));
+        assert_eq!(
+            index.symbol_definitions("brand_new_marker"),
+            cold.symbol_definitions("brand_new_marker")
+        );
+        assert_eq!(
+            index.symbol_references("retry_helpers"),
+            cold.symbol_references("retry_helpers")
+        );
 
         // Deletion drops lexical + symbol candidates.
         std::fs::remove_file(root.join("docs/retry-notes.md")).unwrap();
         index.apply_delta(
             &root,
-            &[IndexChange { path: "docs/retry-notes.md".into(), deleted: true }],
+            &[IndexChange {
+                path: "docs/retry-notes.md".into(),
+                deleted: true,
+            }],
             3,
         );
         assert!(index
@@ -543,13 +596,19 @@ mod tests {
         assert!(index.query_regex("fn ([unclosed", 50).is_err());
 
         // Path: direct name lookup.
-        assert_eq!(index.repo.path("retry.rs"), vec!["src/retry.rs".to_string()]);
+        assert_eq!(
+            index.repo.path("retry.rs"),
+            vec!["src/retry.rs".to_string()]
+        );
 
         // The surfaces track an incremental delta (the refresh contract).
         std::fs::write(root.join("src/new.rs"), b"fn brand_new_thing() {}\n").unwrap();
         index.apply_delta(
             &root,
-            &[IndexChange { path: "src/new.rs".into(), deleted: false }],
+            &[IndexChange {
+                path: "src/new.rs".into(),
+                deleted: false,
+            }],
             2,
         );
         assert_eq!(index.query_exact("brand_new_thing", 50).len(), 1);
@@ -571,8 +630,14 @@ mod tests {
         std::fs::write(root.join("docs/readme.md"), [0u8, 1, 2]).unwrap(); // binary now
         std::fs::remove_file(root.join("src/a.rs")).unwrap(); // gone, no tombstone
         let changes = vec![
-            IndexChange { path: "docs/readme.md".into(), deleted: false },
-            IndexChange { path: "src/a.rs".into(), deleted: false },
+            IndexChange {
+                path: "docs/readme.md".into(),
+                deleted: false,
+            },
+            IndexChange {
+                path: "src/a.rs".into(),
+                deleted: false,
+            },
         ];
         index.apply_delta(&root, &changes, 2);
         let rebuilt = TaskIndex::build_at(&root, 2);

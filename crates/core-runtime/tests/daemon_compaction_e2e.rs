@@ -23,7 +23,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("dce{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -163,7 +172,8 @@ fn spawn_core(
     model_addr: SocketAddr,
     max_input_tokens: &str,
 ) -> (Child, String, PathBuf) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -205,9 +215,7 @@ fn spawn_core(
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -217,22 +225,26 @@ fn spawn_core(
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     std::mem::forget(execd);
     (child, daemon.expect("daemon addr"), db_path)
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -247,9 +259,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_ready_for_review(daemon: &str, task_id: &str) {
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -288,13 +303,17 @@ fn over_budget_daemon_compacts_and_records_the_event() {
             title: "read the big file".into(),
             prompt: "Read big.txt.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -306,7 +325,10 @@ fn over_budget_daemon_compacts_and_records_the_event() {
     let bodies = bodies.lock().unwrap();
     assert!(bodies.len() >= 2, "fixture captured both turns");
     let messages = bodies[1]["messages"].as_array().expect("messages");
-    let roles: Vec<&str> = messages.iter().map(|m| m["role"].as_str().unwrap()).collect();
+    let roles: Vec<&str> = messages
+        .iter()
+        .map(|m| m["role"].as_str().unwrap())
+        .collect();
     assert_eq!(
         roles,
         vec!["system", "user", "assistant", "tool"],
@@ -320,19 +342,24 @@ fn over_budget_daemon_compacts_and_records_the_event() {
         "payload traveled truncated: {} bytes",
         content.len()
     );
-    assert!(content.len() < 1_500, "payload actually shrank: {} bytes", content.len());
+    assert!(
+        content.len() < 1_500,
+        "payload actually shrank: {} bytes",
+        content.len()
+    );
     // Per-model settings ride the body: BASE profile output budget.
     assert_eq!(bodies[1]["max_tokens"], 4096);
-    assert!(bodies[1].get("reasoning_effort").is_none(), "effort is opt-in");
+    assert!(
+        bodies[1].get("reasoning_effort").is_none(),
+        "effort is opt-in"
+    );
     drop(bodies);
 
     // Durable proof: the daemon's REAL SQLite store carries the
     // compaction_applied run event with a manifest digest.
-    let conn = rusqlite::Connection::open_with_flags(
-        &db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .expect("open core db");
+    let conn =
+        rusqlite::Connection::open_with_flags(&db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("open core db");
     let count: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM events WHERE event_type = 'compaction_applied'",

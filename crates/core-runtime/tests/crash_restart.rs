@@ -91,7 +91,7 @@ fn create_task(core: &CoreHandle, title: &str) -> String {
                     title: title.into(),
                     prompt: "p".into(),
                     ..Default::default()
-},
+                },
             )),
         },
     );

@@ -15,7 +15,10 @@ use modbit_tools::ToolRegistry;
 use modbit_workspace::WorkspaceFileService;
 
 fn tempdir(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("modbit-tools-{tag}-{}", uuid::Uuid::now_v7().simple()));
+    let dir = std::env::temp_dir().join(format!(
+        "modbit-tools-{tag}-{}",
+        uuid::Uuid::now_v7().simple()
+    ));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -26,11 +29,19 @@ fn worktree_fixture(tag: &str) -> PathBuf {
     let repo = GitRepo::init(&root).expect("init");
     repo.set_config("user.email", "t@modbit.test").unwrap();
     repo.set_config("user.name", "T").unwrap();
-    std::fs::write(root.join("app.py"), "def qty(x):\n    return x  # positive only\n").unwrap();
+    std::fs::write(
+        root.join("app.py"),
+        "def qty(x):\n    return x  # positive only\n",
+    )
+    .unwrap();
     std::fs::write(root.join("lib.txt"), "needle here\nnothing\n").unwrap();
     repo.commit_all("base").unwrap();
-    let wt = root.parent().unwrap().join(format!("{}-wt", root.file_name().unwrap().to_string_lossy()));
-    repo.worktree_add(&wt, &format!("task-{tag}")).expect("worktree");
+    let wt = root.parent().unwrap().join(format!(
+        "{}-wt",
+        root.file_name().unwrap().to_string_lossy()
+    ));
+    repo.worktree_add(&wt, &format!("task-{tag}"))
+        .expect("worktree");
     wt
 }
 
@@ -81,11 +92,18 @@ fn exec(registry: &ToolRegistry, tool: &str, args: serde_json::Value) -> serde_j
         _ => EffectClass::External,
     };
     let decision = PolicyKernel::new(vec![]).check(
-        &modbit_policy::ToolCallRequest { tool: tool.into(), effect_class, arguments: args.clone() },
+        &modbit_policy::ToolCallRequest {
+            tool: tool.into(),
+            effect_class,
+            arguments: args.clone(),
+        },
         &grants(),
     );
     assert!(decision.is_allow(), "{tool} must be granted: {decision}");
-    registry.execute(tool, &args, &decision).expect("tool executes").result
+    registry
+        .execute(tool, &args, &decision)
+        .expect("tool executes")
+        .result
 }
 
 #[test]
@@ -94,43 +112,67 @@ fn change_gate_propose_preview_and_apply_with_revision_guard() {
     let registry = registry_for(&wt, None);
 
     // propose does NOT write: ambiguous old_text is refused.
-    let out = exec(&registry, "change.propose", serde_json::json!({
-        "path": "app.py", "old_text": "x", "new_text": "y"
-    }));
+    let out = exec(
+        &registry,
+        "change.propose",
+        serde_json::json!({
+            "path": "app.py", "old_text": "x", "new_text": "y"
+        }),
+    );
     assert_eq!(out["ok"], false, "ambiguous match must be refused: {out}");
     assert_eq!(out["occurrences"], 2);
 
     // unique match previews; the file on disk is untouched.
-    let out = exec(&registry, "change.propose", serde_json::json!({
-        "path": "app.py", "old_text": "return x  # positive only",
-        "new_text": "if x < 0:\n        raise ValueError('negative')\n    return x"
-    }));
+    let out = exec(
+        &registry,
+        "change.propose",
+        serde_json::json!({
+            "path": "app.py", "old_text": "return x  # positive only",
+            "new_text": "if x < 0:\n        raise ValueError('negative')\n    return x"
+        }),
+    );
     assert_eq!(out["ok"], true, "{out}");
     assert!(
-        std::fs::read_to_string(wt.join("app.py")).unwrap().contains("# positive only"),
+        std::fs::read_to_string(wt.join("app.py"))
+            .unwrap()
+            .contains("# positive only"),
         "propose must not write"
     );
 
     // apply with a stale revision is refused (optimistic concurrency).
-    let out = exec(&registry, "change.apply", serde_json::json!({
-        "path": "app.py",
-        "old_text": "return x  # positive only",
-        "new_text": "if x < 0:\n        raise ValueError('negative')\n    return x",
-        "expected_revision": 99
-    }));
+    let out = exec(
+        &registry,
+        "change.apply",
+        serde_json::json!({
+            "path": "app.py",
+            "old_text": "return x  # positive only",
+            "new_text": "if x < 0:\n        raise ValueError('negative')\n    return x",
+            "expected_revision": 99
+        }),
+    );
     assert_eq!(out["ok"], false, "stale revision refused: {out}");
 
     // apply with the real revision writes through the change engine.
-    let (_, rev) = WorkspaceFileService::open(&wt).unwrap().read("app.py").unwrap();
-    let out = exec(&registry, "change.apply", serde_json::json!({
-        "path": "app.py",
-        "old_text": "return x  # positive only",
-        "new_text": "if x < 0:\n        raise ValueError('negative')\n    return x",
-        "expected_revision": rev
-    }));
+    let (_, rev) = WorkspaceFileService::open(&wt)
+        .unwrap()
+        .read("app.py")
+        .unwrap();
+    let out = exec(
+        &registry,
+        "change.apply",
+        serde_json::json!({
+            "path": "app.py",
+            "old_text": "return x  # positive only",
+            "new_text": "if x < 0:\n        raise ValueError('negative')\n    return x",
+            "expected_revision": rev
+        }),
+    );
     assert_eq!(out["ok"], true, "{out}");
     let after = std::fs::read_to_string(wt.join("app.py")).unwrap();
-    assert!(after.contains("raise ValueError('negative')"), "file changed on disk");
+    assert!(
+        after.contains("raise ValueError('negative')"),
+        "file changed on disk"
+    );
 }
 
 #[test]
@@ -138,7 +180,11 @@ fn grep_and_git_tools_read_the_real_worktree() {
     let wt = worktree_fixture("grep");
     let registry = registry_for(&wt, None);
 
-    let out = exec(&registry, "search.grep", serde_json::json!({ "pattern": "needle" }));
+    let out = exec(
+        &registry,
+        "search.grep",
+        serde_json::json!({ "pattern": "needle" }),
+    );
     let matches = out["matches"].as_array().unwrap();
     assert_eq!(matches.len(), 1);
     assert!(matches[0].as_str().unwrap().ends_with("lib.txt:1"));
@@ -147,12 +193,19 @@ fn grep_and_git_tools_read_the_real_worktree() {
     std::fs::write(wt.join("new.txt"), "fresh\n").unwrap();
     let out = exec(&registry, "git.status", serde_json::json!({}));
     let entries = out["entries"].as_array().unwrap();
-    assert!(entries.iter().any(|e| e["path"] == "new.txt"), "{entries:?}");
+    assert!(
+        entries.iter().any(|e| e["path"] == "new.txt"),
+        "{entries:?}"
+    );
 
     std::fs::write(wt.join("app.py"), "def qty(x):\n    return 0\n").unwrap();
     let out = exec(&registry, "git.diff", serde_json::json!({}));
     assert!(
-        out["files"].as_array().unwrap().iter().any(|f| f["path"] == "app.py"),
+        out["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|f| f["path"] == "app.py"),
         "{out}"
     );
 }
@@ -160,7 +213,11 @@ fn grep_and_git_tools_read_the_real_worktree() {
 /// Locates the freshly-built modbit-execd binary (same target dir cargo
 /// built this test into).
 fn execd_binary() -> PathBuf {
-    let exe = if cfg!(windows) { "modbit-execd.exe" } else { "modbit-execd" };
+    let exe = if cfg!(windows) {
+        "modbit-execd.exe"
+    } else {
+        "modbit-execd"
+    };
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../target/debug")
         .join(exe)
@@ -195,14 +252,25 @@ fn shell_run_routes_through_real_execd_and_test_run_runs_a_gate() {
     let registry = registry_for(&wt, Some(&execd));
 
     // shell.run through the broker, cwd-pinned to the worktree.
-    let out = exec(&registry, "shell.run", serde_json::json!({ "argv": "git status --porcelain" }));
+    let out = exec(
+        &registry,
+        "shell.run",
+        serde_json::json!({ "argv": "git status --porcelain" }),
+    );
     assert_eq!(out["exit_code"], 0, "{out}");
-    assert!(!out["broker_run_id"].as_str().unwrap().is_empty(), "durable broker run id");
+    assert!(
+        !out["broker_run_id"].as_str().unwrap().is_empty(),
+        "durable broker run id"
+    );
 
     // Without a broker, shell.run FAILS CLOSED (no direct-spawn fallback).
     let bare = registry_for(&wt, None);
     let err = bare
-        .execute("shell.run", &serde_json::json!({"argv": "true"}), &PolicyDecision::Allow)
+        .execute(
+            "shell.run",
+            &serde_json::json!({"argv": "true"}),
+            &PolicyDecision::Allow,
+        )
         .unwrap_err();
     assert!(err.to_string().contains("execd"), "fail closed: {err}");
 
@@ -220,7 +288,11 @@ fn shell_run_routes_through_real_execd_and_test_run_runs_a_gate() {
         "#[test]\nfn passes() { assert_eq!(2 + 2, 4); }\n",
     )
     .unwrap();
-    let out = exec(&registry, "test.run", serde_json::json!({ "runner": "cargo" }));
+    let out = exec(
+        &registry,
+        "test.run",
+        serde_json::json!({ "runner": "cargo" }),
+    );
     assert_eq!(out["passed"], true, "gate passed: {out}");
 
     execd_child.kill().ok();
@@ -234,11 +306,12 @@ fn shell_run_routes_through_real_execd_and_test_run_runs_a_gate() {
 #[test]
 fn partial_toolset_enablement_cannot_expose_denied_tools() {
     let wt = worktree_fixture("deny");
-    let mut execd_child = Command::new(env!("CARGO_MANIFEST_DIR").to_string() + "/../../target/debug/modbit-execd")
-        .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .expect("execd");
+    let mut execd_child =
+        Command::new(env!("CARGO_MANIFEST_DIR").to_string() + "/../../target/debug/modbit-execd")
+            .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .expect("execd");
     let addr = {
         use std::io::BufRead;
         let mut line = String::new();
@@ -246,8 +319,7 @@ fn partial_toolset_enablement_cannot_expose_denied_tools() {
         std::io::BufReader::new(&mut stdout)
             .read_line(&mut line)
             .unwrap();
-        serde_json::from_str::<serde_json::Value>(&line)
-            .unwrap()["addr"]
+        serde_json::from_str::<serde_json::Value>(&line).unwrap()["addr"]
             .as_str()
             .unwrap()
             .to_string()

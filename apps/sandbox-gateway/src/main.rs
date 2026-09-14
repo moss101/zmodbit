@@ -106,11 +106,7 @@ fn serve_worker(conn: Connection<std::net::TcpStream>, reg: &Registration, lease
     }
 }
 
-fn serve_guest(
-    mut conn: Connection<std::net::TcpStream>,
-    reg: &Registration,
-    leases: Leases,
-) {
+fn serve_guest(mut conn: Connection<std::net::TcpStream>, reg: &Registration, leases: Leases) {
     loop {
         let frame = match conn.receive() {
             Ok(f) => f,
@@ -177,8 +173,7 @@ fn serve_guest(
                 // The worker lease is dead — release it so the next
                 // request reports "no worker" instead of hanging.
                 leases.lock().expect("leases").remove(&reg.tenant);
-                let _ = conn
-                    .send(&serde_json::to_vec(&GatewayError { error: e }).expect("json"));
+                let _ = conn.send(&serde_json::to_vec(&GatewayError { error: e }).expect("json"));
             }
         }
     }

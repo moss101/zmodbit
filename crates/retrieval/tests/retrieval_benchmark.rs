@@ -46,9 +46,9 @@ impl Lcg {
 }
 
 const WORDS: [&str; 24] = [
-    "quartz", "lantern", "meridian", "cobalt", "harbor", "falcon", "meadow", "cascade",
-    "summit", "willow", "ember", "tundra", "glacier", "canyon", "orchid", "zenith",
-    "beacon", "drizzle", "fossil", "garnet", "hollow", "island", "jasper", "krypton",
+    "quartz", "lantern", "meridian", "cobalt", "harbor", "falcon", "meadow", "cascade", "summit",
+    "willow", "ember", "tundra", "glacier", "canyon", "orchid", "zenith", "beacon", "drizzle",
+    "fossil", "garnet", "hollow", "island", "jasper", "krypton",
 ];
 
 /// Generates the corpus: code files with unique handler functions and
@@ -175,11 +175,7 @@ fn exact_search(tree: &BTreeMap<String, Vec<u8>>, query: &str, top_k: usize) -> 
 }
 
 fn recall_at_k(top: &[String], relevant: &[String], k: usize) -> f64 {
-    let hits = top
-        .iter()
-        .take(k)
-        .filter(|p| relevant.contains(p))
-        .count();
+    let hits = top.iter().take(k).filter(|p| relevant.contains(p)).count();
     hits as f64 / relevant.len().max(1) as f64
 }
 
@@ -203,7 +199,11 @@ fn retrieval_benchmark_fixed_revision_gates() {
     let cold_started = Instant::now();
     let index = TaskIndex::build_at(&root, CORPUS_REVISION);
     let cold_index_ms = cold_started.elapsed().as_millis();
-    assert_eq!(index.repo.files.len(), tree.len(), "every corpus file indexed");
+    assert_eq!(
+        index.repo.files.len(),
+        tree.len(),
+        "every corpus file indexed"
+    );
 
     // Warm the reader before measuring (docs/53: warm p95).
     let _ = index.context_query("warmup fn_0_handler quartz", 5);

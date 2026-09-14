@@ -158,17 +158,12 @@ impl ProtocolStateStore {
     /// LATEST record wins — a crashed writer's earlier cursors are
     /// superseded (M4.1 SSE replay resume).
     pub fn last_cursor(&self, consumer_id: &str) -> Option<u64> {
-        self.records
-            .iter()
-            .rev()
-            .find_map(|r| match r {
-                ProtocolRecord::TerminalCursor { run_id, offset }
-                    if run_id == consumer_id =>
-                {
-                    Some(*offset)
-                }
-                _ => None,
-            })
+        self.records.iter().rev().find_map(|r| match r {
+            ProtocolRecord::TerminalCursor { run_id, offset } if run_id == consumer_id => {
+                Some(*offset)
+            }
+            _ => None,
+        })
     }
 
     /// All tool calls in their persisted status.

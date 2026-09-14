@@ -52,8 +52,7 @@ fn live_streaming_call_produces_normalized_events() {
         .build()
         .unwrap()
         .block_on(async move {
-            let transport =
-                HttpStreamTransport::new(Arc::new(EnvSecretBroker)).expect("transport");
+            let transport = HttpStreamTransport::new(Arc::new(EnvSecretBroker)).expect("transport");
             let mut stream = transport
                 .stream(OutgoingRequest {
                     provider,
@@ -99,7 +98,10 @@ fn live_streaming_call_produces_normalized_events() {
 
             assert!(deltas > 0, "expected streaming deltas");
             assert!(completed, "expected a Completed event");
-            assert!(!assembled.trim().is_empty(), "assembled text must be non-empty");
+            assert!(
+                !assembled.trim().is_empty(),
+                "assembled text must be non-empty"
+            );
             eprintln!(
                 "live qualification ok: deltas={deltas} usage={usage:?} text={:?}",
                 assembled.chars().take(120).collect::<String>()

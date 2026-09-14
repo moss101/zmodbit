@@ -10,8 +10,8 @@
 //! Canonical owner subsystem: workspace-git (docs/81). Layout: docs/12.
 
 use std::fmt;
-use std::path::{Path, PathBuf};
 use std::io::Write as _;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 pub mod snapshot;
@@ -250,7 +250,9 @@ impl GitRepo {
                 body.push(line.to_string());
             }
         }
-        let selected = blocks.iter().find(|(h, _)| hunk_new_start(h) == Some(new_start));
+        let selected = blocks
+            .iter()
+            .find(|(h, _)| hunk_new_start(h) == Some(new_start));
         let Some((hunk_header, body)) = selected else {
             return Err(GitError::Git {
                 operation: "apply --reverse".into(),
@@ -305,12 +307,10 @@ impl GitRepo {
         let mut child = apply.spawn().map_err(GitError::Io)?;
         {
             let stdin = child.stdin.as_mut().expect("stdin piped");
-            stdin
-                .write_all(&diff.stdout)
-                .map_err(|e| GitError::Git {
-                    operation: "apply --reverse".into(),
-                    message: e.to_string(),
-                })?;
+            stdin.write_all(&diff.stdout).map_err(|e| GitError::Git {
+                operation: "apply --reverse".into(),
+                message: e.to_string(),
+            })?;
         }
         let out = child.wait_with_output().map_err(GitError::Io)?;
         if out.status.success() {
@@ -420,7 +420,11 @@ impl GitRepo {
     /// Clones a repository URL into `into` (Phase 4.1: register-by-URL).
     /// Returns a handle rooted at the clone.
     pub fn clone(url: &str, into: &Path) -> Result<Self, GitError> {
-        if into.exists() && std::fs::read_dir(into).map(|mut d| d.next().is_some()).unwrap_or(false) {
+        if into.exists()
+            && std::fs::read_dir(into)
+                .map(|mut d| d.next().is_some())
+                .unwrap_or(false)
+        {
             return Err(GitError::Git {
                 operation: "clone".into(),
                 message: format!("target {} already exists and is not empty", into.display()),
@@ -585,14 +589,11 @@ impl GitRepo {
 mod hunk_tests {
     use super::*;
 
-
     /// diff_hunks_unrated parses a -U0 diff into per-path hunks.
     #[test]
     fn diff_hunks_parse() {
-        let dir = std::env::temp_dir().join(format!(
-            "git-hunks-parse-{}",
-            uuid::Uuid::now_v7().simple()
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("git-hunks-parse-{}", uuid::Uuid::now_v7().simple()));
         std::fs::create_dir_all(&dir).unwrap();
         let diff_text = "\
 diff --git a/greet.js b/greet.js
@@ -634,7 +635,8 @@ diff --git a/greet.js b/greet.js
         std::fs::write(&file, "line1\nline2-EDIT\nline3\nline4-EDIT\nline5\n").unwrap();
 
         // Hunk 1 starts at line 2 (new file coords).
-        repo.reject_hunk("multi.js", 2, "HEAD").expect("hunk reject");
+        repo.reject_hunk("multi.js", 2, "HEAD")
+            .expect("hunk reject");
 
         let after = std::fs::read_to_string(&file).unwrap();
         // Line 2 reverted, line 4 edit preserved.
@@ -642,7 +644,10 @@ diff --git a/greet.js b/greet.js
             after.contains("line2") && after.contains("line4-EDIT"),
             "after reject: {after:?}"
         );
-        assert!(!after.contains("line2-EDIT"), "the selected hunk was reversed");
+        assert!(
+            !after.contains("line2-EDIT"),
+            "the selected hunk was reversed"
+        );
         assert!(after.contains("line4-EDIT"), "the other hunk is untouched");
         let _ = std::fs::remove_dir_all(&root);
     }
@@ -676,7 +681,8 @@ diff --git a/greet.js b/greet.js
         assert_eq!(hunk.path, "greet.js");
 
         // Reject: the diff against HEAD is applied in reverse.
-        repo.reject_worktree_changes("greet.js").expect("reverse apply");
+        repo.reject_worktree_changes("greet.js")
+            .expect("reverse apply");
         let after = std::fs::read_to_string(&file).unwrap();
         assert_eq!(
             after, "function greet() {\n  return 'hi';\n}\n",

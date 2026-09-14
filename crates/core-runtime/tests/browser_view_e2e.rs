@@ -15,15 +15,16 @@ use modbit_event_store::EventStore;
 use modbit_protocol::modbit::protocol::v1 as pb;
 
 fn tempdir(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "modbit-bv-{tag}-{}",
-        uuid::Uuid::now_v7().simple()
-    ));
+    let dir =
+        std::env::temp_dir().join(format!("modbit-bv-{tag}-{}", uuid::Uuid::now_v7().simple()));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
 
-fn roundtrip(services: &CoreServices, request: pb::surface_request::Request) -> pb::SurfaceResponse {
+fn roundtrip(
+    services: &CoreServices,
+    request: pb::surface_request::Request,
+) -> pb::SurfaceResponse {
     let bytes = pb::SurfaceRequest {
         request: Some(request),
     }

@@ -34,8 +34,13 @@ fn bench_setup(tag: &str) -> (Arc<EventStore>, CommandProcessor, String) {
     processor
         .execute(Command {
             command_id: uuid::Uuid::now_v7().to_string(),
-            actor: Actor { actor_type: ActorType::User, actor_id: "perf".into() },
-            payload: CommandPayload::CreateSession { display_name: "perf".into() },
+            actor: Actor {
+                actor_type: ActorType::User,
+                actor_id: "perf".into(),
+            },
+            payload: CommandPayload::CreateSession {
+                display_name: "perf".into(),
+            },
         })
         .unwrap();
     let sid: String = store
@@ -61,7 +66,10 @@ fn event_append_throughput_holds_the_floor() {
         let outcome = processor
             .execute(Command {
                 command_id: uuid::Uuid::now_v7().to_string(),
-                actor: Actor { actor_type: ActorType::User, actor_id: "perf".into() },
+                actor: Actor {
+                    actor_type: ActorType::User,
+                    actor_id: "perf".into(),
+                },
                 payload: CommandPayload::CreateTask {
                     session_id: modbit_domain::SessionId::parse(&sid).unwrap(),
                     title: format!("task {i}"),
@@ -72,7 +80,10 @@ fn event_append_throughput_holds_the_floor() {
                 },
             })
             .unwrap();
-        assert!(matches!(outcome, modbit_event_store::Outcome::Applied { .. }));
+        assert!(matches!(
+            outcome,
+            modbit_event_store::Outcome::Applied { .. }
+        ));
     }
     let elapsed = start.elapsed();
     let per_sec = n as f64 / elapsed.as_secs_f64();
@@ -97,7 +108,10 @@ fn fleet_snapshot_p95_stays_under_the_bound() {
         processor
             .execute(Command {
                 command_id: uuid::Uuid::now_v7().to_string(),
-                actor: Actor { actor_type: ActorType::User, actor_id: "perf".into() },
+                actor: Actor {
+                    actor_type: ActorType::User,
+                    actor_id: "perf".into(),
+                },
                 payload: CommandPayload::CreateTask {
                     session_id: modbit_domain::SessionId::parse(&sid).unwrap(),
                     title: format!("fleet task {i}"),
@@ -145,8 +159,13 @@ fn write_scope_admission_stays_fast_at_scale() {
             [format!("t{i}")],
         )
         .unwrap();
-        modbit_event_store::write_scopes::acquire(&conn, &format!("t{i}"), "repo", &format!("dir{i}/"))
-            .unwrap();
+        modbit_event_store::write_scopes::acquire(
+            &conn,
+            &format!("t{i}"),
+            "repo",
+            &format!("dir{i}/"),
+        )
+        .unwrap();
     }
     // 200 sequential acquisitions (each scans all held scopes).
     let start = Instant::now();
@@ -157,10 +176,17 @@ fn write_scope_admission_stays_fast_at_scale() {
             [format!("t{i}")],
         )
         .unwrap();
-        let outcome =
-            modbit_event_store::write_scopes::acquire(&conn, &format!("t{i}"), "repo", &format!("fresh{i}/"))
-                .unwrap();
-        assert_eq!(outcome, modbit_event_store::write_scopes::AcquireOutcome::Acquired);
+        let outcome = modbit_event_store::write_scopes::acquire(
+            &conn,
+            &format!("t{i}"),
+            "repo",
+            &format!("fresh{i}/"),
+        )
+        .unwrap();
+        assert_eq!(
+            outcome,
+            modbit_event_store::write_scopes::AcquireOutcome::Acquired
+        );
     }
     let elapsed = start.elapsed();
     assert!(

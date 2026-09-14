@@ -76,7 +76,13 @@ mod tests {
 
     #[test]
     fn reasoning_tier_models_get_larger_output_budgets() {
-        for model in ["gpt-5", "gpt-5-mini", "o3-mini", "claude-sonnet-4", "GLM-5.3-Flash"] {
+        for model in [
+            "gpt-5",
+            "gpt-5-mini",
+            "o3-mini",
+            "claude-sonnet-4",
+            "GLM-5.3-Flash",
+        ] {
             assert_eq!(
                 resolve_model_settings(model).max_output_tokens,
                 8192,
@@ -87,11 +93,11 @@ mod tests {
 
     #[test]
     fn effort_parsing_covers_the_documented_values() {
+        assert_eq!(parse_reasoning_effort("high"), Some(ReasoningEffort::High));
         assert_eq!(
-            parse_reasoning_effort("high"),
-            Some(ReasoningEffort::High)
+            parse_reasoning_effort(" Medium "),
+            Some(ReasoningEffort::Medium)
         );
-        assert_eq!(parse_reasoning_effort(" Medium "), Some(ReasoningEffort::Medium));
         assert_eq!(parse_reasoning_effort("bogus"), None);
         assert_eq!(parse_reasoning_effort(""), None);
     }

@@ -93,7 +93,13 @@ fn approval_decisions_bind_intent_hashes_not_tool_names() {
     let now: u128 = 1_000;
 
     let a = store
-        .request("appr-1", &request_with_path("src/a.rs"), "task-scope", None, now)
+        .request(
+            "appr-1",
+            &request_with_path("src/a.rs"),
+            "task-scope",
+            None,
+            now,
+        )
         .unwrap();
     let _ = store.resolve("appr-1", ApprovalState::Approved, "operator", now);
 
@@ -177,7 +183,9 @@ fn effect_receipts_bind_digests_not_payloads() {
         h.update(hostile_payload.as_bytes());
         format!("{:x}", h.finalize())
     };
-    ledger.append("no-approval", "cap-write", &call_digest, "res").unwrap();
+    ledger
+        .append("no-approval", "cap-write", &call_digest, "res")
+        .unwrap();
 
     // The ledger binds the digest only: the raw hostile payload is not
     // in the file.

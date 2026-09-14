@@ -75,7 +75,11 @@ impl ExecdClient {
 
     pub fn status(&self, run_id: &str) -> Result<SpawnStatus, TerminalError> {
         let response = self.call(&serde_json::json!({ "op": "status", "id": run_id }))?;
-        if !response.get("ok").and_then(|v| v.as_bool()).unwrap_or(false) {
+        if !response
+            .get("ok")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
             return Err(broker_error(&response));
         }
         let state = response
@@ -105,7 +109,11 @@ impl ExecdClient {
         let response = self.call(&serde_json::json!({
             "op": "read", "id": run_id, "offset": offset, "max": max
         }))?;
-        if !response.get("ok").and_then(|v| v.as_bool()).unwrap_or(false) {
+        if !response
+            .get("ok")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
             return Err(broker_error(&response));
         }
         let encoded = response
@@ -116,7 +124,10 @@ impl ExecdClient {
         let bytes = base64::engine::general_purpose::STANDARD
             .decode(encoded)
             .map_err(|e| TerminalError::Io(std::io::Error::other(e)))?;
-        let new_offset = response.get("offset").and_then(|v| v.as_u64()).unwrap_or(offset);
+        let new_offset = response
+            .get("offset")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(offset);
         Ok((bytes, new_offset))
     }
 
@@ -202,10 +213,7 @@ impl ExecdClient {
             .and_then(|v| v.as_str())
             .and_then(|s| base64::engine::general_purpose::STANDARD.decode(s).ok())
             .unwrap_or_default();
-        let next = response
-            .get("offset")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as usize;
+        let next = response.get("offset").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
         Ok((data, next))
     }
 
@@ -295,7 +303,11 @@ impl ExecdClient {
 
     fn expect_ok(&self, request: &Value) -> Result<(), TerminalError> {
         let response = self.call(request)?;
-        if response.get("ok").and_then(|v| v.as_bool()).unwrap_or(false) {
+        if response
+            .get("ok")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
             Ok(())
         } else {
             Err(broker_error(&response))
@@ -313,11 +325,8 @@ impl ExecdClient {
             .map_err(TerminalError::Io)?;
         let mut reader = BufReader::new(stream);
         let mut response = String::new();
-        reader
-            .read_line(&mut response)
-            .map_err(TerminalError::Io)?;
-        serde_json::from_str(&response)
-            .map_err(|e| TerminalError::Io(std::io::Error::other(e)))
+        reader.read_line(&mut response).map_err(TerminalError::Io)?;
+        serde_json::from_str(&response).map_err(|e| TerminalError::Io(std::io::Error::other(e)))
     }
 }
 

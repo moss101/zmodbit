@@ -23,7 +23,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("st1{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -35,7 +44,11 @@ fn code_fixture(tag: &str) -> PathBuf {
     repo.set_config("user.email", "e2e@modbit.test").unwrap();
     repo.set_config("user.name", "Modbit E2E").unwrap();
     repo.set_config("core.autocrlf", "false").unwrap();
-    std::fs::write(root.join("greet.js"), "function greet() {\n  return 'hi';\n}\n").unwrap();
+    std::fs::write(
+        root.join("greet.js"),
+        "function greet() {\n  return 'hi';\n}\n",
+    )
+    .unwrap();
     repo.commit_all("base").expect("baseline");
     root
 }
@@ -96,12 +109,9 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
         .map(String::from)
 }
 
-fn spawn_core(
-    db_path: &PathBuf,
-    repo_root: &PathBuf,
-    worktree_root: &PathBuf,
-) -> (Child, String) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+fn spawn_core(db_path: &PathBuf, repo_root: &PathBuf, worktree_root: &PathBuf) -> (Child, String) {
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -141,9 +151,7 @@ fn spawn_core(
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -152,22 +160,26 @@ fn spawn_core(
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     std::mem::forget(execd);
     (child, daemon.expect("daemon addr"))
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -182,9 +194,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_state(daemon: &str, task_id: &str, want: i32) {
     let deadline = Instant::now() + Duration::from_secs(300);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         if let Some(t) = fleet.tasks.iter().find(|t| t.task_id == task_id) {
             if t.state == want {
                 return;
@@ -200,11 +215,9 @@ fn wait_state(daemon: &str, task_id: &str, want: i32) {
 }
 
 fn conversation_of(db_path: &PathBuf) -> String {
-    let conn = rusqlite::Connection::open_with_flags(
-        db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .unwrap();
+    let conn =
+        rusqlite::Connection::open_with_flags(db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .unwrap();
     let mut stmt = conn
         .prepare(
             "SELECT json_extract(payload_inline, '$.conversation_json')
@@ -285,7 +298,10 @@ fn persisted_settings_drive_runs_and_the_readonly_mode_refuses_edits() {
             let _ = stream.write_all(
                 b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n",
             );
-            let body = script.get(turn).cloned().unwrap_or_else(|| text_turn("done"));
+            let body = script
+                .get(turn)
+                .cloned()
+                .unwrap_or_else(|| text_turn("done"));
             let _ = stream.write_all(body.as_bytes());
         }
     });
@@ -332,8 +348,12 @@ fn persisted_settings_drive_runs_and_the_readonly_mode_refuses_edits() {
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -342,13 +362,14 @@ fn persisted_settings_drive_runs_and_the_readonly_mode_refuses_edits() {
 
     let visible = conversation_of(&db_path);
     assert!(
-        visible.contains("granted")
-            || visible.contains("denied")
-            || visible.contains("policy"),
+        visible.contains("granted") || visible.contains("denied") || visible.contains("policy"),
         "the readonly kernel denial must ride the conversation: {visible}"
     );
     let on_disk = std::fs::read_to_string(worktrees.join(&task_id).join("greet.js")).unwrap();
-    assert_eq!(on_disk, "function greet() {\n  return 'hi';\n}\n", "nothing written in readonly mode");
+    assert_eq!(
+        on_disk, "function greet() {\n  return 'hi';\n}\n",
+        "nothing written in readonly mode"
+    );
 
     // 4) The run REACHED the settings' base_url: the fixture served the
     // turns (the task completed against it), and the model id matched —
@@ -421,14 +442,24 @@ fn default_mode_applies_the_edit() {
                 ),
                 text_turn("edited."),
             ];
-            let body = script.get(turn).cloned().unwrap_or_else(|| text_turn("done"));
+            let body = script
+                .get(turn)
+                .cloned()
+                .unwrap_or_else(|| text_turn("done"));
             let _ = stream.write_all(body.as_bytes());
         }
     });
 
     let (mut core, daemon) = spawn_core(&db_path, &repo, &worktrees);
     // Settings: default mode, no readonly.
-    let saved = update_settings(&daemon, "openai", "fixture-model", &format!("http://{model_addr}"), 6, "default");
+    let saved = update_settings(
+        &daemon,
+        "openai",
+        "fixture-model",
+        &format!("http://{model_addr}"),
+        6,
+        "default",
+    );
     assert!(saved.ok, "{}", saved.error);
 
     let created = request(
@@ -443,8 +474,12 @@ fn default_mode_applies_the_edit() {
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);

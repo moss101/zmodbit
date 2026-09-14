@@ -38,7 +38,8 @@ fn wait_killed(client: &ExecdClient, id: &str) -> bool {
 /// read the echoed command + output → cancel.
 #[test]
 fn pty_session_over_the_broker_round_trips() {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut child = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())

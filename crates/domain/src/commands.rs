@@ -145,9 +145,7 @@ impl CommandPayload {
             CommandPayload::QueueTaskInput { task_id, .. }
             | CommandPayload::SetGoal { task_id, .. }
             | CommandPayload::ResolveReviewHunk { task_id, .. }
-            | CommandPayload::AddReviewComment { task_id, .. } => {
-                Some(task_id.to_string())
-            }
+            | CommandPayload::AddReviewComment { task_id, .. } => Some(task_id.to_string()),
             CommandPayload::AskSideQuestion { session_id, .. } => Some(session_id.to_string()),
             CommandPayload::CreateSession { .. } | CommandPayload::CreateTask { .. } => None,
         }

@@ -173,7 +173,11 @@ impl McpClient {
         if let Some(arr) = tools_json.as_array() {
             for t in arr {
                 tools.push(McpTool {
-                    name: t.get("name").and_then(|v| v.as_str()).unwrap_or_default().into(),
+                    name: t
+                        .get("name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .into(),
                     description: t
                         .get("description")
                         .and_then(|v| v.as_str())
@@ -251,7 +255,6 @@ pub struct McpPool {
     clients: Vec<McpClient>,
 }
 
-
 impl McpPool {
     pub fn new(servers: BTreeMap<String, ExternalServer>) -> Self {
         McpPool {
@@ -295,5 +298,3 @@ impl McpPool {
             .collect()
     }
 }
-
-

@@ -3,7 +3,7 @@
  "product": "Modbit",
  "edition": "V3.1",
  "authority_date": "2026-09-03",
- "generated_on": "2026-09-13",
+ "generated_on": "2026-09-14",
  "generator": "tools/build_graph.py",
  "status_vocabulary": [
   "NOT_STARTED",
@@ -7807,10 +7807,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0001",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33910186850",
-    "commit:98e4fed"
+    "commit:98e4fed",
+    "test:crates/context/src/planner.rs"
    ],
    "notes": [
     {
@@ -7818,9 +7819,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:12Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0001-tagged code+test (crates/context/src/planner.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z"
+   "status_changed_on": "2026-09-14T07:16:12Z"
   },
   {
    "id": "IMP-EV-0002",
@@ -7833,10 +7840,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0002",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33909577371",
-    "commit:b3515bb"
+    "commit:b3515bb",
+    "test:crates/retrieval/src/hydration.rs"
    ],
    "notes": [
     {
@@ -7844,9 +7852,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:12Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0002-tagged code+test (crates/retrieval/src/hydration.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z"
+   "status_changed_on": "2026-09-14T07:16:12Z"
   },
   {
    "id": "IMP-EV-0003",
@@ -7859,10 +7873,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0003",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33910186850",
-    "commit:98e4fed"
+    "commit:98e4fed",
+    "test:crates/context/src/planner.rs"
    ],
    "notes": [
     {
@@ -7870,9 +7885,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:12Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0003-tagged code+test (crates/context/src/planner.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z"
+   "status_changed_on": "2026-09-14T07:16:12Z"
   },
   {
    "id": "IMP-EV-0004",
@@ -7928,10 +7949,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0005",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
-    "commit:5c65e96"
+    "commit:5c65e96",
+    "test:crates/retrieval/src/context_graph.rs"
    ],
    "notes": [
     {
@@ -7939,9 +7961,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:12Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0005-tagged code+test (crates/retrieval/src/context_graph.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:31Z"
+   "status_changed_on": "2026-09-14T07:16:12Z"
   },
   {
    "id": "IMP-EV-0006",
@@ -7954,10 +7982,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0006",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -7965,9 +7994,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:12Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0006-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:12Z"
   },
   {
    "id": "IMP-EV-0007",
@@ -7980,10 +8015,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0007",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -7991,9 +8027,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0007-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0008",
@@ -8006,10 +8048,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0008",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -8017,9 +8060,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0008-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0009",
@@ -8032,10 +8081,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0009",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -8043,9 +8093,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0009-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0010",
@@ -8344,10 +8400,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0017",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -8355,9 +8412,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0017-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0018",
@@ -8465,10 +8528,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0020",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33910186850",
-    "commit:98e4fed"
+    "commit:98e4fed",
+    "test:crates/diagnostics/src/pull.rs"
    ],
    "notes": [
     {
@@ -8476,9 +8540,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0020-tagged code+test (crates/diagnostics/src/pull.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0021",
@@ -8565,10 +8635,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0023",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -8576,9 +8647,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0023-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0024",
@@ -8591,10 +8668,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0024",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/sandbox/src/lib.rs"
    ],
    "notes": [
     {
@@ -8602,9 +8680,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0024-tagged code+test (crates/sandbox/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:32Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0025",
@@ -8860,10 +8944,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0032",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -8871,9 +8956,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0032-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0035",
@@ -9082,10 +9173,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0042",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
-    "commit:d15f4c9"
+    "commit:d15f4c9",
+    "test:crates/checkpoint/src/hook_bus.rs"
    ],
    "notes": [
     {
@@ -9093,9 +9185,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0042-tagged code+test (crates/checkpoint/src/hook_bus.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0043",
@@ -9207,10 +9305,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0046",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -9218,9 +9317,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:13Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0046-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:13Z"
   },
   {
    "id": "IMP-EV-0047",
@@ -9233,10 +9338,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0047",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -9244,9 +9350,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:14Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0047-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:14Z"
   },
   {
    "id": "IMP-EV-0048",
@@ -9259,10 +9371,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0048",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -9270,9 +9383,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:14Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0048-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:14Z"
   },
   {
    "id": "IMP-EV-0049",
@@ -9285,10 +9404,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0049",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949318096",
-    "commit:4e8be7f"
+    "commit:4e8be7f",
+    "test:crates/core-runtime/src/agent_fleet.rs"
    ],
    "notes": [
     {
@@ -9296,9 +9416,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:14Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0049-tagged code+test (crates/core-runtime/src/agent_fleet.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:14Z"
   },
   {
    "id": "IMP-EV-0050",
@@ -9311,10 +9437,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0050",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
-    "commit:fe3d7eb"
+    "commit:fe3d7eb",
+    "test:crates/core-runtime/src/agent_runtime_batch2.rs"
    ],
    "notes": [
     {
@@ -9322,9 +9449,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:14Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0050-tagged code+test (crates/core-runtime/src/agent_runtime_batch2.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:14Z"
   },
   {
    "id": "IMP-EV-0051",
@@ -9337,10 +9470,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0051",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
-    "commit:fe3d7eb"
+    "commit:fe3d7eb",
+    "test:crates/core-runtime/src/agent_runtime_batch2.rs"
    ],
    "notes": [
     {
@@ -9348,9 +9482,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:14Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0051-tagged code+test (crates/core-runtime/src/agent_runtime_batch2.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:14Z"
   },
   {
    "id": "IMP-EV-0052",
@@ -9363,10 +9503,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0052",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
-    "commit:fe3d7eb"
+    "commit:fe3d7eb",
+    "test:crates/core-runtime/src/agent_runtime_batch2.rs"
    ],
    "notes": [
     {
@@ -9374,9 +9515,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:14Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0052-tagged code+test (crates/core-runtime/src/agent_runtime_batch2.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:14Z"
   },
   {
    "id": "IMP-EV-0053",
@@ -9389,10 +9536,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0053",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
-    "commit:fe3d7eb"
+    "commit:fe3d7eb",
+    "test:crates/core-runtime/src/agent_runtime_batch2.rs"
    ],
    "notes": [
     {
@@ -9400,9 +9548,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:14Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0053-tagged code+test (crates/core-runtime/src/agent_runtime_batch2.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:14Z"
   },
   {
    "id": "IMP-EV-0054",
@@ -9491,10 +9645,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0056",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33910791895",
-    "commit:a9f7c0c"
+    "commit:a9f7c0c",
+    "test:crates/compaction/src/lib.rs"
    ],
    "notes": [
     {
@@ -9502,9 +9657,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0056-tagged code+test (crates/compaction/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0057",
@@ -9517,10 +9678,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0057",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33910791895",
-    "commit:a9f7c0c"
+    "commit:a9f7c0c",
+    "test:crates/compaction/src/lib.rs"
    ],
    "notes": [
     {
@@ -9528,9 +9690,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0057-tagged code+test (crates/compaction/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0058",
@@ -9543,10 +9711,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0058",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33910791895",
-    "commit:a9f7c0c"
+    "commit:a9f7c0c",
+    "test:crates/compaction/src/lib.rs"
    ],
    "notes": [
     {
@@ -9554,9 +9723,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0058-tagged code+test (crates/compaction/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0059",
@@ -9569,10 +9744,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0059",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
-    "commit:7411892"
+    "commit:7411892",
+    "test:crates/skills/src/lib.rs"
    ],
    "notes": [
     {
@@ -9580,9 +9756,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0059-tagged code+test (crates/skills/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0060",
@@ -9595,10 +9777,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0060",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
-    "commit:5c65e96"
+    "commit:5c65e96",
+    "test:crates/retrieval/src/knowledge.rs"
    ],
    "notes": [
     {
@@ -9606,9 +9789,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0060-tagged code+test (crates/retrieval/src/knowledge.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0061",
@@ -9621,10 +9810,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0061",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
-    "commit:7411892"
+    "commit:7411892",
+    "test:crates/skills/src/lib.rs"
    ],
    "notes": [
     {
@@ -9632,9 +9822,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0061-tagged code+test (crates/skills/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:33Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0062",
@@ -9803,10 +9999,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0066",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
-    "commit:d15f4c9"
+    "commit:d15f4c9",
+    "test:crates/checkpoint/src/hook_bus.rs"
    ],
    "notes": [
     {
@@ -9814,9 +10011,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0066-tagged code+test (crates/checkpoint/src/hook_bus.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0067",
@@ -10001,10 +10204,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0072",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/sandbox/src/lib.rs"
    ],
    "notes": [
     {
@@ -10012,9 +10216,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0072-tagged code+test (crates/sandbox/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0073",
@@ -10068,10 +10278,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0075",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/sandbox/src/lib.rs"
    ],
    "notes": [
     {
@@ -10079,9 +10290,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0075-tagged code+test (crates/sandbox/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0076",
@@ -10094,10 +10311,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0076",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/sandbox/src/lib.rs"
    ],
    "notes": [
     {
@@ -10105,9 +10323,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:15Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0076-tagged code+test (crates/sandbox/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:15Z"
   },
   {
    "id": "IMP-EV-0077",
@@ -10149,10 +10373,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0078",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33949740234",
-    "commit:fe3d7eb"
+    "commit:fe3d7eb",
+    "test:crates/core-runtime/src/agent_runtime_batch2.rs"
    ],
    "notes": [
     {
@@ -10160,9 +10385,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0078-tagged code+test (crates/core-runtime/src/agent_runtime_batch2.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0079",
@@ -10246,10 +10477,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0081",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/sandbox/src/lib.rs"
    ],
    "notes": [
     {
@@ -10257,9 +10489,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0081-tagged code+test (crates/sandbox/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0082",
@@ -10272,10 +10510,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0082",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -10283,9 +10522,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0082-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0083",
@@ -10298,10 +10543,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0083",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -10309,9 +10555,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0083-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0084",
@@ -10324,10 +10576,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0084",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -10335,9 +10588,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0084-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0085",
@@ -10350,10 +10609,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0085",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -10361,9 +10621,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0085-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0086",
@@ -10376,10 +10642,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0086",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
-    "commit:79466b5"
+    "commit:79466b5",
+    "test:crates/browser/src/computer_safety.rs"
    ],
    "notes": [
     {
@@ -10387,9 +10654,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0086-tagged code+test (crates/browser/src/computer_safety.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0087",
@@ -10402,10 +10675,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0087",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
-    "commit:79466b5"
+    "commit:79466b5",
+    "test:crates/browser/src/computer_safety.rs"
    ],
    "notes": [
     {
@@ -10413,9 +10687,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0087-tagged code+test (crates/browser/src/computer_safety.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0088",
@@ -10460,10 +10740,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0089",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
-    "commit:79466b5"
+    "commit:79466b5",
+    "test:crates/browser/src/computer_safety.rs"
    ],
    "notes": [
     {
@@ -10471,9 +10752,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0089-tagged code+test (crates/browser/src/computer_safety.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:34Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0090",
@@ -10486,10 +10773,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0090",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952424970",
-    "commit:79466b5"
+    "commit:79466b5",
+    "test:crates/browser/src/computer_safety.rs"
    ],
    "notes": [
     {
@@ -10497,9 +10785,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0090-tagged code+test (crates/browser/src/computer_safety.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0091",
@@ -10547,10 +10841,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0092",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
-    "commit:efa4135"
+    "commit:efa4135",
+    "test:crates/context/src/recoverability.rs"
    ],
    "notes": [
     {
@@ -10558,9 +10853,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0092-tagged code+test (crates/context/src/recoverability.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0093",
@@ -10639,10 +10940,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0097",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
-    "commit:7411892"
+    "commit:7411892",
+    "test:crates/procedural-runtime/src/lib.rs"
    ],
    "notes": [
     {
@@ -10650,9 +10952,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0097-tagged code+test (crates/procedural-runtime/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0098",
@@ -10700,10 +11008,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0099",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
-    "commit:93473bc"
+    "commit:93473bc",
+    "test:crates/core-runtime/src/agent_runtime_batch3.rs"
    ],
    "notes": [
     {
@@ -10711,9 +11020,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:16Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0099-tagged code+test (crates/core-runtime/src/agent_runtime_batch3.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:16Z"
   },
   {
    "id": "IMP-EV-0100",
@@ -10854,10 +11169,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0104",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33953675878",
-    "commit:d057e07"
+    "commit:d057e07",
+    "test:crates/checkpoint/src/mcp_memory.rs"
    ],
    "notes": [
     {
@@ -10865,9 +11181,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0104-tagged code+test (crates/checkpoint/src/mcp_memory.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0105",
@@ -10880,10 +11202,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0105",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
-    "commit:7411892"
+    "commit:7411892",
+    "test:crates/skills/src/lib.rs"
    ],
    "notes": [
     {
@@ -10891,9 +11214,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0105-tagged code+test (crates/skills/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0106",
@@ -10941,10 +11270,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0107",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
-    "commit:93473bc"
+    "commit:93473bc",
+    "test:crates/core-runtime/src/agent_runtime_batch3.rs"
    ],
    "notes": [
     {
@@ -10952,9 +11282,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0107-tagged code+test (crates/core-runtime/src/agent_runtime_batch3.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0108",
@@ -11002,10 +11338,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0109",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/sandbox/src/lib.rs"
    ],
    "notes": [
     {
@@ -11013,9 +11350,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0109-tagged code+test (crates/sandbox/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0110",
@@ -11028,10 +11371,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0110",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
-    "commit:6341c3a"
+    "commit:6341c3a",
+    "test:crates/browser/src/session_control.rs"
    ],
    "notes": [
     {
@@ -11039,9 +11383,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0110-tagged code+test (crates/browser/src/session_control.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0111",
@@ -11054,10 +11404,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0111",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
-    "commit:efa4135"
+    "commit:efa4135",
+    "test:crates/context/src/cache_economy.rs"
    ],
    "notes": [
     {
@@ -11065,9 +11416,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0111-tagged code+test (crates/context/src/cache_economy.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0112",
@@ -11114,10 +11471,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0114",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33930776900",
-    "commit:7411892"
+    "commit:7411892",
+    "test:crates/skills/src/lib.rs"
    ],
    "notes": [
     {
@@ -11125,9 +11483,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0114-tagged code+test (crates/skills/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0115",
@@ -11140,10 +11504,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0115",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
-    "commit:6a88e13"
+    "commit:6a88e13",
+    "test:crates/core-runtime/src/agent_profiles_plans.rs"
    ],
    "notes": [
     {
@@ -11151,9 +11516,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0115-tagged code+test (crates/core-runtime/src/agent_profiles_plans.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0116",
@@ -11198,10 +11569,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0117",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
-    "commit:6a88e13"
+    "commit:6a88e13",
+    "test:crates/core-runtime/src/agent_profiles_plans.rs"
    ],
    "notes": [
     {
@@ -11209,9 +11581,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0117-tagged code+test (crates/core-runtime/src/agent_profiles_plans.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0118",
@@ -11224,10 +11602,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0118",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
-    "commit:6a88e13"
+    "commit:6a88e13",
+    "test:crates/core-runtime/src/agent_profiles_plans.rs"
    ],
    "notes": [
     {
@@ -11235,9 +11614,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0118-tagged code+test (crates/core-runtime/src/agent_profiles_plans.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0119",
@@ -11285,10 +11670,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0120",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
-    "commit:6a88e13"
+    "commit:6a88e13",
+    "test:crates/core-runtime/src/agent_profiles_plans.rs"
    ],
    "notes": [
     {
@@ -11296,9 +11682,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0120-tagged code+test (crates/core-runtime/src/agent_profiles_plans.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0121",
@@ -11482,10 +11874,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0126",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -11493,9 +11886,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0126-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:35Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0127",
@@ -11508,10 +11907,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0127",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950062128",
-    "commit:6a88e13"
+    "commit:6a88e13",
+    "test:crates/core-runtime/src/agent_profiles_plans.rs"
    ],
    "notes": [
     {
@@ -11519,9 +11919,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:17Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0127-tagged code+test (crates/core-runtime/src/agent_profiles_plans.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:17Z"
   },
   {
    "id": "IMP-EV-0128",
@@ -11534,10 +11940,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0128",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33953675878",
-    "commit:d057e07"
+    "commit:d057e07",
+    "test:crates/checkpoint/src/mcp_memory.rs"
    ],
    "notes": [
     {
@@ -11545,9 +11952,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0128-tagged code+test (crates/checkpoint/src/mcp_memory.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0129",
@@ -11560,10 +11973,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0129",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33946212071",
-    "commit:7ec3619"
+    "commit:7ec3619",
+    "test:crates/skills/src/layering.rs"
    ],
    "notes": [
     {
@@ -11571,9 +11985,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0129-tagged code+test (crates/skills/src/layering.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0130",
@@ -11586,10 +12006,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0130",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
-    "commit:efa4135"
+    "commit:efa4135",
+    "test:crates/context/src/inspector.rs"
    ],
    "notes": [
     {
@@ -11597,9 +12018,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0130-tagged code+test (crates/context/src/inspector.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0131",
@@ -11612,10 +12039,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0131",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
-    "commit:efa4135"
+    "commit:efa4135",
+    "test:crates/context/src/inspector.rs"
    ],
    "notes": [
     {
@@ -11623,9 +12051,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0131-tagged code+test (crates/context/src/inspector.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0132",
@@ -11801,10 +12235,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0137",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
-    "commit:e3fce5e"
+    "commit:e3fce5e",
+    "test:crates/checkpoint/src/importers_plugins.rs"
    ],
    "notes": [
     {
@@ -11812,9 +12247,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0137-tagged code+test (crates/checkpoint/src/importers_plugins.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0138",
@@ -11827,10 +12268,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0138",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
-    "commit:e3fce5e"
+    "commit:e3fce5e",
+    "test:crates/checkpoint/src/importers_plugins.rs"
    ],
    "notes": [
     {
@@ -11838,9 +12280,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0138-tagged code+test (crates/checkpoint/src/importers_plugins.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0139",
@@ -11853,10 +12301,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0139",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
-    "commit:d15f4c9"
+    "commit:d15f4c9",
+    "test:crates/checkpoint/src/hook_bus.rs"
    ],
    "notes": [
     {
@@ -11864,9 +12313,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:51Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present (test:crates/checkpoint/src/hook_bus.rs); advanced IMPLEMENTING -> WIRED"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:51Z"
   },
   {
    "id": "IMP-EV-0141",
@@ -11879,10 +12334,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0141",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33917312695",
-    "commit:efa4135"
+    "commit:efa4135",
+    "test:crates/workspace/src/bridge.rs"
    ],
    "notes": [
     {
@@ -11890,9 +12346,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0141-tagged code+test (crates/workspace/src/bridge.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0142",
@@ -11905,10 +12367,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0142",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -11916,9 +12379,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0142-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0143",
@@ -11960,10 +12429,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0144",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
-    "commit:77544df"
+    "commit:77544df",
+    "test:crates/core-runtime/src/fleet_admission.rs"
    ],
    "notes": [
     {
@@ -11971,9 +12441,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0144-tagged code+test (crates/core-runtime/src/fleet_admission.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0145",
@@ -11986,10 +12462,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0145",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
-    "commit:77544df"
+    "commit:77544df",
+    "test:crates/core-runtime/src/fleet_admission.rs"
    ],
    "notes": [
     {
@@ -11997,9 +12474,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0145-tagged code+test (crates/core-runtime/src/fleet_admission.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0146",
@@ -12105,10 +12588,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0151",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
-    "commit:77544df"
+    "commit:77544df",
+    "test:crates/core-runtime/src/fleet_admission.rs"
    ],
    "notes": [
     {
@@ -12116,9 +12600,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0151-tagged code+test (crates/core-runtime/src/fleet_admission.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0152",
@@ -12160,10 +12650,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0153",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
-    "commit:5c65e96"
+    "commit:5c65e96",
+    "test:crates/retrieval/src/knowledge.rs"
    ],
    "notes": [
     {
@@ -12171,9 +12662,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0153-tagged code+test (crates/retrieval/src/knowledge.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0154",
@@ -12186,10 +12683,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0154",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
-    "commit:5c65e96"
+    "commit:5c65e96",
+    "test:crates/retrieval/src/knowledge.rs"
    ],
    "notes": [
     {
@@ -12197,9 +12695,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0154-tagged code+test (crates/retrieval/src/knowledge.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0155",
@@ -12212,10 +12716,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0155",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
-    "commit:5c65e96"
+    "commit:5c65e96",
+    "test:crates/retrieval/src/context_graph.rs"
    ],
    "notes": [
     {
@@ -12223,9 +12728,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:18Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0155-tagged code+test (crates/retrieval/src/context_graph.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:18Z"
   },
   {
    "id": "IMP-EV-0157",
@@ -12238,10 +12749,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0157",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918145972",
-    "commit:5c65e96"
+    "commit:5c65e96",
+    "test:crates/retrieval/src/context_graph.rs"
    ],
    "notes": [
     {
@@ -12249,9 +12761,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0157-tagged code+test (crates/retrieval/src/context_graph.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:36Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0158",
@@ -12264,10 +12782,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0158",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
-    "commit:3e3fbf1"
+    "commit:3e3fbf1",
+    "test:crates/retrieval/src/history_context.rs"
    ],
    "notes": [
     {
@@ -12275,9 +12794,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0158-tagged code+test (crates/retrieval/src/history_context.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0159",
@@ -12290,10 +12815,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0159",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
-    "commit:3e3fbf1"
+    "commit:3e3fbf1",
+    "test:crates/retrieval/src/history_context.rs"
    ],
    "notes": [
     {
@@ -12301,9 +12827,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0159-tagged code+test (crates/retrieval/src/history_context.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0160",
@@ -12316,10 +12848,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0160",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
-    "commit:45e4dc5"
+    "commit:45e4dc5",
+    "test:crates/workspace/src/bridge.rs"
    ],
    "notes": [
     {
@@ -12327,9 +12860,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0160-tagged code+test (crates/workspace/src/bridge.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0161",
@@ -12342,10 +12881,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0161",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
-    "commit:3e3fbf1"
+    "commit:3e3fbf1",
+    "test:crates/retrieval/src/engineering_context.rs"
    ],
    "notes": [
     {
@@ -12353,9 +12893,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0161-tagged code+test (crates/retrieval/src/engineering_context.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0162",
@@ -12368,10 +12914,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0162",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33953675878",
-    "commit:d057e07"
+    "commit:d057e07",
+    "test:crates/checkpoint/src/mcp_memory.rs"
    ],
    "notes": [
     {
@@ -12379,9 +12926,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0162-tagged code+test (crates/checkpoint/src/mcp_memory.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0163",
@@ -12394,10 +12947,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0163",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33918864731",
-    "commit:3e3fbf1"
+    "commit:3e3fbf1",
+    "test:crates/retrieval/src/engineering_context.rs"
    ],
    "notes": [
     {
@@ -12405,9 +12959,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0163-tagged code+test (crates/retrieval/src/engineering_context.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0164",
@@ -12420,10 +12980,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0164",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
-    "commit:8a19e6f"
+    "commit:8a19e6f",
+    "test:crates/retrieval/src/context_graph.rs"
    ],
    "notes": [
     {
@@ -12431,9 +12992,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0164-tagged code+test (crates/retrieval/src/context_graph.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0165",
@@ -12446,10 +13013,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0165",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
-    "commit:8a19e6f"
+    "commit:8a19e6f",
+    "test:crates/retrieval/src/rerank.rs"
    ],
    "notes": [
     {
@@ -12457,9 +13025,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0165-tagged code+test (crates/retrieval/src/rerank.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0166",
@@ -12472,10 +13046,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0166",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
-    "commit:8a19e6f"
+    "commit:8a19e6f",
+    "test:crates/context/src/pack_compiler.rs"
    ],
    "notes": [
     {
@@ -12483,9 +13058,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0166-tagged code+test (crates/context/src/pack_compiler.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0167",
@@ -12498,10 +13079,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0167",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33919611362",
-    "commit:8a19e6f"
+    "commit:8a19e6f",
+    "test:crates/context/src/pack_compiler.rs"
    ],
    "notes": [
     {
@@ -12509,9 +13091,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0167-tagged code+test (crates/context/src/pack_compiler.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0168",
@@ -12524,10 +13112,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0168",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
-    "commit:485c781"
+    "commit:485c781",
+    "test:crates/workspace/src/edit_gate.rs"
    ],
    "notes": [
     {
@@ -12535,9 +13124,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0168-tagged code+test (crates/workspace/src/edit_gate.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0169",
@@ -12550,10 +13145,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0169",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
-    "commit:485c781"
+    "commit:485c781",
+    "test:crates/context/src/provenance.rs"
    ],
    "notes": [
     {
@@ -12561,9 +13157,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0169-tagged code+test (crates/context/src/provenance.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0170",
@@ -12576,10 +13178,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0170",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
-    "commit:485c781"
+    "commit:485c781",
+    "test:crates/context/src/provenance.rs"
    ],
    "notes": [
     {
@@ -12587,9 +13190,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0170-tagged code+test (crates/context/src/provenance.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0171",
@@ -12602,10 +13211,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0171",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
-    "commit:485c781"
+    "commit:485c781",
+    "test:crates/context/src/ports.rs"
    ],
    "notes": [
     {
@@ -12613,9 +13223,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:19Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0171-tagged code+test (crates/context/src/ports.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:19Z"
   },
   {
    "id": "IMP-EV-0172",
@@ -12628,10 +13244,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0172",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33920473923",
-    "commit:485c781"
+    "commit:485c781",
+    "test:crates/retrieval/src/index_bench.rs"
    ],
    "notes": [
     {
@@ -12639,9 +13256,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0172-tagged code+test (crates/retrieval/src/index_bench.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0173",
@@ -12654,10 +13277,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0173",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
-    "commit:45e4dc5"
+    "commit:45e4dc5",
+    "test:crates/context/src/metrics.rs"
    ],
    "notes": [
     {
@@ -12665,9 +13289,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0173-tagged code+test (crates/context/src/metrics.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0174",
@@ -12680,10 +13310,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0174",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
-    "commit:45e4dc5"
+    "commit:45e4dc5",
+    "test:crates/context/src/fast_subagent.rs"
    ],
    "notes": [
     {
@@ -12691,9 +13322,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0174-tagged code+test (crates/context/src/fast_subagent.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0175",
@@ -12799,10 +13436,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0178",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
-    "commit:93473bc"
+    "commit:93473bc",
+    "test:crates/core-runtime/src/agent_runtime_batch3.rs"
    ],
    "notes": [
     {
@@ -12810,9 +13448,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0178-tagged code+test (crates/core-runtime/src/agent_runtime_batch3.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0179",
@@ -12825,10 +13469,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0179",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
-    "commit:93473bc"
+    "commit:93473bc",
+    "test:crates/core-runtime/src/agent_runtime_batch3.rs"
    ],
    "notes": [
     {
@@ -12836,9 +13481,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0179-tagged code+test (crates/core-runtime/src/agent_runtime_batch3.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0180",
@@ -12886,10 +13537,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0181",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33946212071",
-    "commit:7ec3619"
+    "commit:7ec3619",
+    "test:crates/skills/src/layering.rs"
    ],
    "notes": [
     {
@@ -12897,9 +13549,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0181-tagged code+test (crates/skills/src/layering.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0182",
@@ -12912,10 +13570,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0182",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950942325",
-    "commit:93473bc"
+    "commit:93473bc",
+    "test:crates/core-runtime/src/agent_runtime_batch3.rs"
    ],
    "notes": [
     {
@@ -12923,9 +13582,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0182-tagged code+test (crates/core-runtime/src/agent_runtime_batch3.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0183",
@@ -12938,10 +13603,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0183",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
-    "commit:e3fce5e"
+    "commit:e3fce5e",
+    "test:crates/checkpoint/src/importers_plugins.rs"
    ],
    "notes": [
     {
@@ -12949,9 +13615,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0183-tagged code+test (crates/checkpoint/src/importers_plugins.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0184",
@@ -12964,10 +13636,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0184",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
-    "commit:80a3070"
+    "commit:80a3070",
+    "test:crates/tools/src/multimodal.rs"
    ],
    "notes": [
     {
@@ -12975,9 +13648,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0184-tagged code+test (crates/tools/src/multimodal.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:37Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0185",
@@ -12990,10 +13669,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0185",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
-    "commit:80a3070"
+    "commit:80a3070",
+    "test:crates/tools/src/multimodal.rs"
    ],
    "notes": [
     {
@@ -13001,9 +13681,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0185-tagged code+test (crates/tools/src/multimodal.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0186",
@@ -13016,10 +13702,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0186",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
-    "commit:80a3070"
+    "commit:80a3070",
+    "test:crates/tools/src/multimodal.rs"
    ],
    "notes": [
     {
@@ -13027,9 +13714,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0186-tagged code+test (crates/tools/src/multimodal.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0187",
@@ -13042,10 +13735,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0187",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33946657215",
-    "commit:80a3070"
+    "commit:80a3070",
+    "test:crates/tools/src/multimodal.rs"
    ],
    "notes": [
     {
@@ -13053,9 +13747,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0187-tagged code+test (crates/tools/src/multimodal.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0188",
@@ -13243,10 +13943,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0193",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954040461",
-    "commit:e3fce5e"
+    "commit:e3fce5e",
+    "test:crates/checkpoint/src/importers_plugins.rs"
    ],
    "notes": [
     {
@@ -13254,9 +13955,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0193-tagged code+test (crates/checkpoint/src/importers_plugins.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0194",
@@ -13301,10 +14008,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0196",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
-    "commit:c205186"
+    "commit:c205186",
+    "test:crates/skills/src/evolution.rs"
    ],
    "notes": [
     {
@@ -13312,9 +14020,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0196-tagged code+test (crates/skills/src/evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0197",
@@ -13327,10 +14041,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0197",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
-    "commit:c205186"
+    "commit:c205186",
+    "test:crates/skills/src/evolution.rs"
    ],
    "notes": [
     {
@@ -13338,9 +14053,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:20Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0197-tagged code+test (crates/skills/src/evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:20Z"
   },
   {
    "id": "IMP-EV-0198",
@@ -13353,10 +14074,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0198",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
-    "commit:c205186"
+    "commit:c205186",
+    "test:crates/skills/src/evolution.rs"
    ],
    "notes": [
     {
@@ -13364,9 +14086,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0198-tagged code+test (crates/skills/src/evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0199",
@@ -13379,10 +14107,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0199",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
-    "commit:c205186"
+    "commit:c205186",
+    "test:crates/skills/src/evolution.rs"
    ],
    "notes": [
     {
@@ -13390,9 +14119,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0199-tagged code+test (crates/skills/src/evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0200",
@@ -13405,10 +14140,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0200",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947111628",
-    "commit:c205186"
+    "commit:c205186",
+    "test:crates/skills/src/evolution.rs"
    ],
    "notes": [
     {
@@ -13416,9 +14152,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0200-tagged code+test (crates/skills/src/evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0201",
@@ -13431,10 +14173,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0201",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
-    "commit:cb0ea93"
+    "commit:cb0ea93",
+    "test:crates/skills/src/impact_log.rs"
    ],
    "notes": [
     {
@@ -13442,9 +14185,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0201-tagged code+test (crates/skills/src/impact_log.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0202",
@@ -13457,10 +14206,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0202",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
-    "commit:cb0ea93"
+    "commit:cb0ea93",
+    "test:crates/skills/src/impact_log.rs"
    ],
    "notes": [
     {
@@ -13468,9 +14218,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0202-tagged code+test (crates/skills/src/impact_log.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0203",
@@ -13483,10 +14239,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0203",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33921378018",
-    "commit:45e4dc5"
+    "commit:45e4dc5",
+    "test:crates/context/src/policy.rs"
    ],
    "notes": [
     {
@@ -13494,9 +14251,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0203-tagged code+test (crates/context/src/policy.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0204",
@@ -13509,10 +14272,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0204",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
-    "commit:cb0ea93"
+    "commit:cb0ea93",
+    "test:crates/skills/src/wiki_index.rs"
    ],
    "notes": [
     {
@@ -13520,9 +14284,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0204-tagged code+test (crates/skills/src/wiki_index.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0205",
@@ -13535,10 +14305,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0205",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
-    "commit:cb0ea93"
+    "commit:cb0ea93",
+    "test:crates/skills/src/eval_harness.rs"
    ],
    "notes": [
     {
@@ -13546,9 +14317,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0205-tagged code+test (crates/skills/src/eval_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0206",
@@ -13561,10 +14338,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0206",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
-    "commit:cb0ea93"
+    "commit:cb0ea93",
+    "test:crates/skills/src/eval_harness.rs"
    ],
    "notes": [
     {
@@ -13572,9 +14350,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0206-tagged code+test (crates/skills/src/eval_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0207",
@@ -13587,10 +14371,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0207",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33947524582",
-    "commit:cb0ea93"
+    "commit:cb0ea93",
+    "test:crates/skills/src/eval_harness.rs"
    ],
    "notes": [
     {
@@ -13598,9 +14383,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0207-tagged code+test (crates/skills/src/eval_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0208",
@@ -13654,10 +14445,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0209",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
-    "commit:0ff8255"
+    "commit:0ff8255",
+    "test:crates/skills/src/packaging.rs"
    ],
    "notes": [
     {
@@ -13665,9 +14457,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0209-tagged code+test (crates/skills/src/packaging.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0210",
@@ -13680,10 +14478,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0210",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
-    "commit:0ff8255"
+    "commit:0ff8255",
+    "test:crates/skills/src/sdk.rs"
    ],
    "notes": [
     {
@@ -13691,9 +14490,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0210-tagged code+test (crates/skills/src/sdk.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0211",
@@ -13706,10 +14511,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0211",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -13717,9 +14523,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0211-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0212",
@@ -13773,10 +14585,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0213",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
-    "commit:0ff8255"
+    "commit:0ff8255",
+    "test:crates/skills/src/compact_mode.rs"
    ],
    "notes": [
     {
@@ -13784,9 +14597,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0213-tagged code+test (crates/skills/src/compact_mode.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0214",
@@ -13799,10 +14618,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0214",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
-    "commit:0ff8255"
+    "commit:0ff8255",
+    "test:crates/skills/src/packaging.rs"
    ],
    "notes": [
     {
@@ -13810,9 +14630,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:21Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0214-tagged code+test (crates/skills/src/packaging.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:38Z"
+   "status_changed_on": "2026-09-14T07:16:21Z"
   },
   {
    "id": "IMP-EV-0215",
@@ -13825,10 +14651,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0215",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
-    "commit:66f5d08"
+    "commit:66f5d08",
+    "test:crates/checkpoint/src/security_hardening.rs"
    ],
    "notes": [
     {
@@ -13836,9 +14663,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0215-tagged code+test (crates/checkpoint/src/security_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0217",
@@ -13885,10 +14718,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0218",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -13896,9 +14730,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0218-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0219",
@@ -13911,10 +14751,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0219",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -13922,9 +14763,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0219-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0220",
@@ -13937,10 +14784,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0220",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -13948,9 +14796,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0220-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0221",
@@ -14030,10 +14884,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0223",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948217114",
-    "commit:0ff8255"
+    "commit:0ff8255",
+    "test:crates/skills/src/media_budgets.rs"
    ],
    "notes": [
     {
@@ -14041,9 +14896,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with REQ-EV-0223-tagged code+test (crates/skills/src/media_budgets.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0224",
@@ -14056,10 +14917,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0224",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
-    "commit:66f5d08"
+    "commit:66f5d08",
+    "test:crates/checkpoint/src/security_hardening.rs"
    ],
    "notes": [
     {
@@ -14067,9 +14929,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0224-tagged code+test (crates/checkpoint/src/security_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0225",
@@ -14082,10 +14950,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0225",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
-    "commit:66f5d08"
+    "commit:66f5d08",
+    "test:crates/checkpoint/src/security_hardening.rs"
    ],
    "notes": [
     {
@@ -14093,9 +14962,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0225-tagged code+test (crates/checkpoint/src/security_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0229",
@@ -14148,10 +15023,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0230",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
-    "commit:a4719eb"
+    "commit:a4719eb",
+    "test:crates/procedural-runtime/src/composition.rs"
    ],
    "notes": [
     {
@@ -14159,9 +15035,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0230-tagged code+test (crates/procedural-runtime/src/composition.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0231",
@@ -14174,10 +15056,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0231",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
-    "commit:a4719eb"
+    "commit:a4719eb",
+    "test:crates/procedural-runtime/src/composition.rs"
    ],
    "notes": [
     {
@@ -14185,9 +15068,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0231-tagged code+test (crates/procedural-runtime/src/composition.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0233",
@@ -14200,10 +15089,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0233",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/terminal/src/sandbox.rs"
    ],
    "notes": [
     {
@@ -14211,9 +15101,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:51Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present (test:crates/terminal/src/sandbox.rs); advanced IMPLEMENTING -> WIRED"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:51Z"
   },
   {
    "id": "IMP-EV-0234",
@@ -14226,10 +15122,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0234",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
-    "commit:6341c3a"
+    "commit:6341c3a",
+    "test:crates/browser/src/session_control.rs"
    ],
    "notes": [
     {
@@ -14237,9 +15134,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0234-tagged code+test (crates/browser/src/session_control.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0237",
@@ -14252,10 +15155,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0237",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
-    "commit:a4719eb"
+    "commit:a4719eb",
+    "test:crates/skills/src/profile_evolution.rs"
    ],
    "notes": [
     {
@@ -14263,9 +15167,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0237-tagged code+test (crates/skills/src/profile_evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0238",
@@ -14278,10 +15188,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0238",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -14289,9 +15200,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0238-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0239",
@@ -14336,10 +15253,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0240",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33953287658",
-    "commit:d15f4c9"
+    "commit:d15f4c9",
+    "test:crates/checkpoint/src/hook_bus.rs"
    ],
    "notes": [
     {
@@ -14347,9 +15265,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:51Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present (test:crates/checkpoint/src/hook_bus.rs); advanced IMPLEMENTING -> WIRED"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:51Z"
   },
   {
    "id": "IMP-EV-0241",
@@ -14362,10 +15286,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0241",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -14373,9 +15298,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:22Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0241-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:22Z"
   },
   {
    "id": "IMP-EV-0242",
@@ -14429,10 +15360,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0244",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -14440,9 +15372,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0244-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0245",
@@ -14495,10 +15433,11 @@
    "milestone": "M10",
    "qual": "QUAL-EV-0246",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955664437",
-    "commit:1b4c40d"
+    "commit:1b4c40d",
+    "test:crates/verification/src/release_hardening.rs"
    ],
    "notes": [
     {
@@ -14506,9 +15445,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0246-tagged code+test (crates/verification/src/release_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0247",
@@ -14521,10 +15466,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0247",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
-    "commit:a4719eb"
+    "commit:a4719eb",
+    "test:crates/skills/src/profile_evolution.rs"
    ],
    "notes": [
     {
@@ -14532,9 +15478,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0247-tagged code+test (crates/skills/src/profile_evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0248",
@@ -14547,10 +15499,11 @@
    "milestone": "M5",
    "qual": "QUAL-EV-0248",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33948591163",
-    "commit:a4719eb"
+    "commit:a4719eb",
+    "test:crates/skills/src/profile_evolution.rs"
    ],
    "notes": [
     {
@@ -14558,9 +15511,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0248-tagged code+test (crates/skills/src/profile_evolution.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0249",
@@ -14573,10 +15532,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0249",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/bench_harness.rs"
    ],
    "notes": [
     {
@@ -14584,9 +15544,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0249-tagged code+test (crates/context/src/bench_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:39Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0250",
@@ -14599,10 +15565,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0250",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/bench_harness.rs"
    ],
    "notes": [
     {
@@ -14610,9 +15577,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0250-tagged code+test (crates/context/src/bench_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0251",
@@ -14625,10 +15598,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0251",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/bench_harness.rs"
    ],
    "notes": [
     {
@@ -14636,9 +15610,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0251-tagged code+test (crates/context/src/bench_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0252",
@@ -14651,10 +15631,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0252",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/bench_harness.rs"
    ],
    "notes": [
     {
@@ -14662,9 +15643,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0252-tagged code+test (crates/context/src/bench_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0253",
@@ -14677,10 +15664,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0253",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/bench_harness.rs"
    ],
    "notes": [
     {
@@ -14688,9 +15676,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0253-tagged code+test (crates/context/src/bench_harness.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0254",
@@ -14703,10 +15697,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0254",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/profile_experiment.rs"
    ],
    "notes": [
     {
@@ -14714,9 +15709,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0254-tagged code+test (crates/context/src/profile_experiment.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0255",
@@ -14729,10 +15730,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0255",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -14740,9 +15742,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0255-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0256",
@@ -14755,10 +15763,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0256",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -14766,9 +15775,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0256-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0261",
@@ -14839,10 +15854,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0263",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/agent_runtime_final.rs"
    ],
    "notes": [
     {
@@ -14850,9 +15866,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0263-tagged code+test (crates/core-runtime/src/agent_runtime_final.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0265",
@@ -14897,10 +15919,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0267",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
-    "commit:77544df"
+    "commit:77544df",
+    "test:crates/core-runtime/src/fleet_admission.rs"
    ],
    "notes": [
     {
@@ -14908,9 +15931,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:23Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0267-tagged code+test (crates/core-runtime/src/fleet_admission.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:23Z"
   },
   {
    "id": "IMP-EV-0268",
@@ -14923,10 +15952,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0268",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/savings.rs"
    ],
    "notes": [
     {
@@ -14934,9 +15964,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0268-tagged code+test (crates/context/src/savings.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0269",
@@ -14983,10 +16019,11 @@
    "milestone": "M9",
    "qual": "QUAL-EV-0270",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33954580434",
-    "commit:66f5d08"
+    "commit:66f5d08",
+    "test:crates/checkpoint/src/security_hardening.rs"
    ],
    "notes": [
     {
@@ -14994,9 +16031,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0270-tagged code+test (crates/checkpoint/src/security_hardening.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0271",
@@ -15044,10 +16087,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0272",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33950530899",
-    "commit:77544df"
+    "commit:77544df",
+    "test:crates/core-runtime/src/fleet_admission.rs"
    ],
    "notes": [
     {
@@ -15055,9 +16099,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0272-tagged code+test (crates/core-runtime/src/fleet_admission.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0273",
@@ -15111,10 +16161,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0274",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/savings.rs"
    ],
    "notes": [
     {
@@ -15122,9 +16173,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0274-tagged code+test (crates/context/src/savings.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0275",
@@ -15137,10 +16194,11 @@
    "milestone": "M6",
    "qual": "QUAL-EV-0275",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951435039",
-    "commit:9e1f19f"
+    "commit:9e1f19f",
+    "test:crates/core-runtime/src/reminder_engine.rs"
    ],
    "notes": [
     {
@@ -15148,9 +16206,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0275-tagged code+test (crates/core-runtime/src/reminder_engine.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0276",
@@ -15163,10 +16227,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0276",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
-    "commit:6341c3a"
+    "commit:6341c3a",
+    "test:crates/browser/src/session_control.rs"
    ],
    "notes": [
     {
@@ -15174,9 +16239,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0276-tagged code+test (crates/browser/src/session_control.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0277",
@@ -15189,10 +16260,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0277",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -15200,9 +16272,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0277-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0278",
@@ -15215,10 +16293,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0278",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -15226,9 +16305,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with REQ-EV-0278-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0279",
@@ -15241,10 +16326,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0279",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -15252,9 +16338,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with REQ-EV-0279-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0280",
@@ -15267,10 +16359,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0280",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33951962366",
-    "commit:fb1cf8b"
+    "commit:fb1cf8b",
+    "test:crates/browser/src/lib.rs"
    ],
    "notes": [
     {
@@ -15278,9 +16371,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with REQ-EV-0280-tagged code+test (crates/browser/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0281",
@@ -15293,10 +16392,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0281",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
-    "commit:6341c3a"
+    "commit:6341c3a",
+    "test:crates/browser/src/session_control.rs"
    ],
    "notes": [
     {
@@ -15304,9 +16404,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0281-tagged code+test (crates/browser/src/session_control.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0282",
@@ -15319,10 +16425,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0282",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
-    "commit:6341c3a"
+    "commit:6341c3a",
+    "test:crates/browser/src/session_control.rs"
    ],
    "notes": [
     {
@@ -15330,9 +16437,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0282-tagged code+test (crates/browser/src/session_control.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:40Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0283",
@@ -15345,10 +16458,11 @@
    "milestone": "M7",
    "qual": "QUAL-EV-0283",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33952844244",
-    "commit:6341c3a"
+    "commit:6341c3a",
+    "test:crates/browser/src/session_control.rs"
    ],
    "notes": [
     {
@@ -15356,9 +16470,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0283-tagged code+test (crates/browser/src/session_control.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0284",
@@ -15371,10 +16491,11 @@
    "milestone": "M3",
    "qual": "QUAL-EV-0284",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33923223213",
-    "commit:a596a94"
+    "commit:a596a94",
+    "test:crates/context/src/savings.rs"
    ],
    "notes": [
     {
@@ -15382,9 +16503,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:24Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with QUAL-EV-0284-tagged code+test (crates/context/src/savings.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-14T07:16:24Z"
   },
   {
    "id": "IMP-EV-0285",
@@ -15397,10 +16524,11 @@
    "milestone": "M8",
    "qual": "QUAL-EV-0285",
    "source": "docs/41",
-   "status": "IMPLEMENTING",
+   "status": "WIRED",
    "evidence": [
     "run:https://github.com/moss101/zmodbit/actions/runs/33955259342",
-    "commit:dfec7b7"
+    "commit:dfec7b7",
+    "test:crates/sandbox/src/lib.rs"
    ],
    "notes": [
     {
@@ -15408,9 +16536,15 @@
      "from": "COMPLETE",
      "to": "IMPLEMENTING",
      "note": "status reset per Future-tasks.md section 3 audit (2026-09-05): prior COMPLETE was premature (untyped evidence; module not in the product binary's dependency closure)"
+    },
+    {
+     "at": "2026-09-14T07:16:25Z",
+     "from": "IMPLEMENTING",
+     "to": "WIRED",
+     "note": "W11 graph audit: implementation verified present with REQ-EV-0285-tagged code+test (crates/sandbox/src/lib.rs); advanced IMPLEMENTING -> WIRED (E2E_PROVEN stays with the qualification layer)"
     }
    ],
-   "status_changed_on": "2026-09-05T09:56:41Z"
+   "status_changed_on": "2026-09-14T07:16:25Z"
   },
   {
    "id": "IMP-EV-0286",
@@ -31082,6 +32216,5 @@
    "to": "eval-bench",
    "type": "constrains"
   }
- ],
- "updated_on": "2026-09-14T05:16:27Z"
+ ]
 }

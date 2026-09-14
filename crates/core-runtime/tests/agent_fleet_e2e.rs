@@ -32,7 +32,10 @@ fn roundtrip(
     services: &CoreServices,
     request: pb::surface_request::Request,
 ) -> pb::SurfaceResponse {
-    let bytes = pb::SurfaceRequest { request: Some(request) }.encode_to_vec();
+    let bytes = pb::SurfaceRequest {
+        request: Some(request),
+    }
+    .encode_to_vec();
     let response = services.handle(&bytes);
     pb::SurfaceResponse::decode(response.as_slice()).unwrap()
 }
@@ -47,14 +50,21 @@ fn setup(tag: &str) -> (Arc<EventStore>, CoreServices, String) {
         .unwrap();
 
     let processor = CommandProcessor::new(store.clone());
-    let execute =
-        |payload: CommandPayload| processor.execute(Command {
+    let execute = |payload: CommandPayload| {
+        processor.execute(Command {
             command_id: uuid::Uuid::now_v7().to_string(),
-            actor: Actor { actor_type: ActorType::User, actor_id: "t".into() },
+            actor: Actor {
+                actor_type: ActorType::User,
+                actor_id: "t".into(),
+            },
             payload,
-        });
+        })
+    };
 
-    execute(CommandPayload::CreateSession { display_name: "s".into() }).unwrap();
+    execute(CommandPayload::CreateSession {
+        display_name: "s".into(),
+    })
+    .unwrap();
     let sid: String = store
         .with_conn(|conn| {
             conn.query_row(
@@ -109,11 +119,18 @@ fn spawn_req(
 fn spawn_admits_a_real_child_task_with_parent_linkage() {
     let (_store, services, parent) = setup("spawn");
 
-    let resp = roundtrip(&services, spawn_req(&parent, "write the tests", "tests/", "k-1", 0));
+    let resp = roundtrip(
+        &services,
+        spawn_req(&parent, "write the tests", "tests/", "k-1", 0),
+    );
     assert!(resp.ok, "{:?}", resp.error);
     let child = resp.task.expect("child task view");
     assert_eq!(child.parent_task_id, parent, "linkage recorded");
-    assert_eq!(child.state, pb::TaskStatus::Started as i32, "child queued AND started");
+    assert_eq!(
+        child.state,
+        pb::TaskStatus::Started as i32,
+        "child queued AND started"
+    );
 
     // The linkage is durable: the tasks projection carries it and the
     // child's event stream records it on TaskCreated.
@@ -139,7 +156,10 @@ fn spawn_admits_a_real_child_task_with_parent_linkage() {
     assert_eq!(has_created, 1, "child is a real task aggregate");
 
     // Idempotent re-attach: the same key returns the SAME child.
-    let resp = roundtrip(&services, spawn_req(&parent, "write the tests", "tests/", "k-1", 0));
+    let resp = roundtrip(
+        &services,
+        spawn_req(&parent, "write the tests", "tests/", "k-1", 0),
+    );
     assert!(resp.ok, "{:?}", resp.error);
     assert_eq!(resp.task.unwrap().task_id, child.task_id);
 }
@@ -184,26 +204,28 @@ fn admission_refuses_without_partial_reservation() {
     // Refusals leave no ACTIVE reservation: the 4 admitted children run;
     // the write-scope-denied child was minted then compensated to
     // cancelled (its scope was released), never started.
-    let (running, cancelled): (i64, i64) = _store
-        .with_conn(|conn| {
-            let running: i64 = conn
-                .query_row(
-                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1 AND state = 'running'",
-                    [&parent],
-                    |r| r.get(0),
-                )
-                .unwrap();
-            let cancelled: i64 = conn
-                .query_row(
-                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1 AND state = 'cancelled'",
-                    [&parent],
-                    |r| r.get(0),
-                )
-                .unwrap();
-            (running, cancelled)
-        });
+    let (running, cancelled): (i64, i64) = _store.with_conn(|conn| {
+        let running: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1 AND state = 'running'",
+                [&parent],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let cancelled: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM tasks WHERE parent_task_id = ?1 AND state = 'cancelled'",
+                [&parent],
+                |r| r.get(0),
+            )
+            .unwrap();
+        (running, cancelled)
+    });
     assert_eq!(running, 4, "admitted children all run");
-    assert_eq!(cancelled, 1, "the denied child was compensated, nothing active");
+    assert_eq!(
+        cancelled, 1,
+        "the denied child was compensated, nothing active"
+    );
 }
 
 #[test]
@@ -227,7 +249,10 @@ fn park_resume_and_result_round_trip_through_the_surface() {
     let view = resp.agent_result.unwrap();
     assert_eq!(view.state, "running");
     assert_eq!(view.parent_task_id, parent);
-    assert!(view.summary.is_empty(), "no summary is fabricated before completion");
+    assert!(
+        view.summary.is_empty(),
+        "no summary is fabricated before completion"
+    );
 
     // Park → Waiting(UserInput); resume → running again.
     let resp = roundtrip(
@@ -251,7 +276,10 @@ fn park_resume_and_result_round_trip_through_the_surface() {
         }),
     );
     assert!(resp.ok, "{:?}", resp.error);
-    assert_eq!(resp.task.as_ref().unwrap().state, pb::TaskStatus::Started as i32);
+    assert_eq!(
+        resp.task.as_ref().unwrap().state,
+        pb::TaskStatus::Started as i32
+    );
 
     // Terminal path: ReadyForReview → CompleteTask → result with summary.
     let processor = CommandProcessor::new(_store.clone());
@@ -268,7 +296,10 @@ fn park_resume_and_result_round_trip_through_the_surface() {
         processor
             .execute(Command {
                 command_id: uuid::Uuid::now_v7().to_string(),
-                actor: Actor { actor_type: ActorType::System, actor_id: "t".into() },
+                actor: Actor {
+                    actor_type: ActorType::System,
+                    actor_id: "t".into(),
+                },
                 payload,
             })
             .unwrap();
@@ -295,8 +326,14 @@ fn terminal_parents_refuse_new_children() {
     processor
         .execute(Command {
             command_id: uuid::Uuid::now_v7().to_string(),
-            actor: Actor { actor_type: ActorType::User, actor_id: "t".into() },
-            payload: CommandPayload::CancelTask { task_id, reason: "done".into() },
+            actor: Actor {
+                actor_type: ActorType::User,
+                actor_id: "t".into(),
+            },
+            payload: CommandPayload::CancelTask {
+                task_id,
+                reason: "done".into(),
+            },
         })
         .unwrap();
 
@@ -321,10 +358,16 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
 
     let (store, services, _parent) = setup("conflict");
 
-    let resp = roundtrip(&services, spawn_req(&_parent, "child A edits shared", "", "mc-1", 0));
+    let resp = roundtrip(
+        &services,
+        spawn_req(&_parent, "child A edits shared", "", "mc-1", 0),
+    );
     assert!(resp.ok, "{:?}", resp.error);
     let child_a = resp.task.unwrap().task_id;
-    let resp = roundtrip(&services, spawn_req(&_parent, "child B edits shared", "", "mc-2", 0));
+    let resp = roundtrip(
+        &services,
+        spawn_req(&_parent, "child B edits shared", "", "mc-2", 0),
+    );
     assert!(resp.ok, "{:?}", resp.error);
     let child_b = resp.task.unwrap().task_id;
 
@@ -332,7 +375,10 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
     // `modbit/<task>`; both children edit the SAME line and commit.
     let branch_of = |id: &str| format!("modbit/{id}");
     let wt_root = tempdir("conflict-wt");
-    for (id, line) in [(&child_a, "line one EDITED BY A\n"), (&child_b, "line one EDITED BY B\n")] {
+    for (id, line) in [
+        (&child_a, "line one EDITED BY A\n"),
+        (&child_b, "line one EDITED BY B\n"),
+    ] {
         let wt = repo
             .worktree_add(&wt_root.join(id), &branch_of(id))
             .unwrap();
@@ -341,26 +387,46 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
     }
 
     // Child A merges clean: open → Merged → Validating → Committed.
-    let (tx, outcome) =
-        modbit_workspace::merge_transaction::open_and_merge(&repo, "tx-a", &branch_of(&child_a), "main")
-            .unwrap();
-    assert!(matches!(outcome, modbit_git::MergeOutcome::Merged), "{outcome:?}");
-    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Validating);
+    let (tx, outcome) = modbit_workspace::merge_transaction::open_and_merge(
+        &repo,
+        "tx-a",
+        &branch_of(&child_a),
+        "main",
+    )
+    .unwrap();
+    assert!(
+        matches!(outcome, modbit_git::MergeOutcome::Merged),
+        "{outcome:?}"
+    );
+    assert_eq!(
+        tx.phase,
+        modbit_workspace::merge_transaction::MergePhase::Validating
+    );
     let _tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
     let tx = modbit_workspace::merge_transaction::commit(&repo).unwrap();
-    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Committed);
+    assert_eq!(
+        tx.phase,
+        modbit_workspace::merge_transaction::MergePhase::Committed
+    );
 
     // Child B edits the same line: the transaction stays OPEN on conflict
     // with the file as typed evidence, recoverable (inspect after crash).
-    let (tx, outcome) =
-        modbit_workspace::merge_transaction::open_and_merge(&repo, "tx-b", &branch_of(&child_b), "main")
-            .unwrap();
+    let (tx, outcome) = modbit_workspace::merge_transaction::open_and_merge(
+        &repo,
+        "tx-b",
+        &branch_of(&child_b),
+        "main",
+    )
+    .unwrap();
     assert!(
         matches!(&outcome, modbit_git::MergeOutcome::Conflict { conflicted_files }
             if conflicted_files == &vec!["shared.txt".to_string()]),
         "{outcome:?}"
     );
-    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Conflicted);
+    assert_eq!(
+        tx.phase,
+        modbit_workspace::merge_transaction::MergePhase::Conflicted
+    );
     assert_eq!(tx.conflicts, vec!["shared.txt".to_string()]);
 
     // The conflict is inspectable and recoverable: record the resolution,
@@ -368,12 +434,21 @@ fn conflicting_child_branches_surface_typed_merge_conflict_evidence() {
     std::fs::write(repo_root.join("shared.txt"), "line one resolved\n").unwrap();
     let tx = modbit_workspace::merge_transaction::record_resolution(&repo, "shared.txt", "manual")
         .unwrap();
-    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Validating);
+    assert_eq!(
+        tx.phase,
+        modbit_workspace::merge_transaction::MergePhase::Validating
+    );
     assert!(tx.conflicts.is_empty());
-    assert!(tx.resolutions.iter().any(|r| r.path == "shared.txt" && r.strategy == "manual"));
+    assert!(tx
+        .resolutions
+        .iter()
+        .any(|r| r.path == "shared.txt" && r.strategy == "manual"));
     let _tx = modbit_workspace::merge_transaction::record_validation(&repo, "build", true).unwrap();
     let tx = modbit_workspace::merge_transaction::commit(&repo).unwrap();
-    assert_eq!(tx.phase, modbit_workspace::merge_transaction::MergePhase::Committed);
+    assert_eq!(
+        tx.phase,
+        modbit_workspace::merge_transaction::MergePhase::Committed
+    );
     let _ = store;
 }
 
@@ -506,7 +581,7 @@ fn run_variants_creates_umbrella_with_admitted_children() {
 }
 
 mod automations {
-    use modbit_core_runtime::automation::{AutomationEngine, CronSpec, minute_key};
+    use modbit_core_runtime::automation::{minute_key, AutomationEngine, CronSpec};
     use modbit_domain::TaskId;
 
     use super::*;
@@ -616,7 +691,10 @@ mod automations {
 
         // No completions yet: the tick is a no-op.
         let outcome = engine.tick(current_utc_minute() + 30);
-        assert!(outcome.fired.is_empty(), "nothing consumed yet: {outcome:?}");
+        assert!(
+            outcome.fired.is_empty(),
+            "nothing consumed yet: {outcome:?}"
+        );
 
         // The parent completes: the durable event stream gains
         // task_completed (host-verified).
@@ -633,7 +711,10 @@ mod automations {
             processor
                 .execute(Command {
                     command_id: uuid::Uuid::now_v7().to_string(),
-                    actor: Actor { actor_type: ActorType::System, actor_id: "t".into() },
+                    actor: Actor {
+                        actor_type: ActorType::System,
+                        actor_id: "t".into(),
+                    },
                     payload,
                 })
                 .unwrap();

@@ -48,7 +48,10 @@ impl std::fmt::Display for TransportError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TransportError::MissingCredential(name) => {
-                write!(f, "missing credential {name:?} (set it in the secret broker)")
+                write!(
+                    f,
+                    "missing credential {name:?} (set it in the secret broker)"
+                )
             }
             TransportError::Status { code, body } => {
                 write!(f, "provider status {code}: {}", truncate(body, 200))
@@ -416,11 +419,7 @@ async fn run_attempt(
                                 }
                             }
                         }
-                        if tx
-                            .send(Ok(TransportEvent::SseData(payload)))
-                            .await
-                            .is_err()
-                        {
+                        if tx.send(Ok(TransportEvent::SseData(payload))).await.is_err() {
                             return; // consumer gone
                         }
                     }

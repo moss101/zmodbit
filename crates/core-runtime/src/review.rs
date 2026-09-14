@@ -76,7 +76,10 @@ pub fn generate_checklist(hunks: &[HunkInput]) -> Vec<ChecklistItem> {
         let count = hunks.iter().filter(|h| h.path == *path).count();
         items.push(ChecklistItem {
             id: next_id(),
-            text: format!("Review {path} ({count} hunk{})", if count == 1 { "" } else { "s" }),
+            text: format!(
+                "Review {path} ({count} hunk{})",
+                if count == 1 { "" } else { "s" }
+            ),
             done: false,
         });
     }
@@ -153,12 +156,18 @@ mod tests {
         assert_eq!(a, b, "deterministic");
 
         let texts: Vec<&str> = a.iter().map(|i| i.text.as_str()).collect();
-        assert!(texts.iter().any(|t| t.contains("Review src/api.rs (2 hunks)")));
+        assert!(texts
+            .iter()
+            .any(|t| t.contains("Review src/api.rs (2 hunks)")));
         assert!(texts.iter().any(|t| t.contains("Review tests/api_test.rs")));
-        assert!(texts.iter().any(|t| t.contains("Run the tests touched by tests/api_test.rs")));
+        assert!(texts
+            .iter()
+            .any(|t| t.contains("Run the tests touched by tests/api_test.rs")));
         assert!(texts.iter().any(|t| t.contains("unwrap() that may panic")));
         assert!(texts.iter().any(|t| t.contains("leftover TODO/FIXME")));
-        assert!(texts.iter().any(|t| t.starts_with("Comment or accept/reject src/api.rs @2")));
+        assert!(texts
+            .iter()
+            .any(|t| t.starts_with("Comment or accept/reject src/api.rs @2")));
         assert!(texts.contains(&"Run the project test suite"));
         assert!(texts.contains(&"No secrets in the diff"));
     }
@@ -168,18 +177,24 @@ mod tests {
         let mut h = hunk("src/x.rs", 4, &["+ok"]);
         h.decided = true;
         let items = generate_checklist(&[h]);
-        assert!(!items.iter().any(|i| i.text.contains("Comment or accept/reject")));
+        assert!(!items
+            .iter()
+            .any(|i| i.text.contains("Comment or accept/reject")));
 
         let mut h2 = hunk("src/y.rs", 9, &["+ok"]);
         h2.commented = true;
         let items = generate_checklist(&[h2]);
-        assert!(!items.iter().any(|i| i.text.contains("Comment or accept/reject")));
+        assert!(!items
+            .iter()
+            .any(|i| i.text.contains("Comment or accept/reject")));
     }
 
     #[test]
     fn secret_shaped_lines_get_a_flag() {
         let h = hunk("src/config.rs", 3, &["+api_key: \"sk-abc123\""]);
         let items = generate_checklist(&[h]);
-        assert!(items.iter().any(|i| i.text.contains("possible secret in the diff")));
+        assert!(items
+            .iter()
+            .any(|i| i.text.contains("possible secret in the diff")));
     }
 }

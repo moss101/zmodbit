@@ -52,10 +52,10 @@ fn fixture_registry() -> ToolRegistry {
     repo.set_config("user.name", "T").unwrap();
     std::fs::write(root.join("app.py"), "def qty(x):\n    return x\n").unwrap();
     repo.commit_all("base").unwrap();
-    let wt = root
-        .parent()
-        .unwrap()
-        .join(format!("{}-wt", root.file_name().unwrap().to_string_lossy()));
+    let wt = root.parent().unwrap().join(format!(
+        "{}-wt",
+        root.file_name().unwrap().to_string_lossy()
+    ));
     repo.worktree_add(&wt, "task-conf").expect("worktree");
     let ws = Arc::new(WorkspaceFileService::open(&wt).unwrap());
     build_worktree_registry(
@@ -83,10 +83,7 @@ fn registered_tools_conform_to_the_canonical_inventory() {
     names.sort();
     let mut canonical: Vec<&str> = CANONICAL.to_vec();
     canonical.sort();
-    assert_eq!(
-        names, canonical,
-        "registry inventory drifted from docs/17"
-    );
+    assert_eq!(names, canonical, "registry inventory drifted from docs/17");
     for conditional in POOL_CONDITIONAL {
         assert!(
             !names.contains(&conditional.to_string()),
@@ -108,7 +105,9 @@ fn registered_tools_conform_to_the_canonical_inventory() {
                 "{name} classified Write — check docs/17 capability lifecycle",
             ),
             EffectClass::External => assert!(
-                name.starts_with("shell.") || name.starts_with("external.") || name.starts_with("test."),
+                name.starts_with("shell.")
+                    || name.starts_with("external.")
+                    || name.starts_with("test."),
                 "{name} classified External — check docs/17",
             ),
         }
@@ -126,7 +125,11 @@ fn registered_tools_conform_to_the_canonical_inventory() {
         );
     }
     for def in &definitions {
-        assert_eq!(def.parameters["type"], "object", "{}: schema root", def.name);
+        assert_eq!(
+            def.parameters["type"], "object",
+            "{}: schema root",
+            def.name
+        );
         let properties = def.parameters["properties"]
             .as_object()
             .unwrap_or_else(|| panic!("{}: projection has no properties", def.name));

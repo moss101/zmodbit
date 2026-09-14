@@ -64,7 +64,7 @@ fn commands_append_events_in_per_aggregate_sequence_order() {
                     title: "Implement projections".into(),
                     prompt: "p".into(),
                     repo_id: None,
-    base_branch: None,
+                    base_branch: None,
 
                     parent_task_id: None,
                 },
@@ -127,7 +127,7 @@ fn idempotent_retry_appends_once_and_replays() {
             title: "t".into(),
             prompt: "p".into(),
             repo_id: None,
-    base_branch: None,
+            base_branch: None,
 
             parent_task_id: None,
         },
@@ -268,7 +268,7 @@ fn create_task_against_missing_session_is_rejected() {
             title: "t".into(),
             prompt: "p".into(),
             repo_id: None,
-    base_branch: None,
+            base_branch: None,
 
             parent_task_id: None,
         },
@@ -303,7 +303,7 @@ fn new_task(proc: &CommandProcessor, session_id: SessionId) -> TaskId {
                 title: "t".into(),
                 prompt: "p".into(),
                 repo_id: None,
-    base_branch: None,
+                base_branch: None,
 
                 parent_task_id: None,
             },

@@ -73,7 +73,7 @@ fn running_task(proc: &CommandProcessor) -> (modbit_domain::SessionId, TaskId) {
                 title: "running task".into(),
                 prompt: "p".into(),
                 repo_id: None,
-    base_branch: None,
+                base_branch: None,
 
                 parent_task_id: None,
             },

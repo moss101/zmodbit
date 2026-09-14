@@ -116,7 +116,11 @@ fn resolve(from_path: &str, raw: &str, kind: DepKind, known: &BTreeSet<String>) 
                     return None;
                 }
             }
-            let rel = normalize(base.join(spec.replace("::", "/")).to_string_lossy().as_ref())?;
+            let rel = normalize(
+                base.join(spec.replace("::", "/"))
+                    .to_string_lossy()
+                    .as_ref(),
+            )?;
             // Crate roots vary (src/ trees vs root-level corpora): try both.
             for cand in [
                 format!("src/{rel}.rs"),
@@ -234,13 +238,11 @@ impl DependencyIndex {
         self.edges
             .iter()
             .flat_map(|(from, targets)| {
-                targets
-                    .iter()
-                    .map(move |(to, kind)| DependencyEdge {
-                        from: from.clone(),
-                        to: to.clone(),
-                        kind,
-                    })
+                targets.iter().map(move |(to, kind)| DependencyEdge {
+                    from: from.clone(),
+                    to: to.clone(),
+                    kind,
+                })
             })
             .collect()
     }
@@ -262,7 +264,13 @@ mod tests {
     /// corpus; externals are dropped.
     #[test]
     fn rust_use_edges_resolve_against_the_corpus() {
-        let known = known(&["src/retry.rs", "src/net/mod.rs", "src/net/tcp.rs", "src/parent.rs", "src/child.rs"]);
+        let known = known(&[
+            "src/retry.rs",
+            "src/net/mod.rs",
+            "src/net/tcp.rs",
+            "src/parent.rs",
+            "src/child.rs",
+        ]);
         let mut idx = DependencyIndex::default();
         let src = b"use crate::retry;\nuse crate::net::tcp;\nuse modbit_git::GitRepo;\n";
         idx.index_file(Path::new("/"), "src/main.rs", src, &known);
@@ -274,12 +282,26 @@ mod tests {
         assert_eq!(from(&idx), vec!["src/net/tcp.rs", "src/retry.rs"]);
 
         // super:: climbs one directory per super.
-        idx.index_file(Path::new("/"), "src/child.rs", b"use super::parent;", &known);
-        let edge = idx.all().into_iter().find(|e| e.from == "src/child.rs").unwrap();
+        idx.index_file(
+            Path::new("/"),
+            "src/child.rs",
+            b"use super::parent;",
+            &known,
+        );
+        let edge = idx
+            .all()
+            .into_iter()
+            .find(|e| e.from == "src/child.rs")
+            .unwrap();
         assert_eq!(edge.to, "src/parent.rs");
 
         // Unresolvable externals leave no edge; self-edge dropped.
-        idx.index_file(Path::new("/"), "src/retry.rs", b"use self::retry;\nuse serde_json;", &known);
+        idx.index_file(
+            Path::new("/"),
+            "src/retry.rs",
+            b"use self::retry;\nuse serde_json;",
+            &known,
+        );
         assert!(!idx.all().iter().any(|e| e.from == "src/retry.rs"));
     }
 
@@ -373,7 +395,9 @@ mod probe {
         // Also show the AST of a use line.
         let mut p = tree_sitter::Parser::new();
         p.set_language(&lang).unwrap();
-        let t = p.parse(b"use crate::retry;\nuse modbit_git::GitRepo;\n", None).unwrap();
+        let t = p
+            .parse(b"use crate::retry;\nuse modbit_git::GitRepo;\n", None)
+            .unwrap();
         eprintln!("AST: {}", t.root_node().to_sexp());
     }
 }

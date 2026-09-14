@@ -135,7 +135,7 @@ fn command_endpoint_applies_commands_and_fleet_reflects_them() {
                 title: "http task".into(),
                 prompt: "p".into(),
                 ..Default::default()
-},
+            },
         )),
     };
     let (code, _) = post_command(&addr, &task.encode_to_vec());

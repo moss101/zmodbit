@@ -90,7 +90,7 @@ fn run_full_lifecycle(proc: &CommandProcessor) {
                 title: "t".into(),
                 prompt: "p".into(),
                 repo_id: None,
-    base_branch: None,
+                base_branch: None,
 
                 parent_task_id: None,
             },

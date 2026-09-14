@@ -37,7 +37,10 @@ fn project_task(
 ) -> Result<(), rusqlite::Error> {
     match &e.payload {
         DomainEvent::TaskCreated {
-            title, prompt, parent_task_id, ..
+            title,
+            prompt,
+            parent_task_id,
+            ..
         } => {
             conn.execute(
                 "INSERT INTO tasks (task_id, session_id, goal_text, state, generation, created_at, parent_task_id)

@@ -35,13 +35,23 @@ fn tempdir(tag: &str) -> PathBuf {
     // Short prefix: unix socket paths must fit sun_path (104 bytes).
     // UUIDv7 leads with its TIMESTAMP: take the random tail instead, or
     // dirs created in the same millisecond window collide across runs.
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("mse{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
 
-const BROKEN: &str = "function validateQuantity(q) {\n  return true;\n}\nmodule.exports = { validateQuantity };\n";
+const BROKEN: &str =
+    "function validateQuantity(q) {\n  return true;\n}\nmodule.exports = { validateQuantity };\n";
 
 fn ts_webapp_fixture(tag: &str) -> PathBuf {
     let root = tempdir(tag);
@@ -62,8 +72,16 @@ fn ts_webapp_fixture(tag: &str) -> PathBuf {
          });\n",
     )
     .unwrap();
-    std::fs::write(root.join("package.json"), "{\n  \"name\": \"ts-webapp-fixture\",\n  \"version\": \"1.0.0\"\n}\n").unwrap();
-    std::fs::write(root.join("run_tests.sh"), "#!/bin/sh\nnode --test quantity.test.js\n").unwrap();
+    std::fs::write(
+        root.join("package.json"),
+        "{\n  \"name\": \"ts-webapp-fixture\",\n  \"version\": \"1.0.0\"\n}\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("run_tests.sh"),
+        "#!/bin/sh\nnode --test quantity.test.js\n",
+    )
+    .unwrap();
     repo.commit_all("fixture baseline").expect("baseline");
     root
 }
@@ -186,9 +204,14 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
         .map(String::from)
 }
 
-fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr) -> (Child, String) {
+fn spawn_core(
+    repo_root: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String) {
     // Real execd broker.
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -230,9 +253,7 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
     // Keep draining stdout so the pipe never breaks the core's writes.
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -245,7 +266,10 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
             Ok(0) => break,
             Ok(_) => {
                 eprintln!("[core] {}", l.trim_end());
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -263,7 +287,10 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -278,9 +305,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_for_terminal(daemon: &str, task_id: &str, timeout: Duration) -> i32 {
     let deadline = Instant::now() + timeout;
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -310,13 +340,17 @@ fn start_task(daemon: &str, prompt: &str) -> String {
             title: "reject negative quantities".into(),
             prompt: prompt.into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -339,15 +373,25 @@ fn e2e_001_full_loop_read_fix_test_review() {
     ]);
     let (mut core, daemon) = spawn_core(&repo, &worktrees, model);
 
-    let task_id = start_task(&daemon, "Add validation so negative quantities are rejected and add tests.");
+    let task_id = start_task(
+        &daemon,
+        "Add validation so negative quantities are rejected and add tests.",
+    );
     let state = wait_for_terminal(&daemon, &task_id, Duration::from_secs(120));
-    assert_eq!(state, pb::TaskStatus::ReadyForReview as i32, "E2E-001 scripted");
+    assert_eq!(
+        state,
+        pb::TaskStatus::ReadyForReview as i32,
+        "E2E-001 scripted"
+    );
 
     // Worktree exists; the diff shows the real fix; node really ran.
     let worktree = worktrees.join(&task_id);
     assert!(worktree.join("quantity.js").exists());
     let fixed = std::fs::read_to_string(worktree.join("quantity.js")).unwrap();
-    assert!(fixed.contains("negative"), "fix applied in the worktree: {fixed}");
+    assert!(
+        fixed.contains("negative"),
+        "fix applied in the worktree: {fixed}"
+    );
 
     // M10.1: the run's measured cost ledger is DURABLE — at least one
     // model invocation was priced (or honestly unpriced) and landed on
@@ -366,11 +410,17 @@ fn e2e_001_full_loop_read_fix_test_review() {
     assert!(!entry.model.is_empty());
     let diff = request(
         &daemon,
-        pb::surface_request::Request::GetDiff(pb::GetDiffRequest { task_id: task_id.clone() }),
+        pb::surface_request::Request::GetDiff(pb::GetDiffRequest {
+            task_id: task_id.clone(),
+        }),
     );
     assert!(diff.ok, "{}", diff.error);
     assert!(
-        diff.diff.unwrap().files.iter().any(|f| f.path == "quantity.js"),
+        diff.diff
+            .unwrap()
+            .files
+            .iter()
+            .any(|f| f.path == "quantity.js"),
         "diff bound to the revision"
     );
 
@@ -382,8 +432,10 @@ fn e2e_001_full_loop_read_fix_test_review() {
     assert!(detail.ok, "{}", detail.error);
     let detail = detail.run_detail.unwrap();
     assert_eq!(detail.run_state, "completed");
-    assert!(detail.turns.iter().flat_map(|t| t.steps.iter()).count() >= 4,
-        "model-invoke + fs.read + change.apply + shell.run steps recorded");
+    assert!(
+        detail.turns.iter().flat_map(|t| t.steps.iter()).count() >= 4,
+        "model-invoke + fs.read + change.apply + shell.run steps recorded"
+    );
 
     core.kill().ok();
     core.wait().ok();
@@ -407,9 +459,16 @@ fn e2e_002_first_command_failure_repairs_without_task_failure() {
     ]);
     let (mut core, daemon) = spawn_core(&repo, &worktrees, model);
 
-    let task_id = start_task(&daemon, "Add validation so negative quantities are rejected and add tests.");
+    let task_id = start_task(
+        &daemon,
+        "Add validation so negative quantities are rejected and add tests.",
+    );
     let state = wait_for_terminal(&daemon, &task_id, Duration::from_secs(120));
-    assert_ne!(state, pb::TaskStatus::Failed as i32, "E2E-002: no TaskFailed from a first failing command");
+    assert_ne!(
+        state,
+        pb::TaskStatus::Failed as i32,
+        "E2E-002: no TaskFailed from a first failing command"
+    );
     assert_eq!(state, pb::TaskStatus::ReadyForReview as i32);
 
     // The failing first command is durable evidence, and the repair turn ran.
@@ -424,7 +483,10 @@ fn e2e_002_first_command_failure_repairs_without_task_failure() {
         .flat_map(|t| t.steps.iter())
         .filter(|s| s.step_type == "tool_call")
         .collect();
-    assert!(shell_steps.len() >= 2, "failing command + repair rerun recorded");
+    assert!(
+        shell_steps.len() >= 2,
+        "failing command + repair rerun recorded"
+    );
 
     core.kill().ok();
     core.wait().ok();

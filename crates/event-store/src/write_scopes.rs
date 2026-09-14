@@ -49,7 +49,10 @@ pub enum AcquireOutcome {
     /// All declared paths are free; they are now held by `task_id`.
     Acquired,
     /// Overlap with an ACTIVE holder — denied BEFORE execution (QUAL-EV-0150).
-    Denied { holder_task_id: String, path: String },
+    Denied {
+        holder_task_id: String,
+        path: String,
+    },
 }
 
 /// Attempts to acquire the declared write scope for a task on a repo.
@@ -194,8 +197,11 @@ mod tests {
         assert_eq!(other_repo, AcquireOutcome::Acquired);
 
         // Holder completes: its scope is released by the next acquire.
-        conn.execute("UPDATE tasks SET state='completed' WHERE task_id='t-holder'", [])
-            .unwrap();
+        conn.execute(
+            "UPDATE tasks SET state='completed' WHERE task_id='t-holder'",
+            [],
+        )
+        .unwrap();
         let after = acquire(&conn, "t-other", "repo-1", "src/api.rs").unwrap();
         assert_eq!(after, AcquireOutcome::Acquired);
     }

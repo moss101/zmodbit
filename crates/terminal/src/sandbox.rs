@@ -47,19 +47,13 @@ const SEATBELT_TEMPLATE: &str = r#"(version 1)
 
 /// Returns the wrapped argv for the current platform, or None when no
 /// sandbox applies (Windows — restricted-token sandbox is follow-up).
-pub fn wrap_argv(
-    argv: &[String],
-    worktree: &Path,
-) -> Result<Option<Vec<String>>, SandboxError> {
+pub fn wrap_argv(argv: &[String], worktree: &Path) -> Result<Option<Vec<String>>, SandboxError> {
     if cfg!(target_os = "macos") {
         // Seatbelt evaluates REAL paths: /var/folders (macOS temp) is a
         // symlink to /private/var/folders, so the worktree must be
         // canonicalized or the write-scope rule never matches.
         let worktree = std::fs::canonicalize(worktree).unwrap_or_else(|_| worktree.to_path_buf());
-        let profile = SEATBELT_TEMPLATE.replace(
-            "<WORKTREE>",
-            &worktree.display().to_string(),
-        );
+        let profile = SEATBELT_TEMPLATE.replace("<WORKTREE>", &worktree.display().to_string());
         let dir = std::env::temp_dir().join(format!(
             "modbit-sb-{}-{}",
             std::process::id(),
@@ -68,10 +62,13 @@ pub fn wrap_argv(
                 .unwrap()
                 .subsec_nanos()
         ));
-        std::fs::create_dir_all(&dir).map_err(|e| SandboxError { message: e.to_string() })?;
+        std::fs::create_dir_all(&dir).map_err(|e| SandboxError {
+            message: e.to_string(),
+        })?;
         let profile_path = dir.join("seatbelt.sb");
-        std::fs::write(&profile_path, profile)
-            .map_err(|e| SandboxError { message: e.to_string() })?;
+        std::fs::write(&profile_path, profile).map_err(|e| SandboxError {
+            message: e.to_string(),
+        })?;
         let mut wrapped = vec![
             "sandbox-exec".to_string(),
             "-f".to_string(),
@@ -83,7 +80,6 @@ pub fn wrap_argv(
         Ok(None)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -98,7 +94,9 @@ mod tests {
             return;
         }
         let argv = vec!["sh".to_string(), "-c".to_string(), "echo hi".to_string()];
-        let wrapped = wrap_argv(&argv, Path::new("/tmp/modbit-wt")).unwrap().unwrap();
+        let wrapped = wrap_argv(&argv, Path::new("/tmp/modbit-wt"))
+            .unwrap()
+            .unwrap();
         assert_eq!(wrapped[0], "sandbox-exec");
         assert_eq!(wrapped[1], "-f");
         let profile = std::fs::read_to_string(&wrapped[2]).unwrap();
@@ -108,5 +106,4 @@ mod tests {
         assert_eq!(&wrapped[3..], argv.as_slice(), "original argv preserved");
         let _ = std::fs::remove_dir_all(Path::new(&wrapped[2]).parent().unwrap());
     }
-
 }

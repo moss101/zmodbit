@@ -36,7 +36,7 @@ impl modbit_core_runtime::scheduler::WorktreeSource for FixedSource {
             branch: format!("modbit/{}", &task_id[..12]),
             base_revision: self.base_revision.clone(),
             start_point: None,
-})
+        })
     }
 
     fn repo_root(&self) -> Option<std::path::PathBuf> {
@@ -64,10 +64,16 @@ fn tempdir(tag: &str) -> PathBuf {
 fn git_fixture(tag: &str) -> PathBuf {
     let root = tempdir(tag);
     let repo = GitRepo::init(&root).expect("init fixture repo");
-    repo.set_config("user.email", "fixture@modbit.test").unwrap();
+    repo.set_config("user.email", "fixture@modbit.test")
+        .unwrap();
     repo.set_config("user.name", "Modbit Fixture").unwrap();
-    std::fs::write(root.join("NOTES.md"), "# Notes\nquantity must be positive\n").unwrap();
-    repo.commit_all("fixture baseline").expect("baseline commit");
+    std::fs::write(
+        root.join("NOTES.md"),
+        "# Notes\nquantity must be positive\n",
+    )
+    .unwrap();
+    repo.commit_all("fixture baseline")
+        .expect("baseline commit");
     root
 }
 
@@ -79,7 +85,9 @@ async fn spawn_model_fixture() -> std::net::SocketAddr {
     let turn = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     tokio::spawn(async move {
         loop {
-            let Ok((socket, _)) = listener.accept().await else { return };
+            let Ok((socket, _)) = listener.accept().await else {
+                return;
+            };
             let turn = turn.clone();
             tokio::spawn(async move {
                 handle_model(socket, turn).await;
@@ -144,8 +152,13 @@ fn create_task(processor: &CommandProcessor, store: &EventStore) -> (String, Str
     processor
         .execute(Command {
             command_id: uuid::Uuid::now_v7().to_string(),
-            actor: Actor { actor_type: ActorType::User, actor_id: "test".into() },
-            payload: CommandPayload::CreateSession { display_name: "sched-test".into() },
+            actor: Actor {
+                actor_type: ActorType::User,
+                actor_id: "test".into(),
+            },
+            payload: CommandPayload::CreateSession {
+                display_name: "sched-test".into(),
+            },
         })
         .unwrap();
     let sid: String = store
@@ -160,13 +173,16 @@ fn create_task(processor: &CommandProcessor, store: &EventStore) -> (String, Str
     processor
         .execute(Command {
             command_id: uuid::Uuid::now_v7().to_string(),
-            actor: Actor { actor_type: ActorType::User, actor_id: "test".into() },
+            actor: Actor {
+                actor_type: ActorType::User,
+                actor_id: "test".into(),
+            },
             payload: CommandPayload::CreateTask {
                 session_id: SessionId::parse(&sid).unwrap(),
                 title: "read the notes".into(),
                 prompt: "Read NOTES.md and summarize the validation rule.".into(),
                 repo_id: None,
-    base_branch: None,
+                base_branch: None,
 
                 parent_task_id: None,
             },
@@ -188,25 +204,27 @@ fn create_task(processor: &CommandProcessor, store: &EventStore) -> (String, Str
 /// bound so failures surface instead of hanging.
 fn wait_for_state(store: &EventStore, task_id: &str, prefix: &str) -> String {
     for _ in 0..300 {
-        let state: String = store
-            .with_conn(|conn| {
-                conn.query_row(
-                    "SELECT state FROM tasks WHERE task_id = ?1",
-                    [task_id],
-                    |r| r.get(0),
-                )
-                .unwrap_or_default()
-            });
+        let state: String = store.with_conn(|conn| {
+            conn.query_row(
+                "SELECT state FROM tasks WHERE task_id = ?1",
+                [task_id],
+                |r| r.get(0),
+            )
+            .unwrap_or_default()
+        });
         if state.starts_with(prefix) {
             return state;
         }
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
-    let state: String = store
-        .with_conn(|conn| {
-            conn.query_row("SELECT state FROM tasks WHERE task_id = ?1", [task_id], |r| r.get(0))
-                .unwrap_or_default()
-        });
+    let state: String = store.with_conn(|conn| {
+        conn.query_row(
+            "SELECT state FROM tasks WHERE task_id = ?1",
+            [task_id],
+            |r| r.get(0),
+        )
+        .unwrap_or_default()
+    });
     panic!("task never reached {prefix:?}, still {state:?}");
 }
 
@@ -233,11 +251,17 @@ async fn scheduler_runs_task_end_to_end_into_worktree_and_store() {
         let outcome = processor
             .execute(Command {
                 command_id: uuid::Uuid::now_v7().to_string(),
-                actor: Actor { actor_type: ActorType::User, actor_id: "test".into() },
+                actor: Actor {
+                    actor_type: ActorType::User,
+                    actor_id: "test".into(),
+                },
                 payload,
             })
             .unwrap();
-        assert!(matches!(outcome, Outcome::Applied { .. }), "queue+start must apply");
+        assert!(
+            matches!(outcome, Outcome::Applied { .. }),
+            "queue+start must apply"
+        );
     }
 
     // THE scheduler runs it (single entry; the poller uses the same path).
@@ -262,12 +286,21 @@ async fn scheduler_runs_task_end_to_end_into_worktree_and_store() {
     );
     // The poller picks up task_started and runs the task (production path).
     let state = wait_for_state(&store, &task_id_str, "ready_for_review");
-    assert_eq!(state, "ready_for_review", "completed run moves task to review");
+    assert_eq!(
+        state, "ready_for_review",
+        "completed run moves task to review"
+    );
 
     // 2. A dedicated worktree exists for the task.
     let worktree = worktree_root.join(&task_id_str);
-    assert!(worktree.join(".git").exists(), "worktree allocated at {worktree:?}");
-    assert!(worktree.join("NOTES.md").exists(), "fixture file present in worktree");
+    assert!(
+        worktree.join(".git").exists(),
+        "worktree allocated at {worktree:?}"
+    );
+    assert!(
+        worktree.join("NOTES.md").exists(),
+        "fixture file present in worktree"
+    );
 
     // 3. Run/Turn/RunStep events are durable with clean aggregate streams.
     let (runs_completed, turns, tool_steps): (i64, i64, i64) = store.with_conn(|conn| {
@@ -293,17 +326,25 @@ async fn scheduler_runs_task_end_to_end_into_worktree_and_store() {
             .unwrap()
     });
     assert_eq!(run_ids.len(), 1, "exactly one run aggregate");
-    store.verify_stream(&run_ids[0]).expect("run stream integrity");
+    store
+        .verify_stream(&run_ids[0])
+        .expect("run stream integrity");
     assert!(turns >= 2, "two model turns recorded, got {turns}");
-    assert!(tool_steps >= 3, "model-invoke + tool-call steps recorded, got {tool_steps}");
+    assert!(
+        tool_steps >= 3,
+        "model-invoke + tool-call steps recorded, got {tool_steps}"
+    );
 
     // 5. Idempotency: a direct re-run of the same task_started does NOT
     // create a second run.
     scheduler.run_task(&task_id_str).expect("idempotent re-run");
     let run_count: i64 = store.with_conn(|conn| {
         conn.query_row(
-            "SELECT COUNT(DISTINCT aggregate_id) FROM events WHERE aggregate_type='run'", [],
-            |r| r.get(0)).unwrap()
+            "SELECT COUNT(DISTINCT aggregate_id) FROM events WHERE aggregate_type='run'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap()
     });
     assert_eq!(run_count, 1, "no duplicate run for the same task");
 
@@ -330,7 +371,10 @@ async fn provider_outage_parks_task_in_waiting() {
         processor
             .execute(Command {
                 command_id: uuid::Uuid::now_v7().to_string(),
-                actor: Actor { actor_type: ActorType::User, actor_id: "test".into() },
+                actor: Actor {
+                    actor_type: ActorType::User,
+                    actor_id: "test".into(),
+                },
                 payload,
             })
             .unwrap();
@@ -368,8 +412,11 @@ async fn provider_outage_parks_task_in_waiting() {
     assert!(state.starts_with("waiting"), "task parked, got {state:?}");
     let waiting_events: i64 = store.with_conn(|conn| {
         conn.query_row(
-            "SELECT COUNT(*) FROM events WHERE aggregate_type='task' AND event_type='task_waiting'", [],
-            |r| r.get(0)).unwrap()
+            "SELECT COUNT(*) FROM events WHERE aggregate_type='task' AND event_type='task_waiting'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap()
     });
     assert_eq!(waiting_events, 1, "one durable waiting event");
 }

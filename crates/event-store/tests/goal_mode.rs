@@ -71,7 +71,7 @@ fn model_claim_without_host_acceptance_leaves_the_run_incomplete() {
                 title: "goal-gated task".into(),
                 prompt: "p".into(),
                 repo_id: None,
-    base_branch: None,
+                base_branch: None,
 
                 parent_task_id: None,
             },

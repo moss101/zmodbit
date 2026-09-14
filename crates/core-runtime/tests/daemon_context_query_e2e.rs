@@ -25,7 +25,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("cqe{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -39,10 +48,26 @@ fn code_fixture(tag: &str) -> PathBuf {
     repo.set_config("core.autocrlf", "false").unwrap();
     std::fs::create_dir_all(root.join("src/ui")).unwrap();
     std::fs::create_dir_all(root.join("docs")).unwrap();
-    std::fs::write(root.join("src/helpers.rs"), "pub fn retry_helpers() -> bool {\n    true\n}\n").unwrap();
-    std::fs::write(root.join("src/caller.rs"), "use crate::helpers;\n\nfn run_task() {\n    let _ = retry_helpers();\n}\n").unwrap();
-    std::fs::write(root.join("src/ui/button.rs"), "button click render focus style widget\n").unwrap();
-    std::fs::write(root.join("docs/retry-notes.md"), "retry notes about the retry mechanism and its backoff\n").unwrap();
+    std::fs::write(
+        root.join("src/helpers.rs"),
+        "pub fn retry_helpers() -> bool {\n    true\n}\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("src/caller.rs"),
+        "use crate::helpers;\n\nfn run_task() {\n    let _ = retry_helpers();\n}\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("src/ui/button.rs"),
+        "button click render focus style widget\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("docs/retry-notes.md"),
+        "retry notes about the retry mechanism and its backoff\n",
+    )
+    .unwrap();
     repo.commit_all("fixture baseline").expect("baseline");
     root
 }
@@ -149,8 +174,13 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
         .map(String::from)
 }
 
-fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr) -> (Child, String, PathBuf) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+fn spawn_core(
+    repo_root: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String, PathBuf) {
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -200,9 +230,7 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -211,22 +239,26 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     std::mem::forget(execd);
     (child, daemon.expect("daemon addr"), db_path)
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -241,9 +273,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_ready_for_review(daemon: &str, task_id: &str) {
     let deadline = Instant::now() + Duration::from_secs(300);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -279,20 +314,44 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
         ),
         // Post-edit: the lexical AND symbol surfaces must know the new fn
         // (explicit fused mode — this is the lexical-commit freshness proof).
-        tool_call_turn("c4", "context.query", r#"{"query":"brand_new_marker","mode":"fused"}"#),
+        tool_call_turn(
+            "c4",
+            "context.query",
+            r#"{"query":"brand_new_marker","mode":"fused"}"#,
+        ),
         // M3.1 direct index modes through the same tool.
-        tool_call_turn("c5", "context.query", r#"{"query":"brand_new_marker","mode":"exact"}"#),
-        tool_call_turn("c6", "context.query", r#"{"query":"^    true$","mode":"regex"}"#),
+        tool_call_turn(
+            "c5",
+            "context.query",
+            r#"{"query":"brand_new_marker","mode":"exact"}"#,
+        ),
+        tool_call_turn(
+            "c6",
+            "context.query",
+            r#"{"query":"^    true$","mode":"regex"}"#,
+        ),
         // M3.7 auto mode: the planner routes from real index signals.
         // (A bare defined identifier routes to L0-exact — the minimum
         // sufficient level; structural phrasing escalates to L2.)
-        tool_call_turn("c7", "context.query", r#"{"query":"definition of brand_new_marker"}"#),
-        tool_call_turn("c8", "context.query", r#"{"query":"How does the retry flow work"}"#),
+        tool_call_turn(
+            "c7",
+            "context.query",
+            r#"{"query":"definition of brand_new_marker"}"#,
+        ),
+        tool_call_turn(
+            "c8",
+            "context.query",
+            r#"{"query":"How does the retry flow work"}"#,
+        ),
         // A bare defined identifier takes the CHEAPER L0-exact route —
         // the planner must not over-escalate (REQ ledger EV-0001 (owner context-engine)).
         tool_call_turn("c9", "context.query", r#"{"query":"brand_new_marker"}"#),
         // M3.6 impact mode: who imports the edited file?
-        tool_call_turn("c10", "context.query", r#"{"query":"src/helpers.rs","mode":"impact"}"#),
+        tool_call_turn(
+            "c10",
+            "context.query",
+            r#"{"query":"src/helpers.rs","mode":"impact"}"#,
+        ),
         text_turn("done"),
     ]);
     let (mut core, daemon, db_path) = spawn_core(&repo, &worktrees, model);
@@ -304,13 +363,17 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
             title: "query the index".into(),
             prompt: "Do it.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -319,11 +382,9 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
 
     // Evidence stream: exactly the build + the apply; pure queries with
     // nothing new emit nothing.
-    let conn = rusqlite::Connection::open_with_flags(
-        &db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .expect("open core db");
+    let conn =
+        rusqlite::Connection::open_with_flags(&db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("open core db");
     let reasons: Vec<String> = {
         let mut stmt = conn
             .prepare(
@@ -434,8 +495,7 @@ fn context_query_and_search_symbol_answer_from_the_live_index() {
     );
     // Turn 8: architectural intent escalates to ENGINEERING (fused + note).
     assert!(
-        visible.contains("\"level\":\"engineering\"")
-            && visible.contains("auto:engineering:fused"),
+        visible.contains("\"level\":\"engineering\"") && visible.contains("auto:engineering:fused"),
         "auto escalates architectural intent to engineering"
     );
     assert!(

@@ -12,7 +12,10 @@
 fn apply(cwd: Option<&std::path::Path>, writes: &[std::path::PathBuf]) -> Result<(), String> {
     #[cfg(target_os = "linux")]
     {
-        use landlock::{Access as _, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr, RulesetCreatedAttr as _};
+        use landlock::{
+            Access as _, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr,
+            RulesetCreatedAttr as _,
+        };
         let abi = landlock::ABI::V1;
         let mut created = Ruleset::default()
             .handle_access(AccessFs::from_all(abi))
@@ -37,7 +40,10 @@ fn apply(cwd: Option<&std::path::Path>, writes: &[std::path::PathBuf]) -> Result
         }
         for w in writes {
             created = created
-                .add_rule(PathBeneath::new(PathFd::new(w).map_err(|e| e.to_string())?, AccessFs::from_all(abi)))
+                .add_rule(PathBeneath::new(
+                    PathFd::new(w).map_err(|e| e.to_string())?,
+                    AccessFs::from_all(abi),
+                ))
                 .map_err(|e| e.to_string())?;
         }
         created
@@ -65,7 +71,11 @@ fn main() {
         }
         match a.as_str() {
             "--cwd" => cwd = args.next().map(std::path::PathBuf::from),
-            "--write" => writes.push(args.next().map(std::path::PathBuf::from).unwrap_or_default()),
+            "--write" => writes.push(
+                args.next()
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_default(),
+            ),
             "--" => after_dashdash = true,
             other => target.push(other.to_string()),
         }

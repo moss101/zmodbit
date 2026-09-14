@@ -449,8 +449,8 @@ mod tests {
                 title: "t".into(),
                 prompt: "p".into(),
                 repo_id: None,
-            base_branch: None,
-        
+                base_branch: None,
+
                 parent_task_id: None,
             },
             payload_object_hash: None,

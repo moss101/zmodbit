@@ -63,7 +63,14 @@ fn days_to_civil(secs: u64) -> (i64, u64, u64, u64, u64, u64) {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
-    (y, m as u64, d as u64, rem / 3600, (rem % 3600) / 60, rem % 60)
+    (
+        y,
+        m as u64,
+        d as u64,
+        rem / 3600,
+        (rem % 3600) / 60,
+        rem % 60,
+    )
 }
 
 #[derive(Default, Clone)]
@@ -109,19 +116,15 @@ impl CoreServices {
         task_id: &str,
         bundle_json: &str,
     ) -> Result<pb::CheckpointAttachView, String> {
-        let root = self
-            .repo_root
-            .as_ref()
-            .ok_or_else(|| "no repository configured for checkpoint attach (set MODBIT_REPO_ROOT)".to_string())?;
+        let root = self.repo_root.as_ref().ok_or_else(|| {
+            "no repository configured for checkpoint attach (set MODBIT_REPO_ROOT)".to_string()
+        })?;
         let bundle: modbit_checkpoint::cloud_attach::CheckpointHandoffBundle =
-            serde_json::from_str(bundle_json)
-                .map_err(|e| format!("bad checkpoint bundle: {e}"))?;
-        let repo =
-            modbit_git::GitRepo::open(root).map_err(|e| e.to_string())?;
-        let receipt = modbit_checkpoint::cloud_attach::attach_checkpoint_bundle(
-            &repo, &bundle, task_id,
-        )
-        .map_err(|e| e.to_string())?;
+            serde_json::from_str(bundle_json).map_err(|e| format!("bad checkpoint bundle: {e}"))?;
+        let repo = modbit_git::GitRepo::open(root).map_err(|e| e.to_string())?;
+        let receipt =
+            modbit_checkpoint::cloud_attach::attach_checkpoint_bundle(&repo, &bundle, task_id)
+                .map_err(|e| e.to_string())?;
         Ok(pb::CheckpointAttachView {
             task_id: receipt.task_id,
             restored_commit: receipt.restored_commit,
@@ -154,10 +157,7 @@ impl CoreServices {
     /// Attaches the agent-fleet journal (Phase 7 item 1): the daemon passes
     /// a path next to the durable store so admitted children survive
     /// restarts. Tests can pass a journal under their temp dir.
-    pub fn with_agent_fleet(
-        mut self,
-        journal: std::path::PathBuf,
-    ) -> std::io::Result<Self> {
+    pub fn with_agent_fleet(mut self, journal: std::path::PathBuf) -> std::io::Result<Self> {
         self.agent_fleet = Some(std::sync::Arc::new(std::sync::Mutex::new(
             crate::agent_fleet::AgentFleet::load(&journal)?,
         )));
@@ -199,7 +199,9 @@ impl CoreServices {
             base_url: get_str("base_url"),
             max_turns: doc.get("max_turns").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
             execution_mode: get_str("execution_mode"),
-            has_api_key: modbit_providers::keychain::has_secret(Self::credential_env_for(&provider)),
+            has_api_key: modbit_providers::keychain::has_secret(Self::credential_env_for(
+                &provider,
+            )),
         })
     }
 
@@ -213,9 +215,10 @@ impl CoreServices {
     ) -> Result<modbit_event_store::repos::RecentRepo, String> {
         use modbit_git::GitRepo;
 
-        let source = self.task_worktrees.as_ref().ok_or_else(|| {
-            "no worktree source configured for repo registration".to_string()
-        })?;
+        let source = self
+            .task_worktrees
+            .as_ref()
+            .ok_or_else(|| "no worktree source configured for repo registration".to_string())?;
         let worktree_root = source
             .worktree_root()
             .ok_or_else(|| "worktree source has no worktree root".to_string())?;
@@ -237,8 +240,7 @@ impl CoreServices {
             )
         } else if !register.path.is_empty() {
             (
-                GitRepo::open(std::path::Path::new(&register.path))
-                .map_err(|e| e.to_string())?,
+                GitRepo::open(std::path::Path::new(&register.path)).map_err(|e| e.to_string())?,
                 String::new(),
             )
         } else {
@@ -432,10 +434,8 @@ impl CoreServices {
                         },
                         title: create.title,
                         prompt: create.prompt,
-                        repo_id: (!create.repo_id.is_empty())
-                            .then(|| create.repo_id.clone()),
-                        base_branch: (!create.base_branch.is_empty())
-                            .then_some(create.base_branch),
+                        repo_id: (!create.repo_id.is_empty()).then(|| create.repo_id.clone()),
+                        base_branch: (!create.base_branch.is_empty()).then_some(create.base_branch),
                         parent_task_id: (!create.parent_task_id.is_empty())
                             .then_some(create.parent_task_id),
                     },
@@ -492,9 +492,7 @@ impl CoreServices {
                             });
                             return pb::SurfaceResponse {
                                 ok: false,
-                                error: format!(
-                                    "write-set conflict with {holder_task_id}: {path}"
-                                ),
+                                error: format!("write-set conflict with {holder_task_id}: {path}"),
                                 ..Default::default()
                             };
                         }
@@ -543,9 +541,9 @@ impl CoreServices {
                 }
             }
             Some(pb::surface_request::Request::ListRecentRepos(_)) => {
-                let listed = self
-                    .store
-                    .with_conn(|conn| modbit_event_store::repos::list(conn).map_err(|e| e.to_string()));
+                let listed = self.store.with_conn(|conn| {
+                    modbit_event_store::repos::list(conn).map_err(|e| e.to_string())
+                });
                 match listed {
                     Ok(repos) => pb::SurfaceResponse {
                         ok: true,
@@ -624,7 +622,9 @@ impl CoreServices {
                     // provider if given, else the stored one, else openai).
                     let stored = self
                         .store
-                        .with_conn(|conn| modbit_event_store::settings::get(conn).map_err(|e| e.to_string()))
+                        .with_conn(|conn| {
+                            modbit_event_store::settings::get(conn).map_err(|e| e.to_string())
+                        })
                         .ok()
                         .flatten()
                         .unwrap_or_else(|| serde_json::Value::Object(Default::default()));
@@ -795,19 +795,21 @@ impl CoreServices {
                         },
                     },
                 )
-            },
-            Some(pb::surface_request::Request::GetRunDetail(get)) => match self.run_detail(&get.task_id) {
-                Ok(run_detail) => pb::SurfaceResponse {
-                    ok: true,
-                    run_detail: Some(run_detail),
-                    ..Default::default()
-                },
-                Err(e) => pb::SurfaceResponse {
-                    ok: false,
-                    error: e,
-                    ..Default::default()
-                },
-            },
+            }
+            Some(pb::surface_request::Request::GetRunDetail(get)) => {
+                match self.run_detail(&get.task_id) {
+                    Ok(run_detail) => pb::SurfaceResponse {
+                        ok: true,
+                        run_detail: Some(run_detail),
+                        ..Default::default()
+                    },
+                    Err(e) => pb::SurfaceResponse {
+                        ok: false,
+                        error: e,
+                        ..Default::default()
+                    },
+                }
+            }
             Some(pb::surface_request::Request::GetDiff(get)) => match self.diff(&get.task_id) {
                 Ok(diff) => pb::SurfaceResponse {
                     ok: true,
@@ -863,20 +865,18 @@ impl CoreServices {
                     },
                 }
             }
-            Some(pb::surface_request::Request::ParkAgent(park)) => {
-                match self.park_agent(&park) {
-                    Ok(task) => pb::SurfaceResponse {
-                        ok: true,
-                        task,
-                        ..Default::default()
-                    },
-                    Err(e) => pb::SurfaceResponse {
-                        ok: false,
-                        error: e,
-                        ..Default::default()
-                    },
-                }
-            }
+            Some(pb::surface_request::Request::ParkAgent(park)) => match self.park_agent(&park) {
+                Ok(task) => pb::SurfaceResponse {
+                    ok: true,
+                    task,
+                    ..Default::default()
+                },
+                Err(e) => pb::SurfaceResponse {
+                    ok: false,
+                    error: e,
+                    ..Default::default()
+                },
+            },
             Some(pb::surface_request::Request::ResumeAgent(resume)) => {
                 match self.resume_agent(&resume) {
                     Ok(task) => pb::SurfaceResponse {
@@ -891,20 +891,18 @@ impl CoreServices {
                     },
                 }
             }
-            Some(pb::surface_request::Request::AgentResult(req)) => {
-                match self.agent_result(&req) {
-                    Ok(view) => pb::SurfaceResponse {
-                        ok: true,
-                        agent_result: Some(view),
-                        ..Default::default()
-                    },
-                    Err(e) => pb::SurfaceResponse {
-                        ok: false,
-                        error: e,
-                        ..Default::default()
-                    },
-                }
-            }
+            Some(pb::surface_request::Request::AgentResult(req)) => match self.agent_result(&req) {
+                Ok(view) => pb::SurfaceResponse {
+                    ok: true,
+                    agent_result: Some(view),
+                    ..Default::default()
+                },
+                Err(e) => pb::SurfaceResponse {
+                    ok: false,
+                    error: e,
+                    ..Default::default()
+                },
+            },
             Some(pb::surface_request::Request::RunVariants(variants)) => {
                 match self.run_variants(&variants) {
                     Ok(task) => pb::SurfaceResponse {
@@ -1044,10 +1042,7 @@ impl CoreServices {
                 }
             }
             Some(pb::surface_request::Request::ListAutomations(_)) => {
-                match self
-                    .store
-                    .with_conn(modbit_event_store::automations::list)
-                {
+                match self.store.with_conn(modbit_event_store::automations::list) {
                     Ok(rows) => pb::SurfaceResponse {
                         ok: true,
                         automations: Some(pb::AutomationList {
@@ -1279,7 +1274,15 @@ impl CoreServices {
         let tasks = tasks
             .into_iter()
             .map(
-                |(task_id, session_id, goal_text, state, generation, created_at, parent_task_id): (
+                |(
+                    task_id,
+                    session_id,
+                    goal_text,
+                    state,
+                    generation,
+                    created_at,
+                    parent_task_id,
+                ): (
                     String,
                     String,
                     String,
@@ -1310,26 +1313,27 @@ impl CoreServices {
         let run_ids: Vec<String> = self
             .store
             .with_conn(|conn| -> Result<Vec<String>, String> {
-            let mut stmt = conn
-                .prepare(
-                    "SELECT aggregate_id FROM events WHERE aggregate_type='run' \
+                let mut stmt = conn
+                    .prepare(
+                        "SELECT aggregate_id FROM events WHERE aggregate_type='run' \
                      AND event_type='run_started' ORDER BY rowid",
-                )
-                .map_err(|e| e.to_string())?;
-            let rows: Vec<String> = stmt
-                .query_map([], |r| r.get::<_, String>(0))
-                .map_err(|e| e.to_string())?
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| e.to_string())?;
-            Ok(rows)
-        })
-        .map_err(|e: String| e)?;
+                    )
+                    .map_err(|e| e.to_string())?;
+                let rows: Vec<String> = stmt
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .map_err(|e| e.to_string())?
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|e| e.to_string())?;
+                Ok(rows)
+            })
+            .map_err(|e: String| e)?;
         let mut runs: Vec<(String, RunSummary)> = Vec::new();
         for id in run_ids {
             let events = self.store.load(&id).map_err(|e| e.to_string())?;
-            let Some(first) = events.first() else { continue };
-            let modbit_domain::DomainEvent::RunStarted { task_id: rid, .. } = &first.payload
-            else {
+            let Some(first) = events.first() else {
+                continue;
+            };
+            let modbit_domain::DomainEvent::RunStarted { task_id: rid, .. } = &first.payload else {
                 continue;
             };
             if rid.to_string() != task_id {
@@ -1377,7 +1381,9 @@ impl CoreServices {
                     )
                     .map_err(|e| e.to_string())?;
                 let rows = stmt
-                    .query_map([aggregate_type], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)))
+                    .query_map([aggregate_type], |r| {
+                        Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?))
+                    })
                     .map_err(|e| e.to_string())?
                     .collect::<Result<Vec<_>, _>>()
                     .map_err(|e| e.to_string())?;
@@ -1403,8 +1409,9 @@ impl CoreServices {
             std::collections::HashMap::new();
         for (_rowid, sid) in aggregate_ids("run_step")? {
             let events = self.store.load(&sid).map_err(|e| e.to_string())?;
-            let Some(modbit_domain::DomainEvent::RunStepPrepared { turn_id, step_type, .. }) =
-                events.first().map(|e| &e.payload)
+            let Some(modbit_domain::DomainEvent::RunStepPrepared {
+                turn_id, step_type, ..
+            }) = events.first().map(|e| &e.payload)
             else {
                 continue;
             };
@@ -1420,13 +1427,16 @@ impl CoreServices {
                     _ => {}
                 }
             }
-            steps_by_turn.entry(turn_id.to_string()).or_default().push(pb::RunStepView {
-                step_id: sid,
-                turn_id: turn_id.to_string(),
-                step_type: step_type.as_str().to_string(),
-                state,
-                failure_code,
-            });
+            steps_by_turn
+                .entry(turn_id.to_string())
+                .or_default()
+                .push(pb::RunStepView {
+                    step_id: sid,
+                    turn_id: turn_id.to_string(),
+                    step_type: step_type.as_str().to_string(),
+                    state,
+                    failure_code,
+                });
         }
 
         let mut views = Vec::new();
@@ -1480,9 +1490,9 @@ impl CoreServices {
         let source = self.task_worktrees.as_ref().ok_or_else(|| {
             "task worktrees not configured on this core (host must attach the layout)".to_string()
         })?;
-        let config = source.layout(task_id).ok_or_else(|| {
-            "no repository configured for task worktrees".to_string()
-        })?;
+        let config = source
+            .layout(task_id)
+            .ok_or_else(|| "no repository configured for task worktrees".to_string())?;
         if !config.worktree.exists() {
             return Err(format!("task {task_id} has no allocated worktree"));
         }
@@ -1609,8 +1619,7 @@ impl CoreServices {
             )
             .map_err(|e| e.to_string())?;
         }
-        let task_id =
-            modbit_domain::TaskId::parse(&resolve.task_id).map_err(|e| e.to_string())?;
+        let task_id = modbit_domain::TaskId::parse(&resolve.task_id).map_err(|e| e.to_string())?;
         self.execute(Command {
             command_id: new_command_id(),
             actor: actor(),
@@ -1631,10 +1640,7 @@ impl CoreServices {
     /// own isolated worktree). Any failure refuses admission with no
     /// partial reservation; a failure after task creation compensates by
     /// cancelling the minted child.
-    fn spawn_agent(
-        &self,
-        spawn: &pb::SpawnAgentCommand,
-    ) -> Result<Option<pb::TaskView>, String> {
+    fn spawn_agent(&self, spawn: &pb::SpawnAgentCommand) -> Result<Option<pb::TaskView>, String> {
         if spawn.parent_task_id.is_empty() {
             return Err("spawn_agent requires parent_task_id".into());
         }
@@ -1643,7 +1649,9 @@ impl CoreServices {
         // a replayed spawn returns the already-admitted child.
         if !spawn.idempotency_key.is_empty() {
             if let Some(fleet) = &self.agent_fleet {
-                let fleet = fleet.lock().map_err(|_| "agent fleet poisoned".to_string())?;
+                let fleet = fleet
+                    .lock()
+                    .map_err(|_| "agent fleet poisoned".to_string())?;
                 if let Some(node) = fleet.find_by_idempotency_key(&spawn.idempotency_key) {
                     let task_id = node.task_id.clone();
                     drop(fleet);
@@ -1667,10 +1675,7 @@ impl CoreServices {
             )
             .map_err(|_| format!("parent task {} does not exist", spawn.parent_task_id))
         })?;
-        if matches!(
-            parent_state.as_str(),
-            "completed" | "failed" | "cancelled"
-        ) {
+        if matches!(parent_state.as_str(), "completed" | "failed" | "cancelled") {
             return Err(format!(
                 "parent task {} is not active (state {parent_state})",
                 spawn.parent_task_id
@@ -1737,9 +1742,9 @@ impl CoreServices {
         // Compensation: a failure after task creation cancels the minted
         // child so no partial reservation leaks.
         fn compensate(svc: &CoreServices, child_id: &str, err: String) -> String {
-            let _ = svc.store.with_conn(|conn| {
-                modbit_event_store::write_scopes::release(conn, child_id)
-            });
+            let _ = svc
+                .store
+                .with_conn(|conn| modbit_event_store::write_scopes::release(conn, child_id));
             if let Ok(task_id) = modbit_domain::TaskId::parse(child_id) {
                 let _ = svc.execute(Command {
                     command_id: new_command_id(),
@@ -1757,7 +1762,9 @@ impl CoreServices {
             let mut fleet = fleet
                 .lock()
                 .map_err(|e| compensate(self, &child_id, format!("agent fleet poisoned: {e}")))?;
-            let parent_agent = fleet.node(&spawn.parent_task_id).map(|n| n.agent_id.clone());
+            let parent_agent = fleet
+                .node(&spawn.parent_task_id)
+                .map(|n| n.agent_id.clone());
             fleet
                 .spawn_child(
                     parent_agent.as_deref(),
@@ -1770,15 +1777,10 @@ impl CoreServices {
                         .map(|p| p.trim().to_string())
                         .filter(|p| !p.is_empty())
                         .collect(),
-                    (!spawn.idempotency_key.is_empty())
-                        .then_some(spawn.idempotency_key.as_str()),
+                    (!spawn.idempotency_key.is_empty()).then_some(spawn.idempotency_key.as_str()),
                 )
                 .map_err(|e| {
-                    compensate(
-                        self,
-                        &child_id,
-                        format!("agent node persist failed: {e}"),
-                    )
+                    compensate(self, &child_id, format!("agent node persist failed: {e}"))
                 })?;
         }
 
@@ -1989,8 +1991,7 @@ impl CoreServices {
                     ),
                     prompt: cmd.objective.clone(),
                     repo_id: (!cmd.repo_id.is_empty()).then_some(cmd.repo_id.clone()),
-                    base_branch: (!cmd.base_branch.is_empty())
-                        .then_some(cmd.base_branch.clone()),
+                    base_branch: (!cmd.base_branch.is_empty()).then_some(cmd.base_branch.clone()),
                     parent_task_id: None,
                 },
             })?
@@ -2001,12 +2002,7 @@ impl CoreServices {
         for i in 0..cmd.count {
             let spawn = pb::SpawnAgentCommand {
                 parent_task_id: umbrella_id.clone(),
-                objective: format!(
-                    "variant {}/{} of: {}",
-                    i + 1,
-                    cmd.count,
-                    cmd.objective
-                ),
+                objective: format!("variant {}/{} of: {}", i + 1, cmd.count, cmd.objective),
                 write_scope: String::new(),
                 idempotency_key: format!("variant-{umbrella_id}-{i}"),
                 parent_generation: 0,
@@ -2111,10 +2107,12 @@ impl CoreServices {
         let inputs: Vec<crate::review::HunkInput> = hunks
             .iter()
             .map(|h| crate::review::HunkInput {
-                commented: comments.iter().any(|c| {
-                    c.path == h.path && c.new_start as usize == h.new_start
-                }),
-                decided: decided.iter().any(|(p, s)| p == &h.path && *s == h.new_start),
+                commented: comments
+                    .iter()
+                    .any(|c| c.path == h.path && c.new_start as usize == h.new_start),
+                decided: decided
+                    .iter()
+                    .any(|(p, s)| p == &h.path && *s == h.new_start),
                 path: h.path.clone(),
                 new_start: h.new_start,
                 lines: h.lines.clone(),
@@ -2138,10 +2136,7 @@ impl CoreServices {
     /// Phase 7 residual: a live frame of the task's browser — the SAME
     /// session the agent uses (docs/60 step 12). Pure observation.
     fn browser_view(&self, task_id: &str) -> Result<pb::BrowserViewView, String> {
-        let frame = self
-            .browser_host
-            .view(task_id)
-            .map_err(|e| e.to_string())?;
+        let frame = self.browser_host.view(task_id).map_err(|e| e.to_string())?;
         use base64::Engine as _;
         Ok(pb::BrowserViewView {
             task_id: task_id.to_string(),
@@ -2181,9 +2176,7 @@ impl CoreServices {
                 return Vec::new();
             };
             let Ok(rows) = stmt
-                .query_map([], |r| {
-                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
-                })
+                .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
                 .map(|rows| rows.collect::<Result<Vec<_>, _>>())
             else {
                 return Vec::new();

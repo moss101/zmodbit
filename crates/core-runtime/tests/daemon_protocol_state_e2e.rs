@@ -21,7 +21,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("dpe{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -43,10 +52,10 @@ fn spawn_core_on_db(db_path: &PathBuf) -> (Child, String) {
     let mut command = Command::new(exe);
     let mut command = command.env("MODBIT_CORE_DB", db_path);
     if !cfg!(windows) {
-        let sock = db_path
-            .parent()
-            .unwrap()
-            .join(format!("s{}.sock", &uuid::Uuid::now_v7().simple().to_string()[..8]));
+        let sock = db_path.parent().unwrap().join(format!(
+            "s{}.sock",
+            &uuid::Uuid::now_v7().simple().to_string()[..8]
+        ));
         command = command.env("MODBIT_SOCKET", sock);
     }
     // No repository/worktree/execd needed: this test never runs a task —
@@ -62,9 +71,7 @@ fn spawn_core_on_db(db_path: &PathBuf) -> (Child, String) {
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -74,21 +81,25 @@ fn spawn_core_on_db(db_path: &PathBuf) -> (Child, String) {
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     (child, daemon.expect("daemon addr"))
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -129,12 +140,20 @@ fn sse_connect(daemon: &str, client_id: &str, since: Option<u64>) -> BufReader<T
 
 /// Reads SSE data lines until `want` events have arrived; returns their
 /// (offset, event_type) pairs.
-fn read_events(reader: &mut BufReader<TcpStream>, want: usize, timeout: Duration) -> Vec<(u64, String)> {
+fn read_events(
+    reader: &mut BufReader<TcpStream>,
+    want: usize,
+    timeout: Duration,
+) -> Vec<(u64, String)> {
     let deadline = Instant::now() + timeout;
     let mut events = Vec::new();
     while events.len() < want {
         if Instant::now() > deadline {
-            panic!("only {}/{} SSE events within {timeout:?}", events.len(), want);
+            panic!(
+                "only {}/{} SSE events within {timeout:?}",
+                events.len(),
+                want
+            );
         }
         let mut line = String::new();
         match reader.read_line(&mut line) {
@@ -144,18 +163,18 @@ fn read_events(reader: &mut BufReader<TcpStream>, want: usize, timeout: Duration
                     continue;
                 };
                 if let Ok(value) = serde_json::from_str::<serde_json::Value>(payload.trim()) {
-                    if let (Some(offset), Some(kind)) = (
-                        value["offset"].as_u64(),
-                        value["event_type"].as_str(),
-                    ) {
+                    if let (Some(offset), Some(kind)) =
+                        (value["offset"].as_u64(), value["event_type"].as_str())
+                    {
                         events.push((offset, kind.to_string()));
                     }
                 }
             }
             // Read timeout on a quiet stream: no data yet, retry until
             // the deadline.
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock
-                || e.kind() == std::io::ErrorKind::TimedOut =>
+            Err(e)
+                if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut =>
             {
                 continue;
             }
@@ -186,7 +205,7 @@ fn sse_cursor_journal_resumes_exactly_across_restart() {
             title: "journal me".into(),
             prompt: "nothing".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
 
@@ -224,7 +243,7 @@ fn sse_cursor_journal_resumes_exactly_across_restart() {
             title: "after restart".into(),
             prompt: "nothing".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created2.ok, "{}", created2.error);
 

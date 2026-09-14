@@ -30,11 +30,19 @@ pub enum LspError {
     Spawn(String),
     Io(String),
     /// No response within the request timeout.
-    Timeout { method: String, timeout_ms: u128 },
+    Timeout {
+        method: String,
+        timeout_ms: u128,
+    },
     /// The server answered with an error object.
-    Server { method: String, message: String },
+    Server {
+        method: String,
+        message: String,
+    },
     /// The stream ended (server exited).
-    Closed { method: String },
+    Closed {
+        method: String,
+    },
 }
 
 impl std::fmt::Display for LspError {
@@ -45,7 +53,9 @@ impl std::fmt::Display for LspError {
             LspError::Timeout { method, timeout_ms } => {
                 write!(f, "lsp {method} timed out after {timeout_ms}ms")
             }
-            LspError::Server { method, message } => write!(f, "lsp {method} server error: {message}"),
+            LspError::Server { method, message } => {
+                write!(f, "lsp {method} server error: {message}")
+            }
             LspError::Closed { method } => write!(f, "lsp {method}: server closed the stream"),
         }
     }
@@ -64,7 +74,9 @@ fn read_message(reader: &mut BufReader<ChildStdout>) -> Result<Option<Vec<u8>>, 
     let mut line = String::new();
     loop {
         line.clear();
-        let n = reader.read_line(&mut line).map_err(|e| LspError::Io(e.to_string()))?;
+        let n = reader
+            .read_line(&mut line)
+            .map_err(|e| LspError::Io(e.to_string()))?;
         if n == 0 {
             return Ok(None); // EOF
         }
@@ -153,8 +165,14 @@ impl LspSession {
             .stderr(Stdio::null())
             .spawn()
             .map_err(|e| LspError::Spawn(format!("{program}: {e}")))?;
-        let stdin = child.stdin.take().ok_or_else(|| LspError::Spawn("no stdin".into()))?;
-        let stdout = child.stdout.take().ok_or_else(|| LspError::Spawn("no stdout".into()))?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| LspError::Spawn("no stdin".into()))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| LspError::Spawn("no stdout".into()))?;
         let mut session = LspSession {
             child,
             stdin,
@@ -193,7 +211,11 @@ impl LspSession {
         let deadline = Instant::now() + self.request_timeout;
         match self.read_response("initialize", deadline)? {
             Some(_) => {}
-            None => return Err(LspError::Closed { method: "initialize".into() }),
+            None => {
+                return Err(LspError::Closed {
+                    method: "initialize".into(),
+                })
+            }
         }
         let notified = serde_json::json!({
             "jsonrpc": "2.0",
@@ -206,7 +228,11 @@ impl LspSession {
     /// Reads framed messages until the response with `id` arrives.
     /// Notifications and other ids are skipped. Shared deadline across
     /// the whole wait.
-    fn read_response(&mut self, method: &str, deadline: Instant) -> Result<Option<Value>, LspError> {
+    fn read_response(
+        &mut self,
+        method: &str,
+        deadline: Instant,
+    ) -> Result<Option<Value>, LspError> {
         loop {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
@@ -279,7 +305,8 @@ impl LspSession {
         line0: usize,
         character0: usize,
     ) -> Result<Vec<SymbolLocation>, LspError> {
-        let result = self.request_position("textDocument/definition", rel_path, line0, character0)?;
+        let result =
+            self.request_position("textDocument/definition", rel_path, line0, character0)?;
         Ok(self.normalize_result(&result))
     }
 
@@ -341,7 +368,9 @@ impl LspSession {
         let deadline = Instant::now() + self.request_timeout;
         match self.read_response(method, deadline)? {
             Some(msg) => Ok(msg.get("result").cloned().unwrap_or(Value::Null)),
-            None => Err(LspError::Closed { method: method.into() }),
+            None => Err(LspError::Closed {
+                method: method.into(),
+            }),
         }
     }
 

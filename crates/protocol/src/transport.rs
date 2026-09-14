@@ -413,14 +413,18 @@ impl<S: Read + Write> Connection<S> {
     /// connected; the server speaks its Challenge first.
     pub fn over_stream(mut stream: S, secret: &BootSecret) -> Result<Self, TransportError> {
         let challenge_bytes = read_frame(&mut stream)?;
-        let challenge =
-            pb::Challenge::decode(challenge_bytes.as_slice()).map_err(|e| {
-                TransportError::Protocol {
-                    reason: format!("bad Challenge: {e}"),
-                }
-            })?;
+        let challenge = pb::Challenge::decode(challenge_bytes.as_slice()).map_err(|e| {
+            TransportError::Protocol {
+                reason: format!("bad Challenge: {e}"),
+            }
+        })?;
         let client_nonce = random_nonce()?;
-        let proof = secret.hmac_proof(&challenge.server_nonce, &client_nonce, PROTOCOL_MAJOR, PROTOCOL_MINOR);
+        let proof = secret.hmac_proof(
+            &challenge.server_nonce,
+            &client_nonce,
+            PROTOCOL_MAJOR,
+            PROTOCOL_MINOR,
+        );
         write_frame(
             &mut stream,
             &pb::Hello {

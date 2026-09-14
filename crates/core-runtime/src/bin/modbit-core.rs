@@ -32,7 +32,10 @@ fn main() {
     // modbit-execd child next to its own binary (the desktop never has
     // to export MODBIT_EXECD_ADDR by hand). The child is a daemon
     // lifetime companion; shell.run fails closed if it cannot start.
-    if std::env::var("MODBIT_EXECD_ADDR").map(|v| v.is_empty()).unwrap_or(true) {
+    if std::env::var("MODBIT_EXECD_ADDR")
+        .map(|v| v.is_empty())
+        .unwrap_or(true)
+    {
         match spawn_embedded_execd() {
             Ok(addr) => {
                 eprintln!("modbit-core: spawned modbit-execd on {addr}");
@@ -46,7 +49,7 @@ fn main() {
         }
     }
 
-eprintln!("boot: services");
+    eprintln!("boot: services");
     let mut services = CoreServices::new(store.clone());
     if let Some(source) = modbit_core_runtime::scheduler::EnvWorktreeSource::from_env() {
         services = services.with_task_worktrees(std::sync::Arc::new(source));
@@ -63,7 +66,7 @@ eprintln!("boot: services");
         ));
     }
 
-eprintln!("boot: worktree source attached");
+    eprintln!("boot: worktree source attached");
     // The single scheduler (docs/14): tails the store for task_started and
     // owns every run. Started in every host mode so runs begin whichever
     // surface executed the command (socket or HTTP daemon).
@@ -103,25 +106,23 @@ eprintln!("boot: worktree source attached");
     };
     let services = Arc::new(services);
 
-eprintln!("boot: scheduler spawned");
+    eprintln!("boot: scheduler spawned");
     // Optional multi-client HTTP+SSE daemon (headless mode):
     // MODBIT_HTTP_ADDR=127.0.0.1:0 binds it alongside the socket transport.
     // M4.1: the SSE client-cursor journal lives next to the durable store
     // and survives restarts (append+flush per advanced batch).
     if let Ok(addr) = std::env::var("MODBIT_HTTP_ADDR") {
-        let journal_path = std::path::PathBuf::from(&db)
-            .with_file_name("protocol-state.jsonl");
-        let protocol_state =
-            match modbit_protocol_state::ProtocolStateStore::open(&journal_path) {
-                Ok(state) => Some(std::sync::Arc::new(std::sync::Mutex::new(state))),
-                Err(e) => {
-                    eprintln!(
-                        "modbit-core: protocol-state journal unavailable at {}: {e}",
-                        journal_path.display()
-                    );
-                    None
-                }
-            };
+        let journal_path = std::path::PathBuf::from(&db).with_file_name("protocol-state.jsonl");
+        let protocol_state = match modbit_protocol_state::ProtocolStateStore::open(&journal_path) {
+            Ok(state) => Some(std::sync::Arc::new(std::sync::Mutex::new(state))),
+            Err(e) => {
+                eprintln!(
+                    "modbit-core: protocol-state journal unavailable at {}: {e}",
+                    journal_path.display()
+                );
+                None
+            }
+        };
         match modbit_core_runtime::daemon::Daemon::bind_with_protocol_state(
             &addr,
             store.clone(),
@@ -198,13 +199,20 @@ eprintln!("boot: scheduler spawned");
 fn spawn_embedded_execd() -> Result<String, String> {
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     // Windows binaries carry the .exe suffix; both live beside the core.
-    let execd_name = if cfg!(windows) { "modbit-execd.exe" } else { "modbit-execd" };
+    let execd_name = if cfg!(windows) {
+        "modbit-execd.exe"
+    } else {
+        "modbit-execd"
+    };
     let execd_path = exe
         .parent()
         .ok_or("no parent dir for core binary")?
         .join(execd_name);
     if !execd_path.is_file() {
-        return Err(format!("no modbit-execd beside the core ({})", execd_path.display()));
+        return Err(format!(
+            "no modbit-execd beside the core ({})",
+            execd_path.display()
+        ));
     }
     let mut child = std::process::Command::new(&execd_path)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")

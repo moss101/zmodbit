@@ -96,7 +96,11 @@ impl CronSpec {
         let day_restricted = self.day.values.len() != 31 || self.month.values.len() != 12;
         let day_ok = self.day.matches(d);
         let dow_ok = self.weekday.matches(dow) || (dow == 0 && self.weekday.matches(7));
-        let dom_dow = match (day_restricted, self.day.values.len() < 31, self.weekday.values.len() < 7) {
+        let dom_dow = match (
+            day_restricted,
+            self.day.values.len() < 31,
+            self.weekday.values.len() < 7,
+        ) {
             (true, true, true) => day_ok || dow_ok,
             _ => day_ok && dow_ok,
         };
@@ -182,17 +186,12 @@ impl AutomationEngine {
                         });
                         outcome.fired.push((a.automation_id.clone(), task_id));
                     }
-                    Err(e) => outcome
-                        .errors
-                        .push(format!("{}: {e}", a.automation_id)),
+                    Err(e) => outcome.errors.push(format!("{}: {e}", a.automation_id)),
                 }
             } else {
                 // Event path: consume events newer than the last consumed
                 // rowid; the newest matching rowid is the new watermark.
-                let consumed = a
-                    .last_fire_key
-                    .parse::<i64>()
-                    .unwrap_or(-1);
+                let consumed = a.last_fire_key.parse::<i64>().unwrap_or(-1);
                 let matches: Vec<i64> = self
                     .store
                     .with_conn(|conn| {
@@ -203,10 +202,9 @@ impl AutomationEngine {
                             )
                             .ok()?;
                         let rows = stmt
-                            .query_map(
-                                rusqlite::params![a.event_pattern, consumed],
-                                |r| r.get::<_, i64>(0),
-                            )
+                            .query_map(rusqlite::params![a.event_pattern, consumed], |r| {
+                                r.get::<_, i64>(0)
+                            })
                             .ok()?
                             .collect::<Result<Vec<_>, _>>()
                             .ok()?;
@@ -228,9 +226,7 @@ impl AutomationEngine {
                         });
                         outcome.fired.push((a.automation_id.clone(), task_id));
                     }
-                    Err(e) => outcome
-                        .errors
-                        .push(format!("{}: {e}", a.automation_id)),
+                    Err(e) => outcome.errors.push(format!("{}: {e}", a.automation_id)),
                 }
                 last_rowid = None;
             }
@@ -242,17 +238,15 @@ impl AutomationEngine {
     fn spawn_task(&self, a: &Automation) -> Result<String, String> {
         // The follow-up task lives in the default (first) session — the
         // daemon owns session kernels, automations ride them.
-        let session_id: String = self
-            .store
-            .with_conn(|conn| {
-                conn.query_row(
-                    "SELECT aggregate_id FROM events WHERE aggregate_type = 'session'
+        let session_id: String = self.store.with_conn(|conn| {
+            conn.query_row(
+                "SELECT aggregate_id FROM events WHERE aggregate_type = 'session'
                      ORDER BY rowid LIMIT 1",
-                    [],
-                    |r| r.get(0),
-                )
-                .map_err(|_| "no session exists yet".to_string())
-            })?;
+                [],
+                |r| r.get(0),
+            )
+            .map_err(|_| "no session exists yet".to_string())
+        })?;
         let session_id = modbit_domain::SessionId::parse(&session_id)
             .map_err(|e| format!("bad session: {e}"))?;
         let outcome = self
@@ -273,7 +267,8 @@ impl AutomationEngine {
                 },
             })
             .map_err(|e| e.to_string())?;
-        let task_id = aggregate_of(&self.store, &outcome).ok_or("automation fire produced no task")?;
+        let task_id =
+            aggregate_of(&self.store, &outcome).ok_or("automation fire produced no task")?;
         let tid = modbit_domain::TaskId::parse(&task_id).map_err(|e| e.to_string())?;
         self.processor
             .execute(Command {
@@ -291,10 +286,7 @@ impl AutomationEngine {
 
 /// The created aggregate id equals the creation event's aggregate —
 /// resolve it from the outcome's first appended event.
-fn aggregate_of(
-    store: &EventStore,
-    outcome: &modbit_event_store::Outcome,
-) -> Option<String> {
+fn aggregate_of(store: &EventStore, outcome: &modbit_event_store::Outcome) -> Option<String> {
     let event_ids = match outcome {
         modbit_event_store::Outcome::Applied { event_ids }
         | modbit_event_store::Outcome::Replayed { event_ids } => event_ids,

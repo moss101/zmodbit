@@ -80,7 +80,10 @@ impl ChatMessage {
     }
 
     /// Assistant message carrying issued tool calls.
-    pub fn assistant_with_tool_calls(content: impl Into<String>, tool_calls: Vec<ToolCallData>) -> Self {
+    pub fn assistant_with_tool_calls(
+        content: impl Into<String>,
+        tool_calls: Vec<ToolCallData>,
+    ) -> Self {
         ChatMessage {
             role: Role::Assistant,
             content: content.into(),
@@ -91,7 +94,11 @@ impl ChatMessage {
     }
 
     /// Tool result message answering `call_id`.
-    pub fn tool_result(call_id: impl Into<String>, content: impl Into<String>, is_error: bool) -> Self {
+    pub fn tool_result(
+        call_id: impl Into<String>,
+        content: impl Into<String>,
+        is_error: bool,
+    ) -> Self {
         ChatMessage {
             role: Role::Tool,
             content: content.into(),
@@ -203,7 +210,9 @@ pub fn openai_request_body(request: &ModelRequest) -> Value {
         });
         match m.role {
             Role::Assistant if !m.tool_calls.is_empty() => {
-                message["tool_calls"] = serde_json::json!(m.tool_calls.iter()
+                message["tool_calls"] = serde_json::json!(m
+                    .tool_calls
+                    .iter()
                     .map(|c| serde_json::json!({
                         "id": c.call_id,
                         "type": "function",
@@ -231,7 +240,9 @@ pub fn openai_request_body(request: &ModelRequest) -> Value {
         "stream_options": { "include_usage": true },
     });
     if !request.tools.is_empty() {
-        body["tools"] = serde_json::json!(request.tools.iter()
+        body["tools"] = serde_json::json!(request
+            .tools
+            .iter()
             .map(|t| serde_json::json!({
                 "type": "function",
                 "function": {
@@ -266,8 +277,8 @@ pub fn anthropic_request_body(request: &ModelRequest) -> Value {
                     blocks.push(serde_json::json!({ "type": "text", "text": m.content }));
                 }
                 for c in &m.tool_calls {
-                    let input: Value =
-                        serde_json::from_str(&c.arguments).unwrap_or(Value::Object(Default::default()));
+                    let input: Value = serde_json::from_str(&c.arguments)
+                        .unwrap_or(Value::Object(Default::default()));
                     blocks.push(serde_json::json!({
                         "type": "tool_use",
                         "id": c.call_id,
@@ -302,7 +313,9 @@ pub fn anthropic_request_body(request: &ModelRequest) -> Value {
         "stream": true,
     });
     if !request.tools.is_empty() {
-        body["tools"] = serde_json::json!(request.tools.iter()
+        body["tools"] = serde_json::json!(request
+            .tools
+            .iter()
             .map(|t| serde_json::json!({
                 "name": t.name,
                 "description": t.description,
@@ -316,7 +329,9 @@ pub fn anthropic_request_body(request: &ModelRequest) -> Value {
     // than sending a request the provider would reject.
     if let Some(effort) = request.reasoning_effort {
         let mapped: u64 = match effort {
-            crate::envelope::ReasoningEffort::Minimal | crate::envelope::ReasoningEffort::Low => 1024,
+            crate::envelope::ReasoningEffort::Minimal | crate::envelope::ReasoningEffort::Low => {
+                1024
+            }
             crate::envelope::ReasoningEffort::Medium => 4096,
             crate::envelope::ReasoningEffort::High => 8192,
         };
@@ -559,7 +574,10 @@ pub fn parse_anthropic_sse_payload(payload: &str) -> Option<StreamEvent> {
             match delta.get("type").and_then(|v| v.as_str()) {
                 Some("input_json_delta") => Some(StreamEvent::ToolCallDelta {
                     call_id: None,
-                    index: value.get("index").and_then(|v| v.as_u64()).map(|i| i as u32),
+                    index: value
+                        .get("index")
+                        .and_then(|v| v.as_u64())
+                        .map(|i| i as u32),
                     name: None,
                     arguments_delta: delta
                         .get("partial_json")
@@ -597,7 +615,10 @@ pub fn parse_anthropic_sse_payload(payload: &str) -> Option<StreamEvent> {
             };
             Some(StreamEvent::ToolCallDelta {
                 call_id: Some(id.to_string()),
-                index: value.get("index").and_then(|v| v.as_u64()).map(|i| i as u32),
+                index: value
+                    .get("index")
+                    .and_then(|v| v.as_u64())
+                    .map(|i| i as u32),
                 name: Some(name.to_string()),
                 arguments_delta,
             })
@@ -717,17 +738,21 @@ mod tests {
     fn openai_body_sends_tools_and_tool_result_turns() {
         let mut request = request();
         request.tools = vec![tool_definition()];
-        request.messages.push(ChatMessage::assistant_with_tool_calls(
-            "",
-            vec![ToolCallData {
-                call_id: "call-9".into(),
-                name: "fs.read".into(),
-                arguments: r#"{"path":"a.rs"}"#.into(),
-            }],
-        ));
         request
             .messages
-            .push(ChatMessage::tool_result("call-9", r#"{"lines": 12}"#, false));
+            .push(ChatMessage::assistant_with_tool_calls(
+                "",
+                vec![ToolCallData {
+                    call_id: "call-9".into(),
+                    name: "fs.read".into(),
+                    arguments: r#"{"path":"a.rs"}"#.into(),
+                }],
+            ));
+        request.messages.push(ChatMessage::tool_result(
+            "call-9",
+            r#"{"lines": 12}"#,
+            false,
+        ));
         let body = openai_request_body(&request);
         let tools = body["tools"].as_array().unwrap();
         assert_eq!(tools.len(), 1);
@@ -746,17 +771,21 @@ mod tests {
     fn anthropic_body_sends_tools_and_tool_result_turns() {
         let mut request = request();
         request.tools = vec![tool_definition()];
-        request.messages.push(ChatMessage::assistant_with_tool_calls(
-            "reading",
-            vec![ToolCallData {
-                call_id: "toolu-1".into(),
-                name: "fs.read".into(),
-                arguments: r#"{"path":"a.rs"}"#.into(),
-            }],
-        ));
         request
             .messages
-            .push(ChatMessage::tool_result("toolu-1", r#"{"lines": 12}"#, true));
+            .push(ChatMessage::assistant_with_tool_calls(
+                "reading",
+                vec![ToolCallData {
+                    call_id: "toolu-1".into(),
+                    name: "fs.read".into(),
+                    arguments: r#"{"path":"a.rs"}"#.into(),
+                }],
+            ));
+        request.messages.push(ChatMessage::tool_result(
+            "toolu-1",
+            r#"{"lines": 12}"#,
+            true,
+        ));
         let body = anthropic_request_body(&request);
         let tools = body["tools"].as_array().unwrap();
         assert_eq!(tools[0]["name"], "fs.read");
@@ -786,8 +815,10 @@ mod tests {
 
         let anthropic = anthropic_request_body(&request);
         assert_eq!(anthropic["thinking"]["type"], "enabled");
-        assert_eq!(anthropic["thinking"]["budget_tokens"], 2048,
-            "budget clamped under max_tokens (high=8192 → 4096/2)");
+        assert_eq!(
+            anthropic["thinking"]["budget_tokens"], 2048,
+            "budget clamped under max_tokens (high=8192 → 4096/2)"
+        );
 
         // Absent effort sends no reasoning parameters at all.
         request.reasoning_effort = None;
@@ -806,8 +837,10 @@ mod tests {
         request.max_output_tokens = 1024;
         request.reasoning_effort = Some(ReasoningEffort::High);
         let anthropic = anthropic_request_body(&request);
-        assert!(anthropic.get("thinking").is_none(),
-            "1024/2 = 512 < 1024 minimum budget");
+        assert!(
+            anthropic.get("thinking").is_none(),
+            "1024/2 = 512 < 1024 minimum budget"
+        );
     }
 
     #[test]
@@ -994,8 +1027,12 @@ mod tests {
             }
         }
         assert_eq!(events.len(), 3);
-        assert!(matches!(&events[0], StreamEvent::ToolRequest { call_id, name, .. } if call_id == "call-1" && name == "fs.read"));
-        assert!(matches!(&events[1], StreamEvent::ToolRequest { call_id, name, .. } if call_id == "call-2" && name == "fs.list"));
+        assert!(
+            matches!(&events[0], StreamEvent::ToolRequest { call_id, name, .. } if call_id == "call-1" && name == "fs.read")
+        );
+        assert!(
+            matches!(&events[1], StreamEvent::ToolRequest { call_id, name, .. } if call_id == "call-2" && name == "fs.list")
+        );
     }
 
     /// OpenAI usage chunk parses to a Usage stream event.

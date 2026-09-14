@@ -105,7 +105,10 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
             // Phase 6: sandbox=true wraps the spawn in the OS sandbox
             // (Seatbelt on macOS, Landlock on Linux).
             let cwd = get_str("cwd").map(std::path::PathBuf::from);
-            let sandbox = parsed.get("sandbox").and_then(|v| v.as_bool()).unwrap_or(false);
+            let sandbox = parsed
+                .get("sandbox")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
             let result = if sandbox && cfg!(target_os = "linux") {
                 // Route through the sbx-launcher helper (Landlock applied
                 // by the launcher before exec'ing the target).
@@ -181,7 +184,11 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
             let argv: Vec<String> = parsed
                 .get("argv")
                 .and_then(|v| v.as_array())
-                .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|x| x.as_str().map(String::from))
+                        .collect()
+                })
                 .unwrap_or_default();
             let cwd = get_str("cwd").map(std::path::PathBuf::from);
             let rows = parsed.get("rows").and_then(|v| v.as_u64()).unwrap_or(24) as u16;
@@ -221,7 +228,9 @@ fn handle_line(broker: &ExecBroker, line: &str) -> String {
             Ok(()) => serde_json::json!({ "ok": true }).to_string(),
             Err(e) => serde_json::json!({ "ok": false, "error": e.to_string() }).to_string(),
         },
-        "pty_list" => serde_json::json!({ "ok": true, "sessions": pty_broker().list() }).to_string(),
+        "pty_list" => {
+            serde_json::json!({ "ok": true, "sessions": pty_broker().list() }).to_string()
+        }
         other => {
             serde_json::json!({ "ok": false, "error": format!("unknown op {other:?}") }).to_string()
         }

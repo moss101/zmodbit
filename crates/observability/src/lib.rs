@@ -57,8 +57,7 @@ pub fn invocation_cost(model: &str, input_tokens: u64, output_tokens: u64) -> In
             model: model.to_string(),
             input_tokens,
             output_tokens,
-            cost_usd: (input_tokens as f64 / 1000.0) * i
-                + (output_tokens as f64 / 1000.0) * o,
+            cost_usd: (input_tokens as f64 / 1000.0) * i + (output_tokens as f64 / 1000.0) * o,
             priced: true,
         },
         None => InvocationCost {
@@ -126,7 +125,6 @@ impl CostTracker {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,7 +134,10 @@ mod tests {
     fn invocation_cost_uses_the_price_table() {
         let cost = invocation_cost("gpt-4o-mini", 1_000, 500);
         assert!(cost.priced);
-        assert!((cost.cost_usd - (0.00015 + 0.0003)).abs() < 1e-9, "{cost:?}");
+        assert!(
+            (cost.cost_usd - (0.00015 + 0.0003)).abs() < 1e-9,
+            "{cost:?}"
+        );
     }
 
     /// Unknown models report unpriced zeros — never a fabricated number.

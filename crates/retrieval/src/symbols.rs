@@ -97,15 +97,42 @@ fn def_query(lang: &str) -> Option<(Query, &'static [&'static str])> {
             (mod_item name: (identifier) @name)
             (type_item name: (type_identifier) @name)
             "#,
-            &["function", "struct", "enum", "trait", "module", "type_alias"],
+            &[
+                "function",
+                "struct",
+                "enum",
+                "trait",
+                "module",
+                "type_alias",
+            ],
         ),
         "typescript" => (
             TS_DEF_QUERY,
-            &["function", "function", "method", "class", "class", "interface", "type_alias", "enum", "function"],
+            &[
+                "function",
+                "function",
+                "method",
+                "class",
+                "class",
+                "interface",
+                "type_alias",
+                "enum",
+                "function",
+            ],
         ),
         "tsx" => (
             TS_DEF_QUERY,
-            &["function", "function", "method", "class", "class", "interface", "type_alias", "enum", "function"],
+            &[
+                "function",
+                "function",
+                "method",
+                "class",
+                "class",
+                "interface",
+                "type_alias",
+                "enum",
+                "function",
+            ],
         ),
         "javascript" => (
             r#"
@@ -168,9 +195,11 @@ pub fn parse_file(path: &str, bytes: &[u8]) -> FileSymbols {
         let mut cursor = QueryCursor::new();
         let mut matches = cursor.matches(&query, tree.root_node(), source);
         while let Some(m) = matches.next() {
-            let Some(name_node) = m.captures().iter().find(|c| {
-                query.capture_names()[c.index as usize] == "name"
-            }) else {
+            let Some(name_node) = m
+                .captures()
+                .iter()
+                .find(|c| query.capture_names()[c.index as usize] == "name")
+            else {
                 continue;
             };
             let name = name_node.node.utf8_text(source).unwrap_or("").to_string();
@@ -205,7 +234,8 @@ pub fn parse_file(path: &str, bytes: &[u8]) -> FileSymbols {
         }
     }
 
-    out.defs.sort_by(|a, b| (a.line, &a.name).cmp(&(b.line, &b.name)));
+    out.defs
+        .sort_by(|a, b| (a.line, &a.name).cmp(&(b.line, &b.name)));
     out
 }
 
@@ -288,10 +318,9 @@ pub fn parse_dep_strings(lang: &str, bytes: &[u8]) -> Vec<(String, DepKind)> {
             r#"(use_declaration argument: [(scoped_identifier) (identifier)] @dep)"#,
             DepKind::Rust,
         ),
-        "typescript" | "tsx" | "javascript" => (
-            r#"(import_statement source: (string) @dep)"#,
-            DepKind::Ts,
-        ),
+        "typescript" | "tsx" | "javascript" => {
+            (r#"(import_statement source: (string) @dep)"#, DepKind::Ts)
+        }
         "python" => (
             r#"[
                 (import_statement name: (dotted_name) @dep)
@@ -301,9 +330,15 @@ pub fn parse_dep_strings(lang: &str, bytes: &[u8]) -> Vec<(String, DepKind)> {
         ),
         _ => return Vec::new(),
     };
-    let Some(language) = language_for(lang) else { return Vec::new() };
-    let Ok(query) = Query::new(&language, query_text) else { return Vec::new() };
-    let Some(tree) = tree_for(lang, bytes) else { return Vec::new() };
+    let Some(language) = language_for(lang) else {
+        return Vec::new();
+    };
+    let Ok(query) = Query::new(&language, query_text) else {
+        return Vec::new();
+    };
+    let Some(tree) = tree_for(lang, bytes) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     let mut cursor = QueryCursor::new();
     let mut matches = cursor.matches(&query, tree.root_node(), bytes);
@@ -387,19 +422,43 @@ mod tests {
         assert!(ts.iter().all(|d| d.kind == "function" && d.line == 1));
 
         // Struct/class identity across languages.
-        assert!(index.definitions("TelemetrySink").iter().any(|d| d.kind == "struct" && d.path == "src/telemetry.rs" && d.line == 5));
-        assert!(index.definitions("TelemetrySink").iter().any(|d| d.kind == "class" && d.path == "src/telemetry.py" && d.line == 4));
-        assert!(index.definitions("TelemetrySink").iter().any(|d| d.kind == "interface" && d.path == "src/telemetry.ts" && d.line == 5));
+        assert!(index
+            .definitions("TelemetrySink")
+            .iter()
+            .any(|d| d.kind == "struct" && d.path == "src/telemetry.rs" && d.line == 5));
+        assert!(index
+            .definitions("TelemetrySink")
+            .iter()
+            .any(|d| d.kind == "class" && d.path == "src/telemetry.py" && d.line == 4));
+        assert!(index
+            .definitions("TelemetrySink")
+            .iter()
+            .any(|d| d.kind == "interface" && d.path == "src/telemetry.ts" && d.line == 5));
 
         // References: callers resolve, definition sites are excluded, and
         // recursion (self-reference) is a reference, not lost.
         let rust_refs = index.references("emit_telemetry");
-        assert!(rust_refs.contains(&SymbolRef { path: "src/caller.rs".into(), line: 2 }));
-        assert!(!rust_refs.contains(&SymbolRef { path: "src/telemetry.rs".into(), line: 1 }), "definition site excluded");
+        assert!(rust_refs.contains(&SymbolRef {
+            path: "src/caller.rs".into(),
+            line: 2
+        }));
+        assert!(
+            !rust_refs.contains(&SymbolRef {
+                path: "src/telemetry.rs".into(),
+                line: 1
+            }),
+            "definition site excluded"
+        );
 
         let py_refs = index.references("emit_telemetry");
-        assert!(py_refs.contains(&SymbolRef { path: "src/telemetry.py".into(), line: 2 }));
-        assert!(py_refs.contains(&SymbolRef { path: "src/caller.py".into(), line: 2 }));
+        assert!(py_refs.contains(&SymbolRef {
+            path: "src/telemetry.py".into(),
+            line: 2
+        }));
+        assert!(py_refs.contains(&SymbolRef {
+            path: "src/caller.py".into(),
+            line: 2
+        }));
 
         // Unknown names are empty on both axes.
         assert!(index.definitions("nope").is_empty());
@@ -408,17 +467,43 @@ mod tests {
         // A definition added to a NEW file immediately resolves
         // references that were indexed BEFORE the definition existed
         // (occurrence-span purity: refs are a query-time view).
-        index.index_file("src/late.rs", b"fn late_user() {\n    let _ = emit_telemetry(\"late\");\n}\n");
-        index.index_file("src/def_holder.rs", b"fn emit_telemetry(x: u8) -> u8 { x }\n");
+        index.index_file(
+            "src/late.rs",
+            b"fn late_user() {\n    let _ = emit_telemetry(\"late\");\n}\n",
+        );
+        index.index_file(
+            "src/def_holder.rs",
+            b"fn emit_telemetry(x: u8) -> u8 { x }\n",
+        );
         let defs = index.definitions("emit_telemetry");
-        assert!(defs.iter().any(|d| d.path == "src/def_holder.rs" && d.line == 1));
-        assert!(index.references("emit_telemetry").iter().any(|r| r.path == "src/late.rs" && r.line == 2));
+        assert!(defs
+            .iter()
+            .any(|d| d.path == "src/def_holder.rs" && d.line == 1));
+        assert!(index
+            .references("emit_telemetry")
+            .iter()
+            .any(|r| r.path == "src/late.rs" && r.line == 2));
 
         // Removing a file drops its surface from both axes.
         index.remove_file("src/telemetry.py");
-        assert!(!index.definitions("emit_telemetry").iter().any(|d| d.path == "src/telemetry.py"));
-        assert!(!index.references("emit_telemetry").iter().any(|r| r.path == "src/telemetry.py" && r.line == 2), "removed file's self-use gone");
-        assert!(index.references("emit_telemetry").iter().any(|r| r.path == "src/caller.py"), "unrelated files keep their references");
+        assert!(!index
+            .definitions("emit_telemetry")
+            .iter()
+            .any(|d| d.path == "src/telemetry.py"));
+        assert!(
+            !index
+                .references("emit_telemetry")
+                .iter()
+                .any(|r| r.path == "src/telemetry.py" && r.line == 2),
+            "removed file's self-use gone"
+        );
+        assert!(
+            index
+                .references("emit_telemetry")
+                .iter()
+                .any(|r| r.path == "src/caller.py"),
+            "unrelated files keep their references"
+        );
     }
 
     /// Unsupported languages parse to an empty surface (file stays

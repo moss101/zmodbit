@@ -16,8 +16,13 @@ fn main() {
     let stdin = std::io::stdin();
     for line in stdin.lock().lines() {
         let Ok(line) = line else { return };
-        let Ok(msg) = serde_json::from_str::<serde_json::Value>(&line) else { continue };
-        let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or_default();
+        let Ok(msg) = serde_json::from_str::<serde_json::Value>(&line) else {
+            continue;
+        };
+        let method = msg
+            .get("method")
+            .and_then(|m| m.as_str())
+            .unwrap_or_default();
         let id = msg.get("id").cloned();
         match method {
             "initialize" => reply(
@@ -39,8 +44,14 @@ fn main() {
                 }]}),
             ),
             "tools/call" => {
-                let name = msg.pointer("/params/name").and_then(|v| v.as_str()).unwrap_or("");
-                let args = msg.pointer("/params/arguments").cloned().unwrap_or_default();
+                let name = msg
+                    .pointer("/params/name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let args = msg
+                    .pointer("/params/arguments")
+                    .cloned()
+                    .unwrap_or_default();
                 let text = args
                     .get("text")
                     .and_then(|v| v.as_str())

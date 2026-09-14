@@ -20,7 +20,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("rbe{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -142,8 +151,13 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
         .map(String::from)
 }
 
-fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr) -> (Child, String, PathBuf) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+fn spawn_core(
+    repo_root: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String, PathBuf) {
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -184,9 +198,7 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -195,22 +207,26 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     std::mem::forget(execd);
     (child, daemon.expect("daemon addr"), db_path)
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -225,9 +241,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_ready_for_review(daemon: &str, task_id: &str) {
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -276,13 +295,17 @@ fn ungrounded_edit_proposal_is_refused_until_the_file_is_retrieved() {
             title: "edit carefully".into(),
             prompt: "Do it.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -290,11 +313,9 @@ fn ungrounded_edit_proposal_is_refused_until_the_file_is_retrieved() {
     wait_ready_for_review(&daemon, &task_id);
 
     // The durable conversation carries the tool results.
-    let conn = rusqlite::Connection::open_with_flags(
-        &db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .expect("open core db");
+    let conn =
+        rusqlite::Connection::open_with_flags(&db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("open core db");
     let conversation: String = {
         let mut stmt = conn
             .prepare(
@@ -323,12 +344,18 @@ fn ungrounded_edit_proposal_is_refused_until_the_file_is_retrieved() {
         visible.contains("\"preview_head\""),
         "the grounded proposal previews: {visible}"
     );
-    assert!(visible.contains("return 'howdy';"), "preview shows the proposed content");
+    assert!(
+        visible.contains("return 'howdy';"),
+        "preview shows the proposed content"
+    );
 
     // Nothing was ever written: the worktree file is untouched and no
     // checkpoint-carrying write (worktree_checkpointed) exists.
     let on_disk = std::fs::read_to_string(worktrees.join(&task_id).join("greet.js")).unwrap();
-    assert_eq!(on_disk, ORIGINAL, "a refused-then-previewed proposal writes nothing");
+    assert_eq!(
+        on_disk, ORIGINAL,
+        "a refused-then-previewed proposal writes nothing"
+    );
     let checkpoints: i64 = {
         let mut stmt = conn
             .prepare("SELECT COUNT(*) FROM events WHERE event_type = 'worktree_checkpointed'")

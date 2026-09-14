@@ -20,13 +20,23 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("deg{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
 
-const ORIGINAL: &str = "function step() {\n  return 'next';\n}\nfunction step() {\n  return 'next';\n}\n";
+const ORIGINAL: &str =
+    "function step() {\n  return 'next';\n}\nfunction step() {\n  return 'next';\n}\n";
 
 fn code_fixture(tag: &str) -> PathBuf {
     let root = tempdir(tag);
@@ -152,8 +162,13 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
         .map(String::from)
 }
 
-fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr) -> (Child, String, PathBuf) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+fn spawn_core(
+    repo_root: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String, PathBuf) {
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -194,9 +209,7 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -205,22 +218,26 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     std::mem::forget(execd);
     (child, daemon.expect("daemon addr"), db_path)
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -235,9 +252,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_ready_for_review(daemon: &str, task_id: &str) {
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -283,13 +303,17 @@ fn ambiguous_edit_fails_and_leaves_worktree_unchanged() {
             title: "ambiguous edit".into(),
             prompt: "Try the edit.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -304,7 +328,8 @@ fn ambiguous_edit_fails_and_leaves_worktree_unchanged() {
         .iter()
         .find(|m| m["role"] == "tool" && m["tool_call_id"] == "c1")
         .expect("the ambiguous edit's result");
-    let result: serde_json::Value = serde_json::from_str(tool["content"].as_str().unwrap()).unwrap();
+    let result: serde_json::Value =
+        serde_json::from_str(tool["content"].as_str().unwrap()).unwrap();
     assert_eq!(result["ok"], false, "the gate rejected the edit: {result}");
     assert_eq!(result["occurrences"], 2, "both occurrences counted");
 
@@ -324,11 +349,9 @@ fn ambiguous_edit_fails_and_leaves_worktree_unchanged() {
 
     // 3. The durable store holds NO checkpoint for a failed edit.
     drop(bodies);
-    let conn = rusqlite::Connection::open_with_flags(
-        &db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .expect("open core db");
+    let conn =
+        rusqlite::Connection::open_with_flags(&db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("open core db");
     let checkpoints: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM events WHERE event_type = 'worktree_checkpointed'",

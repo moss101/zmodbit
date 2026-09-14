@@ -63,10 +63,7 @@ pub fn estimate_tokens(text: &str) -> u64 {
 pub enum CompactionAction {
     /// Replace one tool-result item's content in place. The message (and
     /// its call-id linkage) survives — only the payload shrinks.
-    TruncateToolResult {
-        index: usize,
-        replacement: String,
-    },
+    TruncateToolResult { index: usize, replacement: String },
     /// Replace the contiguous range [start, end) with ONE user message
     /// carrying the epoch summary. The range must be block-aligned (start
     /// on an assistant message, end after that block's tool results) so
@@ -164,7 +161,10 @@ pub fn plan_compaction(items: &[ConversationItem], budget: u64) -> Option<Compac
         if current(&residual) <= budget {
             break;
         }
-        if items[index].kind != ItemKind::ToolResult || index >= recent || in_removed(&removed, index) {
+        if items[index].kind != ItemKind::ToolResult
+            || index >= recent
+            || in_removed(&removed, index)
+        {
             continue;
         }
         let replacement = truncated_replacement(&items[index].text);
@@ -177,7 +177,10 @@ pub fn plan_compaction(items: &[ConversationItem], budget: u64) -> Option<Compac
             index,
             replacement: replacement.clone(),
         });
-        summarized.push((None, format!("tool result truncated: {}", head_line(&items[index].text))));
+        summarized.push((
+            None,
+            format!("tool result truncated: {}", head_line(&items[index].text)),
+        ));
     }
 
     // Stage 2: summarize oldest blocks (after the initial user prompt).
@@ -209,9 +212,7 @@ pub fn plan_compaction(items: &[ConversationItem], budget: u64) -> Option<Compac
         );
         let replacement = format!(
             "[context epoch] {} tool-call block(s) compacted ({} estimated tokens): {}",
-            1,
-            block_tokens,
-            manifest.compressed_projection
+            1, block_tokens, manifest.compressed_projection
         );
         let replacement_tokens = estimate_tokens(&replacement);
         if replacement_tokens >= block_tokens {
@@ -252,7 +253,10 @@ pub fn plan_compaction(items: &[ConversationItem], budget: u64) -> Option<Compac
             index,
             replacement: replacement.clone(),
         });
-        summarized.push((None, format!("tool result truncated: {}", head_line(&items[index].text))));
+        summarized.push((
+            None,
+            format!("tool result truncated: {}", head_line(&items[index].text)),
+        ));
     }
 
     if actions.is_empty() {
@@ -267,7 +271,11 @@ pub fn plan_compaction(items: &[ConversationItem], budget: u64) -> Option<Compac
 }
 
 fn head_line(text: &str) -> String {
-    text.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim().to_string()
+    text.lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .trim()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -307,16 +315,20 @@ mod tests {
         let items = conversation();
         // Budget forces truncation but leaves the recent block intact.
         let plan = plan_compaction(&items, 2_500).expect("must plan");
-        assert!(plan.projected_tokens <= 2_500, "projection fits: {}", plan.projected_tokens);
+        assert!(
+            plan.projected_tokens <= 2_500,
+            "projection fits: {}",
+            plan.projected_tokens
+        );
         // The FIRST (oldest) tool result is truncated; the LAST is not.
-        assert!(plan.actions.iter().any(|a| matches!(
-            a,
-            CompactionAction::TruncateToolResult { index: 2, .. }
-        )));
-        assert!(!plan.actions.iter().any(|a| matches!(
-            a,
-            CompactionAction::TruncateToolResult { index: 6, .. }
-        )));
+        assert!(plan
+            .actions
+            .iter()
+            .any(|a| matches!(a, CompactionAction::TruncateToolResult { index: 2, .. })));
+        assert!(!plan
+            .actions
+            .iter()
+            .any(|a| matches!(a, CompactionAction::TruncateToolResult { index: 6, .. })));
         // Truncation replaces content but keeps linkage: the action set
         // never removes a message.
         assert!(plan
@@ -338,7 +350,11 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert!(!summaries.is_empty(), "blocks summarized: {:?}", plan.actions);
+        assert!(
+            !summaries.is_empty(),
+            "blocks summarized: {:?}",
+            plan.actions
+        );
         // ...never index 0 (the prompt) and never the recent block.
         for (start, end) in &summaries {
             assert!(*start >= 1);
@@ -354,10 +370,9 @@ mod tests {
         let items = conversation();
         let plan = plan_compaction(&items, 10).expect("must plan");
         assert!(
-            plan.actions.iter().any(|a| matches!(
-                a,
-                CompactionAction::TruncateToolResult { index: 6, .. }
-            )),
+            plan.actions
+                .iter()
+                .any(|a| matches!(a, CompactionAction::TruncateToolResult { index: 6, .. })),
             "recent result truncated only as last resort"
         );
     }

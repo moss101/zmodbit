@@ -60,9 +60,7 @@ fn cdp_bridge_drives_a_real_chromium_end_to_end() {
         Err(e) => {
             // Runner browser broken/unstartable = recorded environment
             // gap; the real-Chromium proof runs where a browser works.
-            println!(
-                "cdp e2e skipped: browser at {bin:?} cannot launch here (recorded gap): {e}"
-            );
+            println!("cdp e2e skipped: browser at {bin:?} cannot launch here (recorded gap): {e}");
             stop.store(true, std::sync::atomic::Ordering::Relaxed);
             return;
         }
@@ -91,14 +89,23 @@ fn cdp_bridge_drives_a_real_chromium_end_to_end() {
     // fingerprint moved and the delta names exactly the added element.
     let state2 = browser.snapshot().expect("snapshot after action");
     assert!(
-        state2.elements.iter().any(|e| e.role == "button" && e.name.contains("Added")),
-        "added button in post-action state: {:?}", state2.elements
+        state2
+            .elements
+            .iter()
+            .any(|e| e.role == "button" && e.name.contains("Added")),
+        "added button in post-action state: {:?}",
+        state2.elements
     );
-    assert_ne!(state2.fingerprint, state.fingerprint, "state fingerprint moved");
+    assert_ne!(
+        state2.fingerprint, state.fingerprint,
+        "state fingerprint moved"
+    );
     let (added, removed) = state2.delta(&state);
     assert_eq!(removed.len(), 0);
     assert!(
-        added.iter().any(|r| r.contains("button") && r.contains("Added")),
+        added
+            .iter()
+            .any(|r| r.contains("button") && r.contains("Added")),
         "delta names the added button: {added:?}"
     );
 
@@ -123,7 +130,9 @@ fn cdp_bridge_drives_a_real_chromium_end_to_end() {
     // network drains the request and its 200 response.
     let (requests, responses) = browser.network();
     assert!(
-        requests.iter().any(|r| r.contains("GET") && r.contains("/api")),
+        requests
+            .iter()
+            .any(|r| r.contains("GET") && r.contains("/api")),
         "request observed: {requests:?}"
     );
     assert!(
@@ -172,13 +181,17 @@ fn hostile_page_content_stays_inert_data() {
             return;
         }
     };
-    browser.navigate(&format!("http://{addr}/")).expect("navigate");
+    browser
+        .navigate(&format!("http://{addr}/"))
+        .expect("navigate");
 
     // The injection string arrives as PAGE TEXT — data a model may read,
     // never an instruction the runtime obeys. The browser layer's
     // contract: text passes through verbatim, nothing in the transport
     // parses or executes it.
-    let text = browser.action("document.body.innerText").expect("text read");
+    let text = browser
+        .action("document.body.innerText")
+        .expect("text read");
     let text: String = serde_json::from_value(text).expect("string");
     assert!(
         text.contains("IGNORE ALL PREVIOUS INSTRUCTIONS"),

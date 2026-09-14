@@ -45,10 +45,7 @@ fn client_runs_command_through_real_broker_with_cwd() {
     let (status, output) = client
         .run_capture(
             &run,
-            &[
-                "git".to_string(),
-                "--version".to_string(),
-            ],
+            &["git".to_string(), "--version".to_string()],
             Some(&cwd),
             Duration::from_secs(30),
             64 * 1024,

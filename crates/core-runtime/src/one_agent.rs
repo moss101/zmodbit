@@ -253,7 +253,12 @@ pub struct OneAgentRuntime<'a> {
 pub trait ApprovalGate: Send + Sync {
     /// Returns Some("approved") once the operator approves, Some("denied")
     /// when refused, or None on wait timeout/shutdown.
-    fn await_decision(&self, intent_hash: &str, tool: &str, arguments: &serde_json::Value) -> Option<String>;
+    fn await_decision(
+        &self,
+        intent_hash: &str,
+        tool: &str,
+        arguments: &serde_json::Value,
+    ) -> Option<String>;
 }
 
 impl<'a> OneAgentRuntime<'a> {
@@ -402,31 +407,26 @@ impl<'a> OneAgentRuntime<'a> {
                     .map(|m| modbit_compaction::hot_path::estimate_tokens(&m.content))
                     .sum();
                 if estimate > task.max_input_tokens / 5 {
-                    let snapshot: Vec<modbit_compaction::hot_path::ConversationItem> =
-                        conversation
-                            .iter()
-                            .map(|m| {
-                                use modbit_compaction::hot_path::ItemKind;
-                                modbit_compaction::hot_path::ConversationItem {
-                                    kind: match m.role {
-                                        modbit_providers::gateway::Role::User => {
-                                            ItemKind::UserTurn
+                    let snapshot: Vec<modbit_compaction::hot_path::ConversationItem> = conversation
+                        .iter()
+                        .map(|m| {
+                            use modbit_compaction::hot_path::ItemKind;
+                            modbit_compaction::hot_path::ConversationItem {
+                                kind: match m.role {
+                                    modbit_providers::gateway::Role::User => ItemKind::UserTurn,
+                                    modbit_providers::gateway::Role::Assistant => {
+                                        if m.tool_calls.is_empty() {
+                                            ItemKind::AssistantText
+                                        } else {
+                                            ItemKind::AssistantToolCalls
                                         }
-                                        modbit_providers::gateway::Role::Assistant => {
-                                            if m.tool_calls.is_empty() {
-                                                ItemKind::AssistantText
-                                            } else {
-                                                ItemKind::AssistantToolCalls
-                                            }
-                                        }
-                                        modbit_providers::gateway::Role::Tool => {
-                                            ItemKind::ToolResult
-                                        }
-                                    },
-                                    text: m.content.clone(),
-                                }
-                            })
-                            .collect();
+                                    }
+                                    modbit_providers::gateway::Role::Tool => ItemKind::ToolResult,
+                                },
+                                text: m.content.clone(),
+                            }
+                        })
+                        .collect();
                     let epoch = structure_epoch;
                     let budget = task.max_input_tokens;
                     let slot = precomputed.clone();
@@ -475,9 +475,7 @@ impl<'a> OneAgentRuntime<'a> {
                 let candidate: Option<modbit_compaction::hot_path::CompactionPlan> = {
                     let (lock, signal) = &*precomputed;
                     let mut slot = lock.lock().expect("precomputed slot");
-                    if slot.is_none()
-                        && worker_pending.load(std::sync::atomic::Ordering::SeqCst)
-                    {
+                    if slot.is_none() && worker_pending.load(std::sync::atomic::Ordering::SeqCst) {
                         let (guard, _timeout) = signal
                             .wait_timeout(slot, std::time::Duration::from_millis(5))
                             .expect("precomputed slot");
@@ -493,7 +491,10 @@ impl<'a> OneAgentRuntime<'a> {
                     }
                 };
                 if let Some(plan) = candidate {
-                    let before: u64 = view.iter().map(|i| modbit_compaction::hot_path::estimate_tokens(&i.text)).sum();
+                    let before: u64 = view
+                        .iter()
+                        .map(|i| modbit_compaction::hot_path::estimate_tokens(&i.text))
+                        .sum();
                     // Apply actions in reverse order so earlier indices
                     // stay valid while ranges are replaced.
                     let mut affected: u32 = 0;
@@ -507,7 +508,11 @@ impl<'a> OneAgentRuntime<'a> {
                                     }
                                 }
                             }
-                            CompactionAction::SummarizeBlock { start, end, replacement } => {
+                            CompactionAction::SummarizeBlock {
+                                start,
+                                end,
+                                replacement,
+                            } => {
                                 if *start < *end && *end <= conversation.len() {
                                     affected += (end - start) as u32;
                                     conversation.splice(
@@ -518,8 +523,7 @@ impl<'a> OneAgentRuntime<'a> {
                             }
                         }
                     }
-                    let projection =
-                        serde_json::to_vec(&plan.manifest).unwrap_or_default();
+                    let projection = serde_json::to_vec(&plan.manifest).unwrap_or_default();
                     if let Ok(epoch) =
                         epochs.compact(&current_epoch.epoch_id, turns_used as u64, &projection)
                     {
@@ -734,16 +738,14 @@ impl<'a> OneAgentRuntime<'a> {
                 // call blocks on the operator decision. A still-ungranted
                 // effect after approval is still refused (the gate grants
                 // the decision, never the capability).
-                let mut decision =
-                    self.kernel.check(&request, &self.grants.snapshot());
-                if let (Some(gate), PolicyDecision::Deny { .. }) =
-                    (self.approval_gate, &decision)
-                {
+                let mut decision = self.kernel.check(&request, &self.grants.snapshot());
+                if let (Some(gate), PolicyDecision::Deny { .. }) = (self.approval_gate, &decision) {
                     let class_protected =
                         request.effect_class != modbit_policy::EffectClass::ReadOnly;
                     if class_protected {
                         let intent = modbit_policy::approvals::intent_hash(&request);
-                        if gate.await_decision(&intent, &request.tool, &request.arguments)
+                        if gate
+                            .await_decision(&intent, &request.tool, &request.arguments)
                             .as_deref()
                             == Some("approved")
                         {
@@ -934,7 +936,10 @@ mod tests {
         assert_eq!(snap.input_tokens, 1_000);
         assert_eq!(snap.output_tokens, 500);
         // gpt-4o-mini: $0.00015/1k in + $0.0006/1k out.
-        assert!((snap.cost_usd - (0.00015 + 0.0006 * 0.5)).abs() < 1e-9, "{snap:?}");
+        assert!(
+            (snap.cost_usd - (0.00015 + 0.0006 * 0.5)).abs() < 1e-9,
+            "{snap:?}"
+        );
     }
 
     fn live_grants(values: &[CapabilityGrant]) -> crate::scheduler::LiveGrants {
@@ -1104,7 +1109,10 @@ mod tests {
         assert_eq!(assistant.tool_calls.len(), 1);
         assert_eq!(assistant.tool_calls[0].call_id, "call-1");
         assert_eq!(assistant.tool_calls[0].name, "modbit.file.read");
-        assert_eq!(assistant.tool_calls[0].arguments, r#"{"path":"src/lib.rs"}"#);
+        assert_eq!(
+            assistant.tool_calls[0].arguments,
+            r#"{"path":"src/lib.rs"}"#
+        );
         // Tool result answers the same call id with the result JSON.
         let tool = &second.messages[2];
         assert_eq!(tool.role, Role::Tool);
@@ -1311,7 +1319,8 @@ mod tests {
 
     /// A runaway tool loop is bounded by max_turns and fails closed.
     #[test]
-    fn runaway_tool_loop_is_bounded() {        let endless = || {
+    fn runaway_tool_loop_is_bounded() {
+        let endless = || {
             vec![StreamEvent::ToolRequest {
                 call_id: format!("call-{}", rand_suffix()),
                 name: "modbit.file.read".into(),
@@ -1351,7 +1360,7 @@ mod tests {
             control: None,
             resume_conversation: None,
             async_compaction: false,
-                    cost_tracker: None,
+            cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1409,9 +1418,7 @@ mod tests {
                 "modbit.file.read",
                 "1.0.0",
                 EffectClass::ReadOnly,
-                Arc::new(move |_args| {
-                    Ok(serde_json::json!({ "content": big_result }))
-                }),
+                Arc::new(move |_args| Ok(serde_json::json!({ "content": big_result }))),
             )
             .unwrap();
         let kernel = PolicyKernel::new(vec![]);
@@ -1461,7 +1468,11 @@ mod tests {
         let events = observer.events.lock().unwrap();
         assert!(!events.is_empty(), "compaction observed");
         assert!(events[0].2 > 0, "reclaimed tokens positive");
-        assert!(events[0].0.starts_with("epoch-"), "epoch lineage: {}", events[0].0);
+        assert!(
+            events[0].0.starts_with("epoch-"),
+            "epoch lineage: {}",
+            events[0].0
+        );
 
         // Default budget: the SAME run shape sends the result verbatim.
         let transport = StubTransport::new(vec![
@@ -1603,7 +1614,7 @@ mod tests {
             control: Some(&control),
             resume_conversation: None,
             async_compaction: false,
-                    cost_tracker: None,
+            cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1653,7 +1664,7 @@ mod tests {
             control: Some(&control),
             resume_conversation: None,
             async_compaction: false,
-                    cost_tracker: None,
+            cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1698,7 +1709,7 @@ mod tests {
             control: None,
             resume_conversation: Some(checkpoint),
             async_compaction: false,
-                    cost_tracker: None,
+            cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();
@@ -1712,7 +1723,9 @@ mod tests {
         assert_eq!(messages[2].tool_call_id.as_deref(), Some("c1"));
         let note = &messages[3];
         assert_eq!(note.role, Role::User);
-        assert!(note.content.contains("previous run attempt was interrupted"));
+        assert!(note
+            .content
+            .contains("previous run attempt was interrupted"));
     }
 
     /// M4.2: a plan precomputed off the turn thread applies at the next
@@ -1791,9 +1804,7 @@ mod tests {
             .filter(|m| m.role == Role::Tool)
             .collect();
         assert!(!tools.is_empty());
-        assert!(tools
-            .iter()
-            .any(|m| m.content.contains("[compacted:")));
+        assert!(tools.iter().any(|m| m.content.contains("[compacted:")));
     }
 
     /// M4.2 freshness semantics: plans are index-based, so APPENDED
@@ -1889,9 +1900,7 @@ mod tests {
             .iter()
             .filter(|m| m.role == Role::Tool)
             .collect();
-        assert!(tools
-            .iter()
-            .any(|m| m.content.contains("[compacted:")));
+        assert!(tools.iter().any(|m| m.content.contains("[compacted:")));
         let steered_request_has_note = seen[2]
             .messages
             .iter()
@@ -1950,7 +1959,7 @@ mod tests {
             control: Some(&*control),
             resume_conversation: None,
             async_compaction: false,
-                    cost_tracker: None,
+            cost_tracker: None,
         };
 
         let result = rt.run(&task()).unwrap();

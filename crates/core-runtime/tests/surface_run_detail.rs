@@ -16,7 +16,10 @@ use modbit_git::GitRepo;
 use modbit_protocol::modbit::protocol::v1 as pb;
 
 fn tempdir(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("modbit-surface-{tag}-{}", uuid::Uuid::now_v7().simple()));
+    let dir = std::env::temp_dir().join(format!(
+        "modbit-surface-{tag}-{}",
+        uuid::Uuid::now_v7().simple()
+    ));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -36,7 +39,7 @@ impl modbit_core_runtime::scheduler::WorktreeSource for TestSource {
             branch: format!("modbit/{}", &task_id[..12]),
             base_revision: self.base_revision.clone(),
             start_point: None,
-})
+        })
     }
 
     fn repo_root(&self) -> Option<PathBuf> {
@@ -71,8 +74,13 @@ fn setup_with_base(
     processor
         .execute(Command {
             command_id: uuid::Uuid::now_v7().to_string(),
-            actor: Actor { actor_type: ActorType::User, actor_id: "t".into() },
-            payload: CommandPayload::CreateSession { display_name: "s".into() },
+            actor: Actor {
+                actor_type: ActorType::User,
+                actor_id: "t".into(),
+            },
+            payload: CommandPayload::CreateSession {
+                display_name: "s".into(),
+            },
         })
         .unwrap();
     let sid: String = store
@@ -87,15 +95,18 @@ fn setup_with_base(
     processor
         .execute(Command {
             command_id: uuid::Uuid::now_v7().to_string(),
-            actor: Actor { actor_type: ActorType::User, actor_id: "t".into() },
+            actor: Actor {
+                actor_type: ActorType::User,
+                actor_id: "t".into(),
+            },
             payload: CommandPayload::CreateTask {
                 session_id: modbit_domain::SessionId::parse(&sid).unwrap(),
                 title: "task".into(),
                 prompt: "prompt".into(),
                 repo_id: None,
-    base_branch: None,
-    parent_task_id: None,
-},
+                base_branch: None,
+                parent_task_id: None,
+            },
         })
         .unwrap();
     let tid: String = store
@@ -115,7 +126,10 @@ fn setup_with_base(
         processor
             .execute(Command {
                 command_id: uuid::Uuid::now_v7().to_string(),
-                actor: Actor { actor_type: ActorType::User, actor_id: "t".into() },
+                actor: Actor {
+                    actor_type: ActorType::User,
+                    actor_id: "t".into(),
+                },
                 payload,
             })
             .unwrap();
@@ -124,7 +138,8 @@ fn setup_with_base(
     // Allocate the task worktree exactly like the scheduler does.
     let worktree_root = tempdir(&format!("{tag}-wt"));
     let branch = format!("modbit/{}", &tid[..12]);
-    repo.worktree_add(&worktree_root.join(&tid), &branch).unwrap();
+    repo.worktree_add(&worktree_root.join(&tid), &branch)
+        .unwrap();
     let base_revision = repo.head().unwrap();
 
     let services = services.with_task_worktrees(Arc::new(TestSource {
@@ -139,7 +154,10 @@ fn roundtrip(
     services: &CoreServices,
     request: pb::surface_request::Request,
 ) -> pb::SurfaceResponse {
-    let bytes = pb::SurfaceRequest { request: Some(request) }.encode_to_vec();
+    let bytes = pb::SurfaceRequest {
+        request: Some(request),
+    }
+    .encode_to_vec();
     let response = services.handle(&bytes);
     pb::SurfaceResponse::decode(response.as_slice()).unwrap()
 }
@@ -159,7 +177,9 @@ fn steer_pause_stop_transition_the_task_through_the_surface() {
 
     let resp = roundtrip(
         &services,
-        pb::surface_request::Request::PauseTask(pb::PauseTaskCommand { task_id: tid.clone() }),
+        pb::surface_request::Request::PauseTask(pb::PauseTaskCommand {
+            task_id: tid.clone(),
+        }),
     );
     assert!(resp.ok, "{:?}", resp.error);
     let state = _store
@@ -169,7 +189,10 @@ fn steer_pause_stop_transition_the_task_through_the_surface() {
             })
         })
         .unwrap();
-    assert!(state.starts_with("waiting"), "paused → waiting, got {state}");
+    assert!(
+        state.starts_with("waiting"),
+        "paused → waiting, got {state}"
+    );
 
     let resp = roundtrip(
         &services,
@@ -186,7 +209,10 @@ fn steer_pause_stop_transition_the_task_through_the_surface() {
             })
         })
         .unwrap();
-    assert!(state.starts_with("cancelled"), "stopped → cancelled, got {state}");
+    assert!(
+        state.starts_with("cancelled"),
+        "stopped → cancelled, got {state}"
+    );
 }
 
 #[test]
@@ -201,16 +227,28 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
     let turn_id = modbit_domain::TurnId::generate();
     let step_id = modbit_domain::RunStepId::generate();
     let envelopes = [
-        (modbit_domain::events::AggregateType::Run, run_id.to_string(),
-         modbit_domain::DomainEvent::RunStarted { task_id, attempt: 1 }),
-        (modbit_domain::events::AggregateType::Turn, turn_id.to_string(),
-         modbit_domain::DomainEvent::TurnPrepared { run_id, ordinal: 1 }),
-        (modbit_domain::events::AggregateType::RunStep, step_id.to_string(),
-         modbit_domain::DomainEvent::RunStepPrepared {
-             turn_id,
-             step_type: modbit_domain::events::StepType::ModelInvoke,
-             ordinal: 1,
-         }),
+        (
+            modbit_domain::events::AggregateType::Run,
+            run_id.to_string(),
+            modbit_domain::DomainEvent::RunStarted {
+                task_id,
+                attempt: 1,
+            },
+        ),
+        (
+            modbit_domain::events::AggregateType::Turn,
+            turn_id.to_string(),
+            modbit_domain::DomainEvent::TurnPrepared { run_id, ordinal: 1 },
+        ),
+        (
+            modbit_domain::events::AggregateType::RunStep,
+            step_id.to_string(),
+            modbit_domain::DomainEvent::RunStepPrepared {
+                turn_id,
+                step_type: modbit_domain::events::StepType::ModelInvoke,
+                ordinal: 1,
+            },
+        ),
     ];
     let mut batch = Vec::new();
     for (aggregate, aggregate_id, payload) in envelopes {
@@ -227,7 +265,10 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
             event_type: modbit_domain::EventEnvelope::event_type_of(&payload).to_string(),
             schema_version: modbit_domain::SCHEMA_VERSION,
             occurred_at: "2026-09-05T00:00:00.000Z".into(),
-            actor: Actor { actor_type: ActorType::System, actor_id: "t".into() },
+            actor: Actor {
+                actor_type: ActorType::System,
+                actor_id: "t".into(),
+            },
             causation_id: None,
             correlation_id: None,
             payload,
@@ -242,7 +283,9 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
 
     let resp = roundtrip(
         &services,
-        pb::surface_request::Request::GetRunDetail(pb::GetRunDetailRequest { task_id: tid.clone() }),
+        pb::surface_request::Request::GetRunDetail(pb::GetRunDetailRequest {
+            task_id: tid.clone(),
+        }),
     );
     assert!(resp.ok, "{:?}", resp.error);
     let detail = resp.run_detail.unwrap();
@@ -256,12 +299,18 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
     std::fs::write(worktree_root.join(&tid).join("f.txt"), "one\ntwo\n").unwrap();
     let resp = roundtrip(
         &services,
-        pb::surface_request::Request::GetDiff(pb::GetDiffRequest { task_id: tid.clone() }),
+        pb::surface_request::Request::GetDiff(pb::GetDiffRequest {
+            task_id: tid.clone(),
+        }),
     );
     assert!(resp.ok, "{:?}", resp.error);
     let diff = resp.diff.unwrap();
     assert_eq!(diff.task_id, tid);
-    assert!(diff.files.iter().any(|f| f.path == "f.txt"), "{:?}", diff.files);
+    assert!(
+        diff.files.iter().any(|f| f.path == "f.txt"),
+        "{:?}",
+        diff.files
+    );
 
     // An agent that COMMITS its work must not empty the diff: GetDiff is
     // bound to the task's base revision, not the worktree's moved HEAD
@@ -275,7 +324,9 @@ fn run_detail_assembles_run_turns_and_steps_diff_reads_worktree() {
     repo.commit_all("agent commits its work").unwrap();
     let resp = roundtrip(
         &services,
-        pb::surface_request::Request::GetDiff(pb::GetDiffRequest { task_id: tid.clone() }),
+        pb::surface_request::Request::GetDiff(pb::GetDiffRequest {
+            task_id: tid.clone(),
+        }),
     );
     assert!(resp.ok, "{:?}", resp.error);
     let diff = resp.diff.unwrap();
@@ -313,7 +364,10 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
         .iter()
         .map(|h| (h.path.clone(), h.new_start))
         .collect();
-    assert_eq!(hunks, vec![("f.txt".to_string(), 2), ("f.txt".to_string(), 4)]);
+    assert_eq!(
+        hunks,
+        vec![("f.txt".to_string(), 2), ("f.txt".to_string(), 4)]
+    );
     let hunk2 = view
         .hunks
         .iter()
@@ -334,13 +388,12 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
             path: "f.txt".into(),
             new_start: 2,
             accepted: false,
-        
+
             revision: String::new(),
         }),
     );
     assert!(resp.ok, "{:?}", resp.error);
-    let after_reject =
-        std::fs::read_to_string(worktree.join("f.txt")).unwrap();
+    let after_reject = std::fs::read_to_string(worktree.join("f.txt")).unwrap();
     assert_eq!(after_reject, "line1\nline2\nline3\nline4-EDIT\nline5\n");
 
     // Accept the second hunk: decision recorded, worktree untouched.
@@ -351,7 +404,7 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
             path: "f.txt".into(),
             new_start: 4,
             accepted: true,
-        
+
             revision: String::new(),
         }),
     );
@@ -436,7 +489,10 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
     assert_eq!(view.comments.len(), 1, "{:?}", view.comments);
     assert_eq!(view.comments[0].new_start, 4);
     assert!(view.comments[0].body.contains("keep this change"));
-    assert_eq!(view.comments[0].revision, view.base_revision, "bound to the live revision");
+    assert_eq!(
+        view.comments[0].revision, view.base_revision,
+        "bound to the live revision"
+    );
 
     // The generated checklist: deterministic, revision-bound, and the
     // commented hunk no longer nags for review.
@@ -455,7 +511,9 @@ fn hunk_review_lists_hunks_rejects_one_and_records_decisions() {
         "{texts:?}"
     );
     assert!(
-        !texts.iter().any(|t| t.contains("Comment or accept/reject f.txt @4")),
+        !texts
+            .iter()
+            .any(|t| t.contains("Comment or accept/reject f.txt @4")),
         "the commented hunk must not nag: {texts:?}"
     );
     assert!(texts.contains(&"Run the project test suite"));

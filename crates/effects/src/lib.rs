@@ -135,13 +135,16 @@ impl Ledger {
                 if line.trim().is_empty() {
                     continue;
                 }
-                let receipt: EffectReceipt =
-                    serde_json::from_str(&line).map_err(|e| format!("corrupt receipt line: {e}"))?;
+                let receipt: EffectReceipt = serde_json::from_str(&line)
+                    .map_err(|e| format!("corrupt receipt line: {e}"))?;
                 chain.receipts.push(receipt);
             }
             chain.verify()?;
         }
-        Ok(Ledger { path: path.to_path_buf(), chain })
+        Ok(Ledger {
+            path: path.to_path_buf(),
+            chain,
+        })
     }
 
     /// Appends one receipt and flushes it to disk before returning.
@@ -152,9 +155,12 @@ impl Ledger {
         call_digest: &str,
         result_digest: &str,
     ) -> Result<EffectReceipt, String> {
-        let receipt = self
-            .chain
-            .append(approval_digest, capability_digest, call_digest, result_digest);
+        let receipt = self.chain.append(
+            approval_digest,
+            capability_digest,
+            call_digest,
+            result_digest,
+        );
         let mut file = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
@@ -226,11 +232,15 @@ mod tests {
         assert!(c.verify().is_err(), "value tamper detected");
 
         // DELETE the middle receipt.
-        let c = Chain { receipts: vec![chain.receipts()[0].clone(), chain.receipts()[2].clone()] };
+        let c = Chain {
+            receipts: vec![chain.receipts()[0].clone(), chain.receipts()[2].clone()],
+        };
         assert!(c.verify().is_err(), "deletion detected");
 
         // REORDER two receipts.
-        let c = Chain { receipts: vec![chain.receipts()[1].clone(), chain.receipts()[0].clone()] };
+        let c = Chain {
+            receipts: vec![chain.receipts()[1].clone(), chain.receipts()[0].clone()],
+        };
         assert!(c.verify().is_err(), "reorder detected");
     }
 

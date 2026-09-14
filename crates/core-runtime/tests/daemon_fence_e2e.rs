@@ -22,7 +22,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("dfe{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -152,7 +161,8 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
 }
 
 fn spawn_execd() -> String {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -174,7 +184,13 @@ fn spawn_core_on_db(
     let mut command = Command::new(exe);
     let mut command = command.env("MODBIT_CORE_DB", db_path);
     if !cfg!(windows) {
-        command = command.env("MODBIT_SOCKET", db_path.parent().unwrap().join(format!("s{}.sock", &uuid::Uuid::now_v7().simple().to_string()[..8])));
+        command = command.env(
+            "MODBIT_SOCKET",
+            db_path.parent().unwrap().join(format!(
+                "s{}.sock",
+                &uuid::Uuid::now_v7().simple().to_string()[..8]
+            )),
+        );
     }
     let mut child = command
         .env("MODBIT_HTTP_ADDR", "127.0.0.1:0")
@@ -194,9 +210,7 @@ fn spawn_core_on_db(
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -206,7 +220,10 @@ fn spawn_core_on_db(
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -222,7 +239,10 @@ fn spawn_core_on_db(
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -237,9 +257,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_ready_for_review(daemon: &str, task_id: &str, timeout: Duration) {
     let deadline = Instant::now() + timeout;
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -281,13 +304,17 @@ fn second_core_fences_the_first_mid_run() {
             title: "split brain".into(),
             prompt: "Run the slow command.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon_a, payload);
         assert!(r.ok, "{}", r.error);
@@ -322,11 +349,9 @@ fn second_core_fences_the_first_mid_run() {
     // terminal run event (the fenced writer stops writing — its run
     // dangles while B's completes).
     drop(bodies);
-    let conn = rusqlite::Connection::open_with_flags(
-        &db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .expect("open shared db");
+    let conn =
+        rusqlite::Connection::open_with_flags(&db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("open shared db");
     let ready: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM events WHERE event_type = 'task_ready_for_review'",
@@ -345,9 +370,14 @@ fn second_core_fences_the_first_mid_run() {
     assert_eq!(run_completed, 1, "exactly one run completed (B's)");
     // The lease table records the takeover (generation >= 2).
     let generation: i64 = conn
-        .query_row("SELECT MAX(generation) FROM session_leases", [], |r| r.get(0))
+        .query_row("SELECT MAX(generation) FROM session_leases", [], |r| {
+            r.get(0)
+        })
         .unwrap();
-    assert!(generation >= 2, "lease generation bumped by B's takeover: {generation}");
+    assert!(
+        generation >= 2,
+        "lease generation bumped by B's takeover: {generation}"
+    );
 
     core_a.kill().ok();
     core_a.wait().ok();

@@ -25,7 +25,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("dxe{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -154,8 +163,13 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
         .map(String::from)
 }
 
-fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr) -> (Child, String, PathBuf) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+fn spawn_core(
+    repo_root: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String, PathBuf) {
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -196,9 +210,7 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -208,22 +220,26 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     std::mem::forget(execd);
     (child, daemon.expect("daemon addr"), db_path)
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -243,13 +259,17 @@ fn start_task(daemon: &str, title: &str, prompt: &str) -> String {
             title: title.into(),
             prompt: prompt.into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -258,14 +278,17 @@ fn start_task(daemon: &str, title: &str, prompt: &str) -> String {
 }
 
 fn task_state(daemon: &str, task_id: &str) -> i32 {
-    request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-        .fleet
-        .unwrap()
-        .tasks
-        .iter()
-        .find(|t| t.task_id == task_id)
-        .map(|t| t.state)
-        .unwrap_or(-1)
+    request(
+        daemon,
+        pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+    )
+    .fleet
+    .unwrap()
+    .tasks
+    .iter()
+    .find(|t| t.task_id == task_id)
+    .map(|t| t.state)
+    .unwrap_or(-1)
 }
 
 fn wait_for_state(daemon: &str, task_id: &str, want: i32, timeout: Duration) -> Duration {
@@ -389,7 +412,11 @@ fn pause_task_parks_the_run_at_the_boundary() {
     );
     // The 3s tool finishes; the paused run never invokes turn 2.
     std::thread::sleep(Duration::from_millis(3_500));
-    assert_eq!(bodies.lock().unwrap().len(), 1, "parked run makes no invokes");
+    assert_eq!(
+        bodies.lock().unwrap().len(),
+        1,
+        "parked run makes no invokes"
+    );
 
     core.kill().ok();
     core.wait().ok();

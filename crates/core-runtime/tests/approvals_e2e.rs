@@ -25,7 +25,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("ap1{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -37,7 +46,11 @@ fn code_fixture(tag: &str) -> PathBuf {
     repo.set_config("user.email", "e2e@modbit.test").unwrap();
     repo.set_config("user.name", "Modbit E2E").unwrap();
     repo.set_config("core.autocrlf", "false").unwrap();
-    std::fs::write(root.join("greet.js"), "function greet() {\n  return 'hi';\n}\n").unwrap();
+    std::fs::write(
+        root.join("greet.js"),
+        "function greet() {\n  return 'hi';\n}\n",
+    )
+    .unwrap();
     repo.commit_all("base").expect("baseline");
     root
 }
@@ -106,7 +119,8 @@ fn spawn_core(
     model_addr: SocketAddr,
     _execution_mode: &str,
 ) -> (Child, String) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -139,9 +153,7 @@ fn spawn_core(
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -150,7 +162,10 @@ fn spawn_core(
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -172,7 +187,10 @@ fn spawn_core(
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -187,9 +205,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_state(daemon: &str, task_id: &str, want: i32) {
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         if let Some(t) = fleet.tasks.iter().find(|t| t.task_id == task_id) {
             if t.state == want {
                 return;
@@ -282,13 +303,7 @@ fn approvals_bench(tag: &str, second_edit: &str) -> ApprovalBench {
         text_turn("finished."),
     ];
     spawn_model(listener, script);
-    let (core, daemon) = spawn_core(
-        &db_path,
-        &repo,
-        &worktrees,
-        model_addr,
-        "default",
-    );
+    let (core, daemon) = spawn_core(&db_path, &repo, &worktrees, model_addr, "default");
     // Switch into approvals mode (persists), then restart so it applies.
     let saved = request(
         &daemon,
@@ -305,13 +320,7 @@ fn approvals_bench(tag: &str, second_edit: &str) -> ApprovalBench {
     let mut core = core;
     core.kill().ok();
     core.wait().ok();
-    let (core, daemon) = spawn_core(
-        &db_path,
-        &repo,
-        &worktrees,
-        model_addr,
-        "default",
-    );
+    let (core, daemon) = spawn_core(&db_path, &repo, &worktrees, model_addr, "default");
     ApprovalBench {
         worktrees,
         db_path,
@@ -333,8 +342,12 @@ fn start_task(bench: &ApprovalBench, title: &str) -> String {
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&bench.daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -351,9 +364,7 @@ fn wait_pending(bench: &ApprovalBench, task_id: &str) -> String {
     let deadline = Instant::now() + Duration::from_secs(30);
     loop {
         let mut stmt = conn
-            .prepare(
-                "SELECT approval_id FROM approvals WHERE task_id = ?1 AND state = 'pending'",
-            )
+            .prepare("SELECT approval_id FROM approvals WHERE task_id = ?1 AND state = 'pending'")
             .unwrap();
         let found: Vec<String> = stmt
             .query_map([task_id], |row| row.get::<_, String>(0))
@@ -383,9 +394,7 @@ fn approve_unblocks_the_protected_effect() {
     // card with its tool + scope BEFORE the decision.
     let listed = request(
         &bench.daemon,
-        pb::surface_request::Request::ListPendingApprovals(
-            pb::ListPendingApprovalsRequest {},
-        ),
+        pb::surface_request::Request::ListPendingApprovals(pb::ListPendingApprovalsRequest {}),
     );
     assert!(listed.ok, "list: {}", listed.error);
     let pending = listed.pending_approvals.expect("pending list");
@@ -409,9 +418,7 @@ fn approve_unblocks_the_protected_effect() {
     // After the decision the card is gone (state no longer pending).
     let listed = request(
         &bench.daemon,
-        pb::surface_request::Request::ListPendingApprovals(
-            pb::ListPendingApprovalsRequest {},
-        ),
+        pb::surface_request::Request::ListPendingApprovals(pb::ListPendingApprovalsRequest {}),
     );
     let pending = listed.pending_approvals.expect("pending list");
     assert!(
@@ -422,10 +429,16 @@ fn approve_unblocks_the_protected_effect() {
         "approved card must leave the pending list"
     );
 
-    wait_state(&bench.daemon, &task_id, pb::TaskStatus::ReadyForReview as i32);
-    let on_disk =
-        std::fs::read_to_string(bench.worktrees.join(&task_id).join("greet.js")).unwrap();
-    assert!(on_disk.contains(EDIT_NEW), "the approved edit applied: {on_disk}");
+    wait_state(
+        &bench.daemon,
+        &task_id,
+        pb::TaskStatus::ReadyForReview as i32,
+    );
+    let on_disk = std::fs::read_to_string(bench.worktrees.join(&task_id).join("greet.js")).unwrap();
+    assert!(
+        on_disk.contains(EDIT_NEW),
+        "the approved edit applied: {on_disk}"
+    );
 
     // Replay the SAME decision: first decision wins, replay refused.
     let replay = request(
@@ -459,13 +472,20 @@ fn deny_refuses_the_protected_effect_but_completes() {
     );
     assert!(denied.ok, "deny: {}", denied.error);
 
-    wait_state(&bench.daemon, &task_id, pb::TaskStatus::ReadyForReview as i32);
-    let on_disk =
-        std::fs::read_to_string(bench.worktrees.join(&task_id).join("greet.js")).unwrap();
-    assert_eq!(on_disk, "function greet() {
+    wait_state(
+        &bench.daemon,
+        &task_id,
+        pb::TaskStatus::ReadyForReview as i32,
+    );
+    let on_disk = std::fs::read_to_string(bench.worktrees.join(&task_id).join("greet.js")).unwrap();
+    assert_eq!(
+        on_disk,
+        "function greet() {
   return 'hi';
 }
-", "denied effect must not apply");
+",
+        "denied effect must not apply"
+    );
 
     // Replay a decision on the denied row: refused.
     let replay = request(

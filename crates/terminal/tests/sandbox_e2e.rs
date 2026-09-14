@@ -44,25 +44,27 @@ fn bench(tag: &str) -> Bench {
         .spawn()
         .expect("spawn execd");
     let addr = read_boot_line(&mut execd).expect("execd boot");
-    let worktree = std::env::temp_dir().join(format!("sbx-{tag}-{}", uuid::Uuid::now_v7().simple()));
+    let worktree =
+        std::env::temp_dir().join(format!("sbx-{tag}-{}", uuid::Uuid::now_v7().simple()));
     std::fs::create_dir_all(&worktree).unwrap();
     let client = ExecdClient::connect(&addr).expect("connect execd");
-    Bench { client, worktree, _execd: execd }
+    Bench {
+        client,
+        worktree,
+        _execd: execd,
+    }
 }
 
-fn write_via_sandbox(bench: &Bench, id: &str, target: &Path, content: &str) -> std::io::Result<i64> {
+fn write_via_sandbox(
+    bench: &Bench,
+    id: &str,
+    target: &Path,
+    content: &str,
+) -> std::io::Result<i64> {
     let script = if cfg!(windows) {
-        format!(
-            "echo {} > {}",
-            content,
-            target.display()
-        )
+        format!("echo {} > {}", content, target.display())
     } else {
-        format!(
-            "printf '%s' '{}' > {}",
-            content,
-            target.display()
-        )
+        format!("printf '%s' '{}' > {}", content, target.display())
     };
     let shell = if cfg!(windows) { "cmd" } else { "sh" };
     let shell_flag = if cfg!(windows) { "/C" } else { "-c" };
@@ -101,10 +103,8 @@ fn write_via_sandbox(bench: &Bench, id: &str, target: &Path, content: &str) -> s
 fn sandboxed_writes_outside_the_worktree_fail_inside_succeed() {
     let bench = bench("sbx");
     let inside = bench.worktree.join("inside.txt");
-    let outside_dir = std::env::temp_dir().join(format!(
-        "sbx-outside-{}",
-        uuid::Uuid::now_v7().simple()
-    ));
+    let outside_dir =
+        std::env::temp_dir().join(format!("sbx-outside-{}", uuid::Uuid::now_v7().simple()));
     let outside = outside_dir.join("outside.txt");
 
     // Inside the worktree: allowed.
@@ -114,7 +114,10 @@ fn sandboxed_writes_outside_the_worktree_fail_inside_succeed() {
 
     // Outside the worktree: the sandbox denies the write (non-zero exit).
     let code = write_via_sandbox(&bench, "out", &outside, "outside-evil").unwrap_or(-1);
-    assert_ne!(code, 0, "outside-worktree write must fail under the sandbox");
+    assert_ne!(
+        code, 0,
+        "outside-worktree write must fail under the sandbox"
+    );
     assert!(!outside.exists(), "no file created outside the worktree");
 
     let _ = std::fs::remove_dir_all(&outside_dir);
@@ -136,7 +139,10 @@ fn sandbox_flag_accepted_on_windows() {
     let id = "win";
     let target = bench.worktree.join("win.txt");
     let code = write_via_sandbox(&bench, id, &target, "win-ok").expect("sandboxed run");
-    assert_eq!(code, 0, "the command must run on windows (unsandboxed today)");
+    assert_eq!(
+        code, 0,
+        "the command must run on windows (unsandboxed today)"
+    );
     assert!(target.exists());
 }
 
@@ -147,10 +153,8 @@ fn sandbox_flag_accepted_on_windows() {
 fn macos_seatbelt_fs_scoping() {
     let bench = bench("mac");
     let inside = bench.worktree.join("inside.txt");
-    let outside_dir = std::env::temp_dir().join(format!(
-        "sbx-mac-outside-{}",
-        uuid::Uuid::now_v7().simple()
-    ));
+    let outside_dir =
+        std::env::temp_dir().join(format!("sbx-mac-outside-{}", uuid::Uuid::now_v7().simple()));
     std::fs::create_dir_all(&outside_dir).unwrap();
     let outside = outside_dir.join("outside.txt");
 

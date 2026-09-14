@@ -87,7 +87,7 @@ fn resume_after_crash_reproduces_pending_state_exactly() -> Result<(), Box<dyn s
                 title: "pending work".into(),
                 prompt: "p".into(),
                 repo_id: None,
-    base_branch: None,
+                base_branch: None,
 
                 parent_task_id: None,
             },

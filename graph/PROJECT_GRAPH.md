@@ -1,7 +1,7 @@
 # Modbit Project Graph
 
 > Generated from `graph/project-graph.json` by `tools/graph.py render --write`. Do not edit by hand; edit the graph through `tools/graph.py set` or regenerate structure with `tools/build_graph.py`.  
-> Graph generated on 2026-09-13; view rendered on 2026-09-13.
+> Graph generated on 2026-09-14; view rendered on 2026-09-14.
 
 ## What the graph is
 
@@ -301,13 +301,13 @@ Disposition counts: ADAPT 63, ADOPT 189, ALREADY COVERED 11, DEFERRED 9, EXPERIM
 |---|---|---|---|
 | `M8.1` | E2E_PROVEN | Cloud API/Postgres/object store |  |
 | `M8.2` | E2E_PROVEN | cloud session kernel lease + worker |  |
-| `M8.3` | NOT_STARTED | Sandbox Gateway + sandbox substrate adapter |  |
+| `M8.3` | WIRED | Sandbox Gateway + sandbox substrate adapter |  |
 | `M8.4` | E2E_PROVEN | signed/versioned `modbit-guest` |  |
 | `M8.5` | E2E_PROVEN | typed guest process/fs/PTy RPC |  |
-| `M8.6` | IMPLEMENTING | credential broker + egress policy |  |
-| `M8.7` | IMPLEMENTING | local→cloud checkpoint handoff |  |
-| `M8.8` | NOT_STARTED | cloud browser remote stream/CDP |  |
-| `M8.9` | NOT_STARTED | sandbox-loss recovery |  |
+| `M8.6` | E2E_PROVEN | credential broker + egress policy |  |
+| `M8.7` | E2E_PROVEN | local→cloud checkpoint handoff |  |
+| `M8.8` | E2E_PROVEN | cloud browser remote stream/CDP |  |
+| `M8.9` | E2E_PROVEN | sandbox-loss recovery |  |
 
 ### M9 — Engineering memory/effects/security hardening
 

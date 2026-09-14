@@ -27,7 +27,16 @@ static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 const SECRET_KEY: &str = "sk-keychain-e2e-98765";
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("kc1{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -70,7 +79,8 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
 }
 
 fn spawn_core(db_path: &PathBuf, repo_root: &PathBuf, model_addr: SocketAddr) -> (Child, String) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -108,9 +118,7 @@ fn spawn_core(db_path: &PathBuf, repo_root: &PathBuf, model_addr: SocketAddr) ->
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -119,7 +127,10 @@ fn spawn_core(db_path: &PathBuf, repo_root: &PathBuf, model_addr: SocketAddr) ->
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -158,7 +169,10 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
         _ => "other",
     };
     eprintln!("REQ> {which}");
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -177,9 +191,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_state(daemon: &str, task_id: &str, want: i32) {
     let deadline = Instant::now() + Duration::from_secs(300);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         if let Some(t) = fleet.tasks.iter().find(|t| t.task_id == task_id) {
             if t.state == want {
                 return;
@@ -203,10 +220,7 @@ fn keychain_service() -> String {
 }
 
 fn keychain_available() -> bool {
-    let probe = format!(
-        "{}:PROBE",
-        keychain_service()
-    );
+    let probe = format!("{}:PROBE", keychain_service());
     match modbit_providers::keychain::store_secret(&probe, "probe") {
         Ok(()) => {
             let _ = modbit_providers::keychain::delete_secret(&probe);
@@ -265,7 +279,9 @@ fn api_key_lives_in_the_keychain_and_flows_to_the_transport() {
             use std::io::Write;
             let mut stream = stream;
             if !authorized {
-                let _ = stream.write_all(b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 14\r\n\r\nbad credential");
+                let _ = stream.write_all(
+                    b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 14\r\n\r\nbad credential",
+                );
                 continue;
             }
             let _ = stream.write_all(
@@ -323,8 +339,12 @@ fn api_key_lives_in_the_keychain_and_flows_to_the_transport() {
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -342,11 +362,9 @@ fn api_key_lives_in_the_keychain_and_flows_to_the_transport() {
     // 4) The key NEVER reached the durable event store.
     core.kill().ok();
     core.wait().ok();
-    let conn = rusqlite::Connection::open_with_flags(
-        &db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .unwrap();
+    let conn =
+        rusqlite::Connection::open_with_flags(&db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .unwrap();
     let leaks: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM events WHERE payload_inline LIKE '%' || ?1 || '%'",

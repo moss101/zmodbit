@@ -26,7 +26,16 @@ use modbit_protocol::modbit::protocol::v1 as pb;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("dre{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -156,7 +165,8 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
 }
 
 fn spawn_execd() -> String {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -199,9 +209,7 @@ fn spawn_core_on_db(
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -212,7 +220,10 @@ fn spawn_core_on_db(
             Ok(0) => break,
             Ok(_) => {
                 eprintln!("[core] {}", l.trim_end());
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -228,7 +239,10 @@ fn spawn_core_on_db(
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -248,13 +262,17 @@ fn start_task(daemon: &str) -> String {
             title: "resume me".into(),
             prompt: "Read notes.txt and then run the slow step.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -265,9 +283,12 @@ fn start_task(daemon: &str) -> String {
 fn wait_ready_for_review(daemon: &str, task_id: &str, timeout: Duration) {
     let deadline = Instant::now() + timeout;
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -334,41 +355,42 @@ fn core_kill_mid_run_resumes_from_checkpoint() {
     // the turn-1 assistant tool call and its tool result (typed roles),
     // plus the interruption note — no re-run from a bare prompt.
     {
-    let bodies = bodies.lock().unwrap();
-    assert!(bodies.len() >= 3, "fixture saw the resume request");
-    let resume_body = &bodies[bodies.len() - 1];
-    let messages = resume_body["messages"].as_array().expect("messages");
-    let roles: Vec<&str> = messages.iter().map(|m| m["role"].as_str().unwrap()).collect();
-    assert!(
-        roles.contains(&"assistant") && roles.contains(&"tool"),
-        "checkpointed conversation restored: {roles:?}"
-    );
-    let tool = messages
-        .iter()
-        .find(|m| m["role"] == "tool")
-        .expect("checkpointed tool result rides the resume request");
-    assert_eq!(tool["tool_call_id"], "c1", "call-id linkage restored");
-    assert!(
-        tool["content"].as_str().unwrap().contains("resume fixture content"),
-        "the checkpointed RESULT (not a re-read stub) rides the request"
-    );
-    assert!(
-        messages
+        let bodies = bodies.lock().unwrap();
+        assert!(bodies.len() >= 3, "fixture saw the resume request");
+        let resume_body = &bodies[bodies.len() - 1];
+        let messages = resume_body["messages"].as_array().expect("messages");
+        let roles: Vec<&str> = messages
             .iter()
-            .any(|m| m["role"] == "user"
+            .map(|m| m["role"].as_str().unwrap())
+            .collect();
+        assert!(
+            roles.contains(&"assistant") && roles.contains(&"tool"),
+            "checkpointed conversation restored: {roles:?}"
+        );
+        let tool = messages
+            .iter()
+            .find(|m| m["role"] == "tool")
+            .expect("checkpointed tool result rides the resume request");
+        assert_eq!(tool["tool_call_id"], "c1", "call-id linkage restored");
+        assert!(
+            tool["content"]
+                .as_str()
+                .unwrap()
+                .contains("resume fixture content"),
+            "the checkpointed RESULT (not a re-read stub) rides the request"
+        );
+        assert!(
+            messages.iter().any(|m| m["role"] == "user"
                 && m["content"]
                     .as_str()
                     .is_some_and(|c| c.contains("previous run attempt was interrupted"))),
-        "interruption note surfaces possibly-partial effects"
-    );
-
+            "interruption note surfaces possibly-partial effects"
+        );
     } // checkpoint proof block
-    // The durable store carries the checkpoint events (>= 1).
-    let conn = rusqlite::Connection::open_with_flags(
-        &db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .expect("open core db");
+      // The durable store carries the checkpoint events (>= 1).
+    let conn =
+        rusqlite::Connection::open_with_flags(&db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("open core db");
     let checkpoints: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM events WHERE event_type = 'conversation_checkpointed'",
@@ -417,12 +439,10 @@ fn core_kill_first_tool_resumes_with_note() {
     let resume_body = &bodies[bodies.len() - 1];
     let messages = resume_body["messages"].as_array().expect("messages");
     assert!(
-        messages
-            .iter()
-            .any(|m| m["role"] == "user"
-                && m["content"]
-                    .as_str()
-                    .is_some_and(|c| c.contains("previous run attempt was interrupted"))),
+        messages.iter().any(|m| m["role"] == "user"
+            && m["content"]
+                .as_str()
+                .is_some_and(|c| c.contains("previous run attempt was interrupted"))),
         "interruption note rides the fresh attempt"
     );
 

@@ -9,9 +9,7 @@
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::document::Value;
-use tantivy::schema::{
-    Field, IndexRecordOption, Schema, TextFieldIndexing, TextOptions, TEXT,
-};
+use tantivy::schema::{Field, IndexRecordOption, Schema, TextFieldIndexing, TextOptions, TEXT};
 use tantivy::{Index, IndexWriter, TantivyDocument, Term};
 
 /// The lexical index over indexed file bodies.
@@ -28,13 +26,11 @@ impl LexicalIndex {
         // Path: raw-tokenized (keyword) so term deletion targets exact files.
         let path_field = builder.add_text_field(
             "path",
-            TextOptions::default()
-                .set_stored()
-                .set_indexing_options(
-                    TextFieldIndexing::default()
-                        .set_tokenizer("raw")
-                        .set_index_option(IndexRecordOption::Basic),
-                ),
+            TextOptions::default().set_stored().set_indexing_options(
+                TextFieldIndexing::default()
+                    .set_tokenizer("raw")
+                    .set_index_option(IndexRecordOption::Basic),
+            ),
         );
         // Body: default tokenization, BM25 scoring (freqs + positions).
         let body_field = builder.add_text_field("body", TEXT);
@@ -76,7 +72,9 @@ impl LexicalIndex {
         if query.trim().is_empty() {
             return Vec::new();
         }
-        let Ok(reader) = self.index.reader() else { return Vec::new() };
+        let Ok(reader) = self.index.reader() else {
+            return Vec::new();
+        };
         let searcher = reader.searcher();
         let parser = QueryParser::for_index(&self.index, vec![self.body_field]);
         let Ok(parsed) = parser.parse_query(query) else {
@@ -93,7 +91,11 @@ impl LexicalIndex {
                 Some((path, score as f64))
             })
             .collect();
-        hits.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal).then(a.0.cmp(&b.0)));
+        hits.sort_by(|a, b| {
+            b.1.partial_cmp(&a.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then(a.0.cmp(&b.0))
+        });
         hits.dedup_by(|a, b| a.0 == b.0);
         hits
     }
@@ -109,7 +111,10 @@ mod tests {
             "src/retry.rs",
             b"retry backoff timeout transient failure retry policy\n",
         );
-        idx.replace("src/ui/button.rs", b"button click render focus style widget\n");
+        idx.replace(
+            "src/ui/button.rs",
+            b"button click render focus style widget\n",
+        );
         idx.replace(
             "docs/retry-notes.md",
             b"retry notes about the retry mechanism and its backoff\n",
@@ -125,7 +130,10 @@ mod tests {
     fn tantivy_bm25_ranks_and_replaces_incrementally() {
         let idx = index();
         let hits = idx.search("retry backoff", 10);
-        assert_eq!(hits[0].0, "src/retry.rs", "both terms in one doc wins: {hits:?}");
+        assert_eq!(
+            hits[0].0, "src/retry.rs",
+            "both terms in one doc wins: {hits:?}"
+        );
         assert!(hits.iter().all(|(p, _)| p != "src/ui/button.rs"));
         assert!(idx.search("xylophone", 10).is_empty());
 
@@ -144,11 +152,11 @@ mod tests {
         inc.replace("src/retry.rs", b"completely different words now\n");
         inc.commit();
         let mut cold = LexicalIndex::new().unwrap();
+        cold.replace("src/retry.rs", b"completely different words now\n");
         cold.replace(
-            "src/retry.rs",
-            b"completely different words now\n",
+            "src/ui/button.rs",
+            b"button click render focus style widget\n",
         );
-        cold.replace("src/ui/button.rs", b"button click render focus style widget\n");
         cold.replace(
             "docs/retry-notes.md",
             b"retry notes about the retry mechanism and its backoff\n",
@@ -164,7 +172,10 @@ mod tests {
                 .map(|(p, _)| p)
                 .collect::<Vec<_>>(),
         );
-        assert!(inc.search("policy", 10).is_empty(), "replaced body gone (policy was unique to it)");
+        assert!(
+            inc.search("policy", 10).is_empty(),
+            "replaced body gone (policy was unique to it)"
+        );
 
         // Removal drops the document.
         let mut rm = index();

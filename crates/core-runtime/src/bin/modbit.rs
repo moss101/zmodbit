@@ -306,7 +306,10 @@ fn main() {
         spawned_core = Some(child);
     }
 
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let request = |req: pb::surface_request::Request| -> Option<pb::SurfaceResponse> {
         let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
         match client
@@ -324,7 +327,11 @@ fn main() {
                     }
                 },
                 Err(e) => {
-                    eprintln!("modbit: daemon returned {}: {}", e.status().unwrap_or_default(), e);
+                    eprintln!(
+                        "modbit: daemon returned {}: {}",
+                        e.status().unwrap_or_default(),
+                        e
+                    );
                     None
                 }
             },
@@ -347,16 +354,18 @@ fn run_task(
     run: &RunArgs,
     spawned_core: &mut Option<Child>,
 ) -> ! {
-    let created = request(pb::surface_request::Request::CreateTask(pb::CreateTaskCommand {
-        session_id: String::new(),
-        title: format!("CLI: {}", run.prompt.chars().take(60).collect::<String>()),
-        prompt: run.prompt.clone(),
-        repo_id: String::new(),
-        base_branch: run.branch.clone().unwrap_or_default(),
-        parent_task_id: String::new(),
-    
-        write_scope: String::new(),
-    }))
+    let created = request(pb::surface_request::Request::CreateTask(
+        pb::CreateTaskCommand {
+            session_id: String::new(),
+            title: format!("CLI: {}", run.prompt.chars().take(60).collect::<String>()),
+            prompt: run.prompt.clone(),
+            repo_id: String::new(),
+            base_branch: run.branch.clone().unwrap_or_default(),
+            parent_task_id: String::new(),
+
+            write_scope: String::new(),
+        },
+    ))
     .unwrap_or_else(|| finish_unreachable(spawned_core));
     if !created.ok {
         eprintln!("modbit run: {}", created.error);
@@ -364,8 +373,12 @@ fn run_task(
     }
     let task_id = created.task.as_ref().expect("task view").task_id.clone();
     for req in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(req).unwrap_or_else(|| finish_unreachable(spawned_core));
         if !r.ok {
@@ -378,8 +391,9 @@ fn run_task(
     #[allow(unused_assignments)]
     let mut state = -1;
     loop {
-        let Some(fleet) = request(pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-        else {
+        let Some(fleet) = request(pb::surface_request::Request::GetFleet(
+            pb::GetFleetRequest {},
+        )) else {
             finish_unreachable(spawned_core);
         };
         if let Some(f) = fleet.fleet {

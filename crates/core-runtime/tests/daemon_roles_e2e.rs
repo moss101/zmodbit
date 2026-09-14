@@ -27,7 +27,16 @@ static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
     // Short prefix: unix socket paths must fit sun_path (104 bytes).
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("dre{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -53,12 +62,23 @@ fn notes_fixture(tag: &str) -> PathBuf {
 fn rules_files_ride_the_compiled_prompt_with_provenance() {
     let _guard = E2E_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let repo = notes_fixture("rf");
-    std::fs::write(repo.join("AGENTS.md"), "Always run the tests before claiming done.").unwrap();
+    std::fs::write(
+        repo.join("AGENTS.md"),
+        "Always run the tests before claiming done.",
+    )
+    .unwrap();
     std::fs::create_dir_all(repo.join(".cursor/rules")).unwrap();
-    std::fs::write(repo.join(".cursor/rules/testing.mdc"), "Prefer node.test for new tests.").unwrap();
+    std::fs::write(
+        repo.join(".cursor/rules/testing.mdc"),
+        "Prefer node.test for new tests.",
+    )
+    .unwrap();
     // Rules must be COMMITTED: the run works in a linked worktree checked
     // out at the base revision — untracked files never reach it.
-    GitRepo::open(&repo).unwrap().commit_all("rules files").expect("rules commit");
+    GitRepo::open(&repo)
+        .unwrap()
+        .commit_all("rules files")
+        .expect("rules commit");
     let worktrees = tempdir("rw");
     let (model, bodies) = spawn_model_fixture(vec![text_turn("noted")]);
     let (mut core, daemon) = spawn_core(&repo, &worktrees, model, "openai");
@@ -83,7 +103,10 @@ fn rules_files_ride_the_compiled_prompt_with_provenance() {
         content.contains("Prefer node.test for new tests."),
         ".cursor/rules/*.mdc rides the prompt"
     );
-    assert!(content.contains("sha256:"), "provenance hashes ride the prompt");
+    assert!(
+        content.contains("sha256:"),
+        "provenance hashes ride the prompt"
+    );
     assert!(
         content.contains("# Workspace rules"),
         "rules ride as the workspace_rules segment"
@@ -248,7 +271,8 @@ fn spawn_core(
     provider: &str,
 ) -> (Child, String) {
     // Real execd broker.
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -288,9 +312,7 @@ fn spawn_core(
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -301,7 +323,10 @@ fn spawn_core(
             Ok(0) => break,
             Ok(_) => {
                 eprintln!("[core] {}", l.trim_end());
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -349,9 +374,7 @@ fn spawn_core_without_execd(
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
 
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
@@ -366,7 +389,10 @@ fn spawn_core_without_execd(
                 if l.contains("spawned modbit-execd on ") {
                     spawned_execd = true;
                 }
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
@@ -386,7 +412,10 @@ fn spawn_core_without_execd(
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -406,13 +435,17 @@ fn run_read_task(daemon: &str) -> String {
             title: "read the notes".into(),
             prompt: "Read notes.txt and summarize it.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -423,9 +456,12 @@ fn run_read_task(daemon: &str) -> String {
 fn wait_ready_for_review(daemon: &str, task_id: &str) {
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -447,7 +483,10 @@ fn wait_ready_for_review(daemon: &str, task_id: &str) {
 /// user turn (the compiled prompt), then assistant+tool-result linkage.
 fn repair_bodies(bodies: &Arc<Mutex<Vec<serde_json::Value>>>) -> Vec<serde_json::Value> {
     let bodies = bodies.lock().unwrap();
-    assert!(bodies.len() >= 2, "fixture must capture tool turn + repair turn");
+    assert!(
+        bodies.len() >= 2,
+        "fixture must capture tool turn + repair turn"
+    );
     bodies.clone()
 }
 
@@ -469,7 +508,10 @@ fn openai_wire_body_carries_typed_roles() {
 
     let bodies = repair_bodies(&bodies);
     let messages = bodies[1]["messages"].as_array().expect("messages array");
-    let roles: Vec<&str> = messages.iter().map(|m| m["role"].as_str().unwrap()).collect();
+    let roles: Vec<&str> = messages
+        .iter()
+        .map(|m| m["role"].as_str().unwrap())
+        .collect();
     assert_eq!(
         roles,
         vec!["system", "user", "assistant", "tool"],
@@ -480,7 +522,9 @@ fn openai_wire_body_carries_typed_roles() {
     assert!(user["content"].as_str().unwrap().contains("objective:"));
     // The assistant turn carries the issued call with its id.
     let assistant = &messages[2];
-    let calls = assistant["tool_calls"].as_array().expect("assistant tool_calls");
+    let calls = assistant["tool_calls"]
+        .as_array()
+        .expect("assistant tool_calls");
     assert_eq!(calls.len(), 1);
     assert_eq!(calls[0]["id"], "c1");
     assert_eq!(calls[0]["type"], "function");
@@ -491,12 +535,16 @@ fn openai_wire_body_carries_typed_roles() {
     // The tool result answers the SAME call id and carries the real file.
     let tool = &messages[3];
     assert_eq!(tool["tool_call_id"], "c1");
-    let content: serde_json::Value = serde_json::from_str(tool["content"].as_str().unwrap()).unwrap();
-    assert!(content["content"].as_str().unwrap().contains("ship proper message roles"));
+    let content: serde_json::Value =
+        serde_json::from_str(tool["content"].as_str().unwrap()).unwrap();
+    assert!(content["content"]
+        .as_str()
+        .unwrap()
+        .contains("ship proper message roles"));
     // The old flattened format is gone from every message.
-    assert!(messages
-        .iter()
-        .all(|m| !(m["role"] == "user" && m["content"].as_str().unwrap_or("").starts_with("tool "))));
+    assert!(messages.iter().all(
+        |m| !(m["role"] == "user" && m["content"].as_str().unwrap_or("").starts_with("tool "))
+    ));
 
     core.kill().ok();
     core.wait().ok();
@@ -522,15 +570,26 @@ fn anthropic_wire_body_carries_typed_roles() {
     // System prompt is top-level on the Anthropic wire.
     assert!(!bodies[1]["system"].as_str().unwrap_or("").is_empty());
     let messages = bodies[1]["messages"].as_array().expect("messages array");
-    assert_eq!(messages.len(), 3, "user + assistant(tool_use) + user(tool_result)");
+    assert_eq!(
+        messages.len(),
+        3,
+        "user + assistant(tool_use) + user(tool_result)"
+    );
     // Anthropic has no system/tool roles in messages.
-    assert!(messages.iter().all(|m| m["role"] != "system" && m["role"] != "tool"));
+    assert!(messages
+        .iter()
+        .all(|m| m["role"] != "system" && m["role"] != "tool"));
     // The user turn is the compiled prompt.
-    assert!(messages[0]["content"].as_str().unwrap().contains("objective:"));
+    assert!(messages[0]["content"]
+        .as_str()
+        .unwrap()
+        .contains("objective:"));
     // The assistant turn serializes as a tool_use content block with the id.
     let assistant = &messages[1];
     assert_eq!(assistant["role"], "assistant");
-    let blocks = assistant["content"].as_array().expect("assistant content blocks");
+    let blocks = assistant["content"]
+        .as_array()
+        .expect("assistant content blocks");
     assert_eq!(blocks.len(), 1, "no text before the tool_use in this turn");
     assert_eq!(blocks[0]["type"], "tool_use");
     assert_eq!(blocks[0]["id"], "toolu-1");
@@ -543,10 +602,16 @@ fn anthropic_wire_body_carries_typed_roles() {
     let rblocks = result["content"].as_array().expect("tool_result blocks");
     assert_eq!(rblocks[0]["type"], "tool_result");
     assert_eq!(rblocks[0]["tool_use_id"], "toolu-1");
-    assert!(rblocks[0].get("is_error").is_none(), "successful read is not an error");
+    assert!(
+        rblocks[0].get("is_error").is_none(),
+        "successful read is not an error"
+    );
     let content: serde_json::Value =
         serde_json::from_str(rblocks[0]["content"].as_str().unwrap()).unwrap();
-    assert!(content["content"].as_str().unwrap().contains("ship proper message roles"));
+    assert!(content["content"]
+        .as_str()
+        .unwrap()
+        .contains("ship proper message roles"));
 
     core.kill().ok();
     core.wait().ok();
@@ -561,7 +626,11 @@ fn core_spawns_its_own_execd_when_none_is_configured() {
     let repo = notes_fixture("ee");
     let worktrees = tempdir("ew");
     let (model, _bodies) = spawn_model_fixture(vec![
-        openai_tool_turn("c1", "shell.run", r#"{"argv":["sh","-c","echo broker-ok"]}"#),
+        openai_tool_turn(
+            "c1",
+            "shell.run",
+            r#"{"argv":["sh","-c","echo broker-ok"]}"#,
+        ),
         text_turn("done"),
     ]);
     let (mut core, daemon) = spawn_core_without_execd(&repo, &worktrees, model);
@@ -573,13 +642,17 @@ fn core_spawns_its_own_execd_when_none_is_configured() {
             title: "shell without exported broker".into(),
             prompt: "Run the echo command.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(&daemon, payload);
         assert!(r.ok, "{}", r.error);

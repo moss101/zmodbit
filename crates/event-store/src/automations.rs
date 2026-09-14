@@ -113,11 +113,7 @@ pub fn delete(conn: &Connection, automation_id: &str) -> Result<(), String> {
 }
 
 /// Records that `boundary` (a cron minute key) fired for an automation.
-pub fn record_fire(
-    conn: &Connection,
-    automation_id: &str,
-    boundary: &str,
-) -> Result<(), String> {
+pub fn record_fire(conn: &Connection, automation_id: &str, boundary: &str) -> Result<(), String> {
     conn.execute(
         "UPDATE automations SET last_fire_key = ?2 WHERE automation_id = ?1",
         params![automation_id, boundary],

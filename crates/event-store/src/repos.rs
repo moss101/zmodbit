@@ -18,10 +18,7 @@ pub struct RecentRepo {
 }
 
 /// Inserts (or refreshes) a registered repo by id.
-pub fn register(
-    conn: &Connection,
-    repo: &RecentRepo,
-) -> Result<(), rusqlite::Error> {
+pub fn register(conn: &Connection, repo: &RecentRepo) -> Result<(), rusqlite::Error> {
     conn.execute(
         "INSERT INTO recent_repos (repo_id, path, clone_url, default_branch, registered_at, last_used_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?5)

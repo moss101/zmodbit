@@ -28,7 +28,16 @@ use modbit_retrieval::walker::walk_worktree;
 static E2E_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tempdir(tag: &str) -> PathBuf {
-    let suffix: String = uuid::Uuid::now_v7().simple().to_string().chars().rev().take(8).collect::<String>().chars().rev().collect();
+    let suffix: String = uuid::Uuid::now_v7()
+        .simple()
+        .to_string()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
     let dir = std::env::temp_dir().join(format!("ixe{tag}{suffix}"));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -153,8 +162,13 @@ fn read_boot_line(child: &mut Child) -> Option<String> {
         .map(String::from)
 }
 
-fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAddr) -> (Child, String, PathBuf) {
-    let execd_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
+fn spawn_core(
+    repo_root: &PathBuf,
+    worktree_root: &PathBuf,
+    model_addr: SocketAddr,
+) -> (Child, String, PathBuf) {
+    let execd_bin =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug/modbit-execd");
     let mut execd = Command::new(&execd_bin)
         .env("MODBIT_EXECD_ADDR", "127.0.0.1:0")
         .stdout(Stdio::piped())
@@ -195,9 +209,7 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     reader.read_line(&mut line).expect("core boot line");
-    std::thread::spawn(move || {
-        for _ in reader.lines() {}
-    });
+    std::thread::spawn(move || for _ in reader.lines() {});
     let stderr = child.stderr.take().unwrap();
     let mut err_reader = BufReader::new(stderr);
     let mut daemon = None;
@@ -206,22 +218,26 @@ fn spawn_core(repo_root: &PathBuf, worktree_root: &PathBuf, model_addr: SocketAd
         match err_reader.read_line(&mut l) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(addr) = l.strip_prefix("modbit-core: http daemon on ").map(str::trim) {
+                if let Some(addr) = l
+                    .strip_prefix("modbit-core: http daemon on ")
+                    .map(str::trim)
+                {
                     daemon = Some(addr.to_string());
                 }
             }
             Err(_) => break,
         }
     }
-    std::thread::spawn(move || {
-        for _line in err_reader.lines() {}
-    });
+    std::thread::spawn(move || for _line in err_reader.lines() {});
     std::mem::forget(execd);
     (child, daemon.expect("daemon addr"), db_path)
 }
 
 fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceResponse {
-    let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap();
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
     let body = pb::SurfaceRequest { request: Some(req) }.encode_to_vec();
     let response = client
         .post(format!("http://{daemon}/commands"))
@@ -236,9 +252,12 @@ fn request(daemon: &str, req: pb::surface_request::Request) -> pb::SurfaceRespon
 fn wait_ready_for_review(daemon: &str, task_id: &str) {
     let deadline = Instant::now() + Duration::from_secs(120);
     loop {
-        let fleet = request(daemon, pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}))
-            .fleet
-            .unwrap();
+        let fleet = request(
+            daemon,
+            pb::surface_request::Request::GetFleet(pb::GetFleetRequest {}),
+        )
+        .fleet
+        .unwrap();
         let state = fleet
             .tasks
             .iter()
@@ -263,13 +282,17 @@ fn create_queue_start(daemon: &str, title: &str) -> String {
             title: title.into(),
             prompt: "Do it.".into(),
             ..Default::default()
-}),
+        }),
     );
     assert!(created.ok, "{}", created.error);
     let task_id = created.task.unwrap().task_id;
     for payload in [
-        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand { task_id: task_id.clone() }),
-        pb::surface_request::Request::StartTask(pb::StartTaskCommand { task_id: task_id.clone() }),
+        pb::surface_request::Request::QueueTask(pb::QueueTaskCommand {
+            task_id: task_id.clone(),
+        }),
+        pb::surface_request::Request::StartTask(pb::StartTaskCommand {
+            task_id: task_id.clone(),
+        }),
     ] {
         let r = request(daemon, payload);
         assert!(r.ok, "{}", r.error);
@@ -279,11 +302,9 @@ fn create_queue_start(daemon: &str, title: &str) -> String {
 
 #[allow(clippy::type_complexity)]
 fn index_events(db_path: &PathBuf) -> Vec<(String, i64, i64, String, String)> {
-    let conn = rusqlite::Connection::open_with_flags(
-        db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .expect("open core db");
+    let conn =
+        rusqlite::Connection::open_with_flags(db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .expect("open core db");
     let mut stmt = conn
         .prepare(
             "SELECT json_extract(payload_inline, '$.reason'),
@@ -329,16 +350,26 @@ fn daemon_builds_and_incrementally_refreshes_the_repository_index() {
     wait_ready_for_review(&daemon, &task_id);
 
     let events = index_events(&db_path);
-    assert_eq!(events.len(), 2, "task_start + change_apply evidence: {events:?}");
+    assert_eq!(
+        events.len(),
+        2,
+        "task_start + change_apply evidence: {events:?}"
+    );
 
     let (reason0, rev0, files0, digest0, _) = &events[0];
     assert_eq!(reason0, "task_start");
     assert_eq!(*rev0, 0, "bound to the pre-run workspace revision");
-    assert_eq!(*files0, 2, "greet.js + readme.md; hidden/.gitignore skipped");
+    assert_eq!(
+        *files0, 2,
+        "greet.js + readme.md; hidden/.gitignore skipped"
+    );
     assert_eq!(digest0.len(), 64, "sha256 hex root digest");
 
     let (reason1, rev1, files1, digest1, recomputed1) = &events[1];
-    assert_eq!(reason1, "change_apply", "refresh happened in the apply, not lazily");
+    assert_eq!(
+        reason1, "change_apply",
+        "refresh happened in the apply, not lazily"
+    );
     // change.apply bumps the counter twice: adopt (track the checked-out
     // file) + replace (the edit). The index binds to the post-edit value.
     assert_eq!(*rev1, 2, "one edit: adopt + replace");
@@ -358,10 +389,8 @@ fn daemon_builds_and_incrementally_refreshes_the_repository_index() {
     let worktree = worktrees.join(&task_id);
     let (files, stats) = walk_worktree(&worktree);
     assert_eq!(stats.indexed, 2);
-    let owned: std::collections::BTreeMap<String, Vec<u8>> = files
-        .into_iter()
-        .map(|f| (f.path, f.bytes))
-        .collect();
+    let owned: std::collections::BTreeMap<String, Vec<u8>> =
+        files.into_iter().map(|f| (f.path, f.bytes)).collect();
     let rebuilt = MerkleIndex::build(&owned, 1);
     assert_eq!(
         rebuilt.root_digest(),
@@ -398,7 +427,11 @@ fn refused_edit_leaves_the_index_untouched() {
     wait_ready_for_review(&daemon, &task_id);
 
     let events = index_events(&db_path);
-    assert_eq!(events.len(), 1, "no refresh evidence without a write: {events:?}");
+    assert_eq!(
+        events.len(),
+        1,
+        "no refresh evidence without a write: {events:?}"
+    );
     let (reason, rev, files, digest, recomputed) = &events[0];
     assert_eq!(reason, "task_start");
     assert_eq!(*rev, 0);

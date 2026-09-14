@@ -13,7 +13,7 @@ use tokio::net::{TcpListener, TcpStream};
 
 use modbit_providers::gateway::{
     anthropic_request_body, openai_request_body, parse_openai_sse_payload, ChatMessage,
-    ModelRequest, Provider, Role, ToolCallAssembler, ToolDefinition, ToolCallData,
+    ModelRequest, Provider, Role, ToolCallAssembler, ToolCallData, ToolDefinition,
 };
 use modbit_providers::transport::{
     HttpStreamTransport, ModelTransport as _, OutgoingRequest, SecretBroker, TransportEvent,
@@ -22,7 +22,10 @@ use modbit_providers::transport::{
 /// Loopback credential: proves header wiring without touching process env.
 struct FixtureBroker;
 impl SecretBroker for FixtureBroker {
-    fn credential(&self, _name: &str) -> Result<String, modbit_providers::transport::TransportError> {
+    fn credential(
+        &self,
+        _name: &str,
+    ) -> Result<String, modbit_providers::transport::TransportError> {
         Ok("fixture-key".into())
     }
 }
@@ -127,7 +130,11 @@ async fn tool_projection_streams_calls_and_feeds_results_back() {
             }
         }
         let turn = bodies.lock().unwrap().len();
-        let frames: &[&str] = if turn == 1 { OPEN_FRAMES } else { REPAIR_FRAMES };
+        let frames: &[&str] = if turn == 1 {
+            OPEN_FRAMES
+        } else {
+            REPAIR_FRAMES
+        };
         let mut payload = String::from(
             "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n",
         );
@@ -175,7 +182,12 @@ async fn tool_projection_streams_calls_and_feeds_results_back() {
     // Assembler produced the dispatchable call from fragments.
     let tool_request = events1
         .iter()
-        .find(|e| matches!(e, modbit_providers::gateway::StreamEvent::ToolRequest { .. }))
+        .find(|e| {
+            matches!(
+                e,
+                modbit_providers::gateway::StreamEvent::ToolRequest { .. }
+            )
+        })
         .expect("assembler must yield a dispatchable ToolRequest");
     let modbit_providers::gateway::StreamEvent::ToolRequest {
         call_id,
@@ -191,23 +203,29 @@ async fn tool_projection_streams_calls_and_feeds_results_back() {
 
     // Turn 2: the tool result rides back as a typed tool message.
     let executed = serde_json::json!({"lines": 12});
-    request.messages.push(ChatMessage::assistant_with_tool_calls(
-        "",
-        vec![ToolCallData {
-            call_id: call_id.clone(),
-            name: name.clone(),
-            arguments: arguments.clone(),
-        }],
-    ));
     request
         .messages
-        .push(ChatMessage::tool_result(call_id, executed.to_string(), false));
+        .push(ChatMessage::assistant_with_tool_calls(
+            "",
+            vec![ToolCallData {
+                call_id: call_id.clone(),
+                name: name.clone(),
+                arguments: arguments.clone(),
+            }],
+        ));
+    request.messages.push(ChatMessage::tool_result(
+        call_id,
+        executed.to_string(),
+        false,
+    ));
     request.request_id = "roundtrip-2".into();
 
     let (events2, _) = stream_once(request.clone(), addr).await;
-    assert!(events2.contains(&modbit_providers::gateway::StreamEvent::Delta(
-        "file read: 12 lines".into()
-    )));
+    assert!(
+        events2.contains(&modbit_providers::gateway::StreamEvent::Delta(
+            "file read: 12 lines".into()
+        ))
+    );
 
     // Provider-side assertions: what actually travelled on the wire.
     let bodies = seen_bodies.lock().unwrap();
