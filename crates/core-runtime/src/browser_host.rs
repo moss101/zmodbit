@@ -83,14 +83,15 @@ impl BrowserHost {
             .browser_bin
             .clone()
             .or_else(CdpBrowser::find_browser)
-            .ok_or_else(|| {
-                err("no Chromium-family browser available on this machine")
-            })?;
+            .ok_or_else(|| err("no Chromium-family browser available on this machine"))?;
         CdpBrowser::launch(&bin).map_err(|e| err(e.to_string()))
     }
 
     /// Captures the live frame for a task: launch-on-demand without poisoning the
-    /// session map on failure.
+    /// session map on failure. If the session's browser process has died
+    /// (browser-host crash/restart, W6), the dead session is dropped and
+    /// the browser relaunches ONCE — the frame is served from the fresh
+    /// session (lease resets to agent: the user can take over again).
     pub fn view(&self, task_id: &str) -> Result<BrowserFrame, BrowserHostError> {
         let mut sessions = self.sessions.lock().map_err(|_| err("poisoned"))?;
         if !sessions.contains_key(task_id) {
@@ -103,8 +104,35 @@ impl BrowserHost {
                 },
             );
         }
-        let session = sessions.get_mut(task_id).expect("just inserted");
-        let state = session.browser.snapshot().map_err(|e| err(e.to_string()))?;
+        let snapshot_result = sessions
+            .get_mut(task_id)
+            .expect("just inserted")
+            .browser
+            .snapshot();
+        let state = match snapshot_result {
+            Ok(state) => state,
+            // Dead session: drop it and relaunch once in place.
+            Err(dead) => {
+                let _ = sessions.remove(task_id);
+                let browser = self
+                    .launch()
+                    .map_err(|e| err(format!("relaunch after browser loss failed: {dead}; {e}")))?;
+                sessions.insert(
+                    task_id.to_string(),
+                    Session {
+                        browser,
+                        lease: LeaseOwner::Agent,
+                    },
+                );
+                sessions
+                    .get_mut(task_id)
+                    .expect("just inserted")
+                    .browser
+                    .snapshot()
+                    .map_err(|e| err(format!("relaunch after browser loss failed: {dead}; {e}")))?
+            }
+        };
+        let session = sessions.get_mut(task_id).expect("present");
         let png = session.browser.capture().map_err(|e| err(e.to_string()))?;
         Ok(BrowserFrame {
             url: state.url,
@@ -112,6 +140,24 @@ impl BrowserHost {
             png,
             lease: session.lease,
         })
+    }
+
+    /// Recovery-testing hook (M8/W6 browser-host restart): hard-kills
+    /// the task session's browser process, simulating a browser crash.
+    /// Returns false when no session exists. The NEXT view() must drop
+    /// the dead session, relaunch, and serve the fresh frame.
+    pub fn kill_session_browser(&self, task_id: &str) -> bool {
+        let mut sessions = match self.sessions.lock() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        match sessions.get_mut(task_id) {
+            Some(session) => {
+                session.browser.kill_child();
+                true
+            }
+            None => false,
+        }
     }
 
     /// Takeover (owner = User) or return control (owner = Agent). The

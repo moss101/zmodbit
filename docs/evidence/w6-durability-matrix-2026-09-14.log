@@ -1,0 +1,33 @@
+W6 durability/recovery matrix — goal list mapped to proving tests
+Date: 2026-09-14
+
+| Recovery scenario (goal W6) | Proving test(s) |
+|---|---|
+| Runtime restart during tool execution | crash_restart (E2E-005), kill_points |
+| Desktop restart | detach_reattach, daemon_sse (client reattach; daemon survives) |
+| Coordinator restart | crash_restart, lease_resume, daemon_resume_e2e |
+| Guest (sandbox) restart | guest_e2e::e2e_sandbox_loss_recovery (M8.9, real kill) + gateway_e2e worker kill/reattach |
+| Browser-host restart | NEW browser_host_recovery::browser_host_relaunches_after_browser_loss (real Chromium kill → relaunch; lease resets to agent, takeover re-verifiable) |
+| Network interruption | gateway_e2e (worker disconnect → explicit failure → re-attach; tenant refusal paths) |
+| Stream interruption | daemon_sse (E2E-020 mapping), daemon_roles_e2e (E2E-019 failover mapping) |
+| Database reconnect | m1_event_store (WAL store semantics), dispatch_cluster (durable queue) |
+| Object-store interruption | object_store_contract (digest-mismatch fail-closed, missing-object typed errors; MinIO S3 + local + sqlite) |
+| Terminal reconnect | detach_reattach, pty_broker_e2e |
+| Approval pending during restart | approvals_e2e::pending_approval_survives_a_core_kill (E2E-004) |
+| User browser takeover during restart | browser_view_e2e (E2E-015 takeover/lease generation) + browser_host_recovery (lease reset on relaunch) |
+| Subagent running during restart | agent_fleet_e2e (persisted fleet journal survives restarts) |
+| Checkpoint creation during failure | daemon_checkpoint_journal_e2e (E2E-007) |
+| Compaction occurring during failure | daemon_compaction_e2e (E2E-006) |
+| Stale compaction completion | compaction::async_compaction_stale_result_is_rejected (REQ-EV-0058) |
+| Task cancellation | daemon_cancellation_e2e |
+| Task fork/revert | session_lineage, change_engine (typed UndoPlan), daemon_fence_e2e |
+| Duplicate effect delivery | sandbox::guest executor idempotent replay (unit + e2e raw-wire replay) |
+| Late/out-of-order events | m1_event_store::commands_append_events_in_per_aggregate_sequence_order, daemon_protocol_state_e2e (head-advance-only merge) |
+
+== the one new gap closed this pass: browser-host relaunch after Chromium loss ==
+running 1 test
+test browser_host_relaunches_after_browser_loss ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.13s
+
+== rc_catalog still live ==
+RC CATALOG: OK (all scenarios mapped to live proofs)

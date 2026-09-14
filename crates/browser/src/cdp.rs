@@ -185,11 +185,7 @@ impl CdpBrowser {
             "Runtime.enable",
             json!({}),
         )?;
-        browser.command_value(
-            Some(browser.session_id.clone()),
-            "Page.enable",
-            json!({}),
-        )?;
+        browser.command_value(Some(browser.session_id.clone()), "Page.enable", json!({}))?;
         browser.command_value(
             Some(browser.session_id.clone()),
             "Network.enable",
@@ -248,10 +244,7 @@ impl CdpBrowser {
             }))
         })"#;
         let raw = self.evaluate(js)?;
-        let page = serde_json::from_str::<Value>(
-            raw.as_str().unwrap_or_default(),
-        )
-        .map_err(err)?;
+        let page = serde_json::from_str::<Value>(raw.as_str().unwrap_or_default()).map_err(err)?;
         let elements = page["elements"]
             .as_array()
             .map(|list| {
@@ -306,9 +299,7 @@ impl CdpBrowser {
                 Ok(msg) => {
                     let text = match msg {
                         tungstenite::Message::Text(t) => t.to_string(),
-                        tungstenite::Message::Binary(b) => {
-                            String::from_utf8_lossy(&b).to_string()
-                        }
+                        tungstenite::Message::Binary(b) => String::from_utf8_lossy(&b).to_string(),
                         _ => continue,
                     };
                     if let Ok(value) = serde_json::from_str::<Value>(&text) {
@@ -350,17 +341,22 @@ impl CdpBrowser {
             json!({ "format": "png" }),
         )?;
         use base64::Engine as _;
-        let data = out["data"]
-            .as_str()
-            .ok_or_else(|| CdpError {
-                message: "screenshot produced no data".into(),
-            })?;
+        let data = out["data"].as_str().ok_or_else(|| CdpError {
+            message: "screenshot produced no data".into(),
+        })?;
         base64::engine::general_purpose::STANDARD
             .decode(data)
             .map_err(err)
     }
 
     /// Kills the browser process and removes the throwaway profile.
+    /// Hard-kills the browser process WITHOUT consuming the handle —
+    /// the recovery-testing hook for browser-host crash/loss paths (the
+    /// next operation must surface the death, not a fake success).
+    pub fn kill_child(&mut self) {
+        let _ = self.child.kill();
+    }
+
     pub fn shutdown(mut self) {
         let _ = self.child.kill();
         let _ = self.child.wait();
@@ -385,7 +381,12 @@ impl CdpBrowser {
 
     /// Sends a command and reads until ITS response arrives, filing any
     /// domain events into the observation buffers on the way.
-    fn command_value(&mut self, session: Option<String>, method: &str, params: Value) -> Result<Value, CdpError> {
+    fn command_value(
+        &mut self,
+        session: Option<String>,
+        method: &str,
+        params: Value,
+    ) -> Result<Value, CdpError> {
         let id = self.next_id;
         self.next_id += 1;
         self.send_cmd(session, id, method, params)?;
@@ -448,10 +449,7 @@ impl CdpBrowser {
                         args.iter()
                             .map(|a| {
                                 a["value"].as_str().map(str::to_string).unwrap_or_else(|| {
-                                    a["description"]
-                                        .as_str()
-                                        .unwrap_or("?")
-                                        .to_string()
+                                    a["description"].as_str().unwrap_or("?").to_string()
                                 })
                             })
                             .collect()
@@ -522,9 +520,6 @@ fn which_exists(bin: &str) -> bool {
         return Path::new(bin).exists();
     }
     std::env::var_os("PATH")
-        .map(|paths| {
-            std::env::split_paths(&paths)
-                .any(|dir| dir.join(bin).exists())
-        })
+        .map(|paths| std::env::split_paths(&paths).any(|dir| dir.join(bin).exists()))
         .unwrap_or(false)
 }
