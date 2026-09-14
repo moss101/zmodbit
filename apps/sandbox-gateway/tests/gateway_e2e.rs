@@ -288,9 +288,11 @@ fn gateway_refuses_impersonating_peers_without_the_boot_secret() {
     let stream = std::net::TcpStream::connect(&boot.addr).expect("connect");
     assert!(Connection::over_stream(stream, &wrong).is_err());
     // A correct-secret worker still leases (the gateway is healthy after
-    // the refusals). The worker is a serving process — never wait() on
-    // it; the harness drop kills it.
+    // the refusals). The worker is a serving process — lease-wait, then
+    // kill + wait so the child is reaped (never a hang, never a zombie).
     let db = tempdir("imp-db").join("core.db");
-    let _worker = spawn_worker(&boot, "tenant-imp", &db);
+    let mut worker = spawn_worker(&boot, "tenant-imp", &db);
     std::thread::sleep(std::time::Duration::from_millis(400));
+    let _ = worker.kill();
+    let _ = worker.wait();
 }
